@@ -29,7 +29,7 @@ services:
   core-api:
     build:
       context: ..
-      dockerfile: apps/pops-core-api/Dockerfile
+      dockerfile: pillars/core/Dockerfile
       args:
         BUILD_VERSION: ${BUILD_VERSION:-dev}
     container_name: pops-core-api
@@ -275,113 +275,6 @@ services:
       timeout: 5s
       retries: 3
 
-  pops-api:
-    build:
-      context: ..
-      dockerfile: apps/pops-api/Dockerfile
-      args:
-        BUILD_VERSION: ${BUILD_VERSION:-dev}
-    container_name: pops-api
-    restart: unless-stopped
-    networks:
-      - frontend
-      - backend
-    volumes:
-      - sqlite-data:/data/sqlite
-    secrets:
-      - notion_api_token
-      - up_bank_token
-      - up_webhook_secret
-      - finance_api_key
-      - claude_api_key
-      - tmdb_api_key
-      - thetvdb_api_key
-    environment:
-      NODE_ENV: production
-      SQLITE_PATH: /data/sqlite/pops.db
-      PORT: '3000'
-      REDIS_HOST: pops-redis
-      REDIS_PORT: '6379'
-      # Cross-pillar registry (ADR-026 Phase 3 PR 3). Names core-api by
-      # its compose hostname so pops-api's URI dispatcher can route
-      # outbound `pops:core/...` traffic to the new container. Deployers
-      # override POPS_PILLARS to extend with sibling pillars.
-      POPS_PILLARS: ${POPS_PILLARS:-core:http://core-api:3001,inventory:http://inventory-api:3002,media:http://media-api:3003,finance:http://finance-api:3004,food:http://food-api:3005,lists:http://lists-api:3006}
-      # Paperless-ngx integration (optional — leave unset to disable)
-      PAPERLESS_BASE_URL: ${PAPERLESS_BASE_URL:-}
-      PAPERLESS_API_TOKEN: ${PAPERLESS_API_TOKEN:-}
-    expose:
-      - '3000'
-    depends_on:
-      pops-redis:
-        condition: service_healthy
-      core-api:
-        condition: service_healthy
-      inventory-api:
-        condition: service_healthy
-      media-api:
-        condition: service_healthy
-      finance-api:
-        condition: service_healthy
-      food-api:
-        condition: service_healthy
-      lists-api:
-        condition: service_healthy
-    healthcheck:
-      test:
-        [
-          'CMD',
-          'node',
-          '-e',
-          "fetch('http://localhost:3000/health').then(r=>{if(!r.ok)process.exit(1)})",
-        ]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-
-  pops-worker:
-    build:
-      context: ..
-      dockerfile: apps/pops-api/Dockerfile
-      args:
-        BUILD_VERSION: ${BUILD_VERSION:-dev}
-    container_name: pops-worker
-    restart: unless-stopped
-    command: ['node', 'dist/worker.js']
-    networks:
-      - backend
-    volumes:
-      - sqlite-data:/data/sqlite
-    secrets:
-      - notion_api_token
-      - up_bank_token
-      - up_webhook_secret
-      - finance_api_key
-      - claude_api_key
-      - tmdb_api_key
-      - thetvdb_api_key
-    environment:
-      NODE_ENV: production
-      SQLITE_PATH: /data/sqlite/pops.db
-      REDIS_HOST: pops-redis
-      REDIS_PORT: '6379'
-      POPS_PILLARS: ${POPS_PILLARS:-core:http://core-api:3001,inventory:http://inventory-api:3002,media:http://media-api:3003,finance:http://finance-api:3004,food:http://food-api:3005,lists:http://lists-api:3006}
-    depends_on:
-      pops-redis:
-        condition: service_healthy
-      core-api:
-        condition: service_healthy
-      inventory-api:
-        condition: service_healthy
-      media-api:
-        condition: service_healthy
-      finance-api:
-        condition: service_healthy
-      food-api:
-        condition: service_healthy
-      lists-api:
-        condition: service_healthy
-
   # Cerebrum pillar API (ADR-026). Hosts the cerebrum REST surface on
   # port 3007; nginx routes /cerebrum-api/ and /trpc-cerebrum/ here. Built
   # from the pillar Dockerfile (its default CMD is the API server) — same
@@ -614,13 +507,15 @@ services:
       - pops_api_key
     environment:
       NODE_ENV: production
-      POPS_API_URL: http://pops-api:3000
+      # pops-mcp reaches every pillar through the REST pillar SDK (per-pillar
+      # POPS_*_API_URL with built-in docker-network defaults); the legacy single
+      # POPS_API_URL tRPC client was removed in the 02 decommission.
       POPS_API_KEY_FILE: /run/secrets/pops_api_key
       MCP_PORT: '3002'
     ports:
       - '${MCP_BIND_ADDR:-0.0.0.0}:3002:3002'
     depends_on:
-      pops-api:
+      core-api:
         condition: service_healthy
     healthcheck:
       test:
@@ -673,9 +568,12 @@ services:
       - pops_api_key
     environment:
       TELEGRAM_BOT_TOKEN_FILE: /run/secrets/telegram_bot_token_dev
-      POPS_API_URL: http://pops-api:3000
+      # Skill prompts still describe monolith paths; repointing hosts is
+      # necessary but not sufficient (cerebrum/finance skills need REST-path
+      # rewrites) — tracked as a follow-up gap.
+      POPS_API_URL: http://cerebrum-api:3007
       POPS_API_KEY_FILE: /run/secrets/pops_api_key
-      FINANCE_API_URL: http://pops-api:3000
+      FINANCE_API_URL: http://finance-api:3004
       FINANCE_API_KEY_FILE: /run/secrets/pops_api_key
     depends_on:
       moltbot-validator:

@@ -179,8 +179,8 @@ export function renderNginxConf(order: readonly KnownPillarId[] = PILLAR_RENDER_
 /**
  * Pure renderer (dynamic mode). Takes an explicit list of upstreams in
  * the order they should appear in the output. Empty input is valid and
- * produces a config with zero `/trpc-<pillar>/` dispatchers (the legacy
- * `/trpc` catch-all in the tail still routes to pops-api).
+ * produces a config with zero `/trpc-<pillar>/` dispatchers (the monolith
+ * `/trpc` catch-all is gone after the 02 decommission).
  */
 export function renderNginxConfFromUpstreams(upstreams: readonly PillarUpstream[]): string {
   if (upstreams.length === 0) {

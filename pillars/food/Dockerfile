@@ -20,7 +20,6 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json .oxfmtrc
 
 # Phase 1: package.json of @pops/food + its transitive @pops/* deps.
 COPY pillars/food/package.json ./pillars/food/
-COPY packages/core-contract/package.json ./packages/core-contract/
 COPY packages/shared-schema/package.json ./packages/shared-schema/
 COPY packages/pillar-sdk/package.json ./packages/pillar-sdk/
 COPY packages/types/package.json ./packages/types/
@@ -30,11 +29,6 @@ RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
     corepack enable && pnpm install --frozen-lockfile --filter "@pops/food..."
 
 # Phase 2: source for the transitive @pops/* deps of @pops/food.
-# @pops/core-contract
-COPY packages/core-contract/src ./packages/core-contract/src
-COPY packages/core-contract/scripts ./packages/core-contract/scripts
-COPY packages/core-contract/openapi ./packages/core-contract/openapi
-COPY packages/core-contract/tsconfig.json ./packages/core-contract/tsconfig.json
 # @pops/shared-schema
 COPY packages/shared-schema/src ./packages/shared-schema/src
 COPY packages/shared-schema/tsconfig.json ./packages/shared-schema/tsconfig.json

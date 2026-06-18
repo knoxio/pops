@@ -6,7 +6,6 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json .oxfmtrc
 
 # Copy all workspace package.json files needed by pops-shell
 COPY apps/pops-shell/package.json ./apps/pops-shell/
-COPY apps/pops-api/package.json ./apps/pops-api/
 COPY packages/db-types/package.json ./packages/db-types/
 COPY packages/ui/package.json ./packages/ui/
 COPY packages/app-finance/package.json ./packages/app-finance/
@@ -15,7 +14,6 @@ COPY packages/app-food-db/package.json ./packages/app-food-db/
 COPY packages/food-contracts/package.json ./packages/food-contracts/
 COPY packages/app-lists/package.json ./packages/app-lists/
 COPY packages/app-lists-db/package.json ./packages/app-lists-db/
-COPY packages/core-db/package.json ./packages/core-db/
 COPY packages/finance-db/package.json ./packages/finance-db/
 COPY packages/inventory-db/package.json ./packages/inventory-db/
 COPY packages/food-db/package.json ./packages/food-db/
@@ -30,7 +28,6 @@ COPY packages/navigation/package.json ./packages/navigation/
 COPY packages/types/package.json ./packages/types/
 COPY packages/module-registry/package.json ./packages/module-registry/
 COPY packages/finance-contract/package.json ./packages/finance-contract/
-COPY packages/core-contract/package.json ./packages/core-contract/
 COPY packages/inventory-contract/package.json ./packages/inventory-contract/
 COPY packages/food-contract/package.json ./packages/food-contract/
 COPY packages/lists-contract/package.json ./packages/lists-contract/
@@ -50,14 +47,12 @@ COPY packages/module-registry/tsconfig.json packages/module-registry/tsconfig.bu
 COPY packages/app-lists/ ./packages/app-lists/
 COPY packages/app-lists-db/ ./packages/app-lists-db/
 COPY packages/app-food-db/ ./packages/app-food-db/
-COPY packages/core-db/ ./packages/core-db/
 COPY packages/finance-db/ ./packages/finance-db/
 COPY packages/inventory-db/ ./packages/inventory-db/
 COPY packages/food-db/ ./packages/food-db/
 COPY packages/lists-db/ ./packages/lists-db/
 COPY packages/food-contracts/ ./packages/food-contracts/
 COPY packages/finance-contract/ ./packages/finance-contract/
-COPY packages/core-contract/ ./packages/core-contract/
 COPY packages/inventory-contract/ ./packages/inventory-contract/
 COPY packages/food-contract/ ./packages/food-contract/
 COPY packages/lists-contract/ ./packages/lists-contract/
@@ -72,8 +67,6 @@ RUN pnpm build
 WORKDIR /app/packages/app-lists-db
 RUN pnpm build
 WORKDIR /app/packages/food-db
-RUN pnpm build
-WORKDIR /app/packages/core-db
 RUN pnpm build
 WORKDIR /app/packages/finance-db
 RUN pnpm build
@@ -91,7 +84,6 @@ WORKDIR /app/packages/app-food-db
 RUN pnpm build
 WORKDIR /app/packages/finance-contract
 RUN pnpm build
-WORKDIR /app/packages/core-contract
 RUN pnpm build
 WORKDIR /app/packages/inventory-contract
 RUN pnpm build
@@ -118,7 +110,6 @@ COPY packages/api-client/ ./packages/api-client/
 COPY packages/navigation/ ./packages/navigation/
 COPY packages/types/ ./packages/types/
 COPY packages/module-registry/ ./packages/module-registry/
-COPY apps/pops-api/ ./apps/pops-api/
 COPY apps/pops-shell/ ./apps/pops-shell/
 
 # Build pops-shell (tsc typecheck + vite build)

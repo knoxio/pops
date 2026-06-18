@@ -16,7 +16,6 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json .oxfmtrc
 # resolution to that subgraph; unrelated pillars never need to exist
 # in this image's build context.
 COPY pillars/lists/package.json ./pillars/lists/
-COPY packages/core-contract/package.json ./packages/core-contract/
 COPY packages/pillar-sdk/package.json ./packages/pillar-sdk/
 COPY packages/types/package.json ./packages/types/
 
@@ -25,11 +24,6 @@ RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
     corepack enable && pnpm install --frozen-lockfile --filter "@pops/lists..."
 
 # Phase 2: source for the transitive @pops/* deps of @pops/lists.
-# @pops/core-contract
-COPY packages/core-contract/src ./packages/core-contract/src
-COPY packages/core-contract/scripts ./packages/core-contract/scripts
-COPY packages/core-contract/openapi ./packages/core-contract/openapi
-COPY packages/core-contract/tsconfig.json ./packages/core-contract/tsconfig.json
 # @pops/pillar-sdk
 COPY packages/pillar-sdk/src ./packages/pillar-sdk/src
 COPY packages/pillar-sdk/tsconfig.json ./packages/pillar-sdk/tsconfig.json

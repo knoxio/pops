@@ -1,1 +1,0 @@
-ALTER TABLE `comparisons` ADD `draw_tier` text;

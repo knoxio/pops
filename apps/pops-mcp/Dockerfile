@@ -11,11 +11,9 @@ COPY packages/module-registry/package.json ./packages/module-registry/
 COPY packages/api-client/package.json ./packages/api-client/
 COPY packages/app-food-db/package.json ./packages/app-food-db/
 COPY packages/app-lists-db/package.json ./packages/app-lists-db/
-COPY packages/core-db/package.json ./packages/core-db/
 COPY packages/finance-db/package.json ./packages/finance-db/
 COPY packages/finance-contract/package.json ./packages/finance-contract/
 COPY packages/cerebrum-contract/package.json ./packages/cerebrum-contract/
-COPY packages/core-contract/package.json ./packages/core-contract/
 COPY packages/inventory-contract/package.json ./packages/inventory-contract/
 COPY packages/food-contract/package.json ./packages/food-contract/
 COPY packages/lists-contract/package.json ./packages/lists-contract/
@@ -25,7 +23,6 @@ COPY packages/inventory-db/package.json ./packages/inventory-db/
 COPY packages/cerebrum-db/package.json ./packages/cerebrum-db/
 COPY packages/food-db/package.json ./packages/food-db/
 COPY packages/lists-db/package.json ./packages/lists-db/
-COPY apps/pops-api/package.json ./apps/pops-api/
 COPY apps/pops-mcp/package.json ./apps/pops-mcp/
 
 # Install pnpm and all workspace dependencies
@@ -43,9 +40,6 @@ COPY packages/app-lists-db/src ./packages/app-lists-db/src
 COPY packages/app-lists-db/tsconfig.json ./packages/app-lists-db/
 COPY packages/app-food-db/src ./packages/app-food-db/src
 COPY packages/app-food-db/tsconfig.json ./packages/app-food-db/
-COPY packages/core-db/src ./packages/core-db/src
-COPY packages/core-db/tsconfig.json ./packages/core-db/
-COPY packages/core-db/migrations ./packages/core-db/migrations
 COPY packages/finance-db/src ./packages/finance-db/src
 COPY packages/finance-db/tsconfig.json ./packages/finance-db/
 COPY packages/finance-db/migrations ./packages/finance-db/migrations
@@ -65,15 +59,11 @@ COPY packages/lists-db/tsconfig.json ./packages/lists-db/
 COPY packages/lists-db/migrations ./packages/lists-db/migrations
 COPY packages/finance-contract/ ./packages/finance-contract/
 COPY packages/cerebrum-contract/ ./packages/cerebrum-contract/
-COPY packages/core-contract/ ./packages/core-contract/
 COPY packages/inventory-contract/ ./packages/inventory-contract/
 COPY packages/food-contract/ ./packages/food-contract/
 COPY packages/lists-contract/ ./packages/lists-contract/
 COPY packages/pillar-sdk/ ./packages/pillar-sdk/
 
-# Copy pops-api source (needed only for AppRouter type resolution at compile time)
-COPY apps/pops-api/tsconfig.json ./apps/pops-api/
-COPY apps/pops-api/src ./apps/pops-api/src
 
 # Copy pops-mcp source
 COPY apps/pops-mcp/tsconfig.json ./apps/pops-mcp/
@@ -94,8 +84,6 @@ WORKDIR /app/packages/cerebrum-db
 RUN pnpm build
 WORKDIR /app/packages/food-db
 RUN pnpm build
-WORKDIR /app/packages/core-db
-RUN pnpm build
 WORKDIR /app/packages/finance-db
 RUN pnpm build
 WORKDIR /app/packages/db-types
@@ -114,7 +102,6 @@ WORKDIR /app/packages/finance-contract
 RUN pnpm build
 WORKDIR /app/packages/cerebrum-contract
 RUN pnpm build
-WORKDIR /app/packages/core-contract
 RUN pnpm build
 WORKDIR /app/packages/inventory-contract
 RUN pnpm build

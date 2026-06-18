@@ -256,115 +256,6 @@ services:
       timeout: 5s
       retries: 3
 
-  pops-api:
-    image: ghcr.io/knoxio/pops-api:${POPS_IMAGE_TAG:-main}
-    container_name: pops-api
-    restart: unless-stopped
-    labels:
-      com.centurylinklabs.watchtower.enable: 'true'
-    networks:
-      - frontend
-      - backend
-    volumes:
-      - sqlite-data:/data/sqlite
-    secrets:
-      - notion_api_token
-      - up_bank_token
-      - up_webhook_secret
-      - finance_api_key
-      - claude_api_key
-      - tmdb_api_key
-      - thetvdb_api_key
-    environment:
-      NODE_ENV: production
-      SQLITE_PATH: /data/sqlite/pops.db
-      PORT: '3000'
-      REDIS_HOST: pops-redis
-      REDIS_PORT: '6379'
-      # Paperless-ngx integration (optional — leave unset to disable)
-      PAPERLESS_BASE_URL: ${PAPERLESS_BASE_URL:-}
-      PAPERLESS_API_TOKEN: ${PAPERLESS_API_TOKEN:-}
-      # PRD-100 module runtime — leave empty to install everything (default behaviour).
-      # Valid apps: finance,media,inventory,cerebrum. Valid overlays: ego.
-      # (ai surfaces are mounted under /cerebrum/admin/*, not as a separate app.)
-      POPS_APPS: ${POPS_APPS:-}
-      POPS_OVERLAYS: ${POPS_OVERLAYS:-}
-      # Cross-pillar registry (ADR-026 Phase 3 PR 3). pops-api routes
-      # outbound `pops:core/...` traffic to the core-api container.
-      POPS_PILLARS: ${POPS_PILLARS:-core:http://core-api:3001,inventory:http://inventory-api:3002,media:http://media-api:3003,finance:http://finance-api:3004,food:http://food-api:3005,lists:http://lists-api:3006}
-    expose:
-      - '3000'
-    depends_on:
-      pops-redis:
-        condition: service_healthy
-      core-api:
-        condition: service_healthy
-      inventory-api:
-        condition: service_healthy
-      media-api:
-        condition: service_healthy
-      finance-api:
-        condition: service_healthy
-      food-api:
-        condition: service_healthy
-      lists-api:
-        condition: service_healthy
-    healthcheck:
-      test:
-        [
-          'CMD',
-          'node',
-          '-e',
-          "fetch('http://localhost:3000/health').then(r=>{if(!r.ok)process.exit(1)})",
-        ]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-
-  pops-worker:
-    image: ghcr.io/knoxio/pops-api:${POPS_IMAGE_TAG:-main}
-    container_name: pops-worker
-    restart: unless-stopped
-    labels:
-      com.centurylinklabs.watchtower.enable: 'true'
-    command: ['node', 'dist/worker.js']
-    networks:
-      - backend
-    volumes:
-      - sqlite-data:/data/sqlite
-    secrets:
-      - notion_api_token
-      - up_bank_token
-      - up_webhook_secret
-      - finance_api_key
-      - claude_api_key
-      - tmdb_api_key
-      - thetvdb_api_key
-    environment:
-      NODE_ENV: production
-      SQLITE_PATH: /data/sqlite/pops.db
-      REDIS_HOST: pops-redis
-      REDIS_PORT: '6379'
-      # PRD-100 — same module set as the api so worker jobs scope correctly.
-      POPS_APPS: ${POPS_APPS:-}
-      POPS_OVERLAYS: ${POPS_OVERLAYS:-}
-      POPS_PILLARS: ${POPS_PILLARS:-core:http://core-api:3001,inventory:http://inventory-api:3002,media:http://media-api:3003,finance:http://finance-api:3004,food:http://food-api:3005,lists:http://lists-api:3006}
-    depends_on:
-      pops-redis:
-        condition: service_healthy
-      core-api:
-        condition: service_healthy
-      inventory-api:
-        condition: service_healthy
-      media-api:
-        condition: service_healthy
-      finance-api:
-        condition: service_healthy
-      food-api:
-        condition: service_healthy
-      lists-api:
-        condition: service_healthy
-
   # ── FOOD INGEST WORKER ───────────────────────────────────────────
   # PRD-126 — consumes the `food.ingest` BullMQ queue produced by
   # pops-api (PRD-125) and runs the per-kind ingest pipelines (PRDs
@@ -393,9 +284,12 @@ services:
     environment:
       NODE_ENV: production
       REDIS_URL: redis://pops-redis:6379
-      POPS_API_URL: http://pops-api:3000
+      # Results post back to the food pillar's `POST /ingest/worker-complete`
+      # (internal-token gated). The worker image's client must speak REST, not
+      # tRPC — tracked as a follow-up gap (worker source lives out-of-repo).
+      POPS_API_URL: http://food-api:3005
       # POPS_API_INTERNAL_TOKEN + ANTHROPIC_API_KEY come from
-      # /run/secrets/<lowercased-name> via pops-api's env.ts convention.
+      # /run/secrets/<lowercased-name> via the internal-token convention.
       # Worker pool & rate limiting (PRD-125 contract).
       FOOD_WORKER_CONCURRENCY: ${FOOD_WORKER_CONCURRENCY:-2}
       FOOD_INGEST_TIMEOUT_SEC: ${FOOD_INGEST_TIMEOUT_SEC:-300}
@@ -414,7 +308,7 @@ services:
     depends_on:
       pops-redis:
         condition: service_healthy
-      pops-api:
+      food-api:
         condition: service_healthy
     healthcheck:
       test: ['CMD', 'curl', '-fsS', 'http://localhost:9090/healthz']
@@ -676,10 +570,14 @@ services:
       - pops_api_key
     environment:
       TELEGRAM_BOT_TOKEN_FILE: /run/secrets/telegram_bot_token
-      POPS_API_URL: http://pops-api:3000
+      # NOTE: the moltbot skill prompts still describe the monolith's REST/tRPC
+      # paths. Repointing the hosts is necessary but not sufficient — the finance
+      # skill must drop /budgets/summary + move entities to core-api, and the
+      # cerebrum skill must switch to the pillar REST paths. Tracked as a gap.
+      POPS_API_URL: http://cerebrum-api:3007
       POPS_API_KEY_FILE: /run/secrets/pops_api_key
       # Legacy aliases — the finance skill template still references these.
-      FINANCE_API_URL: http://pops-api:3000
+      FINANCE_API_URL: http://finance-api:3004
       FINANCE_API_KEY_FILE: /run/secrets/pops_api_key
     depends_on:
       moltbot-validator:
@@ -705,13 +603,15 @@ services:
         mode: 0444
     environment:
       NODE_ENV: production
-      POPS_API_URL: http://pops-api:3000
+      # pops-mcp now reaches every pillar through the REST pillar SDK
+      # (per-pillar POPS_*_API_URL with built-in docker-network defaults); the
+      # legacy single POPS_API_URL tRPC client was removed in the 02 decommission.
       POPS_API_KEY_FILE: /run/secrets/pops_api_key
       MCP_PORT: '3002'
     ports:
       - '${MCP_BIND_ADDR:-0.0.0.0}:3002:3002'
     depends_on:
-      pops-api:
+      core-api:
         condition: service_healthy
     healthcheck:
       test:
