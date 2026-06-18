@@ -5,7 +5,7 @@ Goal: bring `finance` to the same end state as `lists` (#3332–#3335) and `inve
 contract, honest OpenAPI, a per-consumer Hey API FE client, scoped CI
 (`finance-quality.yml`) green, and the dead `@pops/finance-*` package names banned.
 
-Follow the generic recipe in [`pillar-rest-migration.md`](./pillar-rest-migration.md);
+Follow the generic recipe in [`pillar-rest-migration.md`](../../../../../docs/runbooks/pillar-rest-migration.md);
 this doc records only what is **different** for finance. Finance is the smallest /
 easiest of the remaining pillars (cf. food/media), but its code is the most
 **scattered**.

@@ -112,7 +112,7 @@ Run:
 
 **Files:**
 
-- Modify: `docs/themes/02-finance/prds/028-correction-proposal-engine/` (only if required by doc rules for #1650 linkage)
+- Modify: `pillars/finance/docs/prds/028-correction-proposal-engine/` (only if required by doc rules for #1650 linkage)
 
 - [ ] **Step 1: Run pops-api checks**
 

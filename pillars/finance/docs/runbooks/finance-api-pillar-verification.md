@@ -534,9 +534,9 @@ Within ~30s the healthcheck reports healthy. Re-run the Step A probe — single-
 - ADR-026: per-domain pillar architecture
 - `apps/pops-finance-api/src/server.ts` — boot sequence
 - `apps/pops-shell/src/app/pillars/pillar-registry-client.ts` — soft-fallback behaviour (shared with core)
-- `docs/runbooks/core-api-pillar-verification.md` — sibling runbook for the core pillar
-- `docs/runbooks/inventory-api-pillar-verification.md` — sibling runbook for the inventory pillar
-- `docs/runbooks/media-api-pillar-verification.md` — sibling runbook for the media pillar
+- `pillars/core/docs/runbooks/core-api-pillar-verification.md` — sibling runbook for the core pillar
+- `pillars/inventory/docs/runbooks/inventory-api-pillar-verification.md` — sibling runbook for the inventory pillar
+- `pillars/media/docs/runbooks/media-api-pillar-verification.md` — sibling runbook for the media pillar
 - Track N3 PR 1 (scaffold): #2857
 - Track N3 PR 3 (routing flip): #2899
 - Track N3 PR 4 (sibling defer pattern): #2905
