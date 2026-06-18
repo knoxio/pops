@@ -81,9 +81,9 @@ Record any unexpected behaviour in the **Lessons captured** section of `.claude/
 - `apps/pops-food-api/src/server.ts` — boot sequence
 - `apps/pops-api/src/db/food-handle.ts` — lazy open + env-aware handle
 - `apps/pops-shell/src/app/pillars/pillar-registry-client.ts` — soft-fallback behaviour (shared with core)
-- `docs/runbooks/core-api-pillar-verification.md` — sibling runbook for the core pillar
-- `docs/runbooks/inventory-api-pillar-verification.md` — sibling runbook for the inventory pillar
-- `docs/runbooks/media-api-pillar-verification.md` — sibling runbook for the media pillar
-- `docs/runbooks/finance-api-pillar-verification.md` — sibling runbook for the finance pillar
-- `docs/runbooks/cerebrum-api-pillar-verification.md` — sibling runbook for the cerebrum pillar
+- `pillars/core/docs/runbooks/core-api-pillar-verification.md` — sibling runbook for the core pillar
+- `pillars/inventory/docs/runbooks/inventory-api-pillar-verification.md` — sibling runbook for the inventory pillar
+- `pillars/media/docs/runbooks/media-api-pillar-verification.md` — sibling runbook for the media pillar
+- `pillars/finance/docs/runbooks/finance-api-pillar-verification.md` — sibling runbook for the finance pillar
+- `pillars/cerebrum/docs/runbooks/cerebrum-api-pillar-verification.md` — sibling runbook for the cerebrum pillar
 - `.claude/pillar-migration-roadmap.md` — Track J status + lessons captured (gitignored, local-only)

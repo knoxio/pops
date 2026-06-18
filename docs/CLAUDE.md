@@ -87,6 +87,38 @@ docs/
                 └── us-02-slug.md
 ```
 
+## Pillar-Scoped Docs
+
+Documentation that belongs to exactly one pillar lives **inside that pillar**, under `pillars/<pillar>/docs/`, mirroring the central layout:
+
+```
+pillars/<pillar>/
+├── README.md                        ← technical package readme (@pops/<pillar>) — NOT a theme doc
+└── docs/
+    ├── README.md                    ← domain/theme overview (the former theme README)
+    ├── epics/
+    │   └── NN-slug.md
+    ├── prds/
+    │   └── NNN-slug/
+    │       ├── README.md
+    │       └── us-NN-slug.md
+    ├── architecture/                ← ADRs scoped to this pillar only
+    │   └── adr-NNN-slug.md
+    ├── runbooks/
+    ├── ideas/  issues/              ← when applicable
+    └── plans/  specs/               ← when applicable
+```
+
+The central `docs/` tree holds only **cross-cutting** material: the platform / foundation / AI / pillar-finale themes, ADRs referenced by more than one pillar, shared runbooks (`cut-release`, `go-live`, `uri-layer`), templates, `vision.md`, and `roadmap.md`.
+
+Rules:
+
+- A pillar's `docs/README.md` is the domain overview. The package `README.md` (`# @pops/<pillar>`) is the technical readme and stays separate.
+- **PRD and ADR numbers remain global and append-only** regardless of where the file lives. The number is a unique ID; the path provides pillar/theme context.
+- An ADR moves into a pillar only when it is referenced by that pillar alone. If a second pillar starts referencing it, promote it back to central `docs/architecture/`.
+- Cross-pillar references use relative paths between pillar docs (e.g. `../../../<other>/docs/...`); references to central docs reach back into `docs/` (e.g. `../../../../docs/architecture/adr-NNN-slug.md`).
+- The roadmap implementation tracker remains the single source of truth for status across all pillars.
+
 ## Naming Conventions
 
 | Type         | Pattern                       | Example                                               |

@@ -175,7 +175,7 @@ Within ~30s the healthcheck reports healthy. Re-run the Step A curl probe — si
 - `apps/pops-shell/src/app/pillars/pillar-registry-client.ts` — soft-fallback behaviour (shared with core)
 - `apps/pops-shell/nginx.conf` — Track M4 PR 2 dispatcher rule and trade-off comment
 - `packages/api-client/src/index.ts` — shared `httpBatchLink` setup
-- `docs/runbooks/core-api-pillar-verification.md` — sibling runbook for the core pillar
+- `pillars/core/docs/runbooks/core-api-pillar-verification.md` — sibling runbook for the core pillar
 - `.claude/pillar-migration-roadmap.md` — Track G status + lessons captured (gitignored, local-only)
 - #2891 — M4 PR 1 (locations router moved into pops-inventory-api)
 - #2896 — M4 PR 2 (nginx dispatcher cutover, `[^,]+$`-anchored)

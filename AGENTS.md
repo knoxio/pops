@@ -284,7 +284,7 @@ The user-facing entry point is the **Import Wizard** (7-step UI in `app-finance`
 6. **Punctuation stripping** — strip apostrophes, retry stages 2-5
 7. **AI fallback** — Claude Haiku API call, cached to disk + DB, rate-limited
 
-Hit rate: ~95-100% with aliases. AI fallback handles the rest. See `docs/themes/02-finance/prds/021-entity-matching-engine/` for the full PRD.
+Hit rate: ~95-100% with aliases. AI fallback handles the rest. See `pillars/finance/docs/prds/021-entity-matching-engine/` for the full PRD.
 
 ## Security Rules (Do Not Violate)
 

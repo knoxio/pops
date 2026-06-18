@@ -15,7 +15,7 @@ Layout (mirrors `pillars/inventory`):
   endpoints. Port **3007**.
 
 The migration lands domain-by-domain (see
-`docs/runbooks/cerebrum-rest-migration.md`); each slice keeps
+`pillars/cerebrum/docs/runbooks/cerebrum-rest-migration.md`); each slice keeps
 `.github/workflows/cerebrum-quality.yml` green. The old `@pops/cerebrum-db` /
 `@pops/cerebrum-contract` packages stay in place until their consumers
 (pillar-sdk settings, module-registry, the monolith) migrate in Phase C/E.
