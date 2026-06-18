@@ -1,18 +1,13 @@
-import type { AnyTRPCRouter } from '@trpc/server';
-
 /**
- * Opaque tRPC router type for the inventory pillar. Mirrors the
- * media-contract pattern: `InventoryRouter` is `AnyTRPCRouter`, so
- * consumers using `pillar<InventoryRouter>('inventory')` get a fully
- * opaque `PillarHandle` with no route or procedure keys preserved. The
+ * Opaque router type for the inventory pillar. `@pops/inventory` speaks REST
+ * now, so there is no concrete tRPC router to import — `InventoryRouter` is
+ * `unknown`, meaning consumers using `pillar<InventoryRouter>('inventory')` get
+ * a fully opaque `PillarHandle` with no route or procedure keys preserved. The
  * committed OpenAPI snapshot at `openapi/inventory.openapi.json` is the
- * wire-typed alternative until PRD-155 ships the declaration bundler.
+ * wire-typed alternative (e.g. for the generated Hey API clients).
  *
- * Previously `typeof inventoryRouter` re-exported from
- * `@pops/inventory-api`, but PRD-239 had `inventory-api` consume
- * `inventoryManifest` from `@pops/inventory-contract/settings`, closing
- * a `inventory-contract → inventory-api → inventory-contract`
- * build-graph cycle that broke standalone Docker builds that don't ship
- * `apps/pops-inventory-api/src`.
+ * The type name is retained because the generated manifest and the manifest
+ * generator scripts reference it as the `router` field type. Mirrors the
+ * food-contract `FoodRouter = unknown` shape.
  */
-export type InventoryRouter = AnyTRPCRouter;
+export type InventoryRouter = unknown;
