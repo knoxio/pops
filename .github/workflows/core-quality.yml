@@ -1,44 +1,78 @@
-name: Core DB Quality
+name: Core Pillar Quality
+
+# Comprehensive standalone quality gate for the collapsed core (platform/
+# registry) pillar. Runs typecheck, test, lint, format, and build for the
+# core pillar in isolation. Triggered ONLY by changes that touch the pillar
+# or its transitive @pops/* deps + the repo-wide tsconfig/lockfile surface.
+#
+# Bubble-of-happiness rule: this workflow is the one that MUST stay green for
+# the core pillar. Other workflows may be red while the monolith still imports
+# the legacy core module + the predecessor `apps/pops-core-api` is live —
+# that's deliberate and resolves as each consumer migrates to `@pops/core`.
+#
+# Phase 0 scaffold: the pillar carries the relocated `@pops/core-db` /
+# `@pops/core-contract` source (still tRPC-era). The OpenAPI + api-types
+# drift checks and the Docker job land with Phase A (ts-rest) / Phase 0 step 1
+# (the Express server), respectively.
 
 on:
   push:
     branches: [main]
     paths:
-      - "packages/core-db/**"
+      - "pillars/core/**"
+      - "packages/types/**"
       - "packages/db-types/**"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "tsconfig.base.json"
+      - ".oxfmtrc.json"
       - ".github/workflows/core-quality.yml"
-      - ".github/workflows/_pkg-check.yml"
   pull_request:
     paths:
-      - "packages/core-db/**"
+      - "pillars/core/**"
+      - "packages/types/**"
       - "packages/db-types/**"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "tsconfig.base.json"
+      - ".oxfmtrc.json"
       - ".github/workflows/core-quality.yml"
-      - ".github/workflows/_pkg-check.yml"
+
+concurrency:
+  group: core-quality-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  changes:
-    name: Detect changes
+  quality:
+    name: Core pillar — typecheck + test + lint + format + build
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
-    outputs:
-      relevant: ${{ steps.filter.outputs.relevant }}
     steps:
       - uses: actions/checkout@v6
-      - uses: dorny/paths-filter@v4
-        id: filter
-        with:
-          filters: |
-            relevant:
-              - 'packages/core-db/**'
-              - 'packages/db-types/**'
-              - '.github/workflows/core-quality.yml'
-              - '.github/workflows/_pkg-check.yml'
 
-  quality:
-    needs: [changes]
-    if: always()
-    uses: ./.github/workflows/_pkg-check.yml
-    with:
-      package-path: packages/core-db
-      needs-db-build: true
-      skip: ${{ github.event_name == 'pull_request' && needs.changes.outputs.relevant != 'true' }}
+      - uses: pnpm/action-setup@v5
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: pnpm
+
+      - name: Install (subgraph only)
+        run: pnpm install --frozen-lockfile --filter "@pops/core..."
+
+      - name: Format check
+        run: pnpm exec oxfmt --check pillars/core/
+
+      - name: Lint
+        run: pnpm exec oxlint pillars/core/src
+
+      - name: Build transitive deps
+        run: pnpm --filter "@pops/core^..." build
+
+      - name: Typecheck
+        run: pnpm --filter @pops/core typecheck
+
+      - name: Build pillar
+        run: pnpm --filter @pops/core build
+
+      - name: Test
+        run: pnpm --filter @pops/core test
