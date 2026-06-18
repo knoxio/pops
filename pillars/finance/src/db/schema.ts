@@ -6,12 +6,12 @@
  * live in this package per PRD-245 US-03 (audit H6/H7).
  *
  *
- * `entities` is re-exported from `@pops/core-db` — the canonical owner per
- * PRD-245 US-07. Previously this barrel pulled from a local schema-shadow
- * because db-types still owned `entities`; that shadow is now deleted.
+ * `entities` is re-exported from `@pops/shared-schema` — the canonical
+ * cross-pillar owner per PRD-245 US-07. Previously this barrel pulled from
+ * `@pops/core-db`; the shared defs were extracted out of core-db so finance
+ * no longer depends on it.
  */
-export { entities } from '@pops/core-db';
-export { ENTITY_TYPES } from '@pops/core-db';
+export { entities, ENTITY_TYPES } from '@pops/shared-schema';
 
 export { budgets } from './schema/budgets.js';
 export { transactionCorrections } from './schema/corrections.js';
