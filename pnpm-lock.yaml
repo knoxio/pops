@@ -371,9 +371,6 @@ importers:
         specifier: ^5.0.1
         version: 5.2.1
     devDependencies:
-      '@pops/api':
-        specifier: workspace:*
-        version: link:../pops-api
       '@types/express':
         specifier: ^5.0.0
         version: 5.0.6

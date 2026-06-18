@@ -1,6 +1,5 @@
-import { getClient } from '../client.js';
 import { getPillar } from '../pillar-client.js';
-import { mapCallResult, ok } from './utils.js';
+import { mapCallResult } from './utils.js';
 
 import type { PillarHandle } from '@pops/pillar-sdk/client';
 
@@ -51,6 +50,28 @@ const ENTITY_TYPES = [
 ] as const;
 
 type EntityType = (typeof ENTITY_TYPES)[number];
+
+type CoreEntityListInput = {
+  search?: string;
+  type?: EntityType;
+  limit?: number;
+  offset?: number;
+};
+
+// Entities live on the CORE pillar (the finance↔transactions usage rollup is
+// finance's, but the entity table itself is core's). Reached over the same REST
+// pillar SDK as the finance calls above.
+type CoreShape = {
+  core: {
+    entities: {
+      list: (input: CoreEntityListInput) => unknown;
+    };
+  };
+};
+
+function core(): PillarHandle<CoreShape>['core'] {
+  return getPillar<CoreShape>('core').core;
+}
 
 const transactionsList: ToolDef = {
   name: 'finance.transactions.list',
@@ -105,7 +126,7 @@ const entitiesList: ToolDef = {
     },
   },
   handler: async (args) => {
-    const result = await getClient().core.entities.list.query({
+    const result = await core().entities.list({
       search: typeof args['search'] === 'string' ? args['search'] : undefined,
       type: (ENTITY_TYPES as readonly string[]).includes(args['type'] as string)
         ? (args['type'] as EntityType)
@@ -113,7 +134,7 @@ const entitiesList: ToolDef = {
       limit: typeof args['limit'] === 'number' ? args['limit'] : undefined,
       offset: typeof args['offset'] === 'number' ? args['offset'] : undefined,
     });
-    return ok(result);
+    return mapCallResult(result);
   },
 };
 
