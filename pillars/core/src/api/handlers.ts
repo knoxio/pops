@@ -2,12 +2,17 @@
  * Request handlers for the core pillar container.
  *
  * Logic lives here (not inline in `app.ts`) so tests can call into the
- * shape directly without booting Express. Subsequent PRs add tRPC +
- * `/uri/resolve` handlers alongside the existing health + pillars probes.
+ * shape directly without booting Express. Covers the health + pillars
+ * registry probes plus the cross-pillar `/uri/resolve` dispatcher and the
+ * `/pillars/health` fan-out (ADR-026 P2/P3).
  */
+import { readInstalledModules } from './env-modules.js';
+import { getUriRegistry } from './modules/uri/registry.js';
+import { dispatchUri, type DispatchUriOptions } from './pillars/dispatcher.js';
+import { type PillarHealthMap, probeAllPillars } from './pillars/health-probe.js';
 import { getPillarRegistry } from './pillars/registry.js';
 
-import type { PillarRegistryEntry } from '@pops/types';
+import type { PillarRegistryEntry, UriResolverResult } from '@pops/types';
 
 import type { OpenedCoreDb } from '../db/index.js';
 
@@ -36,10 +41,36 @@ export interface PillarsResponse {
   pillars: readonly PillarRegistryEntry[];
 }
 
+export interface PillarsHealthResponse {
+  health: PillarHealthMap;
+}
+
+/**
+ * Build the dispatcher's `DispatchUriOptions` from current process state.
+ *
+ * Factored out so tests can call `dispatchUri` directly with stub registries
+ * while the HTTP route uses the live in-process module registry + install
+ * set. Mirrors `apps/pops-api/src/routes/pillars.ts:buildResolveOptions`.
+ */
+function buildResolveOptions(): DispatchUriOptions {
+  const installed = readInstalledModules();
+  const installedSet = new Set<string>(['core', ...installed.apps, ...installed.overlays]);
+  return {
+    registry: getUriRegistry(),
+    isInstalled: (moduleId: string) => installedSet.has(moduleId),
+  };
+}
+
 export function makeRequestHandler(deps: CoreApiDeps): {
   health(): HealthResponse;
   pillars(): PillarsResponse;
+  resolveUri(uri: string): Promise<UriResolverResult>;
+  pillarsHealth(): Promise<PillarsHealthResponse>;
 } {
+  function listPillars(): readonly PillarRegistryEntry[] {
+    return getPillarRegistry({ selfBaseUrl: deps.selfBaseUrl });
+  }
+
   return {
     health(): HealthResponse {
       // Touch the DB so a closed handle surfaces as a thrown error
@@ -55,7 +86,13 @@ export function makeRequestHandler(deps: CoreApiDeps): {
       };
     },
     pillars(): PillarsResponse {
-      return { pillars: getPillarRegistry({ selfBaseUrl: deps.selfBaseUrl }) };
+      return { pillars: listPillars() };
+    },
+    resolveUri(uri: string): Promise<UriResolverResult> {
+      return dispatchUri(uri, buildResolveOptions());
+    },
+    async pillarsHealth(): Promise<PillarsHealthResponse> {
+      return { health: await probeAllPillars(listPillars()) };
     },
   };
 }

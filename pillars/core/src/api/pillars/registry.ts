@@ -31,6 +31,19 @@ export function getPillarRegistry(options: PillarRegistryOptions): readonly Pill
   return [{ id: 'core', baseUrl: normalisedSelf }, ...withoutSelf];
 }
 
+/**
+ * Look up a *remote* pillar entry from `POPS_PILLARS` by id, or `undefined`
+ * if it is not registered. Used by the URI dispatcher's remote leg to route
+ * a cross-pillar URI to its owning process. The synthetic `core` self-entry
+ * is intentionally excluded — self-owned URIs always resolve in-process, so
+ * the dispatcher never proxies to itself.
+ */
+export function getRemotePillarEntry(id: string): PillarRegistryEntry | undefined {
+  cached ??= parsePillarsEnv(process.env['POPS_PILLARS']);
+  if (id === 'core') return undefined;
+  return cached.find((p) => p.id === id);
+}
+
 /** Test-only: forget the cached registry so a new `POPS_PILLARS` is re-read. */
 export function __resetPillarRegistryCache(): void {
   cached = undefined;

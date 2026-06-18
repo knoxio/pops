@@ -12,7 +12,7 @@
  * instance without binding a real port.
  */
 import { createExpressMiddleware } from '@trpc/server/adapters/express';
-import express, { type Express, type Request, type Response } from 'express';
+import express, { type Express, type NextFunction, type Request, type Response } from 'express';
 
 import { type CoreApiDeps, makeRequestHandler } from './handlers.js';
 import { createExternalDeregisterHandler } from './modules/external-registry/deregister.js';
@@ -35,6 +35,38 @@ export function createCoreApiApp(deps: CoreApiDeps): Express {
 
   app.get('/pillars', (_req: Request, res: Response) => {
     res.json(handlers.pillars());
+  });
+
+  // Cross-pillar URI dispatcher (ADR-026 P2). Raw HTTP, mounted before
+  // `/trpc`: pillars POST `{ uri }` here and core resolves in-process or
+  // proxies to the owning pillar via `POPS_PILLARS`. Never throws — every
+  // error path is a typed `UriResolverResult`.
+  app.post('/uri/resolve', (req: Request, res: Response, next: NextFunction) => {
+    const body: unknown = req.body;
+    const rawUri = typeof body === 'object' && body !== null ? Reflect.get(body, 'uri') : undefined;
+    const uri = typeof rawUri === 'string' ? rawUri : undefined;
+    if (!uri) {
+      res.status(400).json({
+        kind: 'malformed',
+        uri: typeof rawUri === 'string' ? rawUri : '',
+        reason: 'request body must be { uri: string }',
+      });
+      return;
+    }
+    void handlers
+      .resolveUri(uri)
+      .then((result) => res.json(result))
+      .catch(next);
+  });
+
+  // Aggregated cross-pillar health probe (ADR-026 P3). Fans out
+  // `GET {baseUrl}/health` against every registered pillar; the self
+  // (`core`) entry short-circuits to `'healthy'`.
+  app.get('/pillars/health', (_req: Request, res: Response, next: NextFunction) => {
+    void handlers
+      .pillarsHealth()
+      .then((result) => res.json(result))
+      .catch(next);
   });
 
   app.get('/registry/subscribe', createRegistrySubscribeHandler(deps.coreDb.db));
