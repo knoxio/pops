@@ -4,6 +4,10 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
   test: {
     environment: 'node',
+    // Auto-restore vi.stubGlobal'd globals (e.g. `fetch`) after every test so a
+    // stub from one file can't leak into another file running in parallel —
+    // the source of intermittent ai-providers/ai-alerts health-check failures.
+    unstubGlobals: true,
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json-summary', 'html'],

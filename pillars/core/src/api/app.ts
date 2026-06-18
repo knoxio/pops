@@ -3,12 +3,12 @@
  *
  * Phase 3 PR 2 of the core pillar migration added the pillar registry
  * snapshot endpoint (`GET /pillars`) alongside the existing `/health`
- * probe. Phase 5 PR 1 (Track M1) wires the tRPC handler at `/trpc` with
- * the migrated `core.serviceAccounts.*` admin procedures backed by
- * `@pops/core-db` directly.
+ * probe. Phase A made the pillar REST-only EXCEPT for the wire surfaces
+ * sibling pillars / the pillar SDK still call with no REST replacement: the
+ * `/trpc` mount now serves only `core.registry.*`, `core.settings.*` and
+ * `core.users.get` (see `router.ts` for the per-procedure rationale).
  *
- * The dispatcher (`POST /uri/resolve`) lands in a subsequent PR. Kept as
- * a factory so the test suite can spin up an in-process `supertest`
+ * Kept as a factory so the test suite can spin up an in-process `supertest`
  * instance without binding a real port.
  */
 import { createExpressMiddleware } from '@trpc/server/adapters/express';
@@ -84,6 +84,10 @@ export function createCoreApiApp(deps: CoreApiDeps): Express {
     createExternalDeregisterHandler({ coreDb: deps.coreDb.db })
   );
 
+  // tRPC mount — the residual cross-pillar wire surface (`core.registry.*`,
+  // `core.settings.*`, `core.users.get`). The other per-domain tRPC routers
+  // were retired in Phase A; these stay because sibling pillars / the pillar
+  // SDK call them and there is no REST replacement yet (see `router.ts`).
   app.use(
     '/trpc',
     createExpressMiddleware({
@@ -100,10 +104,10 @@ export function createCoreApiApp(deps: CoreApiDeps): Express {
   app.use(createIdentityMiddleware(deps.coreDb.db));
 
   // ts-rest REST surface (core REST migration). Mounted root-relative
-  // (e.g. `/entities`) AFTER the raw routes and the `/trpc` mount: this
-  // runs ALONGSIDE the legacy tRPC router during the migration — both wire
-  // formats serve concurrently. The contract starts with the `entities`
-  // domain and grows as each tRPC slice converts.
+  // (e.g. `/entities`) AFTER the raw routes and the `/trpc` mount. This is
+  // the canonical wire surface for every domain; the only tRPC procedures
+  // still served are the cross-pillar residue (`core.registry.*`,
+  // `core.settings.*`, `core.users.get`).
   createExpressEndpoints(coreContract, makeCoreRestHandlers(deps), app);
 
   return app;

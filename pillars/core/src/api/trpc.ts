@@ -1,14 +1,17 @@
 /**
  * tRPC initialisation for the core pillar container.
  *
- * Mirrors the auth surface of `apps/pops-api/src/trpc.ts` but trims off
- * what core-api doesn't need yet:
- *   - no module gate (per-pillar containers serve a single pillar by
- *     definition; the install-set check lives at the dispatcher layer
- *     above this process);
- *   - no `internalProcedure` (no sibling-process callers yet);
- *   - no OpenAPI meta (the dispatcher/gateway owns OpenAPI; core-api
- *     handlers are tRPC-only for now).
+ * Phase A retired the per-domain tRPC routers EXCEPT the surfaces that
+ * sibling pillars / the pillar SDK still call over the wire with no REST
+ * replacement (see `router.ts` for the full rationale):
+ *   - `core.registry.*`            (SDK discovery transport)
+ *   - `core.settings.*`            (cross-pillar server SDK: media, finance)
+ *   - `core.users.get`             (finance cron via the SDK)
+ *
+ * `core.settings.*` / `core.users.get` are `protectedProcedure`;
+ * `core.registry.*` is `publicProcedure`. The `userOnlyProcedure` gate was
+ * dropped with the service-accounts tRPC router (now REST-only via
+ * `requireUser` in `middleware/identity.ts`).
  *
  * The core DB handle is injected at context-creation time via the
  * factory in `createCoreTrpcContextFactory` so tests can swap in an
@@ -140,27 +143,5 @@ export const protectedProcedure = t.procedure.use(({ ctx, path, next }) => {
   throw new TRPCError({
     code: 'UNAUTHORIZED',
     message: 'Missing or invalid credentials (expected Cloudflare Access JWT or X-API-Key)',
-  });
-});
-
-/**
- * Procedure that requires a human (browser session) caller. Service-account
- * principals are rejected unconditionally — used by the service-account
- * admin endpoints so a machine principal can't mint or revoke other
- * machine principals.
- */
-export const userOnlyProcedure = t.procedure.use(({ ctx, next }) => {
-  if (!ctx.user) {
-    throw new TRPCError({
-      code: 'UNAUTHORIZED',
-      message: 'This endpoint requires a Cloudflare Access user session.',
-    });
-  }
-  return next({
-    ctx: {
-      user: ctx.user,
-      serviceAccount: ctx.serviceAccount,
-      coreDb: ctx.coreDb,
-    },
   });
 });
