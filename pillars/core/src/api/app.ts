@@ -17,6 +17,7 @@ import express, { type Express, type NextFunction, type Request, type Response }
 
 import { coreContract } from '../contract/rest.js';
 import { type CoreApiDeps, makeRequestHandler } from './handlers.js';
+import { createIdentityMiddleware } from './middleware/identity.js';
 import { createExternalDeregisterHandler } from './modules/external-registry/deregister.js';
 import { createExternalHeartbeatHandler } from './modules/external-registry/heartbeat.js';
 import { createExternalRegisterHandler } from './modules/external-registry/register.js';
@@ -90,6 +91,13 @@ export function createCoreApiApp(deps: CoreApiDeps): Express {
       createContext: createCoreTrpcContextFactory(deps.coreDb.db),
     })
   );
+
+  // Identity middleware (REST surface). Resolves the per-request principal
+  // EXACTLY as the tRPC context factory does and stashes it on
+  // `res.locals.principal`. It never rejects globally — per-route gating
+  // (`userOnly` / `protected`) is enforced inside the handlers. Mounted
+  // BEFORE `createExpressEndpoints` so every REST handler sees the principal.
+  app.use(createIdentityMiddleware(deps.coreDb.db));
 
   // ts-rest REST surface (core REST migration). Mounted root-relative
   // (e.g. `/entities`) AFTER the raw routes and the `/trpc` mount: this

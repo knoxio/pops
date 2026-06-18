@@ -27,6 +27,7 @@ import type {
   AiUsageStatsOutput as AiUsageStats,
 } from '../modules/ai-usage/types.js';
 import type { Entity } from '../modules/entities/types.js';
+import type { CreatedServiceAccount, ServiceAccount } from '../modules/service-accounts/types.js';
 
 export class HttpError extends Error {
   readonly status: number;
@@ -47,6 +48,18 @@ async function send<T>(req: supertest.Test): Promise<T> {
   const res = await req;
   if (res.status >= 200 && res.status < 300) return res.body as T;
   throw new HttpError(res.status, res.body);
+}
+
+/** Per-client extra request headers — used by the auth-gated REST tests to
+ * present an `x-api-key` (service-account principal) or a Cloudflare Access
+ * header on every request the client issues. */
+export type ClientHeaders = Record<string, string>;
+
+function withHeaders(req: supertest.Test, headers: ClientHeaders | undefined): supertest.Test {
+  if (!headers) return req;
+  let out = req;
+  for (const [name, value] of Object.entries(headers)) out = out.set(name, value);
+  return out;
 }
 
 interface Pagination {
@@ -73,8 +86,15 @@ export interface AlertListQuery {
   offset?: number;
 }
 
-export function makeClient(app: Express) {
-  const r = supertest(app);
+export function makeClient(app: Express, headers?: ClientHeaders) {
+  const base = supertest(app);
+  const r = {
+    get: (url: string) => withHeaders(base.get(url), headers),
+    post: (url: string) => withHeaders(base.post(url), headers),
+    put: (url: string) => withHeaders(base.put(url), headers),
+    patch: (url: string) => withHeaders(base.patch(url), headers),
+    delete: (url: string) => withHeaders(base.delete(url), headers),
+  };
   return {
     entities: {
       list: (query: EntityQuery = {}) =>
@@ -147,6 +167,33 @@ export function makeClient(app: Express) {
       acknowledge: (id: number) =>
         send<FiredAlert>(r.post(`/ai-alerts/${id}/acknowledge`).send({})),
       runNow: () => send<RunEvaluationResult>(r.post('/ai-alerts/run').send({})),
+    },
+    settings: {
+      get: (key: string) =>
+        send<{ data: { key: string; value: string } | null }>(
+          r.get(`/settings/${encodeURIComponent(key)}`)
+        ),
+      getMany: (keys: string[]) =>
+        send<{ settings: Record<string, string> }>(r.post('/settings/get-many').send({ keys })),
+      set: (key: string, value: string) =>
+        send<{ data: { key: string; value: string }; message: string }>(
+          r.put(`/settings/${encodeURIComponent(key)}`).send({ value })
+        ),
+      ensure: (key: string, value: string) =>
+        send<{ data: { key: string; value: string } }>(
+          r.post(`/settings/${encodeURIComponent(key)}/ensure`).send({ value })
+        ),
+      delete: (key: string) =>
+        send<{ message: string }>(r.delete(`/settings/${encodeURIComponent(key)}`)),
+      setMany: (entries: Array<{ key: string; value: string }>) =>
+        send<{ settings: Record<string, string> }>(r.post('/settings/set-many').send({ entries })),
+    },
+    serviceAccounts: {
+      list: () => send<ServiceAccount[]>(r.get('/service-accounts')),
+      create: (body: { name: string; scopes: string[] }) =>
+        send<CreatedServiceAccount>(r.post('/service-accounts').send(body)),
+      revoke: (id: string) =>
+        send<{ ok: true }>(r.post(`/service-accounts/${encodeURIComponent(id)}/revoke`).send({})),
     },
   };
 }

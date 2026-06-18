@@ -38,3 +38,18 @@ export class ConflictError extends HttpError {
     this.name = 'ConflictError';
   }
 }
+
+/**
+ * Caller is unauthenticated or carries a principal the route refuses
+ * (e.g. a service-account principal hitting a `userOnly` admin route, or
+ * a service account whose granted scopes don't cover the requested path).
+ * Mirrors the `UNAUTHORIZED` / `FORBIDDEN` tRPC procedure gates as a single
+ * 401 on the REST surface — the legacy tRPC layer already collapses both to
+ * "you can't call this" at the wire level for these domains.
+ */
+export class UnauthorizedError extends HttpError {
+  constructor(message: string) {
+    super(401, message);
+    this.name = 'UnauthorizedError';
+  }
+}

@@ -55,3 +55,17 @@ export const ERR_RESPONSES = {
   404: ErrorBodySchema,
   409: ErrorBodySchema,
 } as const;
+
+/**
+ * Error responses for identity-gated routes. Adds `401` (unauthenticated,
+ * or a principal the route refuses — the `userOnly` / `protected` tRPC
+ * gates) on top of the common `400/404/409` set. Kept separate from
+ * {@link ERR_RESPONSES} so the OpenAPI projection of the already-migrated
+ * public domains stays byte-identical.
+ */
+export const AUTH_ERR_RESPONSES = {
+  400: ErrorBodySchema,
+  401: ErrorBodySchema,
+  404: ErrorBodySchema,
+  409: ErrorBodySchema,
+} as const;

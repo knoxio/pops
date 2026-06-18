@@ -386,6 +386,111 @@ export interface paths {
     patch: operations['entities.update'];
     trace?: never;
   };
+  '/service-accounts': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List service accounts (admin only) */
+    get: operations['serviceAccounts.list'];
+    put?: never;
+    /** Mint a service account and return its one-time plaintext key (admin only) */
+    post: operations['serviceAccounts.create'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/service-accounts/{id}/revoke': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Revoke a service account by id (admin only) */
+    post: operations['serviceAccounts.revoke'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/settings/get-many': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Batch-read settings by key (missing keys omitted) */
+    post: operations['settings.getMany'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/settings/set-many': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Transactional batch write (all-or-nothing); returns the written mirror */
+    post: operations['settings.setMany'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/settings/{key}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Read a single setting (null on miss) */
+    get: operations['settings.get'];
+    /** Upsert a single setting */
+    put: operations['settings.set'];
+    post?: never;
+    /** Delete a single setting (404 on miss) */
+    delete: operations['settings.delete'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/settings/{key}/ensure': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Write-once upsert-and-return for a single setting */
+    post: operations['settings.ensure'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/shell/manifest': {
     parameters: {
       query?: never;
@@ -2066,6 +2171,1201 @@ export interface operations {
       };
       /** @description 400 */
       400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+          };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+          };
+        };
+      };
+    };
+  };
+  'serviceAccounts.list': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            createdAt: string;
+            createdBy: string | null;
+            id: string;
+            keyPrefix: string;
+            lastUsedAt: string | null;
+            name: string;
+            revokedAt: string | null;
+            scopes: string[];
+          }[];
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+          };
+        };
+      };
+      /** @description 401 */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+          };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+          };
+        };
+      };
+    };
+  };
+  'serviceAccounts.create': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          name: string;
+          scopes: string[];
+        };
+      };
+    };
+    responses: {
+      /** @description 201 */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            createdAt: string;
+            createdBy: string | null;
+            id: string;
+            keyPrefix: string;
+            lastUsedAt: string | null;
+            name: string;
+            plaintextKey: string;
+            revokedAt: string | null;
+            scopes: string[];
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+          };
+        };
+      };
+      /** @description 401 */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+          };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+          };
+        };
+      };
+    };
+  };
+  'serviceAccounts.revoke': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': Record<string, never>;
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            /** @enum {boolean} */
+            ok: true;
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+          };
+        };
+      };
+      /** @description 401 */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+          };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+          };
+        };
+      };
+    };
+  };
+  'settings.getMany': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          keys: string[];
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            settings: {
+              [key: string]: string;
+            };
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+          };
+        };
+      };
+      /** @description 401 */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+          };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+          };
+        };
+      };
+    };
+  };
+  'settings.setMany': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          entries: {
+            key: string;
+            value: string;
+          }[];
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            settings: {
+              [key: string]: string;
+            };
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+          };
+        };
+      };
+      /** @description 401 */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+          };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+          };
+        };
+      };
+    };
+  };
+  'settings.get': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key:
+          | 'plex_url'
+          | 'plex_token'
+          | 'plex_username'
+          | 'plex_encryption_seed'
+          | 'plex_client_identifier'
+          | 'plex_movie_section_id'
+          | 'plex_tv_section_id'
+          | 'plex_scheduler_enabled'
+          | 'plex_scheduler_interval_ms'
+          | 'radarr_url'
+          | 'radarr_api_key'
+          | 'sonarr_url'
+          | 'sonarr_api_key'
+          | 'ai.model'
+          | 'ai.monthlyTokenBudget'
+          | 'ai.budgetExceededFallback'
+          | 'ai.modelOverrides.query'
+          | 'ai.modelOverrides.emit'
+          | 'ai.modelOverrides.classifier'
+          | 'ai.modelOverrides.entityExtractor'
+          | 'ai.modelOverrides.scopeInference'
+          | 'ai.modelOverrides.auditorContradiction'
+          | 'ai.modelOverrides.patternContradiction'
+          | 'cerebrum.query.maxSources'
+          | 'cerebrum.query.relevanceThreshold'
+          | 'cerebrum.query.tokenBudget'
+          | 'cerebrum.emit.maxTokens'
+          | 'cerebrum.emit.relevanceThreshold'
+          | 'cerebrum.emit.maxSources'
+          | 'cerebrum.emit.tokenBudget'
+          | 'cerebrum.semantic.defaultLimit'
+          | 'cerebrum.semantic.defaultThreshold'
+          | 'cerebrum.semantic.queryCacheTtl'
+          | 'cerebrum.hybrid.rrfK'
+          | 'cerebrum.hybrid.defaultLimit'
+          | 'cerebrum.hybrid.defaultThreshold'
+          | 'cerebrum.context.tokenBudget'
+          | 'cerebrum.classifier.confidenceThreshold'
+          | 'cerebrum.entityExtractor.confidenceThreshold'
+          | 'cerebrum.captureHotkey'
+          | 'cerebrum.nudge.consolidationSimilarity'
+          | 'cerebrum.nudge.consolidationMinCluster'
+          | 'cerebrum.nudge.stalenessDays'
+          | 'cerebrum.nudge.patternMinOccurrences'
+          | 'cerebrum.nudge.maxPending'
+          | 'cerebrum.nudge.cooldownHours'
+          | 'cerebrum.engram.fallbackScope'
+          | 'cerebrum.citation.excerptMaxLength'
+          | 'cerebrum.plexus.healthIntervalMs'
+          | 'cerebrum.plexus.healthTimeoutMs'
+          | 'cerebrum.plexus.maxConsecutiveFailures'
+          | 'cerebrum.thalamus.crossSourceIntervalMs'
+          | 'cerebrum.mcp.queryMaxSources'
+          | 'cerebrum.mcp.searchSnippetLength'
+          | 'cerebrum.mcp.searchDefaultLimit'
+          | 'cerebrum.glia.proposeMinApproved'
+          | 'cerebrum.glia.proposeMaxRejectionRate'
+          | 'cerebrum.glia.actReportMinDays'
+          | 'cerebrum.glia.demotionRevertThreshold'
+          | 'cerebrum.glia.demotionWindowDays'
+          | 'ego.defaultModel'
+          | 'ego.maxHistory'
+          | 'ego.maxRetrieval'
+          | 'ego.tokenBudget'
+          | 'ego.relevanceThreshold'
+          | 'ego.chat.maxTokens'
+          | 'ego.chat.temperature'
+          | 'ego.summary.maxTokens'
+          | 'ego.summary.temperature'
+          | 'media.comparisons.eloK'
+          | 'media.comparisons.defaultScore'
+          | 'media.comparisons.maxTierListMovies'
+          | 'media.comparisons.stalenessThreshold'
+          | 'media.comparisons.defaultLimit'
+          | 'media.discovery.sessionTargetMin'
+          | 'media.discovery.sessionTargetMax'
+          | 'media.discovery.maxSeedShelves'
+          | 'media.discovery.maxGenreShelves'
+          | 'media.discovery.maxActiveCollections'
+          | 'media.discovery.maxBecauseYouWatchedSeeds'
+          | 'media.discovery.maxCreditsSeeds'
+          | 'media.discovery.maxBestInGenre'
+          | 'media.discovery.maxCrossoverPairs'
+          | 'media.thetvdb.rateLimitCapacity'
+          | 'media.thetvdb.rateLimitRefillRate'
+          | 'media.thetvdb.maxRetries'
+          | 'media.tmdb.genreCacheTtlMs'
+          | 'media.tmdb.imageMaxRetries'
+          | 'media.tmdb.imageRetryDelayMs'
+          | 'media.plex.rateLimitDelayMs'
+          | 'media.plex.clientPageSize'
+          | 'media.plex.friendsPageSize'
+          | 'media.defaultLimit'
+          | 'media.rotation.tmdbDefaultPages'
+          | 'media.rotation.tmdbMaxPages'
+          | 'media.rotation.tmdbMinVoteCount'
+          | 'media.rotation.letterboxdMaxPages'
+          | 'finance.aiCategorizer.model'
+          | 'finance.aiCategorizer.maxTokens'
+          | 'finance.ruleGen.model'
+          | 'finance.ruleGen.maxTokens'
+          | 'finance.defaultLimit'
+          | 'inventory.defaultLimit'
+          | 'inventory.searchDefaultLimit'
+          | 'inventory.maxFileSizeBytes'
+          | 'core.corrections.highConfidenceThreshold'
+          | 'core.corrections.minPatternLength'
+          | 'core.corrections.previewLimit'
+          | 'core.corrections.previewHardLimit'
+          | 'core.corrections.previewRulesFetchLimit'
+          | 'core.search.showMoreLimit'
+          | 'core.aiRetry.maxRetries'
+          | 'core.aiRetry.baseDelayMs'
+          | 'core.defaultLimit'
+          | 'core.queue.syncConcurrency'
+          | 'core.queue.embeddingsConcurrency'
+          | 'core.queue.defaultConcurrency'
+          | 'core.queue.completedRetention'
+          | 'theme';
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            data: {
+              key: string;
+              value: string;
+            } | null;
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+          };
+        };
+      };
+      /** @description 401 */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+          };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+          };
+        };
+      };
+    };
+  };
+  'settings.set': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key:
+          | 'plex_url'
+          | 'plex_token'
+          | 'plex_username'
+          | 'plex_encryption_seed'
+          | 'plex_client_identifier'
+          | 'plex_movie_section_id'
+          | 'plex_tv_section_id'
+          | 'plex_scheduler_enabled'
+          | 'plex_scheduler_interval_ms'
+          | 'radarr_url'
+          | 'radarr_api_key'
+          | 'sonarr_url'
+          | 'sonarr_api_key'
+          | 'ai.model'
+          | 'ai.monthlyTokenBudget'
+          | 'ai.budgetExceededFallback'
+          | 'ai.modelOverrides.query'
+          | 'ai.modelOverrides.emit'
+          | 'ai.modelOverrides.classifier'
+          | 'ai.modelOverrides.entityExtractor'
+          | 'ai.modelOverrides.scopeInference'
+          | 'ai.modelOverrides.auditorContradiction'
+          | 'ai.modelOverrides.patternContradiction'
+          | 'cerebrum.query.maxSources'
+          | 'cerebrum.query.relevanceThreshold'
+          | 'cerebrum.query.tokenBudget'
+          | 'cerebrum.emit.maxTokens'
+          | 'cerebrum.emit.relevanceThreshold'
+          | 'cerebrum.emit.maxSources'
+          | 'cerebrum.emit.tokenBudget'
+          | 'cerebrum.semantic.defaultLimit'
+          | 'cerebrum.semantic.defaultThreshold'
+          | 'cerebrum.semantic.queryCacheTtl'
+          | 'cerebrum.hybrid.rrfK'
+          | 'cerebrum.hybrid.defaultLimit'
+          | 'cerebrum.hybrid.defaultThreshold'
+          | 'cerebrum.context.tokenBudget'
+          | 'cerebrum.classifier.confidenceThreshold'
+          | 'cerebrum.entityExtractor.confidenceThreshold'
+          | 'cerebrum.captureHotkey'
+          | 'cerebrum.nudge.consolidationSimilarity'
+          | 'cerebrum.nudge.consolidationMinCluster'
+          | 'cerebrum.nudge.stalenessDays'
+          | 'cerebrum.nudge.patternMinOccurrences'
+          | 'cerebrum.nudge.maxPending'
+          | 'cerebrum.nudge.cooldownHours'
+          | 'cerebrum.engram.fallbackScope'
+          | 'cerebrum.citation.excerptMaxLength'
+          | 'cerebrum.plexus.healthIntervalMs'
+          | 'cerebrum.plexus.healthTimeoutMs'
+          | 'cerebrum.plexus.maxConsecutiveFailures'
+          | 'cerebrum.thalamus.crossSourceIntervalMs'
+          | 'cerebrum.mcp.queryMaxSources'
+          | 'cerebrum.mcp.searchSnippetLength'
+          | 'cerebrum.mcp.searchDefaultLimit'
+          | 'cerebrum.glia.proposeMinApproved'
+          | 'cerebrum.glia.proposeMaxRejectionRate'
+          | 'cerebrum.glia.actReportMinDays'
+          | 'cerebrum.glia.demotionRevertThreshold'
+          | 'cerebrum.glia.demotionWindowDays'
+          | 'ego.defaultModel'
+          | 'ego.maxHistory'
+          | 'ego.maxRetrieval'
+          | 'ego.tokenBudget'
+          | 'ego.relevanceThreshold'
+          | 'ego.chat.maxTokens'
+          | 'ego.chat.temperature'
+          | 'ego.summary.maxTokens'
+          | 'ego.summary.temperature'
+          | 'media.comparisons.eloK'
+          | 'media.comparisons.defaultScore'
+          | 'media.comparisons.maxTierListMovies'
+          | 'media.comparisons.stalenessThreshold'
+          | 'media.comparisons.defaultLimit'
+          | 'media.discovery.sessionTargetMin'
+          | 'media.discovery.sessionTargetMax'
+          | 'media.discovery.maxSeedShelves'
+          | 'media.discovery.maxGenreShelves'
+          | 'media.discovery.maxActiveCollections'
+          | 'media.discovery.maxBecauseYouWatchedSeeds'
+          | 'media.discovery.maxCreditsSeeds'
+          | 'media.discovery.maxBestInGenre'
+          | 'media.discovery.maxCrossoverPairs'
+          | 'media.thetvdb.rateLimitCapacity'
+          | 'media.thetvdb.rateLimitRefillRate'
+          | 'media.thetvdb.maxRetries'
+          | 'media.tmdb.genreCacheTtlMs'
+          | 'media.tmdb.imageMaxRetries'
+          | 'media.tmdb.imageRetryDelayMs'
+          | 'media.plex.rateLimitDelayMs'
+          | 'media.plex.clientPageSize'
+          | 'media.plex.friendsPageSize'
+          | 'media.defaultLimit'
+          | 'media.rotation.tmdbDefaultPages'
+          | 'media.rotation.tmdbMaxPages'
+          | 'media.rotation.tmdbMinVoteCount'
+          | 'media.rotation.letterboxdMaxPages'
+          | 'finance.aiCategorizer.model'
+          | 'finance.aiCategorizer.maxTokens'
+          | 'finance.ruleGen.model'
+          | 'finance.ruleGen.maxTokens'
+          | 'finance.defaultLimit'
+          | 'inventory.defaultLimit'
+          | 'inventory.searchDefaultLimit'
+          | 'inventory.maxFileSizeBytes'
+          | 'core.corrections.highConfidenceThreshold'
+          | 'core.corrections.minPatternLength'
+          | 'core.corrections.previewLimit'
+          | 'core.corrections.previewHardLimit'
+          | 'core.corrections.previewRulesFetchLimit'
+          | 'core.search.showMoreLimit'
+          | 'core.aiRetry.maxRetries'
+          | 'core.aiRetry.baseDelayMs'
+          | 'core.defaultLimit'
+          | 'core.queue.syncConcurrency'
+          | 'core.queue.embeddingsConcurrency'
+          | 'core.queue.defaultConcurrency'
+          | 'core.queue.completedRetention'
+          | 'theme';
+      };
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          value: string;
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            data: {
+              key: string;
+              value: string;
+            };
+            message: string;
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+          };
+        };
+      };
+      /** @description 401 */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+          };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+          };
+        };
+      };
+    };
+  };
+  'settings.delete': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key:
+          | 'plex_url'
+          | 'plex_token'
+          | 'plex_username'
+          | 'plex_encryption_seed'
+          | 'plex_client_identifier'
+          | 'plex_movie_section_id'
+          | 'plex_tv_section_id'
+          | 'plex_scheduler_enabled'
+          | 'plex_scheduler_interval_ms'
+          | 'radarr_url'
+          | 'radarr_api_key'
+          | 'sonarr_url'
+          | 'sonarr_api_key'
+          | 'ai.model'
+          | 'ai.monthlyTokenBudget'
+          | 'ai.budgetExceededFallback'
+          | 'ai.modelOverrides.query'
+          | 'ai.modelOverrides.emit'
+          | 'ai.modelOverrides.classifier'
+          | 'ai.modelOverrides.entityExtractor'
+          | 'ai.modelOverrides.scopeInference'
+          | 'ai.modelOverrides.auditorContradiction'
+          | 'ai.modelOverrides.patternContradiction'
+          | 'cerebrum.query.maxSources'
+          | 'cerebrum.query.relevanceThreshold'
+          | 'cerebrum.query.tokenBudget'
+          | 'cerebrum.emit.maxTokens'
+          | 'cerebrum.emit.relevanceThreshold'
+          | 'cerebrum.emit.maxSources'
+          | 'cerebrum.emit.tokenBudget'
+          | 'cerebrum.semantic.defaultLimit'
+          | 'cerebrum.semantic.defaultThreshold'
+          | 'cerebrum.semantic.queryCacheTtl'
+          | 'cerebrum.hybrid.rrfK'
+          | 'cerebrum.hybrid.defaultLimit'
+          | 'cerebrum.hybrid.defaultThreshold'
+          | 'cerebrum.context.tokenBudget'
+          | 'cerebrum.classifier.confidenceThreshold'
+          | 'cerebrum.entityExtractor.confidenceThreshold'
+          | 'cerebrum.captureHotkey'
+          | 'cerebrum.nudge.consolidationSimilarity'
+          | 'cerebrum.nudge.consolidationMinCluster'
+          | 'cerebrum.nudge.stalenessDays'
+          | 'cerebrum.nudge.patternMinOccurrences'
+          | 'cerebrum.nudge.maxPending'
+          | 'cerebrum.nudge.cooldownHours'
+          | 'cerebrum.engram.fallbackScope'
+          | 'cerebrum.citation.excerptMaxLength'
+          | 'cerebrum.plexus.healthIntervalMs'
+          | 'cerebrum.plexus.healthTimeoutMs'
+          | 'cerebrum.plexus.maxConsecutiveFailures'
+          | 'cerebrum.thalamus.crossSourceIntervalMs'
+          | 'cerebrum.mcp.queryMaxSources'
+          | 'cerebrum.mcp.searchSnippetLength'
+          | 'cerebrum.mcp.searchDefaultLimit'
+          | 'cerebrum.glia.proposeMinApproved'
+          | 'cerebrum.glia.proposeMaxRejectionRate'
+          | 'cerebrum.glia.actReportMinDays'
+          | 'cerebrum.glia.demotionRevertThreshold'
+          | 'cerebrum.glia.demotionWindowDays'
+          | 'ego.defaultModel'
+          | 'ego.maxHistory'
+          | 'ego.maxRetrieval'
+          | 'ego.tokenBudget'
+          | 'ego.relevanceThreshold'
+          | 'ego.chat.maxTokens'
+          | 'ego.chat.temperature'
+          | 'ego.summary.maxTokens'
+          | 'ego.summary.temperature'
+          | 'media.comparisons.eloK'
+          | 'media.comparisons.defaultScore'
+          | 'media.comparisons.maxTierListMovies'
+          | 'media.comparisons.stalenessThreshold'
+          | 'media.comparisons.defaultLimit'
+          | 'media.discovery.sessionTargetMin'
+          | 'media.discovery.sessionTargetMax'
+          | 'media.discovery.maxSeedShelves'
+          | 'media.discovery.maxGenreShelves'
+          | 'media.discovery.maxActiveCollections'
+          | 'media.discovery.maxBecauseYouWatchedSeeds'
+          | 'media.discovery.maxCreditsSeeds'
+          | 'media.discovery.maxBestInGenre'
+          | 'media.discovery.maxCrossoverPairs'
+          | 'media.thetvdb.rateLimitCapacity'
+          | 'media.thetvdb.rateLimitRefillRate'
+          | 'media.thetvdb.maxRetries'
+          | 'media.tmdb.genreCacheTtlMs'
+          | 'media.tmdb.imageMaxRetries'
+          | 'media.tmdb.imageRetryDelayMs'
+          | 'media.plex.rateLimitDelayMs'
+          | 'media.plex.clientPageSize'
+          | 'media.plex.friendsPageSize'
+          | 'media.defaultLimit'
+          | 'media.rotation.tmdbDefaultPages'
+          | 'media.rotation.tmdbMaxPages'
+          | 'media.rotation.tmdbMinVoteCount'
+          | 'media.rotation.letterboxdMaxPages'
+          | 'finance.aiCategorizer.model'
+          | 'finance.aiCategorizer.maxTokens'
+          | 'finance.ruleGen.model'
+          | 'finance.ruleGen.maxTokens'
+          | 'finance.defaultLimit'
+          | 'inventory.defaultLimit'
+          | 'inventory.searchDefaultLimit'
+          | 'inventory.maxFileSizeBytes'
+          | 'core.corrections.highConfidenceThreshold'
+          | 'core.corrections.minPatternLength'
+          | 'core.corrections.previewLimit'
+          | 'core.corrections.previewHardLimit'
+          | 'core.corrections.previewRulesFetchLimit'
+          | 'core.search.showMoreLimit'
+          | 'core.aiRetry.maxRetries'
+          | 'core.aiRetry.baseDelayMs'
+          | 'core.defaultLimit'
+          | 'core.queue.syncConcurrency'
+          | 'core.queue.embeddingsConcurrency'
+          | 'core.queue.defaultConcurrency'
+          | 'core.queue.completedRetention'
+          | 'theme';
+      };
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': Record<string, never>;
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            message: string;
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+          };
+        };
+      };
+      /** @description 401 */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+          };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+          };
+        };
+      };
+    };
+  };
+  'settings.ensure': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key:
+          | 'plex_url'
+          | 'plex_token'
+          | 'plex_username'
+          | 'plex_encryption_seed'
+          | 'plex_client_identifier'
+          | 'plex_movie_section_id'
+          | 'plex_tv_section_id'
+          | 'plex_scheduler_enabled'
+          | 'plex_scheduler_interval_ms'
+          | 'radarr_url'
+          | 'radarr_api_key'
+          | 'sonarr_url'
+          | 'sonarr_api_key'
+          | 'ai.model'
+          | 'ai.monthlyTokenBudget'
+          | 'ai.budgetExceededFallback'
+          | 'ai.modelOverrides.query'
+          | 'ai.modelOverrides.emit'
+          | 'ai.modelOverrides.classifier'
+          | 'ai.modelOverrides.entityExtractor'
+          | 'ai.modelOverrides.scopeInference'
+          | 'ai.modelOverrides.auditorContradiction'
+          | 'ai.modelOverrides.patternContradiction'
+          | 'cerebrum.query.maxSources'
+          | 'cerebrum.query.relevanceThreshold'
+          | 'cerebrum.query.tokenBudget'
+          | 'cerebrum.emit.maxTokens'
+          | 'cerebrum.emit.relevanceThreshold'
+          | 'cerebrum.emit.maxSources'
+          | 'cerebrum.emit.tokenBudget'
+          | 'cerebrum.semantic.defaultLimit'
+          | 'cerebrum.semantic.defaultThreshold'
+          | 'cerebrum.semantic.queryCacheTtl'
+          | 'cerebrum.hybrid.rrfK'
+          | 'cerebrum.hybrid.defaultLimit'
+          | 'cerebrum.hybrid.defaultThreshold'
+          | 'cerebrum.context.tokenBudget'
+          | 'cerebrum.classifier.confidenceThreshold'
+          | 'cerebrum.entityExtractor.confidenceThreshold'
+          | 'cerebrum.captureHotkey'
+          | 'cerebrum.nudge.consolidationSimilarity'
+          | 'cerebrum.nudge.consolidationMinCluster'
+          | 'cerebrum.nudge.stalenessDays'
+          | 'cerebrum.nudge.patternMinOccurrences'
+          | 'cerebrum.nudge.maxPending'
+          | 'cerebrum.nudge.cooldownHours'
+          | 'cerebrum.engram.fallbackScope'
+          | 'cerebrum.citation.excerptMaxLength'
+          | 'cerebrum.plexus.healthIntervalMs'
+          | 'cerebrum.plexus.healthTimeoutMs'
+          | 'cerebrum.plexus.maxConsecutiveFailures'
+          | 'cerebrum.thalamus.crossSourceIntervalMs'
+          | 'cerebrum.mcp.queryMaxSources'
+          | 'cerebrum.mcp.searchSnippetLength'
+          | 'cerebrum.mcp.searchDefaultLimit'
+          | 'cerebrum.glia.proposeMinApproved'
+          | 'cerebrum.glia.proposeMaxRejectionRate'
+          | 'cerebrum.glia.actReportMinDays'
+          | 'cerebrum.glia.demotionRevertThreshold'
+          | 'cerebrum.glia.demotionWindowDays'
+          | 'ego.defaultModel'
+          | 'ego.maxHistory'
+          | 'ego.maxRetrieval'
+          | 'ego.tokenBudget'
+          | 'ego.relevanceThreshold'
+          | 'ego.chat.maxTokens'
+          | 'ego.chat.temperature'
+          | 'ego.summary.maxTokens'
+          | 'ego.summary.temperature'
+          | 'media.comparisons.eloK'
+          | 'media.comparisons.defaultScore'
+          | 'media.comparisons.maxTierListMovies'
+          | 'media.comparisons.stalenessThreshold'
+          | 'media.comparisons.defaultLimit'
+          | 'media.discovery.sessionTargetMin'
+          | 'media.discovery.sessionTargetMax'
+          | 'media.discovery.maxSeedShelves'
+          | 'media.discovery.maxGenreShelves'
+          | 'media.discovery.maxActiveCollections'
+          | 'media.discovery.maxBecauseYouWatchedSeeds'
+          | 'media.discovery.maxCreditsSeeds'
+          | 'media.discovery.maxBestInGenre'
+          | 'media.discovery.maxCrossoverPairs'
+          | 'media.thetvdb.rateLimitCapacity'
+          | 'media.thetvdb.rateLimitRefillRate'
+          | 'media.thetvdb.maxRetries'
+          | 'media.tmdb.genreCacheTtlMs'
+          | 'media.tmdb.imageMaxRetries'
+          | 'media.tmdb.imageRetryDelayMs'
+          | 'media.plex.rateLimitDelayMs'
+          | 'media.plex.clientPageSize'
+          | 'media.plex.friendsPageSize'
+          | 'media.defaultLimit'
+          | 'media.rotation.tmdbDefaultPages'
+          | 'media.rotation.tmdbMaxPages'
+          | 'media.rotation.tmdbMinVoteCount'
+          | 'media.rotation.letterboxdMaxPages'
+          | 'finance.aiCategorizer.model'
+          | 'finance.aiCategorizer.maxTokens'
+          | 'finance.ruleGen.model'
+          | 'finance.ruleGen.maxTokens'
+          | 'finance.defaultLimit'
+          | 'inventory.defaultLimit'
+          | 'inventory.searchDefaultLimit'
+          | 'inventory.maxFileSizeBytes'
+          | 'core.corrections.highConfidenceThreshold'
+          | 'core.corrections.minPatternLength'
+          | 'core.corrections.previewLimit'
+          | 'core.corrections.previewHardLimit'
+          | 'core.corrections.previewRulesFetchLimit'
+          | 'core.search.showMoreLimit'
+          | 'core.aiRetry.maxRetries'
+          | 'core.aiRetry.baseDelayMs'
+          | 'core.defaultLimit'
+          | 'core.queue.syncConcurrency'
+          | 'core.queue.embeddingsConcurrency'
+          | 'core.queue.defaultConcurrency'
+          | 'core.queue.completedRetention'
+          | 'theme';
+      };
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          value: string;
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            data: {
+              key: string;
+              value: string;
+            };
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+          };
+        };
+      };
+      /** @description 401 */
+      401: {
         headers: {
           [name: string]: unknown;
         };

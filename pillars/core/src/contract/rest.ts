@@ -19,6 +19,8 @@ import { coreAiObservabilityContract } from './rest-ai-observability.js';
 import { coreAiProvidersContract } from './rest-ai-providers.js';
 import { coreAiUsageContract } from './rest-ai-usage.js';
 import { coreEntitiesContract } from './rest-entities.js';
+import { coreServiceAccountsContract } from './rest-service-accounts.js';
+import { coreSettingsContract } from './rest-settings.js';
 import { coreShellContract } from './rest-shell.js';
 import { coreUsersContract } from './rest-users.js';
 
@@ -32,6 +34,8 @@ export const coreContract = c.router(
     aiProviders: coreAiProvidersContract,
     aiUsage: coreAiUsageContract,
     entities: coreEntitiesContract,
+    serviceAccounts: coreServiceAccountsContract,
+    settings: coreSettingsContract,
     shell: coreShellContract,
     users: coreUsersContract,
   },
