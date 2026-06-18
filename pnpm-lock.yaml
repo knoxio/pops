@@ -1934,9 +1934,6 @@ importers:
 
   pillars/core:
     dependencies:
-      '@pops/cerebrum-db':
-        specifier: workspace:*
-        version: link:../../packages/cerebrum-db
       '@pops/pillar-sdk':
         specifier: workspace:*
         version: link:../../packages/pillar-sdk

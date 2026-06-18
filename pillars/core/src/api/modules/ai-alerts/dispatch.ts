@@ -10,10 +10,8 @@
  *   - Telegram receives only `critical` alerts unless an env override is set
  *     (POPS_ALERTS_TELEGRAM_INCLUDE_WARNINGS=1)
  */
-import { type CerebrumDb } from '@pops/cerebrum-db';
-
 import { logger } from '../../shared/logger.js';
-import { dispatchNudge } from './dispatchers/nudge.js';
+import { dispatchNudge, type NudgeSink } from './dispatchers/nudge.js';
 import { dispatchTelegram } from './dispatchers/telegram.js';
 
 import type { AlertChannel, FiredAlert } from './types.js';
@@ -31,8 +29,8 @@ export interface DispatchOptions {
   nudgeDispatcher?: (alert: FiredAlert) => boolean | Promise<boolean>;
   /** Override the telegram dispatcher (for tests). */
   telegramDispatcher?: (alert: FiredAlert) => boolean | Promise<boolean>;
-  /** Cerebrum handle threaded to the default nudge dispatcher. */
-  cerebrumDb?: CerebrumDb;
+  /** Cerebrum nudge sink threaded to the default nudge dispatcher (tests stub it). */
+  nudgeSink?: NudgeSink;
   env?: NodeJS.ProcessEnv;
 }
 
@@ -63,7 +61,7 @@ export async function dispatchAlert(
       if (channel === 'nudge') {
         delivered = options.nudgeDispatcher
           ? await options.nudgeDispatcher(alert)
-          : dispatchNudge(alert, options.cerebrumDb ? { db: options.cerebrumDb } : {});
+          : await dispatchNudge(alert, options.nudgeSink ? { sink: options.nudgeSink } : {});
       } else if (channel === 'telegram') {
         delivered = options.telegramDispatcher
           ? await options.telegramDispatcher(alert)
