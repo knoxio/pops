@@ -10,7 +10,7 @@ import {
 
 import type { Operation, OperationLink, TRPCClientRuntime, TRPCLink } from '@trpc/client';
 
-import type { AppRouter } from '@pops/api';
+import type { AppRouter } from '../app-router.js';
 
 interface DispatchRecord {
   readonly url: string;
@@ -70,8 +70,9 @@ function dispatch(link: TRPCLink<AppRouter>, op: Operation): void {
 }
 
 describe('pillarOfPath', () => {
-  it('returns the namespace when it is a known tRPC pillar', () => {
-    expect(pillarOfPath('core.health')).toBe('core');
+  it('returns null now that no pillar has a dedicated tRPC URL', () => {
+    expect(pillarOfPath('core.health')).toBeNull();
+    expect(pillarOfPath('cerebrum.nudges.list')).toBeNull();
   });
 
   it('returns null for unprefixed paths', () => {
@@ -107,18 +108,18 @@ describe('createPillarSplitLink', () => {
     ]);
   });
 
-  it('routes core ops to the core URL and non-tRPC pillars to the legacy URL', () => {
+  it('routes the remaining tRPC procedures to the legacy URL', () => {
     const { link, records } = buildRecordingHarness();
 
-    dispatch(link, makeOp('core.foo', 1));
-    dispatch(link, makeOp('food.bar', 2));
+    dispatch(link, makeOp('core.search.query', 1));
+    dispatch(link, makeOp('cerebrum.nudges.list', 2));
 
     expect(records).toEqual([
-      { url: PILLAR_TRPC_URLS.core, path: 'core.foo' },
-      { url: LEGACY_TRPC_URL, path: 'food.bar' },
+      { url: LEGACY_TRPC_URL, path: 'core.search.query' },
+      { url: LEGACY_TRPC_URL, path: 'cerebrum.nudges.list' },
     ]);
     const urls = new Set(records.map((r) => r.url));
-    expect(urls.size).toBe(2);
+    expect(urls.size).toBe(1);
   });
 
   it('routes unprefixed paths to the legacy URL', () => {
@@ -141,24 +142,13 @@ describe('createPillarSplitLink', () => {
     ]);
   });
 
-  it('routes every known pillar to its dedicated URL', () => {
-    const { link, records } = buildRecordingHarness();
-    const cases = Object.entries(PILLAR_TRPC_URLS) as [keyof typeof PILLAR_TRPC_URLS, string][];
-
-    cases.forEach(([pillar], index) => {
-      dispatch(link, makeOp(`${pillar}.thing`, index + 1));
-    });
-
-    expect(records).toEqual(cases.map(([pillar, url]) => ({ url, path: `${pillar}.thing` })));
+  it('exposes no dedicated per-pillar URLs', () => {
+    expect(Object.keys(PILLAR_TRPC_URLS)).toEqual([]);
   });
 
-  it('honours overridden pillar and legacy URLs', () => {
+  it('honours an overridden legacy URL', () => {
     const records: DispatchRecord[] = [];
     const link = createPillarSplitLink({
-      pillarUrls: {
-        ...PILLAR_TRPC_URLS,
-        core: 'http://core-api:3000/trpc',
-      },
       legacyUrl: 'http://legacy:3000/trpc',
       linkFor:
         (url) =>
@@ -175,7 +165,7 @@ describe('createPillarSplitLink', () => {
     dispatch(link, makeOp('unknown.y', 2));
 
     expect(records).toEqual([
-      { url: 'http://core-api:3000/trpc', path: 'core.x' },
+      { url: 'http://legacy:3000/trpc', path: 'core.x' },
       { url: 'http://legacy:3000/trpc', path: 'unknown.y' },
     ]);
   });

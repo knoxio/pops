@@ -10,13 +10,13 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@pops/api": "workspace:*",
     "@pops/pillar-sdk": "workspace:*",
     "@trpc/client": "11.17.0",
-    "@trpc/react-query": "11.17.0"
+    "@trpc/react-query": "11.17.0",
+    "@trpc/server": "11.17.0",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@trpc/server": "11.17.0",
     "typescript": "^6.0.3",
     "vitest": "^4.1.8"
   },

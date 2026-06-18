@@ -21,7 +21,7 @@
     "registry:register": "tsx scripts/register-with-registry.ts"
   },
   "dependencies": {
-    "@pops/api": "workspace:*",
+    "@pops/api-client": "workspace:*",
     "@pops/app-ai": "workspace:*",
     "@pops/app-cerebrum": "workspace:*",
     "@pops/app-finance": "workspace:*",

@@ -398,9 +398,9 @@ importers:
 
   apps/pops-shell:
     dependencies:
-      '@pops/api':
+      '@pops/api-client':
         specifier: workspace:*
-        version: link:../pops-api
+        version: link:../../packages/api-client
       '@pops/app-ai':
         specifier: workspace:*
         version: link:../../packages/app-ai
@@ -604,9 +604,6 @@ importers:
 
   packages/api-client:
     dependencies:
-      '@pops/api':
-        specifier: workspace:*
-        version: link:../../apps/pops-api
       '@pops/pillar-sdk':
         specifier: workspace:*
         version: link:../pillar-sdk
@@ -616,13 +613,16 @@ importers:
       '@trpc/react-query':
         specifier: 11.17.0
         version: 11.17.0(@tanstack/react-query@5.101.0(react@19.2.7))(@trpc/client@11.17.0(@trpc/server@11.17.0(typescript@6.0.3))(typescript@6.0.3))(@trpc/server@11.17.0(typescript@6.0.3))(react@19.2.7)(typescript@6.0.3)
-      react:
-        specifier: ^19.0.0
-        version: 19.2.7
-    devDependencies:
       '@trpc/server':
         specifier: 11.17.0
         version: 11.17.0(typescript@6.0.3)
+      react:
+        specifier: ^19.0.0
+        version: 19.2.7
+      zod:
+        specifier: ^4.4.3
+        version: 4.4.3
+    devDependencies:
       typescript:
         specifier: ^6.0.3
         version: 6.0.3
