@@ -71,7 +71,7 @@ services:
   inventory-api:
     build:
       context: ..
-      dockerfile: apps/pops-inventory-api/Dockerfile
+      dockerfile: pillars/inventory/Dockerfile
       args:
         BUILD_VERSION: ${BUILD_VERSION:-dev}
     container_name: pops-inventory-api
@@ -113,7 +113,7 @@ services:
   finance-api:
     build:
       context: ..
-      dockerfile: apps/pops-finance-api/Dockerfile
+      dockerfile: pillars/finance/Dockerfile
       args:
         BUILD_VERSION: ${BUILD_VERSION:-dev}
     container_name: pops-finance-api
@@ -198,7 +198,7 @@ services:
   food-api:
     build:
       context: ..
-      dockerfile: apps/pops-food-api/Dockerfile
+      dockerfile: pillars/food/Dockerfile
       args:
         BUILD_VERSION: ${BUILD_VERSION:-dev}
     container_name: pops-food-api
@@ -240,7 +240,7 @@ services:
   lists-api:
     build:
       context: ..
-      dockerfile: pillars/lists/api/Dockerfile
+      dockerfile: pillars/lists/Dockerfile
       args:
         BUILD_VERSION: ${BUILD_VERSION:-dev}
     container_name: pops-lists-api
@@ -382,6 +382,57 @@ services:
       lists-api:
         condition: service_healthy
 
+  # Cerebrum pillar API (ADR-026). Hosts the cerebrum REST surface on
+  # port 3007; nginx routes /cerebrum-api/ and /trpc-cerebrum/ here. Built
+  # from the pillar Dockerfile (its default CMD is the API server) — same
+  # image the cerebrum-worker ships.
+  cerebrum-api:
+    build:
+      context: ..
+      dockerfile: pillars/cerebrum/Dockerfile
+      args:
+        BUILD_VERSION: ${BUILD_VERSION:-dev}
+    container_name: pops-cerebrum-api
+    restart: unless-stopped
+    networks:
+      - frontend
+      - backend
+    volumes:
+      - sqlite-data:/data/sqlite
+      - cerebrum-engrams-data:/data/cerebrum/engrams
+    environment:
+      NODE_ENV: production
+      PORT: '3007'
+      REDIS_HOST: pops-redis
+      REDIS_PORT: '6379'
+      CEREBRUM_SQLITE_PATH: /data/sqlite/cerebrum.db
+      CEREBRUM_ENGRAMS_DIR: /data/cerebrum/engrams
+      CEREBRUM_SELF_BASE_URL: http://cerebrum-api:3007
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      EMBEDDING_API_URL: ${EMBEDDING_API_URL:-}
+      EMBEDDING_API_KEY: ${EMBEDDING_API_KEY:-}
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-}
+      EMBEDDING_DIMENSIONS: ${EMBEDDING_DIMENSIONS:-}
+      POPS_PILLARS: ${POPS_PILLARS:-core:http://core-api:3001,inventory:http://inventory-api:3002,media:http://media-api:3003,finance:http://finance-api:3004,food:http://food-api:3005,lists:http://lists-api:3006}
+    expose:
+      - '3007'
+    depends_on:
+      pops-redis:
+        condition: service_healthy
+      core-api:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://localhost:3007/health').then(r=>{if(!r.ok)process.exit(1)})",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
   # Cerebrum pillar worker (ADR-026). Consumes the `pops-embeddings`
   # (dense-vector index) + `pops-curation` (engram enrichment) queues the
   # cerebrum pillar produces into. Same image the cerebrum-api ships, with
@@ -415,6 +466,43 @@ services:
     depends_on:
       pops-redis:
         condition: service_healthy
+
+  # Cross-pillar orchestrator (ADR-029, epics 06+07). Federates over the
+  # pillars via @pops/pillar-sdk (REST); owns no domain DB. nginx routes
+  # /orchestrator-api/ here on port 3009. Built from the app Dockerfile;
+  # no published image yet.
+  pops-orchestrator:
+    build:
+      context: ..
+      dockerfile: apps/pops-orchestrator/Dockerfile
+      args:
+        BUILD_VERSION: ${BUILD_VERSION:-dev}
+    container_name: pops-orchestrator
+    restart: unless-stopped
+    networks:
+      - frontend
+      - backend
+    environment:
+      NODE_ENV: production
+      PORT: '3009'
+      ORCHESTRATOR_SELF_BASE_URL: http://pops-orchestrator:3009
+      POPS_PILLARS: ${POPS_PILLARS:-core:http://core-api:3001,inventory:http://inventory-api:3002,media:http://media-api:3003,finance:http://finance-api:3004,food:http://food-api:3005,lists:http://lists-api:3006}
+    expose:
+      - '3009'
+    depends_on:
+      core-api:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://localhost:3009/health').then(r=>{if(!r.ok)process.exit(1)})",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
   # ── FRONTEND ─────────────────────────────────────────────────────
   pops-shell:
