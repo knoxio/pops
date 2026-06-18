@@ -13,6 +13,7 @@
 import express, { type Express, type Request, type Response } from 'express';
 import { z } from 'zod';
 
+import { type BuildToolList, createAiToolsHandler } from './ai-tools/index.js';
 import { type OrchestratorDeps, makeRequestHandler } from './handlers.js';
 import { runSearch, type SearchSource } from './search/index.js';
 
@@ -49,6 +50,13 @@ export interface CreateOrchestratorAppOptions {
    * service-account auth.
    */
   readonly searchSource?: SearchSource;
+  /**
+   * AI-tool registry aggregator override. Production omits this so
+   * `GET /ai/tools` uses the SDK's `buildToolList` over the live discovery
+   * cache; tests inject a stub to assert the projected tools without a
+   * registry round-trip.
+   */
+  readonly buildToolList?: BuildToolList;
 }
 
 export function createOrchestratorApp(
@@ -60,6 +68,9 @@ export function createOrchestratorApp(
   app.use(express.json({ limit: JSON_BODY_LIMIT }));
 
   const handlers = makeRequestHandler(deps);
+  const aiTools = createAiToolsHandler(
+    options.buildToolList !== undefined ? { buildToolList: options.buildToolList } : {}
+  );
 
   app.get('/health', (_req: Request, res: Response) => {
     res.json(handlers.health());
@@ -71,6 +82,10 @@ export function createOrchestratorApp(
 
   app.post('/search', (req: Request, res: Response) => {
     void handleSearch(req, res, options.searchSource);
+  });
+
+  app.get('/ai/tools', (_req: Request, res: Response) => {
+    void aiTools().then((payload) => res.json(payload));
   });
 
   return app;
