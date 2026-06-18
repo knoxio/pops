@@ -43,63 +43,66 @@ The migration is done when **all** of these pass from a clean checkout of `main`
 | G9  | FE green                        | `fe-quality.yml` green repo-wide (not just per-app isolation); every `packages/app-*` ships only an `openapi-ts` client                                                                                                       |
 | G10 | OpenAPI honest & idempotent     | per pillar: `generate:openapi && generate:api-types` leaves `git diff --exit-code` clean                                                                                                                                      |
 
-## Where we are now (2026-06-18, branch `lake-migration` — updated after #3444–#3447)
+## Where we are now (2026-06-18, branch `lake-migration` — updated after #3448)
 
-| Dimension                                             | State                                                                                                                                                                                                   |
-| ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Leaf pillars (lists, inventory, finance, food, media) | **Clean** — ts-rest, OpenAPI, own DB, deployed; leaf `AnyTRPCRouter` shims dropped (#3447)                                                                                                              |
-| cerebrum                                              | **Clean & wired** — code clean (no `@trpc`); `cerebrum-api` compose service added (#3444)                                                                                                               |
-| core                                                  | **Clean** — ts-rest contract, `./manifest`, own DB; serves no `/trpc`; raw `GET /core.registry.list` discovery (runbook `01` complete)                                                                  |
-| Monolith `apps/pops-api`                              | **Alive** — `modules/core` + `modules/finance` still served at `/trpc`                                                                                                                                  |
-| Predecessor `apps/pops-core-api`                      | **Alive** — live duplicate of `pillars/core` (compose deploys this, not the pillar); now dual-serves the raw `GET /core.registry.list` discovery route alongside `/trpc`                                |
-| Server-side cross-pillar SDK                          | **REST is the default** (tRPC fallback) — C4 landed server-side                                                                                                                                         |
-| Browser `@pops/api-client`                            | Still tRPC machinery (`split-link`/`createTRPCReact`) — removed in **B3** (gated on 02). `TRPC_PILLARS` already `[]`                                                                                    |
-| FE apps                                               | **7/8 on Hey API**; nudge bell + global search now REST (#3446, B1/B2). **No live FE tRPC calls** except `app-finance` — the lone hybrid (18 files, Track A, blocked on C1)                             |
-| Shared `pops.db`                                      | **Intact** in the monolith                                                                                                                                                                              |
-| nginx / compose                                       | **Dual-stack** — both `/trpc-<x>` and `/<x>-api`; cerebrum-api + orchestrator services added (#3444), no more 502s; full REST cut is 04 Phase Cut                                                       |
-| CI                                                    | **GREEN** — `lint:boundaries:verify` up to date (#3444). The earlier "RED/drift" was a false positive: local untracked `packages/*-contract` crud tripped `discoverPillars`; absent on a clean checkout |
+| Dimension                                             | State                                                                                                                                                                                                                                 |
+| ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Leaf pillars (lists, inventory, finance, food, media) | **Clean** — ts-rest, OpenAPI, own DB, deployed; leaf `AnyTRPCRouter` shims dropped (#3447)                                                                                                                                            |
+| cerebrum                                              | **Clean & wired** — code clean (no `@trpc`); `cerebrum-api` compose service added (#3444)                                                                                                                                             |
+| core                                                  | **Pillar clean (#3448)** — ts-rest contract, `./manifest`, own DB; no `/trpc`; raw `GET /core.registry.list` discovery. ⚠️ NOT "01 complete": **C1 finance-reclaim still outstanding** (corrections/tag-rules remain in the monolith) |
+| Monolith `apps/pops-api`                              | **Alive** — `modules/core` + `modules/finance` still served at `/trpc`                                                                                                                                                                |
+| Predecessor `apps/pops-core-api`                      | **Alive** — live duplicate of `pillars/core` (compose deploys this, not the pillar); now dual-serves the raw `GET /core.registry.list` discovery route alongside `/trpc`                                                              |
+| Server-side cross-pillar SDK                          | **REST is the default** (tRPC fallback) — C4 landed server-side                                                                                                                                                                       |
+| Browser `@pops/api-client`                            | Still tRPC machinery (`split-link`/`createTRPCReact`) — removed in **B3** (gated on 02). `TRPC_PILLARS` already `[]`                                                                                                                  |
+| FE apps                                               | **7/8 on Hey API**; nudge bell + global search now REST (#3446, B1/B2). **No live FE tRPC calls** except `app-finance` — the lone hybrid (18 files, Track A, blocked on C1)                                                           |
+| Shared `pops.db`                                      | **Intact** in the monolith                                                                                                                                                                                                            |
+| nginx / compose                                       | **Dual-stack** — both `/trpc-<x>` and `/<x>-api`; cerebrum-api + orchestrator services added (#3444), no more 502s; full REST cut is 04 Phase Cut                                                                                     |
+| CI                                                    | **GREEN** — `lint:boundaries:verify` up to date (#3444). The earlier "RED/drift" was a false positive: local untracked `packages/*-contract` crud tripped `discoverPillars`; absent on a clean checkout                               |
 
 ## Runbooks & sequencing
 
-| Runbook                                                          | Owns                                                                                                | Gated on                                                                                                                   |
-| ---------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| [`04-ci-docker-infra.md`](./04-ci-docker-infra.md) **Phase 0**   | Fix CI boundary drift, add missing compose services, fix broken dev refs, delete dead shells        | ✅ **DONE (#3444)** — all 6 items verified                                                                                 |
-| [`01-core-pillar-completion.md`](./01-core-pillar-completion.md) | Finish core: precursors C1/C3/C5, ts-rest contract, identity middleware, drop `/trpc`, `./manifest` | ✅ unblocked — **can start now** (Wave P)                                                                                  |
-| [`03-frontend-rest-cutover.md`](./03-frontend-rest-cutover.md)   | Browser client → REST, `app-finance` conversion, remove tRPC shims, drop `TRPC_PILLARS`             | **Track B ✅(#3446) · Track C ✅(#3447, leaves)**; Track A blocked on C1; B3 + `TRPC_PILLARS` + browser client gated on 02 |
-| [`02-monolith-decommission.md`](./02-monolith-decommission.md)   | Relocate stray monolith routes, delete `apps/pops-api` + `apps/pops-core-api` + shared `pops.db`    | **01** (core must serve what the monolith did)                                                                             |
-| [`04-ci-docker-infra.md`](./04-ci-docker-infra.md) **Phase Cut** | nginx cut to REST, compose → `pillars/` Dockerfiles, GHCR rename, core dead-pkg ban, clear baseline | 01 + 02 + 03                                                                                                               |
+| Runbook                                                          | Owns                                                                                                | Gated on                                                                                                                                                |
+| ---------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`04-ci-docker-infra.md`](./04-ci-docker-infra.md) **Phase 0**   | Fix CI boundary drift, add missing compose services, fix broken dev refs, delete dead shells        | ✅ **DONE (#3444)** — all 6 items verified                                                                                                              |
+| [`01-core-pillar-completion.md`](./01-core-pillar-completion.md) | Finish core: precursors C1/C3/C5, ts-rest contract, identity middleware, drop `/trpc`, `./manifest` | **Core pillar ✅(#3448)** — C3+C5 done, tRPC dropped, manifest published. **☐ C1 (finance reclaim) still outstanding — now the keystone**               |
+| [`03-frontend-rest-cutover.md`](./03-frontend-rest-cutover.md)   | Browser client → REST, `app-finance` conversion, remove tRPC shims, drop `TRPC_PILLARS`             | **Track B ✅(#3446) · Track C ✅(#3447, leaves + app-food dep #5a6a0d4c)**; Track A blocked on **C1**; B3 + `TRPC_PILLARS` + browser client gated on 02 |
+| [`02-monolith-decommission.md`](./02-monolith-decommission.md)   | Relocate stray monolith routes, delete `apps/pops-api` + `apps/pops-core-api` + shared `pops.db`    | core ✅; still needs **C1** (finance owns corrections/tag-rules) + relocations R1/R2 before the delete                                                  |
+| [`04-ci-docker-infra.md`](./04-ci-docker-infra.md) **Phase Cut** | nginx cut to REST, compose → `pillars/` Dockerfiles, GHCR rename, core dead-pkg ban, clear baseline | 01 + 02 + 03                                                                                                                                            |
 
 ### Dependency DAG (what runs in parallel)
 
 ```
-✅ 04 Phase 0 — DONE (#3444): CI green · cerebrum-api + orchestrator services · dev refs fixed · shells gone
-        │  (gate satisfied → parallel front open)
+DONE:  ✅ 04 Phase 0 (#3444)  ·  ✅ 03 Track B (#3446)  ·  ✅ 03 Track C leaves + app-food (#3447/5a6a0d4c/d1151dc0)
+       ✅ 01 core pillar REST (#3448: drop /trpc · publish manifest · C3 REST discovery · C5 schema relocation)
+        │
         ▼
   ┌──────────────────────────────────────────────────────────────────────────┐
-  │ IN FLIGHT / NEXT                                                           │
-  │  01 core completion ─────────────────────▶ 02 monolith ──┐                │
-  │     Wave P:  C1 ∥ C3 ∥ C5   ☐ next                         decommission  │  │
-  │       └▶ Wave A: domains 1–5 ∥ → A6 (drops core /trpc + shim)            │  │
-  │                                                           ▼                │
-  │  03 FE cutover                              03 B3 (kill /trpc catch-all ◀── needs 02
-  │     Track B  ✅ DONE (#3446)  — nudge + search on REST       + browser client
-  │     Track C  ✅ leaves done (#3447) — ☐ app-food orphan dep │  + TRPC_PILLARS)
-  │     Track A  ⛔ blocked on C1 ────────────────────────────┘                │
-  │              (correction-proposal AI engine ~4.7k LOC still monolith-only) │
+  │ ☐ KEYSTONE NEXT — C1: finance reclaim                                      │
+  │    relocate corrections + tag-rules + the correction-proposal engine       │
+  │    (~4.7k LOC / 29 files) from monolith modules/core → pillars/finance REST │
+  │       ├──────────▶ unblocks 03 Track A (app-finance FE conversion, 18 files)│
+  │       └──────────▶ clears the path to the 02 monolith delete               │
   └──────────────────────────────────────────────────────────────────────────┘
-                                   │
-                                   ▼
-                  04 Phase Cut (nginx REST-only · compose → pillars/ · GHCR rename · empty baseline)  ← needs 01+02+03
-                                   │
-                                   ▼
-                                 DONE  (global gate G1–G10)
+        │
+        ▼
+  02 monolith decommission — delete apps/pops-api + apps/pops-core-api + shared pops.db
+        │   needs: core ✅ · C1 · R1 (up-bank webhook → finance) · R2 (inventory file routes → inventory)
+        ▼
+  03 B3 — kill /trpc catch-all + browser @pops/api-client + TRPC_PILLARS    ← needs 02
+        │
+        ▼
+  04 Phase Cut — nginx REST-only · compose → pillars/ · GHCR rename · empty baseline    ← needs 01+02+03
+        │
+        ▼
+       DONE  (global gate G1–G10)
 ```
 
-**Status:** `04 Phase 0` ✅, `03` Track B ✅ and Track C ✅ (leaves) are merged — the FE
-issues **no live tRPC calls** now except `app-finance`. **Next unblocked work:** `01` (core,
-Wave P = C1∥C3∥C5). Still gated: `02` needs `01`; `03` Track A needs **C1**; `03` B3 (browser
-`@pops/api-client` removal + `TRPC_PILLARS` drop) and `04 Phase Cut` need `02`. Remaining tail
-cleanup: drop the orphan `@trpc/server` dep in `app-food` (no import — do anytime).
+**Status:** core is now a clean REST pillar (#3448) — `04 Phase 0`, `03` Track B, Track C, and
+the core-pillar conversion are all merged. **The migration has linearized onto one keystone:
+C1 (finance reclaim).** C1 is the _only_ thing now gating both `03` Track A (the last FE hybrid)
+and the `02` monolith delete. After C1: do `02` (with relocations R1/R2), then `03` B3, then
+`04 Phase Cut`. The `apps/pops-core-api` predecessor (50 src files) is still live and still
+deployed by compose — it dies in `02`.
 
 ## Process rules (carry forward — apply on every PR)
 
