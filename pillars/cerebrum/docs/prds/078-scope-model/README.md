@@ -5,7 +5,7 @@
 
 ## Overview
 
-Define the hierarchical dot-notation scope system for engrams. Scopes control which content appears in outputs — they are not access control (there is one user) but output filtering so the system speaks appropriately for context. This PRD covers scope format validation, rule-based auto-assignment, query-time filtering with secret-scope protection, and the tRPC management API. See [ADR-020](../../../architecture/adr-020-hierarchical-scope-model.md) for the architectural decision.
+Define the hierarchical dot-notation scope system for engrams. Scopes control which content appears in outputs — they are not access control (there is one user) but output filtering so the system speaks appropriately for context. This PRD covers scope format validation, rule-based auto-assignment, query-time filtering with secret-scope protection, and the tRPC management API. See [ADR-020](../../architecture/adr-020-hierarchical-scope-model.md) for the architectural decision.
 
 ## Data Model
 

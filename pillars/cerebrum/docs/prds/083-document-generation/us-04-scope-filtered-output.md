@@ -22,5 +22,5 @@ As a user generating documents for a specific audience (e.g., a work report, a p
 
 - This story is a cross-cutting concern applied to all three generation modes (report, summary, timeline). It should be implemented as middleware or a shared filtering layer, not duplicated per mode.
 - The retrieval-time enforcement is critical — post-generation scrubbing is insufficient because the LLM could have already synthesised information from secret sources into the generated text. The secret content must never reach the LLM prompt.
-- See [ADR-020](../../../architecture/adr-020-hierarchical-scope-model.md) for the full rationale behind the scope model and secret-scope hard-blocking.
+- See [ADR-020](../../architecture/adr-020-hierarchical-scope-model.md) for the full rationale behind the scope model and secret-scope hard-blocking.
 - The `audienceScope` default (broadest non-secret scope) should be computed from the union of scopes across all retrieved sources, picking the shortest common prefix.

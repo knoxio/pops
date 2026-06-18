@@ -5,7 +5,7 @@
 
 ## Overview
 
-Implement the three-phase trust graduation system from [ADR-021](../../../architecture/adr-021-glia-trust-graduation.md) as a trackable state machine per action type. This includes the proposal review queue with low-friction approve/reject interaction, a `glia_actions` SQLite table for tracking every action, per-action-type graduation logic with configurable thresholds, and a full audit trail with reversibility. After this PRD, Glia workers can earn autonomy incrementally while the system maintains a safety net of automatic demotion on bad behaviour.
+Implement the three-phase trust graduation system from [ADR-021](../../architecture/adr-021-glia-trust-graduation.md) as a trackable state machine per action type. This includes the proposal review queue with low-friction approve/reject interaction, a `glia_actions` SQLite table for tracking every action, per-action-type graduation logic with configurable thresholds, and a full audit trail with reversibility. After this PRD, Glia workers can earn autonomy incrementally while the system maintains a safety net of automatic demotion on bad behaviour.
 
 ## Data Model
 

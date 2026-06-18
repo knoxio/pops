@@ -20,4 +20,4 @@ As a system, I need a scope format specification with parsing and validation uti
 
 ## Notes
 
-This is the foundation for all other scope stories. The Zod schema is reused in tRPC input validation (US-04), the rule engine (US-02), and the filtering service (US-03). Keep the module dependency-free apart from Zod. See [ADR-020](../../../architecture/adr-020-hierarchical-scope-model.md) for the format rationale.
+This is the foundation for all other scope stories. The Zod schema is reused in tRPC input validation (US-04), the rule engine (US-02), and the filtering service (US-03). Keep the module dependency-free apart from Zod. See [ADR-020](../../architecture/adr-020-hierarchical-scope-model.md) for the format rationale.
