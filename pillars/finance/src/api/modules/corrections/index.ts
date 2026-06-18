@@ -13,6 +13,14 @@ export {
   ruleMatchesDescription,
 } from './pure.js';
 export {
+  previewChangeSetImpact,
+  summarizeMatch,
+  type ChangeSetPreviewDiff,
+  type ChangeSetPreviewSummary,
+  type CorrectionMatchSummary,
+  type PreviewTransaction,
+} from './preview-impact.js';
+export {
   classifyCorrectionMatch,
   parseCorrectionTags,
   HIGH_CONFIDENCE_THRESHOLD,

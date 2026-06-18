@@ -172,6 +172,30 @@ interface PreviewMatchResult {
   truncated: boolean;
 }
 
+interface CorrectionMatchSummary {
+  matched: boolean;
+  status: 'matched' | 'uncertain' | null;
+  ruleId: string | null;
+  confidence: number | null;
+}
+
+interface ChangeSetPreviewResult {
+  diffs: {
+    checksum?: string;
+    description: string;
+    before: CorrectionMatchSummary;
+    after: CorrectionMatchSummary;
+    changed: boolean;
+  }[];
+  summary: {
+    total: number;
+    newMatches: number;
+    removedMatches: number;
+    statusChanges: number;
+    netMatchedDelta: number;
+  };
+}
+
 export interface CorrectionListQuery {
   minConfidence?: number;
   matchType?: 'exact' | 'contains' | 'regex';
@@ -260,6 +284,16 @@ export function makeClient(app: Express) {
         ),
       previewMatches: (body: Record<string, unknown>) =>
         send<{ data: PreviewMatchResult }>(r.post('/corrections/preview-matches').send(body)),
+      listMerged: (body: Record<string, unknown> = {}) =>
+        send<{ data: Correction[]; pagination: Pagination }>(
+          r.post('/corrections/list-merged').send(body)
+        ),
+      previewChangeSet: (body: Record<string, unknown>) =>
+        send<ChangeSetPreviewResult>(r.post('/corrections/preview-changeset').send(body)),
+      applyChangeSet: (body: Record<string, unknown>) =>
+        send<{ data: Correction[]; message: string }>(
+          r.post('/corrections/apply-changeset').send(body)
+        ),
     },
     imports: {
       processImport: (body: Record<string, unknown>) =>
