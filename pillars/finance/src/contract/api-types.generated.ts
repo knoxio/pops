@@ -179,6 +179,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/entity-usage': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List entities with per-entity transactionCount; orphanedOnly=true returns count===0 */
+    get: operations['entityUsage.list'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/imports/apply-changeset-reevaluate': {
     parameters: {
       query?: never;
@@ -2051,6 +2068,90 @@ export interface operations {
         content: {
           'application/json': {
             message: string;
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'entityUsage.list': {
+    parameters: {
+      query?: {
+        search?: string;
+        type?: 'company' | 'person' | 'government' | 'bank' | 'place' | 'brand' | 'organisation';
+        orphanedOnly?: 'true' | 'false';
+        limit?: number;
+        offset?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            data: {
+              abn: string | null;
+              aliases: string[];
+              defaultTags: string[];
+              defaultTransactionType: string | null;
+              id: string;
+              lastEditedTime: string;
+              name: string;
+              notes: string | null;
+              transactionCount: number;
+              type: string;
+            }[];
+            pagination: {
+              hasMore: boolean;
+              limit: number;
+              offset: number;
+              total: number;
+            };
           };
         };
       };

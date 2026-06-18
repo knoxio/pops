@@ -203,6 +203,27 @@ export interface CorrectionListQuery {
   offset?: number;
 }
 
+export interface EntityUsage {
+  id: string;
+  name: string;
+  type: string;
+  abn: string | null;
+  aliases: string[];
+  defaultTransactionType: string | null;
+  defaultTags: string[];
+  notes: string | null;
+  lastEditedTime: string;
+  transactionCount: number;
+}
+
+export interface EntityUsageQuery {
+  search?: string;
+  type?: string;
+  orphanedOnly?: 'true' | 'false';
+  limit?: number;
+  offset?: number;
+}
+
 export function makeClient(app: Express) {
   const r = supertest(app);
   return {
@@ -294,6 +315,10 @@ export function makeClient(app: Express) {
         send<{ data: Correction[]; message: string }>(
           r.post('/corrections/apply-changeset').send(body)
         ),
+    },
+    entityUsage: {
+      list: (query: EntityUsageQuery = {}) =>
+        send<{ data: EntityUsage[]; pagination: Pagination }>(r.get('/entity-usage').query(query)),
     },
     imports: {
       processImport: (body: Record<string, unknown>) =>

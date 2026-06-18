@@ -11,6 +11,7 @@ import { financeContract } from '../../contract/rest.js';
 import { type OpenedFinanceDb } from '../../db/index.js';
 import { makeBudgetsHandlers } from './budgets-handlers.js';
 import { makeCorrectionsHandlers } from './corrections-handlers.js';
+import { makeEntityUsageHandlers } from './entity-usage-handlers.js';
 import { makeImportsHandlers } from './imports-handlers.js';
 import { makeSearchHandlers } from './search-handlers.js';
 import { makeTagRulesHandlers } from './tag-rules-handlers.js';
@@ -29,6 +30,7 @@ export function makeFinanceRestHandlers(deps: {
     transactions: makeTransactionsHandlers(db),
     tagRules: makeTagRulesHandlers(db),
     corrections: makeCorrectionsHandlers(db),
+    entityUsage: makeEntityUsageHandlers(db),
     imports: makeImportsHandlers(db),
     search: makeSearchHandlers(db),
   });
