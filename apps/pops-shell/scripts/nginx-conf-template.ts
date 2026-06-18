@@ -3,8 +3,9 @@
  *
  * Split out so the generator's renderer stays small and the literal
  * blocks (which are essentially data) live next to each other. Order:
- * the renderer concatenates HEAD → DISPATCHER_INTRO → <pillar blocks>
- * → TAIL.
+ * the renderer concatenates
+ *   HEAD → <per-pillar /trpc-<id>/ blocks> → REST_INTRO →
+ *   <per-pillar /<id>-api/ blocks> → TAIL.
  *
  * Editing any text below changes the committed `nginx.conf` — the
  * drift-detection test will fail until `pnpm gen:nginx` is re-run.
@@ -64,6 +65,30 @@ export const NGINX_CONF_HEAD = `server {
     # flips to the unavailable placeholder.
 `;
 
+/**
+ * Intro comment for the generated per-pillar REST surfaces. Sits between
+ * the `/trpc-<id>/` dispatchers (legacy mesh transport, kept during the
+ * cutover) and the `/<id>-api/` REST blocks the generator emits below it.
+ */
+export const NGINX_CONF_REST_INTRO = `    # ── Per-pillar REST surfaces (pillar migration cutover, generated) ──
+    #
+    # GENERATED FILE — do not hand-edit. Source:
+    #   apps/pops-shell/scripts/generate-nginx-conf.ts
+    #
+    # Each collapsed pillar now serves an idiomatic REST contract at root
+    # on its own container (\`/health\`, \`/pillars\`, \`/openapi\`, plus its
+    # resource routes). The Hey API clients post to the shell's
+    # \`/<pillar>-api/...\` prefix (e.g. \`/media-api/...\`, \`/core-api/...\`);
+    # each block strips the \`/<pillar>-api\` prefix so the pillar's own
+    # router sees its natural paths, then proxies to the pillar container.
+    #
+    # Variable-form \`proxy_pass\` defers DNS to request time so pops-shell
+    # still boots when a pillar container is absent (consistent with the
+    # \`/trpc-<pillar>/\` dispatchers above); calls 502 until the upstream
+    # is in place. The \`/trpc-<pillar>/\` blocks above stay for now — a
+    # later slice removes them once the monolith tRPC routers are deleted.
+`;
+
 export const NGINX_CONF_TAIL = `    # Legacy tRPC catch-all → pops-api.
     #
     # Kept for backwards compatibility: orchestration code, cached SPA
@@ -81,22 +106,6 @@ export const NGINX_CONF_TAIL = `    # Legacy tRPC catch-all → pops-api.
         proxy_read_timeout 300s;
         proxy_connect_timeout 10s;
         proxy_send_timeout 300s;
-    }
-
-    # Media pillar REST surface (Phase E — Hey API client posts to
-    # \`/media-api/...\`). Strip the \`/media-api\` prefix so the pillar's
-    # own router sees its natural paths, then proxy to the media pillar
-    # on :3003. Variable-form \`proxy_pass\` defers DNS to request time so
-    # pops-shell still boots when the media container is absent
-    # (consistent with the \`/trpc-<pillar>/\` dispatchers above); calls
-    # 502 until the upstream is in place. The \`/trpc-media/\` block above
-    # stays for now — a later slice removes it once the monolith media
-    # tRPC router is deleted.
-    location /media-api/ {
-        rewrite ^/media-api/(.*)$ /$1 break;
-        set $media_api_upstream http://media-api:3003;
-        proxy_pass $media_api_upstream;
-        include /etc/nginx/snippets/_pillar-proxy.conf;
     }
 
     # Proxy media images (posters, backdrops) served by the media pillar
@@ -147,6 +156,28 @@ export const NGINX_CONF_TAIL = `    # Legacy tRPC catch-all → pops-api.
         proxy_connect_timeout 5s;
         proxy_read_timeout 10s;
         proxy_send_timeout 10s;
+    }
+
+    # Core pillar registry SSE stream (PRD-163). \`GET /registry/subscribe\`
+    # is a plain-HTTP Server-Sent-Events endpoint on the core pillar (NOT
+    # a tRPC subscription). Proxy buffering is disabled and the read
+    # timeout is long so the stream stays open; the handler already sets
+    # \`X-Accel-Buffering: no\` but we pin it here too. Variable-form
+    # \`proxy_pass\` keeps pops-shell booting when core-api is absent.
+    location ~ ^/registry/subscribe/?$ {
+        set $registry_subscribe_upstream http://core-api:3001;
+        proxy_pass $registry_subscribe_upstream;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Connection '';
+        proxy_buffering off;
+        proxy_cache off;
+        proxy_connect_timeout 5s;
+        proxy_read_timeout 3600s;
+        proxy_send_timeout 3600s;
     }
 
     # NOTE: \`/core.registry.{register,heartbeat,deregister}\` are deliberately
