@@ -111,6 +111,16 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (urlPath: string) => urlPath.replace(/^\/cerebrum-api/, ''),
       },
+      // The orchestrator (ADR-029, epic 06) federates search over the pillars
+      // and serves `POST /search` at root. The shell's global search panel
+      // (`@pops/navigation` useSearchInputData) posts to `/orchestrator-api/search`;
+      // strip the prefix so the orchestrator router sees its natural `/search`.
+      // Mirrors the `/<pillar>-api` proxies above.
+      '/orchestrator-api': {
+        target: 'http://localhost:3009',
+        changeOrigin: true,
+        rewrite: (urlPath: string) => urlPath.replace(/^\/orchestrator-api/, ''),
+      },
       // SSE streaming endpoints (ego chat + cerebrum query) live on the
       // cerebrum pillar. These MUST precede the bare `/api` rule below,
       // which otherwise sends every `/api/*` request to core-api (3000).

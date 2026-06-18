@@ -111,12 +111,15 @@ describe('createPillarSplitLink', () => {
   it('routes the remaining tRPC procedures to the legacy URL', () => {
     const { link, records } = buildRecordingHarness();
 
-    dispatch(link, makeOp('core.search.query', 1));
-    dispatch(link, makeOp('cerebrum.nudges.list', 2));
+    // `cerebrum.nudges.list` is the sole live FE tRPC procedure (global
+    // search moved to the orchestrator's `POST /search`); `core.health` is a
+    // non-pillar path. Both fall through to the legacy `/trpc` catch-all.
+    dispatch(link, makeOp('cerebrum.nudges.list', 1));
+    dispatch(link, makeOp('core.health', 2));
 
     expect(records).toEqual([
-      { url: LEGACY_TRPC_URL, path: 'core.search.query' },
       { url: LEGACY_TRPC_URL, path: 'cerebrum.nudges.list' },
+      { url: LEGACY_TRPC_URL, path: 'core.health' },
     ]);
     const urls = new Set(records.map((r) => r.url));
     expect(urls.size).toBe(1);

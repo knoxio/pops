@@ -46,6 +46,7 @@ import { PILLARS, type KnownPillarId } from '@pops/pillar-sdk';
 
 import { parseCliArgs, type CliOptions } from './nginx-cli-args.ts';
 import { assertDynamicNotCheck, runDynamic, runStatic } from './nginx-cli-main.ts';
+import { NGINX_CONF_ORCHESTRATOR } from './nginx-conf-orchestrator.ts';
 import { NGINX_CONF_HEAD, NGINX_CONF_REST_INTRO, NGINX_CONF_TAIL } from './nginx-conf-template.ts';
 import {
   fetchRegistryViaTrpc,
@@ -61,7 +62,7 @@ import {
  * (in `@pops/pillar-sdk`) to ship a port here; missing entries fail
  * typecheck.
  */
-const PILLAR_UPSTREAMS: Record<KnownPillarId, { host: string; port: number }> = {
+export const PILLAR_UPSTREAMS: Record<KnownPillarId, { host: string; port: number }> = {
   core: { host: 'core-api', port: 3001 },
   inventory: { host: 'inventory-api', port: 3002 },
   media: { host: 'media-api', port: 3003 },
@@ -76,7 +77,7 @@ const PILLAR_UPSTREAMS: Record<KnownPillarId, { host: string; port: number }> = 
  * order PRD-190 shipped in the hand-written conf so the generator's
  * first run produces a byte-identical (modulo header comment) file.
  */
-const PILLAR_RENDER_ORDER: readonly KnownPillarId[] = [
+export const PILLAR_RENDER_ORDER: readonly KnownPillarId[] = [
   'core',
   'inventory',
   'media',
@@ -86,7 +87,7 @@ const PILLAR_RENDER_ORDER: readonly KnownPillarId[] = [
   'cerebrum',
 ];
 
-const DEFAULT_REGISTRY_URL = 'http://core-api:3001';
+export const DEFAULT_REGISTRY_URL = 'http://core-api:3001';
 
 export interface PillarUpstream {
   readonly pillarId: string;
@@ -94,7 +95,7 @@ export interface PillarUpstream {
   readonly port: number;
 }
 
-function assertRenderOrderCoversAllPillars(): void {
+export function assertRenderOrderCoversAllPillars(): void {
   const ordered = new Set<KnownPillarId>(PILLAR_RENDER_ORDER);
   const missing = PILLARS.filter((id) => !ordered.has(id));
   if (missing.length > 0) {
@@ -172,7 +173,7 @@ function renderPillarRestBlock(id: KnownPillarId): string {
 export function renderNginxConf(order: readonly KnownPillarId[] = PILLAR_RENDER_ORDER): string {
   const trpcBlocks = order.map(renderPillarBlock).join('\n\n');
   const restBlocks = order.map(renderPillarRestBlock).join('\n\n');
-  return `${NGINX_CONF_HEAD}\n${trpcBlocks}\n\n${NGINX_CONF_REST_INTRO}\n${restBlocks}\n\n${NGINX_CONF_TAIL}`;
+  return `${NGINX_CONF_HEAD}\n${trpcBlocks}\n\n${NGINX_CONF_REST_INTRO}\n${restBlocks}\n\n${NGINX_CONF_ORCHESTRATOR}\n${NGINX_CONF_TAIL}`;
 }
 
 /**
@@ -183,11 +184,11 @@ export function renderNginxConf(order: readonly KnownPillarId[] = PILLAR_RENDER_
  */
 export function renderNginxConfFromUpstreams(upstreams: readonly PillarUpstream[]): string {
   if (upstreams.length === 0) {
-    return `${NGINX_CONF_HEAD}\n${NGINX_CONF_TAIL}`;
+    return `${NGINX_CONF_HEAD}\n${NGINX_CONF_ORCHESTRATOR}\n${NGINX_CONF_TAIL}`;
   }
   const trpcBlocks = upstreams.map(renderPillarBlockFromUpstream).join('\n\n');
   const restBlocks = upstreams.map(renderPillarRestBlockFromUpstream).join('\n\n');
-  return `${NGINX_CONF_HEAD}\n${trpcBlocks}\n\n${NGINX_CONF_REST_INTRO}\n${restBlocks}\n\n${NGINX_CONF_TAIL}`;
+  return `${NGINX_CONF_HEAD}\n${trpcBlocks}\n\n${NGINX_CONF_REST_INTRO}\n${restBlocks}\n\n${NGINX_CONF_ORCHESTRATOR}\n${NGINX_CONF_TAIL}`;
 }
 
 /**
@@ -299,10 +300,3 @@ if (invokedAsScript) {
     process.exit(1);
   });
 }
-
-export {
-  PILLAR_UPSTREAMS,
-  PILLAR_RENDER_ORDER,
-  DEFAULT_REGISTRY_URL,
-  assertRenderOrderCoversAllPillars,
-};
