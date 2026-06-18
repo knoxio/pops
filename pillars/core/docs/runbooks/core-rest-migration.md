@@ -6,9 +6,9 @@ port **3001**) that serves REST from a ts-rest contract, with an honest OpenAPI
 projection, a Hey API FE client for `app-ai`, scoped CI (`core-quality.yml`) green,
 the dead `@pops/core-*` package names banned, **and `apps/pops-core-api` retired**.
 
-Follow the generic recipe in [`pillar-rest-migration.md`](./pillar-rest-migration.md)
-and the worked [`finance`](./finance-rest-migration.md) /
-[`cerebrum`](./cerebrum-rest-migration.md) examples; this doc records only what is
+Follow the generic recipe in [`pillar-rest-migration.md`](../../../../docs/runbooks/pillar-rest-migration.md)
+and the worked [`finance`](../../../finance/docs/runbooks/finance-rest-migration.md) /
+[`cerebrum`](../../../cerebrum/docs/runbooks/cerebrum-rest-migration.md) examples; this doc records only what is
 **different** for core. **Core is the last pillar, and unlike the six leaves it is
 the hub** — the registry every other pillar reads, the URI resolver, the cross-pillar
 settings surface, the AI-ops platform. It is also already **half-migrated**
