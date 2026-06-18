@@ -90,8 +90,8 @@ jobs:
       # epic 09) are excluded so the lifted platform code isn't double-penalised.
       #
       # The 02 monolith-decommission relocation tombstones follow the same rule:
-      # the inventory binary serve routes (`routes/inventory`, lifted into
-      # `pillars/inventory`, relocation R2) are excluded so the in-flight
-      # relocation isn't double-penalised before the 02 barrier delete removes
-      # the monolith copy.
-      - run: npx jscpd@^4 --threshold 5 --min-lines 8 --min-tokens 70 --ignore "**/*.test.{ts,tsx},**/*.spec.{ts,tsx},**/dist/**,**/node_modules/**,**/*.snap,**/*.d.ts,**/generated.ts,**/db/schema.ts,**/db/seeder.ts,apps/pops-api/src/modules/food/**,apps/pops-api/src/routes/food/**,apps/pops-api/src/modules/cerebrum/**,packages/cerebrum-db/**,packages/cerebrum-contract/**,apps/pops-api/src/modules/media/**,apps/pops-api/src/routes/media/**,apps/pops-api/src/modules/core/**,apps/pops-api/src/routes/pillars.ts,apps/pops-api/src/routes/inventory/**" --reporters "console" --exitCode 0 .
+      # the Up Bank webhook (`routes/webhooks` → `pillars/finance`, R1) and the
+      # inventory binary serve routes (`routes/inventory` → `pillars/inventory`,
+      # R2) are excluded so the in-flight relocations aren't double-penalised
+      # before the 02 barrier delete removes the monolith copies.
+      - run: npx jscpd@^4 --threshold 5 --min-lines 8 --min-tokens 70 --ignore "**/*.test.{ts,tsx},**/*.spec.{ts,tsx},**/dist/**,**/node_modules/**,**/*.snap,**/*.d.ts,**/generated.ts,**/db/schema.ts,**/db/seeder.ts,apps/pops-api/src/modules/food/**,apps/pops-api/src/routes/food/**,apps/pops-api/src/modules/cerebrum/**,packages/cerebrum-db/**,packages/cerebrum-contract/**,apps/pops-api/src/modules/media/**,apps/pops-api/src/routes/media/**,apps/pops-api/src/modules/core/**,apps/pops-api/src/routes/pillars.ts,apps/pops-api/src/routes/webhooks/**,apps/pops-api/src/routes/inventory/**" --reporters "console" --exitCode 0 .

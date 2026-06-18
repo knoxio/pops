@@ -20,6 +20,7 @@ import express, { type Express, type Request, type Response } from 'express';
 import { financeContract } from '../contract/rest.js';
 import { type FinanceApiDeps, makeRequestHandler } from './handlers.js';
 import { makeFinanceRestHandlers } from './rest/handlers.js';
+import { createUpBankWebhookRouter } from './webhooks/up-bank.js';
 
 /**
  * JSON body cap. Statement-import uploads will arrive as base64 strings in
@@ -52,6 +53,11 @@ const openapiDocument: unknown = JSON.parse(
 export function createFinanceApiApp(deps: FinanceApiDeps): Express {
   const app = express();
   app.disable('x-powered-by');
+
+  // Up Bank signs the raw request bytes, so the webhook body must reach the
+  // handler unparsed. The path-scoped raw parser MUST precede the global JSON
+  // parser, which would otherwise consume the stream first.
+  app.use('/webhooks/up', express.raw({ type: 'application/json' }));
   app.use(express.json({ limit: JSON_BODY_LIMIT }));
 
   const handlers = makeRequestHandler(deps);
@@ -73,6 +79,11 @@ export function createFinanceApiApp(deps: FinanceApiDeps): Express {
   });
 
   createExpressEndpoints(financeContract, makeFinanceRestHandlers(deps), app);
+
+  // Raw (non-ts-rest) webhook route. Mounted after the contract endpoints; its
+  // `/webhooks/up` paths don't collide with any contract path, so it adds no
+  // OpenAPI surface.
+  app.use(createUpBankWebhookRouter());
 
   return app;
 }
