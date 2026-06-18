@@ -1,5 +1,14 @@
 # 02 — Monolith & predecessor decommission
 
+> **Status: ✅ DONE.** Landed across R1 up-bank→finance (#3453), R2 inventory file routes→inventory
+> (#3454), `app-finance` + `pops-mcp` off `@pops/api` (#3455/#3456), and the barrier delete (#3457).
+> All verification gates pass: V1 monolith+predecessor gone · V2 no shared-DB stack · V3 no dangling
+> db imports · V4 dead packages gone · **V5 repo-wide `pnpm typecheck` GREEN** · V6 `pnpm build` green
+> · V7 relocations routed (nginx `/webhooks/up`→finance, `/api/inventory` + `/inventory/documents`→
+> inventory) · V8 no tRPC servers. Follow-ups deferred to 04 Phase Cut: docker-build / E2E harness /
+> moltbot+worker-food consumer rewrites ([#3458](https://github.com/knoxio/pops/issues/3458),
+> [#3459](https://github.com/knoxio/pops/issues/3459), [#3460](https://github.com/knoxio/pops/issues/3460)).
+
 Parent: [`00-completion-overview.md`](./00-completion-overview.md). **Gated on
 [`01-core-pillar-completion.md`](./01-core-pillar-completion.md)** — core must serve everything
 the monolith's `modules/core` did, and finance must own everything `modules/finance` did, before
