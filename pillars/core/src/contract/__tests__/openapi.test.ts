@@ -67,9 +67,27 @@ describe('@pops/core REST openapi projection', () => {
     expect(op?.operationId).toBe(operationId);
   });
 
-  it('documents only the migrated REST domains (entities), not the tRPC surface', () => {
+  it('documents only the migrated REST domains, not the tRPC surface', () => {
+    // The set of tRPC slices converted to ts-rest so far. Grows one domain at
+    // a time as the core REST migration proceeds; every documented path must
+    // live under one of these roots.
+    const MIGRATED_DOMAIN_ROOTS = [
+      '/entities',
+      '/users',
+      '/shell',
+      '/ai-usage',
+      '/ai-budgets',
+      '/ai-providers',
+      '/ai-observability',
+      '/ai-alerts',
+    ];
     const paths = Object.keys(openapi.paths);
-    expect(paths.every((p) => p.startsWith('/entities'))).toBe(true);
+    for (const p of paths) {
+      expect(
+        MIGRATED_DOMAIN_ROOTS.some((root) => p === root || p.startsWith(`${root}/`)),
+        `${p} is not under a migrated domain root`
+      ).toBe(true);
+    }
     // The legacy tRPC-era `/core/*` snapshot must be gone — it is served from
     // `/trpc` now, not described by this ts-rest projection.
     expect(paths.some((p) => p.startsWith('/core/'))).toBe(false);
