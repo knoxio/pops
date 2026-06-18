@@ -23,4 +23,4 @@ As the Cerebrum system, I need to infer appropriate scopes for incoming content 
 - Rule-based inference is fast and deterministic — it should always run first. LLM-based inference is the expensive fallback for content that does not match any rules.
 - The LLM prompt should be conservative about suggesting `*.secret.*` scopes — it is better to miss a secret scope than to over-classify, since the user can always add it manually.
 - Scope inference is called during `cerebrum.ingest.submit` (when scopes are absent or partially provided) and during the background job for quick captures.
-- See [ADR-020](../../../architecture/adr-020-hierarchical-scope-model.md) for the architectural rationale behind the three-tier priority model.
+- See [ADR-020](../../architecture/adr-020-hierarchical-scope-model.md) for the architectural rationale behind the three-tier priority model.
