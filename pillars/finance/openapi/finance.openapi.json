@@ -1217,6 +1217,373 @@
         "tags": ["corrections"]
       }
     },
+    "/corrections/apply-changeset": {
+      "post": {
+        "operationId": "corrections.applyChangeSet",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "changeSet": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "ops": {
+                        "items": {
+                          "oneOf": [
+                            {
+                              "additionalProperties": false,
+                              "properties": {
+                                "data": {
+                                  "additionalProperties": false,
+                                  "properties": {
+                                    "confidence": {
+                                      "maximum": 1,
+                                      "minimum": 0,
+                                      "type": "number"
+                                    },
+                                    "descriptionPattern": {
+                                      "minLength": 1,
+                                      "type": "string"
+                                    },
+                                    "entityId": {
+                                      "nullable": true,
+                                      "type": "string"
+                                    },
+                                    "entityName": {
+                                      "nullable": true,
+                                      "type": "string"
+                                    },
+                                    "isActive": {
+                                      "type": "boolean"
+                                    },
+                                    "location": {
+                                      "nullable": true,
+                                      "type": "string"
+                                    },
+                                    "matchType": {
+                                      "default": "exact",
+                                      "enum": ["exact", "contains", "regex"],
+                                      "type": "string"
+                                    },
+                                    "priority": {
+                                      "maximum": 9007199254740991,
+                                      "minimum": 0,
+                                      "type": "integer"
+                                    },
+                                    "tags": {
+                                      "default": [],
+                                      "items": {
+                                        "type": "string"
+                                      },
+                                      "type": "array"
+                                    },
+                                    "transactionType": {
+                                      "enum": ["purchase", "transfer", "income"],
+                                      "nullable": true,
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": ["descriptionPattern", "matchType", "tags"],
+                                  "type": "object"
+                                },
+                                "op": {
+                                  "enum": ["add"],
+                                  "type": "string"
+                                }
+                              },
+                              "required": ["op", "data"],
+                              "type": "object"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "properties": {
+                                "data": {
+                                  "additionalProperties": false,
+                                  "properties": {
+                                    "confidence": {
+                                      "maximum": 1,
+                                      "minimum": 0,
+                                      "type": "number"
+                                    },
+                                    "descriptionPattern": {
+                                      "minLength": 1,
+                                      "type": "string"
+                                    },
+                                    "entityId": {
+                                      "nullable": true,
+                                      "type": "string"
+                                    },
+                                    "entityName": {
+                                      "nullable": true,
+                                      "type": "string"
+                                    },
+                                    "isActive": {
+                                      "type": "boolean"
+                                    },
+                                    "location": {
+                                      "nullable": true,
+                                      "type": "string"
+                                    },
+                                    "matchType": {
+                                      "enum": ["exact", "contains", "regex"],
+                                      "type": "string"
+                                    },
+                                    "priority": {
+                                      "maximum": 9007199254740991,
+                                      "minimum": 0,
+                                      "type": "integer"
+                                    },
+                                    "tags": {
+                                      "items": {
+                                        "type": "string"
+                                      },
+                                      "type": "array"
+                                    },
+                                    "transactionType": {
+                                      "enum": ["purchase", "transfer", "income"],
+                                      "nullable": true,
+                                      "type": "string"
+                                    }
+                                  },
+                                  "type": "object"
+                                },
+                                "id": {
+                                  "minLength": 1,
+                                  "type": "string"
+                                },
+                                "op": {
+                                  "enum": ["edit"],
+                                  "type": "string"
+                                }
+                              },
+                              "required": ["op", "id", "data"],
+                              "type": "object"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "properties": {
+                                "id": {
+                                  "minLength": 1,
+                                  "type": "string"
+                                },
+                                "op": {
+                                  "enum": ["disable"],
+                                  "type": "string"
+                                }
+                              },
+                              "required": ["op", "id"],
+                              "type": "object"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "properties": {
+                                "id": {
+                                  "minLength": 1,
+                                  "type": "string"
+                                },
+                                "op": {
+                                  "enum": ["remove"],
+                                  "type": "string"
+                                }
+                              },
+                              "required": ["op", "id"],
+                              "type": "object"
+                            }
+                          ]
+                        },
+                        "minItems": 1,
+                        "type": "array"
+                      },
+                      "reason": {
+                        "type": "string"
+                      },
+                      "source": {
+                        "type": "string"
+                      }
+                    },
+                    "required": ["ops"],
+                    "type": "object"
+                  }
+                },
+                "required": ["changeSet"],
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "confidence": {
+                            "type": "number"
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          },
+                          "descriptionPattern": {
+                            "type": "string"
+                          },
+                          "entityId": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "entityName": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "id": {
+                            "type": "string"
+                          },
+                          "isActive": {
+                            "type": "boolean"
+                          },
+                          "lastUsedAt": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "location": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "matchType": {
+                            "enum": ["exact", "contains", "regex"],
+                            "type": "string"
+                          },
+                          "priority": {
+                            "type": "number"
+                          },
+                          "tags": {
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array"
+                          },
+                          "timesApplied": {
+                            "type": "number"
+                          },
+                          "transactionType": {
+                            "enum": ["purchase", "transfer", "income"],
+                            "nullable": true,
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "descriptionPattern",
+                          "matchType",
+                          "entityId",
+                          "entityName",
+                          "location",
+                          "tags",
+                          "transactionType",
+                          "isActive",
+                          "priority",
+                          "confidence",
+                          "timesApplied",
+                          "createdAt",
+                          "lastUsedAt"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["data", "message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "404"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "409"
+          }
+        },
+        "summary": "Apply a correction-rule ChangeSet atomically; returns the full rule set",
+        "tags": ["corrections"]
+      }
+    },
     "/corrections/find-match": {
       "post": {
         "operationId": "corrections.findMatch",
@@ -1411,6 +1778,1016 @@
           }
         },
         "summary": "Find the winning correction for a description (null when none match)",
+        "tags": ["corrections"]
+      }
+    },
+    "/corrections/list-merged": {
+      "post": {
+        "operationId": "corrections.listMerged",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "limit": {
+                    "exclusiveMinimum": true,
+                    "maximum": 50000,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "offset": {
+                    "maximum": 9007199254740991,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "pendingChangeSets": {
+                    "items": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "changeSet": {
+                          "additionalProperties": false,
+                          "properties": {
+                            "ops": {
+                              "items": {
+                                "oneOf": [
+                                  {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                      "data": {
+                                        "additionalProperties": false,
+                                        "properties": {
+                                          "confidence": {
+                                            "maximum": 1,
+                                            "minimum": 0,
+                                            "type": "number"
+                                          },
+                                          "descriptionPattern": {
+                                            "minLength": 1,
+                                            "type": "string"
+                                          },
+                                          "entityId": {
+                                            "nullable": true,
+                                            "type": "string"
+                                          },
+                                          "entityName": {
+                                            "nullable": true,
+                                            "type": "string"
+                                          },
+                                          "isActive": {
+                                            "type": "boolean"
+                                          },
+                                          "location": {
+                                            "nullable": true,
+                                            "type": "string"
+                                          },
+                                          "matchType": {
+                                            "default": "exact",
+                                            "enum": ["exact", "contains", "regex"],
+                                            "type": "string"
+                                          },
+                                          "priority": {
+                                            "maximum": 9007199254740991,
+                                            "minimum": 0,
+                                            "type": "integer"
+                                          },
+                                          "tags": {
+                                            "default": [],
+                                            "items": {
+                                              "type": "string"
+                                            },
+                                            "type": "array"
+                                          },
+                                          "transactionType": {
+                                            "enum": ["purchase", "transfer", "income"],
+                                            "nullable": true,
+                                            "type": "string"
+                                          }
+                                        },
+                                        "required": ["descriptionPattern", "matchType", "tags"],
+                                        "type": "object"
+                                      },
+                                      "op": {
+                                        "enum": ["add"],
+                                        "type": "string"
+                                      }
+                                    },
+                                    "required": ["op", "data"],
+                                    "type": "object"
+                                  },
+                                  {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                      "data": {
+                                        "additionalProperties": false,
+                                        "properties": {
+                                          "confidence": {
+                                            "maximum": 1,
+                                            "minimum": 0,
+                                            "type": "number"
+                                          },
+                                          "descriptionPattern": {
+                                            "minLength": 1,
+                                            "type": "string"
+                                          },
+                                          "entityId": {
+                                            "nullable": true,
+                                            "type": "string"
+                                          },
+                                          "entityName": {
+                                            "nullable": true,
+                                            "type": "string"
+                                          },
+                                          "isActive": {
+                                            "type": "boolean"
+                                          },
+                                          "location": {
+                                            "nullable": true,
+                                            "type": "string"
+                                          },
+                                          "matchType": {
+                                            "enum": ["exact", "contains", "regex"],
+                                            "type": "string"
+                                          },
+                                          "priority": {
+                                            "maximum": 9007199254740991,
+                                            "minimum": 0,
+                                            "type": "integer"
+                                          },
+                                          "tags": {
+                                            "items": {
+                                              "type": "string"
+                                            },
+                                            "type": "array"
+                                          },
+                                          "transactionType": {
+                                            "enum": ["purchase", "transfer", "income"],
+                                            "nullable": true,
+                                            "type": "string"
+                                          }
+                                        },
+                                        "type": "object"
+                                      },
+                                      "id": {
+                                        "minLength": 1,
+                                        "type": "string"
+                                      },
+                                      "op": {
+                                        "enum": ["edit"],
+                                        "type": "string"
+                                      }
+                                    },
+                                    "required": ["op", "id", "data"],
+                                    "type": "object"
+                                  },
+                                  {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                      "id": {
+                                        "minLength": 1,
+                                        "type": "string"
+                                      },
+                                      "op": {
+                                        "enum": ["disable"],
+                                        "type": "string"
+                                      }
+                                    },
+                                    "required": ["op", "id"],
+                                    "type": "object"
+                                  },
+                                  {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                      "id": {
+                                        "minLength": 1,
+                                        "type": "string"
+                                      },
+                                      "op": {
+                                        "enum": ["remove"],
+                                        "type": "string"
+                                      }
+                                    },
+                                    "required": ["op", "id"],
+                                    "type": "object"
+                                  }
+                                ]
+                              },
+                              "minItems": 1,
+                              "type": "array"
+                            },
+                            "reason": {
+                              "type": "string"
+                            },
+                            "source": {
+                              "type": "string"
+                            }
+                          },
+                          "required": ["ops"],
+                          "type": "object"
+                        }
+                      },
+                      "required": ["changeSet"],
+                      "type": "object"
+                    },
+                    "maxItems": 200,
+                    "type": "array"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "confidence": {
+                            "type": "number"
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          },
+                          "descriptionPattern": {
+                            "type": "string"
+                          },
+                          "entityId": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "entityName": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "id": {
+                            "type": "string"
+                          },
+                          "isActive": {
+                            "type": "boolean"
+                          },
+                          "lastUsedAt": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "location": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "matchType": {
+                            "enum": ["exact", "contains", "regex"],
+                            "type": "string"
+                          },
+                          "priority": {
+                            "type": "number"
+                          },
+                          "tags": {
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array"
+                          },
+                          "timesApplied": {
+                            "type": "number"
+                          },
+                          "transactionType": {
+                            "enum": ["purchase", "transfer", "income"],
+                            "nullable": true,
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "descriptionPattern",
+                          "matchType",
+                          "entityId",
+                          "entityName",
+                          "location",
+                          "tags",
+                          "transactionType",
+                          "isActive",
+                          "priority",
+                          "confidence",
+                          "timesApplied",
+                          "createdAt",
+                          "lastUsedAt"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "pagination": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "hasMore": {
+                          "type": "boolean"
+                        },
+                        "limit": {
+                          "type": "number"
+                        },
+                        "offset": {
+                          "type": "number"
+                        },
+                        "total": {
+                          "type": "number"
+                        }
+                      },
+                      "required": ["total", "limit", "offset", "hasMore"],
+                      "type": "object"
+                    }
+                  },
+                  "required": ["data", "pagination"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "404"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "409"
+          }
+        },
+        "summary": "List corrections with pending (un-persisted) ChangeSets folded in (temp: rows included), paginated",
+        "tags": ["corrections"]
+      }
+    },
+    "/corrections/preview-changeset": {
+      "post": {
+        "operationId": "corrections.previewChangeSet",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "changeSet": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "ops": {
+                        "items": {
+                          "oneOf": [
+                            {
+                              "additionalProperties": false,
+                              "properties": {
+                                "data": {
+                                  "additionalProperties": false,
+                                  "properties": {
+                                    "confidence": {
+                                      "maximum": 1,
+                                      "minimum": 0,
+                                      "type": "number"
+                                    },
+                                    "descriptionPattern": {
+                                      "minLength": 1,
+                                      "type": "string"
+                                    },
+                                    "entityId": {
+                                      "nullable": true,
+                                      "type": "string"
+                                    },
+                                    "entityName": {
+                                      "nullable": true,
+                                      "type": "string"
+                                    },
+                                    "isActive": {
+                                      "type": "boolean"
+                                    },
+                                    "location": {
+                                      "nullable": true,
+                                      "type": "string"
+                                    },
+                                    "matchType": {
+                                      "default": "exact",
+                                      "enum": ["exact", "contains", "regex"],
+                                      "type": "string"
+                                    },
+                                    "priority": {
+                                      "maximum": 9007199254740991,
+                                      "minimum": 0,
+                                      "type": "integer"
+                                    },
+                                    "tags": {
+                                      "default": [],
+                                      "items": {
+                                        "type": "string"
+                                      },
+                                      "type": "array"
+                                    },
+                                    "transactionType": {
+                                      "enum": ["purchase", "transfer", "income"],
+                                      "nullable": true,
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": ["descriptionPattern", "matchType", "tags"],
+                                  "type": "object"
+                                },
+                                "op": {
+                                  "enum": ["add"],
+                                  "type": "string"
+                                }
+                              },
+                              "required": ["op", "data"],
+                              "type": "object"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "properties": {
+                                "data": {
+                                  "additionalProperties": false,
+                                  "properties": {
+                                    "confidence": {
+                                      "maximum": 1,
+                                      "minimum": 0,
+                                      "type": "number"
+                                    },
+                                    "descriptionPattern": {
+                                      "minLength": 1,
+                                      "type": "string"
+                                    },
+                                    "entityId": {
+                                      "nullable": true,
+                                      "type": "string"
+                                    },
+                                    "entityName": {
+                                      "nullable": true,
+                                      "type": "string"
+                                    },
+                                    "isActive": {
+                                      "type": "boolean"
+                                    },
+                                    "location": {
+                                      "nullable": true,
+                                      "type": "string"
+                                    },
+                                    "matchType": {
+                                      "enum": ["exact", "contains", "regex"],
+                                      "type": "string"
+                                    },
+                                    "priority": {
+                                      "maximum": 9007199254740991,
+                                      "minimum": 0,
+                                      "type": "integer"
+                                    },
+                                    "tags": {
+                                      "items": {
+                                        "type": "string"
+                                      },
+                                      "type": "array"
+                                    },
+                                    "transactionType": {
+                                      "enum": ["purchase", "transfer", "income"],
+                                      "nullable": true,
+                                      "type": "string"
+                                    }
+                                  },
+                                  "type": "object"
+                                },
+                                "id": {
+                                  "minLength": 1,
+                                  "type": "string"
+                                },
+                                "op": {
+                                  "enum": ["edit"],
+                                  "type": "string"
+                                }
+                              },
+                              "required": ["op", "id", "data"],
+                              "type": "object"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "properties": {
+                                "id": {
+                                  "minLength": 1,
+                                  "type": "string"
+                                },
+                                "op": {
+                                  "enum": ["disable"],
+                                  "type": "string"
+                                }
+                              },
+                              "required": ["op", "id"],
+                              "type": "object"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "properties": {
+                                "id": {
+                                  "minLength": 1,
+                                  "type": "string"
+                                },
+                                "op": {
+                                  "enum": ["remove"],
+                                  "type": "string"
+                                }
+                              },
+                              "required": ["op", "id"],
+                              "type": "object"
+                            }
+                          ]
+                        },
+                        "minItems": 1,
+                        "type": "array"
+                      },
+                      "reason": {
+                        "type": "string"
+                      },
+                      "source": {
+                        "type": "string"
+                      }
+                    },
+                    "required": ["ops"],
+                    "type": "object"
+                  },
+                  "minConfidence": {
+                    "default": 0.7,
+                    "maximum": 1,
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  "pendingChangeSets": {
+                    "items": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "changeSet": {
+                          "additionalProperties": false,
+                          "properties": {
+                            "ops": {
+                              "items": {
+                                "oneOf": [
+                                  {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                      "data": {
+                                        "additionalProperties": false,
+                                        "properties": {
+                                          "confidence": {
+                                            "maximum": 1,
+                                            "minimum": 0,
+                                            "type": "number"
+                                          },
+                                          "descriptionPattern": {
+                                            "minLength": 1,
+                                            "type": "string"
+                                          },
+                                          "entityId": {
+                                            "nullable": true,
+                                            "type": "string"
+                                          },
+                                          "entityName": {
+                                            "nullable": true,
+                                            "type": "string"
+                                          },
+                                          "isActive": {
+                                            "type": "boolean"
+                                          },
+                                          "location": {
+                                            "nullable": true,
+                                            "type": "string"
+                                          },
+                                          "matchType": {
+                                            "default": "exact",
+                                            "enum": ["exact", "contains", "regex"],
+                                            "type": "string"
+                                          },
+                                          "priority": {
+                                            "maximum": 9007199254740991,
+                                            "minimum": 0,
+                                            "type": "integer"
+                                          },
+                                          "tags": {
+                                            "default": [],
+                                            "items": {
+                                              "type": "string"
+                                            },
+                                            "type": "array"
+                                          },
+                                          "transactionType": {
+                                            "enum": ["purchase", "transfer", "income"],
+                                            "nullable": true,
+                                            "type": "string"
+                                          }
+                                        },
+                                        "required": ["descriptionPattern", "matchType", "tags"],
+                                        "type": "object"
+                                      },
+                                      "op": {
+                                        "enum": ["add"],
+                                        "type": "string"
+                                      }
+                                    },
+                                    "required": ["op", "data"],
+                                    "type": "object"
+                                  },
+                                  {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                      "data": {
+                                        "additionalProperties": false,
+                                        "properties": {
+                                          "confidence": {
+                                            "maximum": 1,
+                                            "minimum": 0,
+                                            "type": "number"
+                                          },
+                                          "descriptionPattern": {
+                                            "minLength": 1,
+                                            "type": "string"
+                                          },
+                                          "entityId": {
+                                            "nullable": true,
+                                            "type": "string"
+                                          },
+                                          "entityName": {
+                                            "nullable": true,
+                                            "type": "string"
+                                          },
+                                          "isActive": {
+                                            "type": "boolean"
+                                          },
+                                          "location": {
+                                            "nullable": true,
+                                            "type": "string"
+                                          },
+                                          "matchType": {
+                                            "enum": ["exact", "contains", "regex"],
+                                            "type": "string"
+                                          },
+                                          "priority": {
+                                            "maximum": 9007199254740991,
+                                            "minimum": 0,
+                                            "type": "integer"
+                                          },
+                                          "tags": {
+                                            "items": {
+                                              "type": "string"
+                                            },
+                                            "type": "array"
+                                          },
+                                          "transactionType": {
+                                            "enum": ["purchase", "transfer", "income"],
+                                            "nullable": true,
+                                            "type": "string"
+                                          }
+                                        },
+                                        "type": "object"
+                                      },
+                                      "id": {
+                                        "minLength": 1,
+                                        "type": "string"
+                                      },
+                                      "op": {
+                                        "enum": ["edit"],
+                                        "type": "string"
+                                      }
+                                    },
+                                    "required": ["op", "id", "data"],
+                                    "type": "object"
+                                  },
+                                  {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                      "id": {
+                                        "minLength": 1,
+                                        "type": "string"
+                                      },
+                                      "op": {
+                                        "enum": ["disable"],
+                                        "type": "string"
+                                      }
+                                    },
+                                    "required": ["op", "id"],
+                                    "type": "object"
+                                  },
+                                  {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                      "id": {
+                                        "minLength": 1,
+                                        "type": "string"
+                                      },
+                                      "op": {
+                                        "enum": ["remove"],
+                                        "type": "string"
+                                      }
+                                    },
+                                    "required": ["op", "id"],
+                                    "type": "object"
+                                  }
+                                ]
+                              },
+                              "minItems": 1,
+                              "type": "array"
+                            },
+                            "reason": {
+                              "type": "string"
+                            },
+                            "source": {
+                              "type": "string"
+                            }
+                          },
+                          "required": ["ops"],
+                          "type": "object"
+                        }
+                      },
+                      "required": ["changeSet"],
+                      "type": "object"
+                    },
+                    "maxItems": 200,
+                    "type": "array"
+                  },
+                  "transactions": {
+                    "items": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "checksum": {
+                          "type": "string"
+                        },
+                        "description": {
+                          "minLength": 1,
+                          "type": "string"
+                        }
+                      },
+                      "required": ["description"],
+                      "type": "object"
+                    },
+                    "maxItems": 2000,
+                    "minItems": 1,
+                    "type": "array"
+                  }
+                },
+                "required": ["changeSet", "transactions", "minConfidence"],
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "diffs": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "after": {
+                            "additionalProperties": false,
+                            "properties": {
+                              "confidence": {
+                                "nullable": true,
+                                "type": "number"
+                              },
+                              "matched": {
+                                "type": "boolean"
+                              },
+                              "ruleId": {
+                                "nullable": true,
+                                "type": "string"
+                              },
+                              "status": {
+                                "enum": ["matched", "uncertain"],
+                                "nullable": true,
+                                "type": "string"
+                              }
+                            },
+                            "required": ["matched", "status", "ruleId", "confidence"],
+                            "type": "object"
+                          },
+                          "before": {
+                            "additionalProperties": false,
+                            "properties": {
+                              "confidence": {
+                                "nullable": true,
+                                "type": "number"
+                              },
+                              "matched": {
+                                "type": "boolean"
+                              },
+                              "ruleId": {
+                                "nullable": true,
+                                "type": "string"
+                              },
+                              "status": {
+                                "enum": ["matched", "uncertain"],
+                                "nullable": true,
+                                "type": "string"
+                              }
+                            },
+                            "required": ["matched", "status", "ruleId", "confidence"],
+                            "type": "object"
+                          },
+                          "changed": {
+                            "type": "boolean"
+                          },
+                          "checksum": {
+                            "type": "string"
+                          },
+                          "description": {
+                            "type": "string"
+                          }
+                        },
+                        "required": ["description", "before", "after", "changed"],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "summary": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "netMatchedDelta": {
+                          "maximum": 9007199254740991,
+                          "minimum": -9007199254740991,
+                          "type": "integer"
+                        },
+                        "newMatches": {
+                          "maximum": 9007199254740991,
+                          "minimum": 0,
+                          "type": "integer"
+                        },
+                        "removedMatches": {
+                          "maximum": 9007199254740991,
+                          "minimum": 0,
+                          "type": "integer"
+                        },
+                        "statusChanges": {
+                          "maximum": 9007199254740991,
+                          "minimum": 0,
+                          "type": "integer"
+                        },
+                        "total": {
+                          "maximum": 9007199254740991,
+                          "minimum": 0,
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "total",
+                        "newMatches",
+                        "removedMatches",
+                        "statusChanges",
+                        "netMatchedDelta"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": ["diffs", "summary"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "404"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "409"
+          }
+        },
+        "summary": "Preview the before/after match impact of a ChangeSet against caller-supplied transactions",
         "tags": ["corrections"]
       }
     },

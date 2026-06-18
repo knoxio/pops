@@ -255,3 +255,229 @@ describe('corrections — request validation', () => {
     ).rejects.toMatchObject({ status: 400 });
   });
 });
+
+describe('corrections — applyChangeSet', () => {
+  it('applies add / edit / disable / remove ops atomically and returns the full rule set', async () => {
+    // Seed two rules to edit/disable later.
+    const seed = await client().corrections.applyChangeSet({
+      changeSet: {
+        ops: [
+          { op: 'add', data: { descriptionPattern: 'KEEP', matchType: 'contains', tags: ['a'] } },
+          { op: 'add', data: { descriptionPattern: 'DROP', matchType: 'exact' } },
+        ],
+      },
+    });
+    expect(seed.message).toBe('ChangeSet applied');
+    expect(seed.data).toHaveLength(2);
+    const keep = seed.data.find((c) => c.descriptionPattern === 'KEEP')!;
+    const drop = seed.data.find((c) => c.descriptionPattern === 'DROP')!;
+
+    const result = await client().corrections.applyChangeSet({
+      changeSet: {
+        ops: [
+          {
+            op: 'add',
+            data: { descriptionPattern: 'NEW', matchType: 'contains', confidence: 0.8 },
+          },
+          { op: 'edit', id: keep.id, data: { tags: ['a', 'b'], entityName: 'Acme' } },
+          { op: 'remove', id: drop.id },
+        ],
+      },
+    });
+
+    const byPattern = new Map(result.data.map((c) => [c.descriptionPattern, c]));
+    expect(byPattern.has('DROP')).toBe(false);
+    expect(byPattern.get('KEEP')).toMatchObject({ tags: ['a', 'b'], entityName: 'Acme' });
+    expect(byPattern.get('NEW')).toMatchObject({ matchType: 'contains', confidence: 0.8 });
+
+    // The persisted state matches what apply returned.
+    const list = await client().corrections.list();
+    expect(list.data.map((c) => c.descriptionPattern).toSorted()).toEqual(['KEEP', 'NEW']);
+  });
+
+  it('disable flips isActive without deleting the row', async () => {
+    const seed = await client().corrections.applyChangeSet({
+      changeSet: { ops: [{ op: 'add', data: { descriptionPattern: 'OFF', matchType: 'exact' } }] },
+    });
+    const id = seed.data[0]!.id;
+    await client().corrections.applyChangeSet({ changeSet: { ops: [{ op: 'disable', id }] } });
+    expect((await client().corrections.get(id)).data.isActive).toBe(false);
+  });
+
+  it('rolls the whole ChangeSet back when an op targets an unknown id (404)', async () => {
+    await expect(
+      client().corrections.applyChangeSet({
+        changeSet: {
+          ops: [
+            { op: 'add', data: { descriptionPattern: 'GHOST', matchType: 'exact' } },
+            { op: 'edit', id: 'does-not-exist', data: { tags: ['x'] } },
+          ],
+        },
+      })
+    ).rejects.toMatchObject({ status: 404 });
+
+    // The add must NOT have landed — the transaction rolled back.
+    expect((await client().corrections.list()).pagination.total).toBe(0);
+  });
+
+  it('400s an empty ops array', async () => {
+    await expect(
+      client().corrections.applyChangeSet({ changeSet: { ops: [] } })
+    ).rejects.toMatchObject({ status: 400 });
+  });
+});
+
+describe('corrections — previewChangeSet', () => {
+  it('diffs before/after match outcomes and rolls them up into a summary', async () => {
+    // Persisted baseline rule R1 (confidence 0.95 → matches at the 0.7 floor).
+    await client().corrections.applyChangeSet({
+      changeSet: {
+        ops: [
+          {
+            op: 'add',
+            data: { descriptionPattern: 'FOO', matchType: 'contains', confidence: 0.95 },
+          },
+        ],
+      },
+    });
+
+    const preview = await client().corrections.previewChangeSet({
+      changeSet: {
+        ops: [
+          {
+            op: 'add',
+            data: { descriptionPattern: 'BAR', matchType: 'contains', confidence: 0.95 },
+          },
+        ],
+      },
+      transactions: [{ description: 'FOO PURCHASE' }, { description: 'BAR SHOP' }],
+    });
+
+    const foo = preview.diffs.find((d) => d.description === 'FOO PURCHASE')!;
+    const bar = preview.diffs.find((d) => d.description === 'BAR SHOP')!;
+    expect(foo.before.matched).toBe(true);
+    expect(foo.changed).toBe(false); // R1 already matched FOO before and after
+    expect(bar.before.matched).toBe(false);
+    expect(bar.after.matched).toBe(true);
+    expect(bar.changed).toBe(true);
+    expect(preview.summary).toMatchObject({
+      total: 2,
+      newMatches: 1,
+      removedMatches: 0,
+      statusChanges: 0,
+      netMatchedDelta: 1,
+    });
+  });
+
+  it('folds pendingChangeSets into the baseline so `before` reflects un-persisted rules', async () => {
+    // R1 persisted; the preview removes it, but a pending add re-matches BAR.
+    const seed = await client().corrections.applyChangeSet({
+      changeSet: {
+        ops: [
+          {
+            op: 'add',
+            data: { descriptionPattern: 'FOO', matchType: 'contains', confidence: 0.95 },
+          },
+        ],
+      },
+    });
+    const r1 = seed.data[0]!.id;
+
+    const preview = await client().corrections.previewChangeSet({
+      changeSet: { ops: [{ op: 'remove', id: r1 }] },
+      transactions: [{ description: 'FOO PURCHASE' }, { description: 'BAR SHOP' }],
+      pendingChangeSets: [
+        {
+          changeSet: {
+            ops: [
+              {
+                op: 'add',
+                data: { descriptionPattern: 'BAR', matchType: 'contains', confidence: 0.95 },
+              },
+            ],
+          },
+        },
+      ],
+    });
+
+    const foo = preview.diffs.find((d) => d.description === 'FOO PURCHASE')!;
+    const bar = preview.diffs.find((d) => d.description === 'BAR SHOP')!;
+    // baseline (with the pending add) matched both; removing R1 only drops FOO.
+    expect(foo.before.matched).toBe(true);
+    expect(foo.after.matched).toBe(false);
+    expect(bar.before.matched).toBe(true);
+    expect(bar.after.matched).toBe(true);
+    expect(preview.summary).toMatchObject({
+      removedMatches: 1,
+      newMatches: 0,
+      netMatchedDelta: -1,
+    });
+  });
+
+  it('400s a preview with an empty transactions array', async () => {
+    await expect(
+      client().corrections.previewChangeSet({
+        changeSet: { ops: [{ op: 'add', data: { descriptionPattern: 'X', matchType: 'exact' } }] },
+        transactions: [],
+      })
+    ).rejects.toMatchObject({ status: 400 });
+  });
+});
+
+describe('corrections — listMerged', () => {
+  it('folds pending ChangeSets in, including un-persisted temp: add rows', async () => {
+    await client().corrections.createOrUpdate({
+      descriptionPattern: 'PERSISTED',
+      matchType: 'exact',
+    });
+
+    const merged = await client().corrections.listMerged({
+      pendingChangeSets: [
+        {
+          changeSet: {
+            ops: [{ op: 'add', data: { descriptionPattern: 'PENDING', matchType: 'contains' } }],
+          },
+        },
+      ],
+    });
+
+    expect(merged.pagination.total).toBe(2);
+    const patterns = merged.data.map((c) => c.descriptionPattern).toSorted();
+    expect(patterns).toEqual(['PENDING', 'PERSISTED']);
+    expect(merged.data.some((c) => c.id.startsWith('temp:'))).toBe(true);
+  });
+
+  it('reflects pending edit/disable ops over persisted rows', async () => {
+    const created = await client().corrections.createOrUpdate({
+      descriptionPattern: 'EDITME',
+      matchType: 'exact',
+      tags: ['old'],
+    });
+
+    const merged = await client().corrections.listMerged({
+      pendingChangeSets: [
+        { changeSet: { ops: [{ op: 'edit', id: created.data.id, data: { tags: ['new'] } }] } },
+      ],
+    });
+    expect(merged.data.find((c) => c.id === created.data.id)?.tags).toEqual(['new']);
+
+    // The persisted row is untouched — the fold is in-memory only.
+    expect((await client().corrections.get(created.data.id)).data.tags).toEqual(['old']);
+  });
+
+  it('paginates the merged set', async () => {
+    for (const p of ['A', 'B', 'C']) {
+      await client().corrections.createOrUpdate({ descriptionPattern: p, matchType: 'exact' });
+    }
+    const page = await client().corrections.listMerged({ limit: 2, offset: 0 });
+    expect(page.data).toHaveLength(2);
+    expect(page.pagination).toMatchObject({ total: 3, limit: 2, offset: 0, hasMore: true });
+  });
+
+  it('returns only persisted rows when no pending ChangeSets are supplied', async () => {
+    await client().corrections.createOrUpdate({ descriptionPattern: 'SOLO', matchType: 'exact' });
+    const merged = await client().corrections.listMerged();
+    expect(merged.pagination.total).toBe(1);
+    expect(merged.data[0]?.descriptionPattern).toBe('SOLO');
+  });
+});

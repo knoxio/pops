@@ -1,31 +1,28 @@
 /**
- * Handlers for the `corrections.*` sub-router — deterministic CRUD over the
- * finance-owned `transaction_corrections` table.
+ * Handlers for the `corrections.*` sub-router — deterministic CRUD plus the
+ * ChangeSet preview/apply/merged-list surface over the finance-owned
+ * `transaction_corrections` table.
  *
- * Wraps `transactionCorrectionsService` (the finance-db data layer) in
- * `runHttp` so a `TransactionCorrectionNotFoundError` (missing id on get /
- * update / delete / adjustConfidence) maps to 404 via the shared `HttpError`
- * path. `findMatch` and `previewMatches` are read-only computations against
- * the corrections / transactions tables.
- *
- * The ChangeSet propose/preview/apply machinery and the AI procedures from the
- * monolith `core.corrections.*` router are intentionally NOT served here — see
- * `contract/rest-corrections.ts` for why.
+ * Read/projection helpers live in `corrections-handlers-support.ts`; the AI
+ * propose/revise/reject + rule-generator procedures from the monolith
+ * `core.corrections.*` router are intentionally NOT served here yet — see
+ * `contract/rest-corrections.ts`.
  */
-import { desc } from 'drizzle-orm';
-
+import { type FinanceDb, transactionCorrectionsService } from '../../db/index.js';
 import {
-  type FinanceDb,
-  type TransactionCorrectionMatchType,
-  type TransactionCorrectionRow,
-  type TransactionRow,
-  TransactionCorrectionNotFoundError,
-  transactionCorrectionsService,
-  transactions,
-} from '../../db/index.js';
-import { classifyCorrectionMatch, parseCorrectionTags } from '../modules/corrections/index.js';
-import { NotFoundError } from '../shared/errors.js';
+  applyChangeSet as applyCorrectionChangeSet,
+  classifyCorrectionMatch,
+  previewChangeSetImpact,
+} from '../modules/corrections/index.js';
 import { paginationMeta } from '../shared/pagination.js';
+import {
+  DEFAULT_LIMIT,
+  DEFAULT_OFFSET,
+  mergedRules,
+  previewMatches,
+  toCorrection,
+  translateCorrectionError,
+} from './corrections-handlers-support.js';
 import { runHttp } from './error-mapping.js';
 
 import type { ServerInferRequest } from '@ts-rest/core';
@@ -33,110 +30,6 @@ import type { ServerInferRequest } from '@ts-rest/core';
 import type { financeCorrectionsContract } from '../../contract/rest-corrections.js';
 
 type Req = ServerInferRequest<typeof financeCorrectionsContract>;
-
-const DEFAULT_LIMIT = 50;
-const DEFAULT_OFFSET = 0;
-const PREVIEW_DEFAULT_LIMIT = 25;
-const PREVIEW_HARD_LIMIT = 200;
-
-interface Correction {
-  id: string;
-  descriptionPattern: string;
-  matchType: TransactionCorrectionMatchType;
-  entityId: string | null;
-  entityName: string | null;
-  location: string | null;
-  tags: string[];
-  transactionType: 'purchase' | 'transfer' | 'income' | null;
-  isActive: boolean;
-  priority: number;
-  confidence: number;
-  timesApplied: number;
-  createdAt: string;
-  lastUsedAt: string | null;
-}
-
-function toCorrection(row: TransactionCorrectionRow): Correction {
-  return {
-    id: row.id,
-    descriptionPattern: row.descriptionPattern,
-    matchType: row.matchType,
-    entityId: row.entityId,
-    entityName: row.entityName,
-    location: row.location,
-    tags: parseCorrectionTags(row.tags),
-    transactionType: row.transactionType,
-    isActive: Boolean(row.isActive),
-    priority: row.priority,
-    confidence: row.confidence,
-    timesApplied: row.timesApplied,
-    createdAt: row.createdAt,
-    lastUsedAt: row.lastUsedAt,
-  };
-}
-
-/**
- * Verify a candidate `(pattern, matchType)` matches a description after
- * normalisation. Mirrors the monolith `patternMatchesDescription` so a preview
- * matches exactly what the rule would match at apply time (both pattern and
- * description are normalised for `exact`/`contains`; `regex` runs against the
- * normalised description with the raw pattern).
- */
-function patternMatchesDescription(
-  pattern: string,
-  matchType: TransactionCorrectionMatchType,
-  description: string
-): boolean {
-  const { normalizeDescription } = transactionCorrectionsService;
-  const normalizedDescription = normalizeDescription(description);
-  const normalizedPattern = matchType === 'regex' ? pattern : normalizeDescription(pattern);
-  if (normalizedPattern.length === 0) return false;
-  if (matchType === 'exact') return normalizedPattern === normalizedDescription;
-  if (matchType === 'contains') return normalizedDescription.includes(normalizedPattern);
-  try {
-    return new RegExp(normalizedPattern).test(normalizedDescription);
-  } catch {
-    return false;
-  }
-}
-
-function previewMatchTransaction(row: TransactionRow) {
-  return {
-    id: row.id,
-    description: row.description,
-    account: row.account,
-    amount: row.amount,
-    date: row.date,
-    entityName: row.entityName,
-    tags: parseCorrectionTags(row.tags ?? '[]'),
-  };
-}
-
-function previewMatches(db: FinanceDb, input: Req['previewMatches']['body']) {
-  const limit = Math.min(input.limit ?? PREVIEW_DEFAULT_LIMIT, PREVIEW_HARD_LIMIT);
-  const rows = db.select().from(transactions).orderBy(desc(transactions.date)).all();
-
-  const matched = rows.filter((row) =>
-    patternMatchesDescription(input.descriptionPattern, input.matchType, row.description)
-  );
-
-  const truncated = matched.length > limit;
-  const sliced = truncated ? matched.slice(0, limit) : matched;
-
-  return {
-    matches: sliced.map(previewMatchTransaction),
-    total: matched.length,
-    scanned: rows.length,
-    truncated,
-  };
-}
-
-function translateCorrectionError(err: unknown, id?: string): never {
-  if (err instanceof TransactionCorrectionNotFoundError) {
-    throw new NotFoundError('Correction', id ?? err.id);
-  }
-  throw err;
-}
 
 export function makeCorrectionsHandlers(db: FinanceDb) {
   return {
@@ -180,10 +73,7 @@ export function makeCorrectionsHandlers(db: FinanceDb) {
       }),
 
     previewMatches: ({ body }: Req['previewMatches']) =>
-      runHttp(() => ({
-        status: 200 as const,
-        body: { data: previewMatches(db, body) },
-      })),
+      runHttp(() => ({ status: 200 as const, body: { data: previewMatches(db, body) } })),
 
     createOrUpdate: ({ body }: Req['createOrUpdate']) =>
       runHttp(() => {
@@ -234,5 +124,40 @@ export function makeCorrectionsHandlers(db: FinanceDb) {
           translateCorrectionError(err, params.id);
         }
       }),
+
+    listMerged: ({ body }: Req['listMerged']) =>
+      runHttp(() => {
+        const limit = body.limit ?? DEFAULT_LIMIT;
+        const offset = body.offset ?? DEFAULT_OFFSET;
+        const merged = mergedRules(db, body.pendingChangeSets);
+        const page = merged.slice(offset, offset + limit);
+        return {
+          status: 200 as const,
+          body: {
+            data: page.map(toCorrection),
+            pagination: paginationMeta(merged.length, limit, offset),
+          },
+        };
+      }),
+
+    previewChangeSet: ({ body }: Req['previewChangeSet']) =>
+      runHttp(() => ({
+        status: 200 as const,
+        body: previewChangeSetImpact({
+          rules: mergedRules(db, body.pendingChangeSets),
+          changeSet: body.changeSet,
+          transactions: body.transactions,
+          minConfidence: body.minConfidence,
+        }),
+      })),
+
+    applyChangeSet: ({ body }: Req['applyChangeSet']) =>
+      runHttp(() => ({
+        status: 200 as const,
+        body: {
+          data: applyCorrectionChangeSet(db, body.changeSet).map(toCorrection),
+          message: 'ChangeSet applied',
+        },
+      })),
   };
 }

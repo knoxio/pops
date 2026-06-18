@@ -58,6 +58,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/corrections/apply-changeset': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Apply a correction-rule ChangeSet atomically; returns the full rule set */
+    post: operations['corrections.applyChangeSet'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/corrections/find-match': {
     parameters: {
       query?: never;
@@ -69,6 +86,40 @@ export interface paths {
     put?: never;
     /** Find the winning correction for a description (null when none match) */
     post: operations['corrections.findMatch'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/corrections/list-merged': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** List corrections with pending (un-persisted) ChangeSets folded in (temp: rows included), paginated */
+    post: operations['corrections.listMerged'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/corrections/preview-changeset': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Preview the before/after match impact of a ChangeSet against caller-supplied transactions */
+    post: operations['corrections.previewChangeSet'];
     delete?: never;
     options?: never;
     head?: never;
@@ -1047,6 +1098,148 @@ export interface operations {
       };
     };
   };
+  'corrections.applyChangeSet': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          changeSet: {
+            ops: (
+              | {
+                  data: {
+                    confidence?: number;
+                    descriptionPattern: string;
+                    entityId?: string | null;
+                    entityName?: string | null;
+                    isActive?: boolean;
+                    location?: string | null;
+                    /**
+                     * @default exact
+                     * @enum {string}
+                     */
+                    matchType: 'exact' | 'contains' | 'regex';
+                    priority?: number;
+                    /** @default [] */
+                    tags: string[];
+                    /** @enum {string|null} */
+                    transactionType?: 'purchase' | 'transfer' | 'income' | null;
+                  };
+                  /** @enum {string} */
+                  op: 'add';
+                }
+              | {
+                  data: {
+                    confidence?: number;
+                    descriptionPattern?: string;
+                    entityId?: string | null;
+                    entityName?: string | null;
+                    isActive?: boolean;
+                    location?: string | null;
+                    /** @enum {string} */
+                    matchType?: 'exact' | 'contains' | 'regex';
+                    priority?: number;
+                    tags?: string[];
+                    /** @enum {string|null} */
+                    transactionType?: 'purchase' | 'transfer' | 'income' | null;
+                  };
+                  id: string;
+                  /** @enum {string} */
+                  op: 'edit';
+                }
+              | {
+                  id: string;
+                  /** @enum {string} */
+                  op: 'disable';
+                }
+              | {
+                  id: string;
+                  /** @enum {string} */
+                  op: 'remove';
+                }
+            )[];
+            reason?: string;
+            source?: string;
+          };
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            data: {
+              confidence: number;
+              createdAt: string;
+              descriptionPattern: string;
+              entityId: string | null;
+              entityName: string | null;
+              id: string;
+              isActive: boolean;
+              lastUsedAt: string | null;
+              location: string | null;
+              /** @enum {string} */
+              matchType: 'exact' | 'contains' | 'regex';
+              priority: number;
+              tags: string[];
+              timesApplied: number;
+              /** @enum {string|null} */
+              transactionType: 'purchase' | 'transfer' | 'income' | null;
+            }[];
+            message: string;
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
   'corrections.findMatch': {
     parameters: {
       query?: never;
@@ -1092,6 +1285,371 @@ export interface operations {
             } | null;
             /** @enum {string|null} */
             status: 'matched' | 'uncertain' | null;
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'corrections.listMerged': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          limit?: number;
+          offset?: number;
+          pendingChangeSets?: {
+            changeSet: {
+              ops: (
+                | {
+                    data: {
+                      confidence?: number;
+                      descriptionPattern: string;
+                      entityId?: string | null;
+                      entityName?: string | null;
+                      isActive?: boolean;
+                      location?: string | null;
+                      /**
+                       * @default exact
+                       * @enum {string}
+                       */
+                      matchType: 'exact' | 'contains' | 'regex';
+                      priority?: number;
+                      /** @default [] */
+                      tags: string[];
+                      /** @enum {string|null} */
+                      transactionType?: 'purchase' | 'transfer' | 'income' | null;
+                    };
+                    /** @enum {string} */
+                    op: 'add';
+                  }
+                | {
+                    data: {
+                      confidence?: number;
+                      descriptionPattern?: string;
+                      entityId?: string | null;
+                      entityName?: string | null;
+                      isActive?: boolean;
+                      location?: string | null;
+                      /** @enum {string} */
+                      matchType?: 'exact' | 'contains' | 'regex';
+                      priority?: number;
+                      tags?: string[];
+                      /** @enum {string|null} */
+                      transactionType?: 'purchase' | 'transfer' | 'income' | null;
+                    };
+                    id: string;
+                    /** @enum {string} */
+                    op: 'edit';
+                  }
+                | {
+                    id: string;
+                    /** @enum {string} */
+                    op: 'disable';
+                  }
+                | {
+                    id: string;
+                    /** @enum {string} */
+                    op: 'remove';
+                  }
+              )[];
+              reason?: string;
+              source?: string;
+            };
+          }[];
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            data: {
+              confidence: number;
+              createdAt: string;
+              descriptionPattern: string;
+              entityId: string | null;
+              entityName: string | null;
+              id: string;
+              isActive: boolean;
+              lastUsedAt: string | null;
+              location: string | null;
+              /** @enum {string} */
+              matchType: 'exact' | 'contains' | 'regex';
+              priority: number;
+              tags: string[];
+              timesApplied: number;
+              /** @enum {string|null} */
+              transactionType: 'purchase' | 'transfer' | 'income' | null;
+            }[];
+            pagination: {
+              hasMore: boolean;
+              limit: number;
+              offset: number;
+              total: number;
+            };
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'corrections.previewChangeSet': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          changeSet: {
+            ops: (
+              | {
+                  data: {
+                    confidence?: number;
+                    descriptionPattern: string;
+                    entityId?: string | null;
+                    entityName?: string | null;
+                    isActive?: boolean;
+                    location?: string | null;
+                    /**
+                     * @default exact
+                     * @enum {string}
+                     */
+                    matchType: 'exact' | 'contains' | 'regex';
+                    priority?: number;
+                    /** @default [] */
+                    tags: string[];
+                    /** @enum {string|null} */
+                    transactionType?: 'purchase' | 'transfer' | 'income' | null;
+                  };
+                  /** @enum {string} */
+                  op: 'add';
+                }
+              | {
+                  data: {
+                    confidence?: number;
+                    descriptionPattern?: string;
+                    entityId?: string | null;
+                    entityName?: string | null;
+                    isActive?: boolean;
+                    location?: string | null;
+                    /** @enum {string} */
+                    matchType?: 'exact' | 'contains' | 'regex';
+                    priority?: number;
+                    tags?: string[];
+                    /** @enum {string|null} */
+                    transactionType?: 'purchase' | 'transfer' | 'income' | null;
+                  };
+                  id: string;
+                  /** @enum {string} */
+                  op: 'edit';
+                }
+              | {
+                  id: string;
+                  /** @enum {string} */
+                  op: 'disable';
+                }
+              | {
+                  id: string;
+                  /** @enum {string} */
+                  op: 'remove';
+                }
+            )[];
+            reason?: string;
+            source?: string;
+          };
+          /** @default 0.7 */
+          minConfidence: number;
+          pendingChangeSets?: {
+            changeSet: {
+              ops: (
+                | {
+                    data: {
+                      confidence?: number;
+                      descriptionPattern: string;
+                      entityId?: string | null;
+                      entityName?: string | null;
+                      isActive?: boolean;
+                      location?: string | null;
+                      /**
+                       * @default exact
+                       * @enum {string}
+                       */
+                      matchType: 'exact' | 'contains' | 'regex';
+                      priority?: number;
+                      /** @default [] */
+                      tags: string[];
+                      /** @enum {string|null} */
+                      transactionType?: 'purchase' | 'transfer' | 'income' | null;
+                    };
+                    /** @enum {string} */
+                    op: 'add';
+                  }
+                | {
+                    data: {
+                      confidence?: number;
+                      descriptionPattern?: string;
+                      entityId?: string | null;
+                      entityName?: string | null;
+                      isActive?: boolean;
+                      location?: string | null;
+                      /** @enum {string} */
+                      matchType?: 'exact' | 'contains' | 'regex';
+                      priority?: number;
+                      tags?: string[];
+                      /** @enum {string|null} */
+                      transactionType?: 'purchase' | 'transfer' | 'income' | null;
+                    };
+                    id: string;
+                    /** @enum {string} */
+                    op: 'edit';
+                  }
+                | {
+                    id: string;
+                    /** @enum {string} */
+                    op: 'disable';
+                  }
+                | {
+                    id: string;
+                    /** @enum {string} */
+                    op: 'remove';
+                  }
+              )[];
+              reason?: string;
+              source?: string;
+            };
+          }[];
+          transactions: {
+            checksum?: string;
+            description: string;
+          }[];
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            diffs: {
+              after: {
+                confidence: number | null;
+                matched: boolean;
+                ruleId: string | null;
+                /** @enum {string|null} */
+                status: 'matched' | 'uncertain' | null;
+              };
+              before: {
+                confidence: number | null;
+                matched: boolean;
+                ruleId: string | null;
+                /** @enum {string|null} */
+                status: 'matched' | 'uncertain' | null;
+              };
+              changed: boolean;
+              checksum?: string;
+              description: string;
+            }[];
+            summary: {
+              netMatchedDelta: number;
+              newMatches: number;
+              removedMatches: number;
+              statusChanges: number;
+              total: number;
+            };
           };
         };
       };
