@@ -2,7 +2,6 @@
  * Root App component with all providers
  */
 import { isNetworkError } from '@/lib/network-error';
-import { trpc, trpcClient } from '@/lib/trpc';
 import { useThemeStore } from '@/store/themeStore';
 import { MutationCache, QueryCache, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
@@ -52,18 +51,16 @@ export function App() {
   }, [theme]);
 
   return (
-    <trpc.Provider client={trpcClient} queryClient={queryClient}>
-      <QueryClientProvider client={queryClient}>
-        <PillarSdkProvider>
-          <PillarStatusProvider>
-            <TooltipProvider>
-              <RouterProvider router={router} />
-            </TooltipProvider>
-          </PillarStatusProvider>
-          {!import.meta.env.VITE_E2E && <ReactQueryDevtools initialIsOpen={false} />}
-          <Toaster />
-        </PillarSdkProvider>
-      </QueryClientProvider>
-    </trpc.Provider>
+    <QueryClientProvider client={queryClient}>
+      <PillarSdkProvider>
+        <PillarStatusProvider>
+          <TooltipProvider>
+            <RouterProvider router={router} />
+          </TooltipProvider>
+        </PillarStatusProvider>
+        {!import.meta.env.VITE_E2E && <ReactQueryDevtools initialIsOpen={false} />}
+        <Toaster />
+      </PillarSdkProvider>
+    </QueryClientProvider>
   );
 }

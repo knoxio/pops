@@ -15,7 +15,6 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@pops/api-client": "workspace:*",
     "@pops/pillar-sdk": "workspace:*",
     "@pops/ui": "workspace:*",
     "@tanstack/react-query": "^5.101.0",

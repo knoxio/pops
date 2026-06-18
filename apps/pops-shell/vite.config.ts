@@ -64,15 +64,6 @@ export default defineConfig({
       host: 'localhost',
     },
     proxy: {
-      // Every pillar has migrated to REST, so no namespace gets a dedicated
-      // `/trpc-<pillar>` upstream anymore. The procedures the REST cutover
-      // has not yet absorbed (global search, the nudge bell) keep flowing to
-      // the monolith's `/trpc` catch-all.
-      '/trpc': {
-        target: 'http://localhost:3000',
-        changeOrigin: true,
-        // Don't rewrite — tRPC expects /trpc prefix
-      },
       // The core pillar now serves a REST contract; app-ai's generated Hey
       // API client targets the shell's `/core-api` path (see
       // `@pops/app-ai` core-api-runtime-config). Mirrors `/media-api`.
