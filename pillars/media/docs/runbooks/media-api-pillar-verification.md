@@ -152,9 +152,9 @@ Within ~30s the healthcheck reports healthy. `PillarGuard` re-promotes media fro
 - ADR-026: per-domain pillar architecture
 - `apps/pops-media-api/src/server.ts` — boot sequence
 - `apps/pops-shell/src/app/pillars/pillar-registry-client.ts` — soft-fallback behaviour (shared with core)
-- `docs/runbooks/core-api-pillar-verification.md` — sibling runbook for the core pillar
-- `docs/runbooks/inventory-api-pillar-verification.md` — sibling runbook for the inventory pillar
-- `docs/runbooks/cerebrum-api-pillar-verification.md` — sibling runbook for the cerebrum pillar
+- `pillars/core/docs/runbooks/core-api-pillar-verification.md` — sibling runbook for the core pillar
+- `pillars/inventory/docs/runbooks/inventory-api-pillar-verification.md` — sibling runbook for the inventory pillar
+- `pillars/cerebrum/docs/runbooks/cerebrum-api-pillar-verification.md` — sibling runbook for the cerebrum pillar
 - `.claude/pillar-migration-roadmap.md` — Track F status + lessons captured (gitignored, local-only)
 - #2890 — M3 PR 1 (shelf-impressions router stood up on pops-media-api)
 - #2895 — M3 PR 2 (nginx dispatcher cutover, unanchored prefix)

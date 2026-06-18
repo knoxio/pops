@@ -5,7 +5,7 @@ import { InvalidSlugError } from '../db/errors.js';
  * matching `[a-z0-9]+(-[a-z0-9]+)*`. Empty strings, leading/trailing
  * hyphens, double hyphens, uppercase, and any non-ASCII are rejected.
  *
- * See `docs/themes/07-food/prds/106-ingredient-model/README.md` Business Rules.
+ * See `pillars/food/docs/prds/106-ingredient-model/README.md` Business Rules.
  */
 const SLUG_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 

@@ -1,7 +1,7 @@
 # Moltbot
 
 [Moltbot](https://github.com/moltbot/moltbot) is the Telegram channel for POPS
-([PRD-088 US-02](../../docs/themes/06-cerebrum/prds/088-ego-channels/us-02-moltbot-channel.md)).
+([PRD-088 US-02](../../pillars/cerebrum/docs/prds/088-ego-channels/us-02-moltbot-channel.md)).
 This directory ships:
 
 - The **config** files (prod + dev) that get mounted into the upstream

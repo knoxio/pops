@@ -13,9 +13,9 @@ router (PRD-140 part API), and the `/lists` index page (PRD-140 part B).
 List detail page is PRD-140 part C; shopping-list specialisation lands in
 PRD-141; food → shopping-list send action in PRD-142.
 
-- Schema spec: [PRD-112](../../docs/themes/07-food/prds/112-lists-schema/README.md)
-- Shell module spec: [PRD-139](../../docs/themes/07-food/prds/139-app-lists-shell-module/README.md)
-- Theme: [`docs/themes/07-food/`](../../docs/themes/07-food/) — note the lists
+- Schema spec: [PRD-112](../../pillars/food/docs/prds/112-lists-schema/README.md)
+- Shell module spec: [PRD-139](../../pillars/food/docs/prds/139-app-lists-shell-module/README.md)
+- Theme: [`pillars/food/docs/`](../../pillars/food/docs/) — note the lists
   module itself is theme-agnostic; the food theme just happens to be the first
   driver.
 

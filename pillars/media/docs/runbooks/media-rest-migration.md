@@ -7,7 +7,7 @@ scoped CI (`media-quality.yml`) green, the dead `@pops/media-*` package names
 banned, and `apps/pops-media-api` retired.
 
 Follow the generic recipe in [`pillar-rest-migration.md`](../../../../docs/runbooks/pillar-rest-migration.md)
-and the worked finance example in [`finance-rest-migration.md`](../../../../docs/runbooks/finance-rest-migration.md);
+and the worked finance example in [`finance-rest-migration.md`](../../../finance/docs/runbooks/finance-rest-migration.md);
 this doc records only what is **different** for media — and media is the **largest
 and most externally-coupled** of the remaining pillars (~5× finance).
 

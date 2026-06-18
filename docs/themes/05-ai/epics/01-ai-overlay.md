@@ -1,11 +1,11 @@
 # Epic 01: AI Overlay
 
 > Theme: [AI](../README.md)
-> Status: Superseded by [Cerebrum Epic 05 — Ego](../../06-cerebrum/epics/05-ego.md)
+> Status: Superseded by [Cerebrum Epic 05 — Ego](../../../../pillars/cerebrum/docs/epics/05-ego.md)
 
 ## Scope
 
-Superseded. The contextual AI assistant is now [PRD-087 (Ego Core)](../../06-cerebrum/prds/087-ego-core/README.md) under the Cerebrum theme, with additional channel support via [PRD-088 (Ego Channels)](../../06-cerebrum/prds/088-ego-channels/README.md).
+Superseded. The contextual AI assistant is now [PRD-087 (Ego Core)](../../../../pillars/cerebrum/docs/prds/087-ego-core/README.md) under the Cerebrum theme, with additional channel support via [PRD-088 (Ego Channels)](../../../../pillars/cerebrum/docs/prds/088-ego-channels/README.md).
 
 ## PRDs
 
