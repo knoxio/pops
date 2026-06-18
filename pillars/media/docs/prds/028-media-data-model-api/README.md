@@ -5,7 +5,7 @@
 
 ## Overview
 
-Define the media domain schema and build the tRPC routers that all other media features depend on. Nine tables cover movies, TV shows (with season/episode hierarchy), watchlist, watch history, and pairwise comparison scoring. Split tables per [ADR-008](../../../../architecture/adr-008-media-split-tables.md).
+Define the media domain schema and build the tRPC routers that all other media features depend on. Nine tables cover movies, TV shows (with season/episode hierarchy), watchlist, watch history, and pairwise comparison scoring. Split tables per [ADR-008](../../architecture/adr-008-media-split-tables.md).
 
 ## Data Model
 
@@ -235,7 +235,7 @@ Define the media domain schema and build the tRPC routers that all other media f
 
 ## Business Rules
 
-- Split tables for movies vs TV per [ADR-008](../../../../architecture/adr-008-media-split-tables.md) — TV hierarchy enforced via FKs with CASCADE deletes
+- Split tables for movies vs TV per [ADR-008](../../architecture/adr-008-media-split-tables.md) — TV hierarchy enforced via FKs with CASCADE deletes
 - Polymorphic references (mediaType + mediaId) for watchlist, watch history, comparisons, and scores — no FK at database level, validated in application layer
 - Auto-increment integer PKs for all media tables
 - Genres stored as JSON array of strings, parsed on read

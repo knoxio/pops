@@ -25,4 +25,4 @@ As a developer, I want the movies, tv_shows, seasons, and episodes tables with p
 
 ## Notes
 
-Per [ADR-008](../../../../architecture/adr-008-media-split-tables.md), movies and TV shows use separate tables rather than a unified media_items table. The TV hierarchy (show > season > episode) is enforced at the database level via foreign keys with CASCADE deletes. All PKs are auto-increment integers.
+Per [ADR-008](../../architecture/adr-008-media-split-tables.md), movies and TV shows use separate tables rather than a unified media_items table. The TV hierarchy (show > season > episode) is enforced at the database level via foreign keys with CASCADE deletes. All PKs are auto-increment integers.

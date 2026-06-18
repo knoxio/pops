@@ -22,4 +22,4 @@ As a developer, I want TV show and season poster images downloaded from TheTVDB 
 
 ## Notes
 
-Per [ADR-011](../../../../architecture/adr-011-local-image-cache.md), images download once on add-to-library. The image serving infrastructure (endpoint, cache headers, fallback chain) should be shared with the movie image cache from PRD-029 — avoid duplicating the serving logic. The only difference is the storage path pattern (`/media/images/tv/` vs `/media/images/movies/`).
+Per [ADR-011](../../architecture/adr-011-local-image-cache.md), images download once on add-to-library. The image serving infrastructure (endpoint, cache headers, fallback chain) should be shared with the movie image cache from PRD-029 — avoid duplicating the serving logic. The only difference is the storage path pattern (`/media/images/tv/` vs `/media/images/movies/`).

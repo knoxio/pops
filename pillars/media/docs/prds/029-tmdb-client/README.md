@@ -5,7 +5,7 @@
 
 ## Overview
 
-Build an HTTP client for The Movie Database (TMDB) that handles movie search, metadata fetch, and poster/backdrop download with local caching per [ADR-011](../../../../architecture/adr-011-local-image-cache.md). A token bucket rate limiter respects TMDB's 50 requests per 10 seconds limit. The client powers the add-to-library flow: search TMDB, select a result, fetch full metadata, download images, create the movie record.
+Build an HTTP client for The Movie Database (TMDB) that handles movie search, metadata fetch, and poster/backdrop download with local caching per [ADR-011](../../architecture/adr-011-local-image-cache.md). A token bucket rate limiter respects TMDB's 50 requests per 10 seconds limit. The client powers the add-to-library flow: search TMDB, select a result, fetch full metadata, download images, create the movie record.
 
 ## Data Model
 
@@ -44,7 +44,7 @@ No new tables — uses the `movies` table from PRD-028. Image paths written to `
 - `backdrop.jpg` — w1280 size for detail hero
 - `logo.png` — original size (where available from TMDB)
 
-**Fallback chain (per [ADR-011](../../../../architecture/adr-011-local-image-cache.md)):**
+**Fallback chain (per [ADR-011](../../architecture/adr-011-local-image-cache.md)):**
 
 1. User override (`posterOverridePath`) — highest priority
 2. Local cache (`/media/images/movies/{tmdbId}/poster.jpg`)

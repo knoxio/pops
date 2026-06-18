@@ -5,7 +5,7 @@
 
 ## Overview
 
-Build a pairwise comparison system per [ADR-010](../../../../architecture/adr-010-comparison-system.md). Two watched movies are presented side by side across taste dimensions, the user picks a winner, and Elo scores update. A rankings page shows the leaderboard. A quick-pick flow helps decide what to watch.
+Build a pairwise comparison system per [ADR-010](../../architecture/adr-010-pairwise-elo-ratings.md). Two watched movies are presented side by side across taste dimensions, the user picks a winner, and Elo scores update. A rankings page shows the leaderboard. A quick-pick flow helps decide what to watch.
 
 ## Routes
 
