@@ -15,20 +15,14 @@ vi.mock('bullmq', () => ({ Queue: MockQueue }));
 vi.mock('./redis.js', () => ({ createRedisConnection: vi.fn().mockReturnValue({}) }));
 
 import {
-  CURATION_JOB_OPTIONS,
-  CURATION_QUEUE,
   DEAD_LETTER_QUEUE,
   DEFAULT_JOB_OPTIONS,
   DEFAULT_QUEUE,
-  EMBEDDINGS_JOB_OPTIONS,
-  EMBEDDINGS_QUEUE,
   SYNC_JOB_OPTIONS,
   SYNC_QUEUE,
   closeQueues,
-  getCurationQueue,
   getDeadLetterQueue,
   getDefaultQueue,
-  getEmbeddingsQueue,
   getQueueByName,
   getSyncQueue,
 } from './queues.js';
@@ -51,18 +45,6 @@ describe('queue creation succeeds when Redis is available', () => {
     expect(SYNC_JOB_OPTIONS.backoff).toMatchObject({ type: 'exponential' });
   });
 
-  it('getEmbeddingsQueue returns a queue with correct name and retry options', () => {
-    const q = getEmbeddingsQueue();
-    expect((q as { name: string }).name).toBe(EMBEDDINGS_QUEUE);
-    expect(EMBEDDINGS_JOB_OPTIONS.attempts).toBeGreaterThan(1);
-  });
-
-  it('getCurationQueue returns a queue with correct name and retry options', () => {
-    const q = getCurationQueue();
-    expect((q as { name: string }).name).toBe(CURATION_QUEUE);
-    expect(CURATION_JOB_OPTIONS.attempts).toBeGreaterThan(0);
-  });
-
   it('getDefaultQueue returns a queue with correct name and retry options', () => {
     const q = getDefaultQueue();
     expect((q as { name: string }).name).toBe(DEFAULT_QUEUE);
@@ -83,16 +65,12 @@ describe('queue creation succeeds when Redis is available', () => {
 
   it('all queue names are prefixed with pops-', () => {
     expect(SYNC_QUEUE).toMatch(/^pops-/);
-    expect(EMBEDDINGS_QUEUE).toMatch(/^pops-/);
-    expect(CURATION_QUEUE).toMatch(/^pops-/);
     expect(DEFAULT_QUEUE).toMatch(/^pops-/);
     expect(DEAD_LETTER_QUEUE).toMatch(/^pops-/);
   });
 
   it('all queues retain failed jobs so they can be dead-lettered', () => {
     expect(SYNC_JOB_OPTIONS.removeOnFail).toBe(false);
-    expect(EMBEDDINGS_JOB_OPTIONS.removeOnFail).toBe(false);
-    expect(CURATION_JOB_OPTIONS.removeOnFail).toBe(false);
     expect(DEFAULT_JOB_OPTIONS.removeOnFail).toBe(false);
   });
 });
@@ -109,8 +87,6 @@ describe('queue creation throws descriptively when Redis is unavailable', () => 
 describe('getQueueByName', () => {
   it('returns each known queue by name', () => {
     expect(getQueueByName(SYNC_QUEUE)).not.toBeNull();
-    expect(getQueueByName(EMBEDDINGS_QUEUE)).not.toBeNull();
-    expect(getQueueByName(CURATION_QUEUE)).not.toBeNull();
     expect(getQueueByName(DEFAULT_QUEUE)).not.toBeNull();
     expect(getQueueByName(DEAD_LETTER_QUEUE)).not.toBeNull();
   });
@@ -124,14 +100,12 @@ describe('getQueueByName', () => {
 describe('closeQueues', () => {
   it('calls close on every open queue and resets singletons', async () => {
     getSyncQueue();
-    getEmbeddingsQueue();
-    getCurationQueue();
     getDefaultQueue();
     getDeadLetterQueue();
 
     await closeQueues();
 
-    expect(mockClose).toHaveBeenCalledTimes(5);
+    expect(mockClose).toHaveBeenCalledTimes(3);
 
     // After closing, the next getter call creates a fresh instance
     vi.clearAllMocks();

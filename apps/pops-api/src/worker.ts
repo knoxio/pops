@@ -7,36 +7,13 @@ import { Worker } from 'bullmq';
 import pino from 'pino';
 
 import { moveToDeadLetter } from './jobs/dead-letter.js';
-import { process as processCuration } from './jobs/handlers/curation.js';
 import { process as processDefault } from './jobs/handlers/default.js';
-import { process as processEmbeddings } from './jobs/handlers/embeddings.js';
-import {
-  CURATION_QUEUE,
-  DEFAULT_QUEUE,
-  EMBEDDINGS_QUEUE,
-  QUEUE_CONCURRENCY,
-} from './jobs/queues.js';
+import { DEFAULT_QUEUE, QUEUE_CONCURRENCY } from './jobs/queues.js';
 import { createRedisConnection } from './jobs/redis.js';
 
-import type {
-  CurationQueueJobData,
-  DefaultQueueJobData,
-  EmbeddingsQueueJobData,
-} from './jobs/types.js';
+import type { DefaultQueueJobData } from './jobs/types.js';
 
 const logger = pino({ name: 'pops-worker' });
-
-const embeddingsWorker = new Worker<EmbeddingsQueueJobData>(EMBEDDINGS_QUEUE, processEmbeddings, {
-  connection: createRedisConnection(),
-  concurrency: QUEUE_CONCURRENCY[EMBEDDINGS_QUEUE],
-  stalledInterval: 30_000,
-});
-
-const curationWorker = new Worker<CurationQueueJobData>(CURATION_QUEUE, processCuration, {
-  connection: createRedisConnection(),
-  concurrency: QUEUE_CONCURRENCY[CURATION_QUEUE],
-  stalledInterval: 30_000,
-});
 
 const defaultWorker = new Worker<DefaultQueueJobData>(DEFAULT_QUEUE, processDefault, {
   connection: createRedisConnection(),
@@ -44,11 +21,7 @@ const defaultWorker = new Worker<DefaultQueueJobData>(DEFAULT_QUEUE, processDefa
   stalledInterval: 30_000,
 });
 
-for (const [worker, queue] of [
-  [embeddingsWorker, EMBEDDINGS_QUEUE],
-  [curationWorker, CURATION_QUEUE],
-  [defaultWorker, DEFAULT_QUEUE],
-] as const) {
+for (const [worker, queue] of [[defaultWorker, DEFAULT_QUEUE]] as const) {
   worker.on('failed', (job, err) => {
     if (!job) return;
     logger.error(
@@ -72,7 +45,7 @@ for (const [worker, queue] of [
 logger.info('pops-worker started');
 
 const SHUTDOWN_TIMEOUT_MS = 30_000;
-const allWorkers = [embeddingsWorker, curationWorker, defaultWorker];
+const allWorkers = [defaultWorker];
 
 async function shutdown(signal: string): Promise<void> {
   logger.info({ signal }, 'Worker shutting down');

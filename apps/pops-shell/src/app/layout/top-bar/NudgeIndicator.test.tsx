@@ -49,7 +49,7 @@ function cerebrumDiscoveredPillar(): DiscoveredPillar {
       pillar: 'cerebrum',
       version: '1.0.0',
       contract: {
-        package: '@pops/cerebrum-contract',
+        package: '@pops/cerebrum',
         version: '1.0.0',
         tag: 'contract-cerebrum@v1.0.0',
       },

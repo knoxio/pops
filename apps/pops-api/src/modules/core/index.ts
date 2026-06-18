@@ -18,7 +18,6 @@ import { aiObservabilityRouter } from './ai-observability/router.js';
 import { aiProvidersRouter } from './ai-providers/router.js';
 import { aiUsageRouter } from './ai-usage/router.js';
 import { correctionsRouter } from './corrections/router.js';
-import { embeddingsRouter } from './embeddings/router.js';
 import { entitiesRouter } from './entities/router.js';
 import { entitiesSearchAdapter } from './entities/search-adapter.js';
 import { coreFeaturesManifest } from './features/manifest.js';
@@ -42,7 +41,6 @@ export const coreRouter = router({
   aiAlerts: aiAlertsRouter,
   corrections: correctionsRouter,
   jobs: jobsRouter,
-  embeddings: embeddingsRouter,
   tagRules: tagRulesRouter,
   settings: settingsRouter,
   features: featuresRouter,

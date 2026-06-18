@@ -1,12 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import {
-  CURATION_JOB_OPTIONS,
-  DEAD_LETTER_QUEUE,
-  DEFAULT_JOB_OPTIONS,
-  EMBEDDINGS_JOB_OPTIONS,
-  SYNC_JOB_OPTIONS,
-} from './queues.js';
+import { DEAD_LETTER_QUEUE, DEFAULT_JOB_OPTIONS, SYNC_JOB_OPTIONS } from './queues.js';
 
 // Mock BullMQ with a proper constructor (not an arrow function)
 const { MockQueue } = vi.hoisted(() => {
@@ -28,31 +22,22 @@ vi.mock('./redis.js', () => ({ createRedisConnection: vi.fn().mockReturnValue({}
 describe('failure handling — queue configuration', () => {
   it('all queues have at least 2 retry attempts before exhaustion', () => {
     expect(SYNC_JOB_OPTIONS.attempts).toBeGreaterThanOrEqual(2);
-    expect(EMBEDDINGS_JOB_OPTIONS.attempts).toBeGreaterThanOrEqual(2);
-    expect(CURATION_JOB_OPTIONS.attempts).toBeGreaterThanOrEqual(2);
     expect(DEFAULT_JOB_OPTIONS.attempts).toBeGreaterThanOrEqual(2);
   });
 
   it('all queues use exponential backoff between retries', () => {
-    for (const opts of [
-      SYNC_JOB_OPTIONS,
-      EMBEDDINGS_JOB_OPTIONS,
-      CURATION_JOB_OPTIONS,
-      DEFAULT_JOB_OPTIONS,
-    ]) {
+    for (const opts of [SYNC_JOB_OPTIONS, DEFAULT_JOB_OPTIONS]) {
       expect(opts.backoff).toMatchObject({ type: 'exponential' });
     }
   });
 
   it('all queues retain failed jobs (removeOnFail: false) for dead-letter routing', () => {
     expect(SYNC_JOB_OPTIONS.removeOnFail).toBe(false);
-    expect(EMBEDDINGS_JOB_OPTIONS.removeOnFail).toBe(false);
-    expect(CURATION_JOB_OPTIONS.removeOnFail).toBe(false);
     expect(DEFAULT_JOB_OPTIONS.removeOnFail).toBe(false);
   });
 
   it('dead-letter queue name is distinct from operational queues', () => {
-    const operationalQueues = ['pops-sync', 'pops-embeddings', 'pops-curation', 'pops-default'];
+    const operationalQueues = ['pops-sync', 'pops-default'];
     expect(operationalQueues).not.toContain(DEAD_LETTER_QUEUE);
   });
 });

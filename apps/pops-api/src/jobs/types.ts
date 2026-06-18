@@ -41,27 +41,8 @@ export type SyncQueueJobData =
   | PlexScheduledSyncJobData;
 
 // ---------------------------------------------------------------------------
-// pops-embeddings queue
+// pops-default queue
 // ---------------------------------------------------------------------------
-
-export interface EmbedJobData {
-  sourceType: string;
-  sourceId: string;
-  /** Content to embed. If omitted, the handler fetches it from the source table. */
-  content?: string;
-}
-
-export type EmbeddingsQueueJobData = EmbedJobData;
-
-// ---------------------------------------------------------------------------
-// pops-curation / pops-default queues (stubs)
-// ---------------------------------------------------------------------------
-
-export interface CrossSourceIndexJobData {
-  type: 'crossSourceIndex';
-  /** Subset of source types to scan; defaults to all when omitted. */
-  sourceTypes?: string[];
-}
 
 export interface AiLogRetentionJobData {
   type: 'aiLogRetention';
@@ -75,45 +56,7 @@ export interface AiObservabilitySummaryJobData {
   type: 'aiObservabilitySummary';
 }
 
-export interface ClassifyEngramJobData {
-  type: 'classifyEngram';
-  engramId: string;
-}
-
-export interface GliaPruneJobData {
-  type: 'glia:prune';
-  dryRun?: boolean;
-}
-
-export interface GliaConsolidateJobData {
-  type: 'glia:consolidate';
-  dryRun?: boolean;
-}
-
-export interface GliaLinkJobData {
-  type: 'glia:link';
-  dryRun?: boolean;
-}
-
-export interface GliaAuditJobData {
-  type: 'glia:audit';
-  dryRun?: boolean;
-}
-
-export interface GenericJobData {
-  type: string;
-  [key: string]: unknown;
-}
-
-export type GliaJobData =
-  | GliaPruneJobData
-  | GliaConsolidateJobData
-  | GliaLinkJobData
-  | GliaAuditJobData;
-
-export type CurationQueueJobData = ClassifyEngramJobData | GliaJobData | GenericJobData;
 export type DefaultQueueJobData =
-  | CrossSourceIndexJobData
   | AiLogRetentionJobData
   | AiAlertEvaluationJobData
   | AiObservabilitySummaryJobData;

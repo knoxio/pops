@@ -14,7 +14,6 @@ import { join } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { manifest as cerebrumManifest } from '../modules/cerebrum/index.js';
 import { manifest as coreManifest } from '../modules/core/index.js';
 import { manifest as financeManifest } from '../modules/finance/index.js';
 import { manifest as inventoryManifest } from '../modules/inventory/index.js';
@@ -57,13 +56,7 @@ describe('migration ownership contract', () => {
 
   it('static map matches per-module manifest declarations exhaustively', () => {
     const manifestOwnership = new Map<string, string>();
-    for (const m of [
-      coreManifest,
-      financeManifest,
-      listsManifest,
-      inventoryManifest,
-      cerebrumManifest,
-    ]) {
+    for (const m of [coreManifest, financeManifest, listsManifest, inventoryManifest]) {
       for (const tag of manifestTags(m)) {
         expect(manifestOwnership.has(tag)).toBe(false);
         manifestOwnership.set(tag, m.id);

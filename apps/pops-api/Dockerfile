@@ -10,10 +10,8 @@ COPY packages/types/package.json ./packages/types/
 COPY packages/module-registry/package.json ./packages/module-registry/
 COPY packages/api-client/package.json ./packages/api-client/
 COPY packages/core-db/package.json ./packages/core-db/
-COPY packages/cerebrum-contract/package.json ./packages/cerebrum-contract/
 COPY packages/core-contract/package.json ./packages/core-contract/
 COPY packages/pillar-sdk/package.json ./packages/pillar-sdk/
-COPY packages/cerebrum-db/package.json ./packages/cerebrum-db/
 COPY apps/pops-api/package.json ./apps/pops-api/
 
 # Install pnpm and dependencies (cached across builds)
@@ -30,10 +28,6 @@ COPY packages/module-registry/tsconfig.json packages/module-registry/tsconfig.bu
 COPY packages/core-db/src ./packages/core-db/src
 COPY packages/core-db/tsconfig.json ./packages/core-db/
 COPY packages/core-db/migrations ./packages/core-db/migrations
-COPY packages/cerebrum-db/src ./packages/cerebrum-db/src
-COPY packages/cerebrum-db/tsconfig.json ./packages/cerebrum-db/
-COPY packages/cerebrum-db/migrations ./packages/cerebrum-db/migrations
-COPY packages/cerebrum-contract/ ./packages/cerebrum-contract/
 COPY packages/core-contract/ ./packages/core-contract/
 COPY packages/pillar-sdk/ ./packages/pillar-sdk/
 COPY apps/pops-api/tsconfig.json ./apps/pops-api/
@@ -45,15 +39,11 @@ COPY apps/pops-api/scripts ./apps/pops-api/scripts
 # package — order between db-types and the pillars no longer matters.
 WORKDIR /app/packages/db-types
 RUN pnpm build
-WORKDIR /app/packages/cerebrum-db
-RUN pnpm build
 WORKDIR /app/packages/core-db
 RUN pnpm build
 WORKDIR /app/packages/types
 RUN pnpm build
 WORKDIR /app/packages/module-registry
-RUN pnpm build
-WORKDIR /app/packages/cerebrum-contract
 RUN pnpm build
 WORKDIR /app/packages/core-contract
 RUN pnpm build
@@ -91,9 +81,6 @@ COPY --from=builder /app/packages/module-registry/package.json ./node_modules/@p
 COPY --from=builder /app/packages/core-db/dist ./node_modules/@pops/core-db/dist
 COPY --from=builder /app/packages/core-db/package.json ./node_modules/@pops/core-db/
 COPY --from=builder /app/packages/core-db/migrations ./node_modules/@pops/core-db/migrations
-COPY --from=builder /app/packages/cerebrum-db/dist ./node_modules/@pops/cerebrum-db/dist
-COPY --from=builder /app/packages/cerebrum-db/package.json ./node_modules/@pops/cerebrum-db/
-COPY --from=builder /app/packages/cerebrum-db/migrations ./node_modules/@pops/cerebrum-db/migrations
 
 # Copy types source into node_modules (source-only package, no build step)
 COPY --from=builder /app/packages/types/src ./node_modules/@pops/types/src

@@ -2,7 +2,6 @@ import BetterSqlite3 from 'better-sqlite3';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 
 import { closeDb, setCoreDb, setDb } from '../db.js';
-import { setCerebrumDb } from '../db/cerebrum-handle.js';
 import { setFinanceDb } from '../db/finance-handle.js';
 import { setInventoryDb } from '../db/inventory-handle.js';
 import { setListsDb } from '../db/lists-handle.js';
@@ -1511,13 +1510,6 @@ export function setupTestContext() {
     // test fixture has to surface its tables on the finance handle.
     setFinanceDb({ db: drizzle(db), raw: db });
 
-    // Same for the cerebrum pillar handle (phase 2 PR 3): nudge_log
-    // reads/writes now resolve getCerebrumDrizzle(), so the test
-    // fixture has to surface that table on the cerebrum handle too.
-    // vecAvailable: false — the in-memory test fixture doesn't load
-    // sqlite-vec; vector consumers that need it inject their own handle.
-    setCerebrumDb({ db: drizzle(db), raw: db, vecAvailable: false });
-
     // Same for the lists pillar handle (phase 2 PR 3): every lists
     // module read + write now resolves getListsDrizzle(), so the test
     // fixture has to surface its tables (lists, list_items) on the
@@ -1537,7 +1529,6 @@ export function setupTestContext() {
     setCoreDb(null);
     setFinanceDb(null);
     setInventoryDb(null);
-    setCerebrumDb(null);
     setListsDb(null);
     closeDb();
   }
