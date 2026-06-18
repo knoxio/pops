@@ -19,3 +19,10 @@ export {
   type CallResult,
   type CallSuccess,
 } from './errors.js';
+export {
+  buildRouteMap,
+  type OpenApiDocument,
+  type RouteEntry,
+  type RouteMap,
+} from './openapi-route-map.js';
+export { performRestCall, type RestCallContext, type RestRouteSource } from './rest-call.js';
