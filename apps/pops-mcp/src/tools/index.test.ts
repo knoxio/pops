@@ -1,8 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
-
-import { mockClient } from './test-helpers.js';
-
-vi.mock('../client.js', () => ({ getClient: () => mockClient }));
+import { describe, expect, it } from 'vitest';
 
 const { allTools } = await import('./index.js');
 

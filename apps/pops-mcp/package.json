@@ -19,7 +19,6 @@
     "express": "^5.0.1"
   },
   "devDependencies": {
-    "@pops/api": "workspace:*",
     "@types/express": "^5.0.0",
     "@types/node": "^25.9.3",
     "tsx": "^4.22.4",
