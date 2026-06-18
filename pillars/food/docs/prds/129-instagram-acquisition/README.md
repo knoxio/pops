@@ -144,9 +144,9 @@ If no `Retry-After` header: default delay 300 seconds (5 minutes). Conservative 
 - Source: throwaway Instagram account; cookies exported via browser extension (e.g. "Get cookies.txt LOCALLY") and saved to `infra/secrets/instagram-cookies.txt` on the host.
 - Mounted into the worker container at `/secrets/instagram-cookies.txt` (read-only) per PRD-126.
 - File format: Netscape cookies.txt (what yt-dlp expects).
-- Refresh procedure documented at `docs/runbooks/instagram-cookie-refresh.md` (this PRD creates the runbook stub).
+- Refresh procedure documented at `pillars/food/docs/runbooks/instagram-cookie-refresh.md` (this PRD creates the runbook stub).
 
-### Runbook contents (`docs/runbooks/instagram-cookie-refresh.md`)
+### Runbook contents (`pillars/food/docs/runbooks/instagram-cookie-refresh.md`)
 
 ```markdown
 # Instagram Cookie Refresh
@@ -248,7 +248,7 @@ Inline per theme protocol.
 
 ### Runbook
 
-- [ ] `docs/runbooks/instagram-cookie-refresh.md` created with the documented contents.
+- [ ] `pillars/food/docs/runbooks/instagram-cookie-refresh.md` created with the documented contents.
 - [ ] PRD-129 cross-references the runbook from its "auth-dead" handling.
 
 ### Tests

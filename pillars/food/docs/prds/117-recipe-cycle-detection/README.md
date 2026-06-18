@@ -4,7 +4,7 @@
 
 ## Overview
 
-[ADR-022](../../../../architecture/adr-022-unified-recipe-ingredient-model.md) unifies ingredients and recipe outputs into one graph: a recipe's `@ingredient(N, slug, ...)` line may reference either a raw ingredient or another recipe's yield. That construction makes cycles possible: recipe A uses B's yield, B uses C's yield, C uses A's yield. The graph must be acyclic; this PRD defines the detector that enforces it.
+[ADR-022](../../architecture/adr-022-unified-recipe-ingredient-model.md) unifies ingredients and recipe outputs into one graph: a recipe's `@ingredient(N, slug, ...)` line may reference either a raw ingredient or another recipe's yield. That construction makes cycles possible: recipe A uses B's yield, B uses C's yield, C uses A's yield. The graph must be acyclic; this PRD defines the detector that enforces it.
 
 Cycle detection is the **last gate before materialisation** in PRD-116's compile pipeline. It runs in memory using the candidate recipe's `ResolvedRecipeAst` (from PRD-115) plus the existing recipe-lines graph from the DB, so a cycle is rejected before any rows are written.
 

@@ -4,7 +4,7 @@
 
 ## Overview
 
-Define the recipe header and version schemas. Every recipe is a stable identity (`recipes`) with one or more snapshots of its content (`recipe_versions`); each version stores the canonical DSL body ([ADR-023](../../../../architecture/adr-023-recipe-markdown-dsl.md)) plus the metadata that doesn't depend on parsing (title, servings, times, yield declaration, source). Tags are a free-form pivot on the recipe (not the version).
+Define the recipe header and version schemas. Every recipe is a stable identity (`recipes`) with one or more snapshots of its content (`recipe_versions`); each version stores the canonical DSL body ([ADR-023](../../architecture/adr-023-recipe-markdown-dsl.md)) plus the metadata that doesn't depend on parsing (title, servings, times, yield declaration, source). Tags are a free-form pivot on the recipe (not the version).
 
 This PRD is schema-only. The DSL grammar, parser, resolver, materialised line/step tables, and cycle detection live in PRDs 114–117. PRD-107 owns the columns those PRDs read and write into, but does not define the parsing or compile semantics beyond column meaning.
 

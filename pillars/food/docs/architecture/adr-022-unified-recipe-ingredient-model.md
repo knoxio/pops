@@ -77,7 +77,7 @@ So "caramelised onions" is a recipe (heat applied; output stored in jars). "Dice
 ## References
 
 - [Food spike](../ideas/food-app-spike.md) — original scoping discussion
-- [Theme 07 — Food](../themes/07-food/README.md)
+- [Food pillar](../README.md)
 - PRD-106 — ingredient model (the singular `ingredients` table)
 - PRD-107 — recipe model (`yield_ingredient_id`, cycle detection invariant)
 - PRD-108 — batch model (`source_type`, FIFO consumption, batch ↔ recipe_run linkage)

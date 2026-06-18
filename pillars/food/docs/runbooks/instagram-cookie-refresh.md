@@ -64,6 +64,6 @@ If cookies need refreshing more frequently than ~monthly, consider:
 
 ## Related
 
-- [PRD-129 — Instagram Acquisition](../themes/07-food/prds/129-instagram-acquisition/README.md): the spec that detects auth-dead and routes here.
-- [PRD-130 — Instagram STT + Vision Pipeline](../themes/07-food/prds/130-instagram-stt-vision/README.md): downstream consumer.
-- [Theme 07 — Food risks](../themes/07-food/README.md#risks): "Instagram cookie fragility" — the architectural acknowledgment that this runbook exists.
+- [PRD-129 — Instagram Acquisition](../prds/129-instagram-acquisition/README.md): the spec that detects auth-dead and routes here.
+- [PRD-130 — Instagram STT + Vision Pipeline](../prds/130-instagram-stt-vision/README.md): downstream consumer.
+- [Food pillar risks](../README.md#risks): "Instagram cookie fragility" — the architectural acknowledgment that this runbook exists.

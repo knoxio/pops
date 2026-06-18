@@ -4,7 +4,7 @@
 
 ## Overview
 
-Implement the parser for the recipe DSL specified in [ADR-023](../../../../architecture/adr-023-recipe-markdown-dsl.md). Input: a `body_dsl` string from `recipe_versions.body_dsl` (PRD-107). Output: a typed AST or a structured parse error. This PRD is pure text processing — no database, no slug lookups, no side effects.
+Implement the parser for the recipe DSL specified in [ADR-023](../../architecture/adr-023-recipe-markdown-dsl.md). Input: a `body_dsl` string from `recipe_versions.body_dsl` (PRD-107). Output: a typed AST or a structured parse error. This PRD is pure text processing — no database, no slug lookups, no side effects.
 
 The parser is invoked by PRD-115 (Resolver) which turns AST node slugs into real entity IDs. The split lets the parser be exercised in isolation against the formal grammar; the parser's tests don't need a database.
 
