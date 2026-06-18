@@ -17,6 +17,25 @@ remnants. Split into:
 
 ## Phase 0 — immediate (parallel, gated on nothing)
 
+> **Status — done (landed in #3444).** P0-2, P0-3, P0-4, P0-6 shipped. Two list items were
+> already satisfied and needed no change:
+>
+> - **P0-1** is obsolete as written. `cerebrum` collapsed into `pillars/cerebrum` (single root
+>   `package.json`, no `contract/` subpackage), so the boundary-rule generator deliberately does
+>   **not** discover it — `PILLARS = ['core']`, the generated file is in sync, and
+>   `pnpm lint:boundaries:verify` is green. There is no missing `…-cerebrum` rule. (The local
+>   `pnpm lint:boundaries` run can show phantom `core-db` reach-ins, but only from a stale
+>   `packages/core-db/dist`; CI installs `--frozen-lockfile` with no build, so the imports are
+>   unresolvable and produce no violation.)
+> - **P0-5** was already removed from git — only untracked local crud (`.turbo`/`node_modules`/
+>   `dist`) remained in the shell dirs; cleaned locally, no commit.
+>
+> The Phase 0 gate (V0-1…V0-4) holds. **Follow-up outside Phase 0:** `docker-build.yml` is
+> independently stale (Phase-E fallout) — the committed `apps/pops-core-api/Dockerfile` has drifted
+> from `generate-pillar-dockerfile.mjs`, and the job still `docker build`s the retired
+> `apps/pops-{inventory,finance,food}-api` + `pillars/lists/api` Dockerfiles. Its `docker-build`
+> job fails on any Dockerfile-touching PR; not addressed here.
+
 CI is **currently red** and several routed services would 502. Every item below is independent —
 land them as separate small PRs in parallel.
 
