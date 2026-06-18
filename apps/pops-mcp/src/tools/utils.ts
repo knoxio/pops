@@ -20,6 +20,14 @@ export function mapCallResult<T>(result: CallResult<T>): CallToolResult {
   return toolError(formatFailureReason(result));
 }
 
+const MESSAGE_FALLBACK: Record<'not-found' | 'conflict' | 'bad-request' | 'unauthorized', string> =
+  {
+    'not-found': 'returned not-found for this request',
+    conflict: 'returned conflict for this request',
+    'bad-request': 'returned bad-request for this request',
+    unauthorized: 'rejected this request (unauthorized)',
+  };
+
 function formatFailureReason(failure: Exclude<CallResult<unknown>, { kind: 'ok' }>): string {
   switch (failure.kind) {
     case 'unavailable':
@@ -29,11 +37,10 @@ function formatFailureReason(failure: Exclude<CallResult<unknown>, { kind: 'ok' 
     case 'contract-mismatch':
       return `Pillar '${failure.pillar}' contract mismatch — expected ${failure.expected ?? 'unknown'}, got ${failure.actual ?? 'unknown'}.`;
     case 'not-found':
-      return failure.message ?? `Pillar '${failure.pillar}' returned not-found for this request.`;
     case 'conflict':
-      return failure.message ?? `Pillar '${failure.pillar}' returned conflict for this request.`;
     case 'bad-request':
-      return failure.message ?? `Pillar '${failure.pillar}' returned bad-request for this request.`;
+    case 'unauthorized':
+      return failure.message ?? `Pillar '${failure.pillar}' ${MESSAGE_FALLBACK[failure.kind]}.`;
   }
 }
 

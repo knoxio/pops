@@ -25,17 +25,21 @@ export const PILLARS = [
 export type KnownPillarId = (typeof PILLARS)[number];
 
 /**
- * Pillars that still speak tRPC over `/trpc-<id>`. Lists migrated to a
- * REST contract (`@pops/lists/openapi`) on the Y refactor and no longer
- * serves /trpc — consumers reach it via a generated REST client.
+ * Pillars that still get their own dedicated `/trpc-<id>` batch URL.
+ *
+ * Every pillar has now migrated to a REST contract, so none is split out
+ * to a per-pillar tRPC upstream — the list is empty. The few cross-cutting
+ * procedures the REST cutover has not yet absorbed (global search, the
+ * shell nudge bell) keep flowing to the legacy `/trpc` catch-all on the
+ * monolith via the split-link's fallback branch.
  *
  * Used by the shell's split-link + the shared api-client split-link to
- * skip tRPC dispatch for migrated pillars. As more pillars migrate off
- * tRPC, prune them from this list (and adjust the `_assert` below so
- * any new pillar id added to {@link PILLARS} forces a deliberate choice
- * about its transport).
+ * decide which namespaces get a dedicated batch URL. If a pillar ever
+ * needs its own tRPC upstream again, add its id here (and adjust the
+ * `_assert` below so any new pillar id added to {@link PILLARS} forces a
+ * deliberate choice about its transport).
  */
-export const TRPC_PILLARS = ['core'] as const;
+export const TRPC_PILLARS = [] as const satisfies readonly KnownPillarId[];
 
 export type TrpcPillarId = (typeof TRPC_PILLARS)[number];
 

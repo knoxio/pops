@@ -1,11 +1,9 @@
-import { httpBatchLink, splitLink } from '@trpc/client';
+import { httpBatchLink } from '@trpc/client';
 import { createTRPCReact } from '@trpc/react-query';
 
-import { TRPC_PILLARS, type TrpcPillarId } from '@pops/pillar-sdk/capabilities';
+import type { TRPCLink } from '@trpc/client';
 
-import type { Operation, TRPCLink } from '@trpc/client';
-
-import type { AppRouter } from '@pops/api';
+import type { AppRouter } from '@pops/api-client';
 
 /** React Query hooks for tRPC — shared across all app packages. */
 export const trpc = createTRPCReact<AppRouter>();
@@ -39,67 +37,27 @@ function fetchWithTimeout(input: RequestInfo | URL, init?: RequestInit): Promise
 }
 
 /**
- * tRPC URL prefix per pillar. Each pillar's API serves at its own URL so
- * nginx can do a simple prefix match (no regex on procedure paths) and so
- * the client batcher never assembles a batch URL targeting more than one
- * pillar at a time.
+ * Legacy pops-api URL — every pillar has migrated to REST, so no namespace
+ * gets a dedicated `/trpc-<pillar>` batch URL anymore. The handful of
+ * procedures the REST cutover has not yet absorbed (global search, the
+ * nudge bell) still flow through the monolith's `/trpc` catch-all.
  */
-const PILLAR_TRPC_URLS: Readonly<Record<TrpcPillarId, string>> = {
-  core: '/trpc-core',
-};
-
-/** Legacy pops-api URL — catches every procedure that isn't pillar-prefixed. */
 const LEGACY_TRPC_URL = '/trpc';
 
 const MAX_URL_LENGTH = 2083;
 
-const PILLAR_SET: ReadonlySet<string> = new Set(TRPC_PILLARS);
-
-function isTrpcPillarId(value: string): value is TrpcPillarId {
-  return PILLAR_SET.has(value);
-}
-
-function pillarOfPath(path: string): TrpcPillarId | null {
-  const namespace = path.split('.')[0];
-  if (!namespace) return null;
-  return isTrpcPillarId(namespace) ? namespace : null;
-}
-
-function terminalLinkFor(url: string): TRPCLink<AppRouter> {
+function terminalLink(): TRPCLink<AppRouter> {
   return httpBatchLink<AppRouter>({
-    url,
+    url: LEGACY_TRPC_URL,
     maxURLLength: MAX_URL_LENGTH,
     fetch: fetchWithTimeout,
   });
 }
 
 /**
- * Builds a tRPC link that dispatches each operation to the per-pillar batch
- * link matching its namespace, falling back to the legacy URL for anything
- * else. tRPC's `splitLink` is binary, so the chain is nested once per pillar.
- *
- * Per-pillar links share no batch buffer: a request graph that mixes
- * `core.foo` and `finance.bar` always produces two separate HTTP calls.
- */
-function createPillarSplitLink(): TRPCLink<AppRouter> {
-  const legacyLink = terminalLinkFor(LEGACY_TRPC_URL);
-  return TRPC_PILLARS.reduce<TRPCLink<AppRouter>>((falseBranch, pillar) => {
-    const pillarLink = terminalLinkFor(PILLAR_TRPC_URLS[pillar]);
-    return splitLink<AppRouter>({
-      condition: (op: Operation) => pillarOfPath(op.path) === pillar,
-      true: pillarLink,
-      false: falseBranch,
-    });
-  }, legacyLink);
-}
-
-/**
- * tRPC client instance with a per-pillar splitLink (PRD-187).
- *
- * Each pillar's procedures route to their own batched URL
- * (`/trpc-<pillar>`); non-pillar procedures keep flowing to the legacy
- * `/trpc` endpoint. No batch URL ever spans more than one pillar.
+ * tRPC client instance pointing every remaining procedure at the legacy
+ * `/trpc` endpoint on the monolith.
  */
 export const trpcClient = trpc.createClient({
-  links: [createPillarSplitLink()],
+  links: [terminalLink()],
 });

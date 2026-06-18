@@ -57,12 +57,6 @@ const CORE_INPUTS: PillarSmokeInputs = {
   'core.settings.get': { key: 'plex_url' },
   'core.settings.getBulk': { keys: ['plex_url'] },
   'core.features.isEnabled': { key: 'nonexistent-feature' },
-  'core.search.query': { text: 'smoke', context: { app: null, page: null } },
-  'core.search.showMore': {
-    domain: 'transactions',
-    text: 'smoke',
-    context: { app: null, page: null },
-  },
   'core.uri.resolve': { uri: 'pops:core/probe/none' },
 };
 

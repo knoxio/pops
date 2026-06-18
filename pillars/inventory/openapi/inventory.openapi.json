@@ -6264,6 +6264,137 @@
         "tags": ["reports"]
       }
     },
+    "/search": {
+      "post": {
+        "operationId": "search.search",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "context": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "app": {
+                        "nullable": true,
+                        "type": "string"
+                      },
+                      "entity": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "title": {
+                            "type": "string"
+                          },
+                          "type": {
+                            "type": "string"
+                          },
+                          "uri": {
+                            "type": "string"
+                          }
+                        },
+                        "required": ["uri", "type", "title"],
+                        "type": "object"
+                      },
+                      "filters": {
+                        "additionalProperties": {
+                          "type": "string"
+                        },
+                        "type": "object"
+                      },
+                      "page": {
+                        "nullable": true,
+                        "type": "string"
+                      }
+                    },
+                    "required": ["app", "page"],
+                    "type": "object"
+                  },
+                  "query": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "filters": {
+                        "items": {
+                          "additionalProperties": false,
+                          "properties": {
+                            "field": {
+                              "type": "string"
+                            },
+                            "operator": {
+                              "type": "string"
+                            },
+                            "value": {
+                              "type": "string"
+                            }
+                          },
+                          "required": ["field", "operator", "value"],
+                          "type": "object"
+                        },
+                        "type": "array"
+                      },
+                      "text": {
+                        "type": "string"
+                      }
+                    },
+                    "required": ["text"],
+                    "type": "object"
+                  }
+                },
+                "required": ["query"],
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "hits": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "data": {
+                            "additionalProperties": {},
+                            "type": "object"
+                          },
+                          "matchField": {
+                            "type": "string"
+                          },
+                          "matchType": {
+                            "enum": ["exact", "prefix", "contains"],
+                            "type": "string"
+                          },
+                          "score": {
+                            "type": "number"
+                          },
+                          "uri": {
+                            "type": "string"
+                          }
+                        },
+                        "required": ["uri", "score", "matchField", "matchType", "data"],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": ["hits"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "Search the inventory pillar's items for the unified search engine",
+        "tags": ["search"]
+      }
+    },
     "/uploads/{id}": {
       "delete": {
         "operationId": "documentFiles.removeUpload",

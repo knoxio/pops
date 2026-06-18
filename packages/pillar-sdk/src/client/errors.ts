@@ -41,7 +41,8 @@ export type CallFailure =
     }
   | { kind: 'not-found'; pillar: string; message?: string }
   | { kind: 'conflict'; pillar: string; message?: string }
-  | { kind: 'bad-request'; pillar: string; message?: string };
+  | { kind: 'bad-request'; pillar: string; message?: string }
+  | { kind: 'unauthorized'; pillar: string; message?: string };
 
 export type CallResult<T> = CallSuccess<T> | CallFailure;
 
@@ -82,4 +83,14 @@ export function isBadRequest(err: unknown): err is PillarCallError & {
   result: Extract<CallFailure, { kind: 'bad-request' }>;
 } {
   return err instanceof PillarCallError && err.result.kind === 'bad-request';
+}
+
+/**
+ * True when `err` is a `PillarCallError` whose failure result has the
+ * `unauthorized` discriminant. Maps to HTTP 401 / tRPC `UNAUTHORIZED`.
+ */
+export function isUnauthorized(err: unknown): err is PillarCallError & {
+  result: Extract<CallFailure, { kind: 'unauthorized' }>;
+} {
+  return err instanceof PillarCallError && err.result.kind === 'unauthorized';
 }

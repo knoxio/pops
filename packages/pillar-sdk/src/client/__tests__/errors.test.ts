@@ -5,6 +5,7 @@ import {
   isConflict,
   isNotFound,
   isOk,
+  isUnauthorized,
   PillarCallError,
   PillarSdkError,
   type CallResult,
@@ -33,12 +34,14 @@ describe('CallResult', () => {
     const notFound: CallResult<number> = { kind: 'not-found', pillar: 'finance' };
     const conflict: CallResult<number> = { kind: 'conflict', pillar: 'finance' };
     const badRequest: CallResult<number> = { kind: 'bad-request', pillar: 'finance' };
+    const unauthorized: CallResult<number> = { kind: 'unauthorized', pillar: 'finance' };
     expect(isOk(unavailable)).toBe(false);
     expect(isOk(degraded)).toBe(false);
     expect(isOk(mismatch)).toBe(false);
     expect(isOk(notFound)).toBe(false);
     expect(isOk(conflict)).toBe(false);
     expect(isOk(badRequest)).toBe(false);
+    expect(isOk(unauthorized)).toBe(false);
   });
 });
 
@@ -146,5 +149,38 @@ describe('isBadRequest', () => {
     const notFound = new PillarCallError('food', { kind: 'not-found', pillar: 'food' });
     expect(isBadRequest(notFound)).toBe(false);
     expect(isBadRequest(new Error())).toBe(false);
+  });
+
+  it('does not match unauthorized', () => {
+    const unauthorized = new PillarCallError('food', { kind: 'unauthorized', pillar: 'food' });
+    expect(isBadRequest(unauthorized)).toBe(false);
+  });
+});
+
+describe('isUnauthorized', () => {
+  it('matches a PillarCallError with kind unauthorized', () => {
+    const err = new PillarCallError('food', { kind: 'unauthorized', pillar: 'food' });
+    expect(isUnauthorized(err)).toBe(true);
+  });
+
+  it('does not match other kinds', () => {
+    const badRequest = new PillarCallError('food', { kind: 'bad-request', pillar: 'food' });
+    const notFound = new PillarCallError('food', { kind: 'not-found', pillar: 'food' });
+    expect(isUnauthorized(badRequest)).toBe(false);
+    expect(isUnauthorized(notFound)).toBe(false);
+    expect(isUnauthorized(null)).toBe(false);
+    expect(isUnauthorized(new Error())).toBe(false);
+  });
+
+  it('narrows the type so .result.message is reachable', () => {
+    const err: unknown = new PillarCallError('food', {
+      kind: 'unauthorized',
+      pillar: 'food',
+      message: 'token expired',
+    });
+    if (isUnauthorized(err)) {
+      const msg: string | undefined = err.result.message;
+      expect(msg).toBe('token expired');
+    }
   });
 });

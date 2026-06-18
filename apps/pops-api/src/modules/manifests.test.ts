@@ -32,23 +32,4 @@ describe('PRD-098 backend module manifests', () => {
       expect(m.id).toBe(label);
     }
   });
-
-  it('search slots match the api-side adapter aggregator (PRD-101 US-06)', async () => {
-    const { getOwnedAdapters } = await import('./search-adapters.js');
-    const owned = getOwnedAdapters();
-    const ownedDomainsByModule = new Map<string, string[]>();
-    for (const { moduleId, adapter } of owned) {
-      const list = ownedDomainsByModule.get(moduleId) ?? [];
-      list.push(adapter.domain);
-      ownedDomainsByModule.set(moduleId, list);
-    }
-
-    for (const [label, m] of manifests) {
-      const declared = (m.search ?? []).map((a) => a.domain).toSorted();
-      const aggregated = (ownedDomainsByModule.get(label) ?? []).toSorted();
-      // Skip modules that declare no search adapters and contribute none.
-      if (declared.length === 0 && aggregated.length === 0) continue;
-      expect(aggregated, `aggregator domains for module '${label}'`).toEqual(declared);
-    }
-  });
 });

@@ -1,46 +1,33 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { createElement, type ReactNode } from 'react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const mockGetStats = vi.fn();
-const mockGetHistory = vi.fn();
-const mockGetQualityMetrics = vi.fn();
-const mockGetLatencyStats = vi.fn();
-const mockCacheStats = vi.fn();
-const mockClearStaleMutate = vi.fn();
-const mockClearAllMutate = vi.fn();
-const mockInvalidate = vi.fn().mockResolvedValue(undefined);
+const aiObservabilityGetStatsMock = vi.hoisted(() => vi.fn());
+const aiObservabilityGetHistoryMock = vi.hoisted(() => vi.fn());
+const aiObservabilityGetQualityMetricsMock = vi.hoisted(() => vi.fn());
+const aiObservabilityGetLatencyStatsMock = vi.hoisted(() => vi.fn());
+const aiUsageCacheStatsMock = vi.hoisted(() => vi.fn());
+const aiProvidersListMock = vi.hoisted(() => vi.fn());
+const aiBudgetsGetBudgetStatusMock = vi.hoisted(() => vi.fn());
+const aiUsageClearStaleCacheMock = vi.hoisted(() => vi.fn());
+const aiUsageClearAllCacheMock = vi.hoisted(() => vi.fn());
+const aiProvidersHealthCheckMock = vi.hoisted(() => vi.fn());
 
-vi.mock('@pops/pillar-sdk/react', () => ({
-  usePillarQuery: (_pillarId: string, path: readonly string[]) => {
-    const key = path.join('.');
-    if (key === 'aiObservability.getStats') return mockGetStats();
-    if (key === 'aiObservability.getHistory') return mockGetHistory();
-    if (key === 'aiObservability.getQualityMetrics') return mockGetQualityMetrics();
-    if (key === 'aiObservability.getLatencyStats') return mockGetLatencyStats();
-    if (key === 'aiUsage.cacheStats') return mockCacheStats();
-    if (key === 'aiProviders.list') return { data: [], isLoading: false };
-    if (key === 'aiBudgets.getBudgetStatus') return { data: [], isLoading: false };
-    throw new Error(`Unexpected pillar query: ${key}`);
-  },
-  usePillarMutation: (_pillarId: string, path: readonly string[]) => {
-    const key = path.join('.');
-    if (key === 'aiUsage.clearStaleCache') {
-      return { mutate: mockClearStaleMutate, isPending: false };
-    }
-    if (key === 'aiUsage.clearAllCache') {
-      return { mutate: mockClearAllMutate, isPending: false };
-    }
-    if (key === 'aiProviders.healthCheck') {
-      return { mutate: vi.fn(), isPending: false };
-    }
-    throw new Error(`Unexpected pillar mutation: ${key}`);
-  },
-  usePillarUtils: () => ({
-    invalidate: mockInvalidate,
-    setData: vi.fn(),
-    fetchQuery: vi.fn(),
-  }),
+vi.mock('../core-api/index.js', () => ({
+  aiObservabilityGetStats: (...args: unknown[]) => aiObservabilityGetStatsMock(...args),
+  aiObservabilityGetHistory: (...args: unknown[]) => aiObservabilityGetHistoryMock(...args),
+  aiObservabilityGetQualityMetrics: (...args: unknown[]) =>
+    aiObservabilityGetQualityMetricsMock(...args),
+  aiObservabilityGetLatencyStats: (...args: unknown[]) =>
+    aiObservabilityGetLatencyStatsMock(...args),
+  aiUsageCacheStats: (...args: unknown[]) => aiUsageCacheStatsMock(...args),
+  aiProvidersList: (...args: unknown[]) => aiProvidersListMock(...args),
+  aiBudgetsGetBudgetStatus: (...args: unknown[]) => aiBudgetsGetBudgetStatusMock(...args),
+  aiUsageClearStaleCache: (...args: unknown[]) => aiUsageClearStaleCacheMock(...args),
+  aiUsageClearAllCache: (...args: unknown[]) => aiUsageClearAllCacheMock(...args),
+  aiProvidersHealthCheck: (...args: unknown[]) => aiProvidersHealthCheckMock(...args),
 }));
 
 vi.mock('sonner', () => ({
@@ -85,6 +72,27 @@ const defaultCacheStats = {
   diskSizeBytes: 8192,
 };
 
+function ok(data: unknown) {
+  return { data, error: undefined };
+}
+
+/** A promise that never resolves — used to keep a query in its loading state. */
+function pending() {
+  return new Promise(() => {});
+}
+
+function makeQueryClient() {
+  return new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  });
+}
+
+function renderPage(queryClient = makeQueryClient()) {
+  const wrapper = ({ children }: { children: ReactNode }) =>
+    createElement(QueryClientProvider, { client: queryClient }, children);
+  return render(<AiUsagePage />, { wrapper });
+}
+
 function setupMocks(overrides?: {
   stats?: Partial<typeof defaultStats> | null;
   history?: typeof defaultHistory | null;
@@ -92,129 +100,157 @@ function setupMocks(overrides?: {
   statsLoading?: boolean;
   historyLoading?: boolean;
   cacheLoading?: boolean;
-  statsError?: Error | null;
-  historyError?: Error | null;
+  statsError?: boolean;
 }) {
   const o = overrides ?? {};
-  mockGetStats.mockReturnValue({
-    data: o.stats === null ? undefined : { ...defaultStats, ...o.stats },
-    isLoading: o.statsLoading ?? false,
-    error: o.statsError ?? null,
-  });
-  mockGetHistory.mockReturnValue({
-    data: o.history === null ? undefined : (o.history ?? defaultHistory),
-    isLoading: o.historyLoading ?? false,
-    error: o.historyError ?? null,
-  });
-  mockGetQualityMetrics.mockReturnValue({ data: { byModel: [] }, isLoading: false });
-  mockGetLatencyStats.mockReturnValue({ data: null, isLoading: false });
-  mockCacheStats.mockReturnValue({
-    data: o.cache === null ? undefined : (o.cache ?? defaultCacheStats),
-    isLoading: o.cacheLoading ?? false,
-  });
+
+  if (o.statsLoading) {
+    aiObservabilityGetStatsMock.mockReturnValue(pending());
+  } else if (o.statsError) {
+    aiObservabilityGetStatsMock.mockResolvedValue({
+      data: undefined,
+      error: { message: 'Network error' },
+      response: { status: 500 },
+    });
+  } else {
+    aiObservabilityGetStatsMock.mockResolvedValue(
+      ok(o.stats === null ? undefined : { ...defaultStats, ...o.stats })
+    );
+  }
+
+  aiObservabilityGetHistoryMock.mockReturnValue(
+    o.historyLoading
+      ? pending()
+      : Promise.resolve(ok(o.history === null ? undefined : (o.history ?? defaultHistory)))
+  );
+  aiObservabilityGetQualityMetricsMock.mockResolvedValue(ok({ byModel: [] }));
+  aiObservabilityGetLatencyStatsMock.mockResolvedValue(
+    ok({ avg: 0, p50: 0, p75: 0, p95: 0, p99: 0, slowQueries: [] })
+  );
+  aiUsageCacheStatsMock.mockReturnValue(
+    o.cacheLoading
+      ? pending()
+      : Promise.resolve(ok(o.cache === null ? undefined : (o.cache ?? defaultCacheStats)))
+  );
+  aiProvidersListMock.mockResolvedValue(ok([]));
+  aiBudgetsGetBudgetStatusMock.mockResolvedValue(ok([]));
 }
+
+afterEach(() => {
+  cleanup();
+});
 
 beforeEach(() => {
   vi.clearAllMocks();
+  aiUsageClearStaleCacheMock.mockResolvedValue(ok({ removed: 0 }));
+  aiUsageClearAllCacheMock.mockResolvedValue(ok({ removed: 0 }));
+  aiProvidersHealthCheckMock.mockResolvedValue(ok({ status: 'active', latencyMs: 1 }));
   setupMocks();
 });
 
 describe('AiUsagePage', () => {
   it('renders loading skeleton when stats are loading', () => {
     setupMocks({ statsLoading: true });
-    render(<AiUsagePage />);
+    renderPage();
     expect(screen.getByText('AI Observability')).toBeInTheDocument();
     expect(screen.queryByText('Total Cost')).not.toBeInTheDocument();
   });
 
-  it('renders error alert on stats error', () => {
-    setupMocks({ statsError: new Error('Network error') });
-    render(<AiUsagePage />);
-    expect(screen.getByText('Failed to load observability data')).toBeInTheDocument();
+  it('renders error alert on stats error', async () => {
+    setupMocks({ statsError: true });
+    renderPage();
+    expect(await screen.findByText('Failed to load observability data')).toBeInTheDocument();
     expect(screen.getByText('Network error')).toBeInTheDocument();
   });
 
-  it('renders stat cards with correct values', () => {
-    render(<AiUsagePage />);
-    expect(screen.getByText('Total Cost')).toBeInTheDocument();
+  it('renders stat cards with correct values', async () => {
+    renderPage();
+    expect(await screen.findByText('Total Cost')).toBeInTheDocument();
     expect(screen.getByText('$0.1234')).toBeInTheDocument();
     expect(screen.getAllByText('Total Calls').length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText('Cache Hit Rate').length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText('Error Rate')).toBeInTheDocument();
   });
 
-  it('renders daily cost chart when history records exist', () => {
-    render(<AiUsagePage />);
-    expect(screen.getByText('Daily Cost')).toBeInTheDocument();
+  it('renders daily cost chart when history records exist', async () => {
+    renderPage();
+    expect(await screen.findByText('Daily Cost')).toBeInTheDocument();
   });
 
-  it('does not render chart when history has no records', () => {
+  it('does not render chart when history has no records', async () => {
     setupMocks({
       history: { records: [], summary: { totalCostUsd: 0, totalCalls: 0, totalCacheHits: 0 } },
     });
-    render(<AiUsagePage />);
+    renderPage();
+    expect(await screen.findByText('Total Cost')).toBeInTheDocument();
     expect(screen.queryByText('Daily Cost')).not.toBeInTheDocument();
   });
 });
 
 describe('CacheManagement', () => {
-  it('displays cache entry count and disk size', () => {
-    render(<AiUsagePage />);
-    expect(screen.getByText('AI Cache')).toBeInTheDocument();
+  it('displays cache entry count and disk size', async () => {
+    renderPage();
+    expect(await screen.findByText('AI Cache')).toBeInTheDocument();
     expect(screen.getByText(/42 entries/)).toBeInTheDocument();
     expect(screen.getByText(/8\.0 KB/)).toBeInTheDocument();
   });
 
-  it('renders Clear Stale and Clear All buttons', () => {
-    render(<AiUsagePage />);
-    expect(screen.getByRole('button', { name: /Clear Stale/i })).toBeInTheDocument();
+  it('renders Clear Stale and Clear All buttons', async () => {
+    renderPage();
+    expect(await screen.findByRole('button', { name: /Clear Stale/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Clear All/i })).toBeInTheDocument();
   });
 
   it('calls clearStaleCache mutation with days value', async () => {
-    render(<AiUsagePage />);
-    const clearStaleBtn = screen.getByRole('button', { name: /Clear Stale/i });
+    renderPage();
+    const clearStaleBtn = await screen.findByRole('button', { name: /Clear Stale/i });
     fireEvent.click(clearStaleBtn);
-    expect(mockClearStaleMutate).toHaveBeenCalledWith({ maxAgeDays: 30 });
+    await waitFor(() =>
+      expect(aiUsageClearStaleCacheMock).toHaveBeenCalledWith({ body: { maxAgeDays: 30 } })
+    );
   });
 
   it('shows confirmation dialog before clearing all cache', async () => {
-    render(<AiUsagePage />);
-    const clearAllBtn = screen.getByRole('button', { name: /Clear All/i });
+    renderPage();
+    const clearAllBtn = await screen.findByRole('button', { name: /Clear All/i });
     fireEvent.click(clearAllBtn);
-    expect(screen.getByText('Clear entire AI cache?')).toBeInTheDocument();
+    expect(await screen.findByText('Clear entire AI cache?')).toBeInTheDocument();
     expect(screen.getByText(/42 cached/)).toBeInTheDocument();
   });
 
   it('calls clearAllCache mutation when confirmed', async () => {
     const user = userEvent.setup();
-    render(<AiUsagePage />);
-    await user.click(screen.getByRole('button', { name: /Clear All/i }));
+    renderPage();
+    await user.click(await screen.findByRole('button', { name: /Clear All/i }));
     const dialogActions = screen.getAllByRole('button', { name: /Clear All/i });
     await user.click(dialogActions.at(-1)!);
-    expect(mockClearAllMutate).toHaveBeenCalled();
+    await waitFor(() => expect(aiUsageClearAllCacheMock).toHaveBeenCalled());
   });
 
-  it('disables buttons when cache is empty', () => {
+  it('disables buttons when cache is empty', async () => {
     setupMocks({ cache: { totalEntries: 0, diskSizeBytes: 0 } });
-    render(<AiUsagePage />);
-    expect(screen.getByRole('button', { name: /Clear Stale/i })).toBeDisabled();
+    renderPage();
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: /Clear Stale/i })).toBeDisabled()
+    );
     expect(screen.getByRole('button', { name: /Clear All/i })).toBeDisabled();
   });
 
   it('allows configuring stale days', async () => {
     const user = userEvent.setup();
-    render(<AiUsagePage />);
-    const input = screen.getByLabelText(/Older than/i) as HTMLInputElement;
+    renderPage();
+    const input = (await screen.findByLabelText(/Older than/i)) as HTMLInputElement;
     await user.tripleClick(input);
     await user.keyboard('7');
     fireEvent.click(screen.getByRole('button', { name: /Clear Stale/i }));
-    expect(mockClearStaleMutate).toHaveBeenCalledWith({ maxAgeDays: 7 });
+    await waitFor(() =>
+      expect(aiUsageClearStaleCacheMock).toHaveBeenCalledWith({ body: { maxAgeDays: 7 } })
+    );
   });
 
   it('shows loading skeleton when cache stats are loading', () => {
     setupMocks({ cacheLoading: true });
-    render(<AiUsagePage />);
+    renderPage();
     expect(screen.getByText('AI Observability')).toBeInTheDocument();
   });
 });

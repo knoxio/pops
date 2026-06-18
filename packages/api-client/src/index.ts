@@ -9,7 +9,7 @@ import { createPillarSplitLink } from './split-link.js';
  * imports from. The shell owns the Provider; app packages just
  * consume the hooks.
  */
-import type { AppRouter } from '@pops/api';
+import type { AppRouter } from './app-router.js';
 
 /** React Query hooks for tRPC — shared across all app packages. */
 export const trpc = createTRPCReact<AppRouter>();
@@ -93,7 +93,7 @@ export function isNetworkError(err: unknown): boolean {
   return false;
 }
 
-export type { AppRouter };
+export type { AppRouter } from './app-router.js';
 
 export {
   CrossPillarBatchError,

@@ -1,72 +1,28 @@
 // @vitest-environment jsdom
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import {
   discoveredPillar,
-  fakeFetch,
   FakeRegistryTransport,
   jsonResponse,
 } from '../../client/__tests__/fixtures.js';
-import { __resetSharedPillarClient } from '../../client/factory.js';
 import { pillarQueryArg, usePillarQueries, type PillarQueryArg } from '../hooks.js';
-import { PillarSdkProvider } from '../provider.js';
-
-import type { ReactNode } from 'react';
-
-import type { PillarClientOptions } from '../../client/factory.js';
+import { buildHarness, resetReactSdkCaches } from './rest-harness.js';
 
 type Ingredient = { id: string; name: string };
 type Unit = { id: string; symbol: string };
 
-type FetchScript = (url: string, body: unknown) => Response | Promise<Response>;
-
-type Harness = {
-  wrapper: (props: { children: ReactNode }) => ReactNode;
-  queryClient: QueryClient;
-  calls: { url: string; body: unknown }[];
-};
-
-function buildHarness(transport: FakeRegistryTransport, script: FetchScript): Harness {
-  const calls: { url: string; body: unknown }[] = [];
-  const fetchImpl = fakeFetch(async (url, init) => {
-    let parsed: unknown = null;
-    if (init?.body && typeof init.body === 'string') {
-      try {
-        parsed = JSON.parse(init.body);
-      } catch {
-        parsed = init.body;
-      }
-    }
-    calls.push({ url, body: parsed });
-    return script(url, parsed);
-  });
-  const options: PillarClientOptions = { transport, fetchImpl };
-  const queryClient = new QueryClient({
-    defaultOptions: {
-      queries: { retry: false },
-      mutations: { retry: false },
-    },
-  });
-  const wrapper = ({ children }: { children: ReactNode }): ReactNode => (
-    <QueryClientProvider client={queryClient}>
-      <PillarSdkProvider options={options}>{children}</PillarSdkProvider>
-    </QueryClientProvider>
-  );
-  return { wrapper, queryClient, calls };
-}
-
 describe('usePillarQueries', () => {
-  beforeEach(() => __resetSharedPillarClient());
-  afterEach(() => __resetSharedPillarClient());
+  beforeEach(resetReactSdkCaches);
+  afterEach(resetReactSdkCaches);
 
   it('runs each descriptor in parallel and returns results in matching order', async () => {
     const transport = new FakeRegistryTransport({ pillars: [discoveredPillar()] });
     const harness = buildHarness(transport, (_url, body) => {
       const input = body as { id: string };
-      if (input.id === 'a') return jsonResponse({ result: { data: { id: 'a', name: 'apple' } } });
-      return jsonResponse({ result: { data: { id: 'b', name: 'banana' } } });
+      if (input.id === 'a') return jsonResponse({ id: 'a', name: 'apple' });
+      return jsonResponse({ id: 'b', name: 'banana' });
     });
 
     const { result } = renderHook(
@@ -102,9 +58,9 @@ describe('usePillarQueries', () => {
     const harness = buildHarness(transport, (_url, body) => {
       const input = body as { id: string };
       if (input.id === 'ing-1') {
-        return jsonResponse({ result: { data: { id: 'ing-1', name: 'flour' } } });
+        return jsonResponse({ id: 'ing-1', name: 'flour' });
       }
-      return jsonResponse({ result: { data: { id: 'unit-1', symbol: 'g' } } });
+      return jsonResponse({ id: 'unit-1', symbol: 'g' });
     });
 
     const { result } = renderHook(
@@ -150,7 +106,7 @@ describe('usePillarQueries', () => {
   it('surfaces failure flags per element when one pillar is unavailable', async () => {
     const transport = new FakeRegistryTransport({ pillars: [discoveredPillar()] });
     const harness = buildHarness(transport, (_url, body) => {
-      return jsonResponse({ result: { data: { id: (body as { id: string }).id, name: 'ok' } } });
+      return jsonResponse({ id: (body as { id: string }).id, name: 'ok' });
     });
 
     const { result } = renderHook(
@@ -181,9 +137,7 @@ describe('usePillarQueries', () => {
 
   it('forwards per-query options (enabled: false skips the call)', async () => {
     const transport = new FakeRegistryTransport({ pillars: [discoveredPillar()] });
-    const harness = buildHarness(transport, () =>
-      jsonResponse({ result: { data: { id: 'a', name: 'apple' } } })
-    );
+    const harness = buildHarness(transport, () => jsonResponse({ id: 'a', name: 'apple' }));
 
     const { result } = renderHook(
       () =>

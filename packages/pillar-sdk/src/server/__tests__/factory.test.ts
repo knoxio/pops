@@ -4,9 +4,10 @@ import {
   discoveredPillar,
   fakeFetch,
   FakeRegistryTransport,
+  FINANCE_OPENAPI,
   jsonResponse,
 } from '../../client/__tests__/fixtures.js';
-import { __resetSharedPillarClient, isOk } from '../../client/index.js';
+import { __resetSharedOpenApiCache, __resetSharedPillarClient, isOk } from '../../client/index.js';
 import {
   __resetServerPillarCache,
   __resetServerSdkConfig,
@@ -18,12 +19,19 @@ import {
 
 type FetchCall = { url: string; headers: Record<string, string>; body: unknown };
 
+/**
+ * Records only the domain (REST) call, transparently serving the target
+ * pillar's OpenAPI document on `GET ${baseUrl}/openapi` so the client's
+ * `getRouteMap` step succeeds. The OpenAPI fetch is intentionally NOT recorded
+ * so `calls[0]` is always the domain call under test (header/url assertions).
+ */
 function recordingFetch(responder: (url: string) => Response | Promise<Response>): {
   fetchImpl: typeof fetch;
   calls: FetchCall[];
 } {
   const calls: FetchCall[] = [];
   const fetchImpl = fakeFetch(async (url, init) => {
+    if (url.endsWith('/openapi')) return jsonResponse(FINANCE_OPENAPI);
     const rawBody = typeof init?.body === 'string' ? init.body : '';
     let parsed: unknown = null;
     try {
@@ -57,6 +65,7 @@ function resetAll(): void {
   __resetServerSdkConfig();
   __resetServerPillarCache();
   __resetSharedPillarClient();
+  __resetSharedOpenApiCache();
 }
 
 describe('server pillar() — auth bootstrapping', () => {
@@ -129,7 +138,7 @@ describe('server pillar() — outbound auth header', () => {
     const { fetchImpl, calls } = recordingFetch(() => jsonResponse({ result: { data: null } }));
     const finance = pillar<WishlistRouter>('finance', { transport, fetchImpl });
     await finance.wishlist.list({ limit: 1 });
-    expect(calls[0]?.url).toBe('http://finance-api:3004/trpc/finance.wishlist.list');
+    expect(calls[0]?.url).toBe('http://finance-api:3004/wishlist/list');
   });
 
   it('reads the env-supplied key at call time so a later env update is picked up', async () => {
@@ -200,7 +209,7 @@ describe('server pillar() — internal base URL overrides', () => {
     const { fetchImpl, calls } = recordingFetch(() => jsonResponse({ result: { data: null } }));
     const finance = pillar('finance', { transport, fetchImpl });
     await finance.wishlist.list({});
-    expect(calls[0]?.url).toBe('http://localhost:3104/trpc/finance.wishlist.list');
+    expect(calls[0]?.url).toBe('http://localhost:3104/wishlist/list');
   });
 
   it('leaves the URL untouched for pillars that are not in the override map', async () => {
@@ -209,7 +218,7 @@ describe('server pillar() — internal base URL overrides', () => {
     const { fetchImpl, calls } = recordingFetch(() => jsonResponse({ result: { data: null } }));
     const finance = pillar('finance', { transport, fetchImpl });
     await finance.wishlist.list({});
-    expect(calls[0]?.url).toBe('http://finance-api:3004/trpc/finance.wishlist.list');
+    expect(calls[0]?.url).toBe('http://finance-api:3004/wishlist/list');
   });
 });
 

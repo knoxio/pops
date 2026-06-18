@@ -4,7 +4,7 @@ import { TRPC_PILLARS, type TrpcPillarId } from '@pops/pillar-sdk/capabilities';
 
 import type { Operation, TRPCLink } from '@trpc/client';
 
-import type { AppRouter } from '@pops/api';
+import type { AppRouter } from './app-router.js';
 
 /**
  * tRPC URL prefix per pillar. Each pillar's API serves at its own URL so
@@ -16,9 +16,7 @@ import type { AppRouter } from '@pops/api';
  * prefixes to per-pillar upstreams in production. A future PRD (217) will
  * generate this map from the pillar registry.
  */
-export const PILLAR_TRPC_URLS: Readonly<Record<TrpcPillarId, string>> = {
-  core: '/trpc-core',
-};
+export const PILLAR_TRPC_URLS: Readonly<Record<TrpcPillarId, string>> = {};
 
 /** Legacy pops-api URL — catches every procedure that isn't pillar-prefixed. */
 export const LEGACY_TRPC_URL = '/trpc';

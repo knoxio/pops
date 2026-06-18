@@ -1,70 +1,26 @@
 // @vitest-environment jsdom
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import {
   discoveredPillar,
-  fakeFetch,
   FakeRegistryTransport,
   jsonResponse,
 } from '../../client/__tests__/fixtures.js';
 import { PillarCallError } from '../../client/errors.js';
-import { __resetSharedPillarClient } from '../../client/factory.js';
 import { usePillarMutation, usePillarQuery, usePillarUtils } from '../hooks.js';
-import { PillarSdkProvider } from '../provider.js';
 import { pillarQueryKey } from '../query-key.js';
-
-import type { ReactNode } from 'react';
-
-import type { PillarClientOptions } from '../../client/factory.js';
-
-type FetchScript = (url: string, body: unknown) => Response | Promise<Response>;
-
-type Harness = {
-  wrapper: (props: { children: ReactNode }) => ReactNode;
-  queryClient: QueryClient;
-  calls: { url: string; body: unknown }[];
-};
-
-function buildHarness(transport: FakeRegistryTransport, script: FetchScript): Harness {
-  const calls: { url: string; body: unknown }[] = [];
-  const fetchImpl = fakeFetch(async (url, init) => {
-    let parsed: unknown = null;
-    if (init?.body && typeof init.body === 'string') {
-      try {
-        parsed = JSON.parse(init.body);
-      } catch {
-        parsed = init.body;
-      }
-    }
-    calls.push({ url, body: parsed });
-    return script(url, parsed);
-  });
-  const options: PillarClientOptions = { transport, fetchImpl };
-  const queryClient = new QueryClient({
-    defaultOptions: {
-      queries: { retry: false },
-      mutations: { retry: false },
-    },
-  });
-  const wrapper = ({ children }: { children: ReactNode }): ReactNode => (
-    <QueryClientProvider client={queryClient}>
-      <PillarSdkProvider options={options}>{children}</PillarSdkProvider>
-    </QueryClientProvider>
-  );
-  return { wrapper, queryClient, calls };
-}
+import { buildHarness, resetReactSdkCaches } from './rest-harness.js';
 
 type Item = { id: string; checked: boolean };
 
 describe('usePillarUtils.setData', () => {
-  beforeEach(() => __resetSharedPillarClient());
-  afterEach(() => __resetSharedPillarClient());
+  beforeEach(resetReactSdkCaches);
+  afterEach(resetReactSdkCaches);
 
   it('writes directly to the slot keyed by pillarQueryKey', async () => {
     const transport = new FakeRegistryTransport({ pillars: [discoveredPillar()] });
-    const harness = buildHarness(transport, () => jsonResponse({ result: { data: [] } }));
+    const harness = buildHarness(transport, () => jsonResponse([]));
 
     const { result } = renderHook(() => usePillarUtils('media'), { wrapper: harness.wrapper });
 
@@ -80,7 +36,7 @@ describe('usePillarUtils.setData', () => {
 
   it('returns the previous value as the snapshot before applying the updater', async () => {
     const transport = new FakeRegistryTransport({ pillars: [discoveredPillar()] });
-    const harness = buildHarness(transport, () => jsonResponse({ result: { data: [] } }));
+    const harness = buildHarness(transport, () => jsonResponse([]));
 
     const { result } = renderHook(() => usePillarUtils('media'), { wrapper: harness.wrapper });
 
@@ -102,16 +58,16 @@ describe('usePillarUtils.setData', () => {
 });
 
 describe('usePillarUtils.invalidate', () => {
-  beforeEach(() => __resetSharedPillarClient());
-  afterEach(() => __resetSharedPillarClient());
+  beforeEach(resetReactSdkCaches);
+  afterEach(resetReactSdkCaches);
 
   it('invalidates a specific router prefix', async () => {
     const transport = new FakeRegistryTransport({ pillars: [discoveredPillar()] });
     const harness = buildHarness(transport, (url) => {
-      if (url.endsWith('finance.wishlist.list')) {
-        return jsonResponse({ result: { data: [{ id: 'a' }] } });
+      if (url.endsWith('/wishlist/list')) {
+        return jsonResponse([{ id: 'a' }]);
       }
-      return jsonResponse({ result: { data: [] } });
+      return jsonResponse([]);
     });
 
     const { result: queryResult } = renderHook(
@@ -120,7 +76,7 @@ describe('usePillarUtils.invalidate', () => {
       { wrapper: harness.wrapper }
     );
     await waitFor(() => expect(queryResult.current.isSuccess).toBe(true));
-    const before = harness.calls.filter((c) => c.url.endsWith('finance.wishlist.list')).length;
+    const before = harness.calls.filter((c) => c.url.endsWith('/wishlist/list')).length;
 
     const { result: utilsResult } = renderHook(() => usePillarUtils('finance'), {
       wrapper: harness.wrapper,
@@ -130,7 +86,7 @@ describe('usePillarUtils.invalidate', () => {
     });
 
     await waitFor(() => {
-      const after = harness.calls.filter((c) => c.url.endsWith('finance.wishlist.list')).length;
+      const after = harness.calls.filter((c) => c.url.endsWith('/wishlist/list')).length;
       expect(after).toBeGreaterThan(before);
     });
   });
@@ -138,10 +94,10 @@ describe('usePillarUtils.invalidate', () => {
   it('invalidates the entire pillar when called with no routerPath', async () => {
     const transport = new FakeRegistryTransport({ pillars: [discoveredPillar()] });
     const harness = buildHarness(transport, (url) => {
-      if (url.endsWith('finance.wishlist.list')) {
-        return jsonResponse({ result: { data: [{ id: 'a' }] } });
+      if (url.endsWith('/wishlist/list')) {
+        return jsonResponse([{ id: 'a' }]);
       }
-      return jsonResponse({ result: { data: [] } });
+      return jsonResponse([]);
     });
 
     const { result: queryResult } = renderHook(
@@ -150,7 +106,7 @@ describe('usePillarUtils.invalidate', () => {
       { wrapper: harness.wrapper }
     );
     await waitFor(() => expect(queryResult.current.isSuccess).toBe(true));
-    const before = harness.calls.filter((c) => c.url.endsWith('finance.wishlist.list')).length;
+    const before = harness.calls.filter((c) => c.url.endsWith('/wishlist/list')).length;
 
     const { result: utilsResult } = renderHook(() => usePillarUtils('finance'), {
       wrapper: harness.wrapper,
@@ -160,20 +116,20 @@ describe('usePillarUtils.invalidate', () => {
     });
 
     await waitFor(() => {
-      const after = harness.calls.filter((c) => c.url.endsWith('finance.wishlist.list')).length;
+      const after = harness.calls.filter((c) => c.url.endsWith('/wishlist/list')).length;
       expect(after).toBeGreaterThan(before);
     });
   });
 });
 
 describe('usePillarUtils.fetchQuery', () => {
-  beforeEach(() => __resetSharedPillarClient());
-  afterEach(() => __resetSharedPillarClient());
+  beforeEach(resetReactSdkCaches);
+  afterEach(resetReactSdkCaches);
 
   it('resolves with the procedure output and caches it under the pillar query key', async () => {
     const transport = new FakeRegistryTransport({ pillars: [discoveredPillar()] });
     const payload = [{ id: 'wl-1', checked: false }];
-    const harness = buildHarness(transport, () => jsonResponse({ result: { data: payload } }));
+    const harness = buildHarness(transport, () => jsonResponse(payload));
 
     const { result } = renderHook(() => usePillarUtils('finance'), { wrapper: harness.wrapper });
 
@@ -194,7 +150,7 @@ describe('usePillarUtils.fetchQuery', () => {
     let next = 0;
     const harness = buildHarness(transport, () => {
       next += 1;
-      return jsonResponse({ result: { data: [{ id: `wl-${next}`, checked: false }] } });
+      return jsonResponse([{ id: `wl-${next}`, checked: false }]);
     });
 
     const { result } = renderHook(() => usePillarUtils('finance'), { wrapper: harness.wrapper });
@@ -214,9 +170,7 @@ describe('usePillarUtils.fetchQuery', () => {
 
   it('serves the cached value without issuing a new network call when staleTime keeps it fresh', async () => {
     const transport = new FakeRegistryTransport({ pillars: [discoveredPillar()] });
-    const harness = buildHarness(transport, () =>
-      jsonResponse({ result: { data: [{ id: 'x' }] } })
-    );
+    const harness = buildHarness(transport, () => jsonResponse([{ id: 'x' }]));
 
     const { result } = renderHook(() => usePillarUtils('finance'), { wrapper: harness.wrapper });
 
@@ -295,19 +249,16 @@ describe('usePillarUtils.fetchQuery', () => {
 });
 
 describe('usePillarMutation optimistic updates', () => {
-  beforeEach(() => __resetSharedPillarClient());
-  afterEach(() => __resetSharedPillarClient());
+  beforeEach(resetReactSdkCaches);
+  afterEach(resetReactSdkCaches);
 
   it('updates the cache during onMutate and rolls back from previousData on error', async () => {
     const transport = new FakeRegistryTransport({ pillars: [discoveredPillar()] });
     const harness = buildHarness(transport, (url) => {
-      if (url.endsWith('finance.wishlist.toggle')) {
-        return new Response(
-          JSON.stringify({ error: { code: 'INTERNAL_SERVER_ERROR', message: 'boom' } }),
-          { status: 500, headers: { 'content-type': 'application/json' } }
-        );
+      if (url.endsWith('/wishlist/toggle')) {
+        return jsonResponse({ message: 'boom' }, { status: 500 });
       }
-      return jsonResponse({ result: { data: [] } });
+      return jsonResponse([]);
     });
 
     const key = pillarQueryKey('finance', ['wishlist', 'list'], { limit: 10 });
@@ -373,12 +324,9 @@ describe('usePillarMutation optimistic updates', () => {
     let mode: 'ok' | 'fail' = 'ok';
     const harness = buildHarness(transport, () => {
       if (mode === 'fail') {
-        return new Response(
-          JSON.stringify({ error: { code: 'INTERNAL_SERVER_ERROR', message: 'boom' } }),
-          { status: 500, headers: { 'content-type': 'application/json' } }
-        );
+        return jsonResponse({ message: 'boom' }, { status: 500 });
       }
-      return jsonResponse({ result: { data: { ok: true } } });
+      return jsonResponse({ ok: true });
     });
 
     const settledCalls: Array<{ ok: boolean }> = [];

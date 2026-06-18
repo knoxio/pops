@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
@@ -9,60 +9,19 @@ import {
   FakeRegistryTransport,
   jsonResponse,
 } from '../../client/__tests__/fixtures.js';
-import { __resetSharedPillarClient } from '../../client/factory.js';
 import { usePillarMutation, usePillarQuery } from '../hooks.js';
 import { PillarSdkProvider } from '../provider.js';
+import { buildHarness, resetReactSdkCaches } from './rest-harness.js';
 
 import type { ReactNode } from 'react';
 
-import type { PillarClientOptions } from '../../client/factory.js';
-
-type FetchScript = (url: string, body: unknown) => Response | Promise<Response>;
-
-type Harness = {
-  wrapper: (props: { children: ReactNode }) => ReactNode;
-  queryClient: QueryClient;
-  calls: { url: string; body: unknown }[];
-};
-
-function buildHarness(transport: FakeRegistryTransport, script: FetchScript): Harness {
-  const calls: { url: string; body: unknown }[] = [];
-  const fetchImpl = fakeFetch(async (url, init) => {
-    let parsed: unknown = null;
-    if (init?.body && typeof init.body === 'string') {
-      try {
-        parsed = JSON.parse(init.body);
-      } catch {
-        parsed = init.body;
-      }
-    }
-    calls.push({ url, body: parsed });
-    return script(url, parsed);
-  });
-  const options: PillarClientOptions = { transport, fetchImpl };
-  const queryClient = new QueryClient({
-    defaultOptions: {
-      queries: { retry: false },
-      mutations: { retry: false },
-    },
-  });
-  const wrapper = ({ children }: { children: ReactNode }): ReactNode => (
-    <QueryClientProvider client={queryClient}>
-      <PillarSdkProvider options={options}>{children}</PillarSdkProvider>
-    </QueryClientProvider>
-  );
-  return { wrapper, queryClient, calls };
-}
-
 describe('usePillarQuery', () => {
-  beforeEach(() => __resetSharedPillarClient());
-  afterEach(() => __resetSharedPillarClient());
+  beforeEach(resetReactSdkCaches);
+  afterEach(resetReactSdkCaches);
 
   it('returns data from a successful pillar call (happy path)', async () => {
     const transport = new FakeRegistryTransport({ pillars: [discoveredPillar()] });
-    const harness = buildHarness(transport, () =>
-      jsonResponse({ result: { data: [{ id: 'wish-1' }] } })
-    );
+    const harness = buildHarness(transport, () => jsonResponse([{ id: 'wish-1' }]));
     const { result } = renderHook(
       () =>
         usePillarQuery<readonly { id: string }[]>('finance', ['wishlist', 'list'], { limit: 10 }),
@@ -139,14 +98,12 @@ describe('usePillarQuery', () => {
 });
 
 describe('usePillarMutation', () => {
-  beforeEach(() => __resetSharedPillarClient());
-  afterEach(() => __resetSharedPillarClient());
+  beforeEach(resetReactSdkCaches);
+  afterEach(resetReactSdkCaches);
 
   it('runs the mutation and reports isPending + final data', async () => {
     const transport = new FakeRegistryTransport({ pillars: [discoveredPillar()] });
-    const harness = buildHarness(transport, () =>
-      jsonResponse({ result: { data: { id: 'created' } } })
-    );
+    const harness = buildHarness(transport, () => jsonResponse({ id: 'created' }));
     const { result } = renderHook(
       () => usePillarMutation<{ name: string }, { id: string }>('finance', ['wishlist', 'create']),
       { wrapper: harness.wrapper }
@@ -163,10 +120,10 @@ describe('usePillarMutation', () => {
   it('invalidates the matching query prefix on success', async () => {
     const transport = new FakeRegistryTransport({ pillars: [discoveredPillar()] });
     const harness = buildHarness(transport, (url) => {
-      if (url.endsWith('finance.wishlist.list')) {
-        return jsonResponse({ result: { data: [{ id: 'a' }] } });
+      if (url.endsWith('/wishlist/list')) {
+        return jsonResponse([{ id: 'a' }]);
       }
-      return jsonResponse({ result: { data: { id: 'created' } } });
+      return jsonResponse({ id: 'created' });
     });
 
     const { result: queryResult } = renderHook(
@@ -176,9 +133,7 @@ describe('usePillarMutation', () => {
     );
     await waitFor(() => expect(queryResult.current.isSuccess).toBe(true));
 
-    const listCallsBefore = harness.calls.filter((c) =>
-      c.url.endsWith('finance.wishlist.list')
-    ).length;
+    const listCallsBefore = harness.calls.filter((c) => c.url.endsWith('/wishlist/list')).length;
     expect(listCallsBefore).toBe(1);
 
     const { result: mutationResult } = renderHook(
@@ -190,9 +145,7 @@ describe('usePillarMutation', () => {
     });
 
     await waitFor(() => {
-      const listCallsAfter = harness.calls.filter((c) =>
-        c.url.endsWith('finance.wishlist.list')
-      ).length;
+      const listCallsAfter = harness.calls.filter((c) => c.url.endsWith('/wishlist/list')).length;
       expect(listCallsAfter).toBeGreaterThan(listCallsBefore);
     });
   });

@@ -101,6 +101,81 @@ describe('generate-nginx-conf', () => {
       expect(perPillarIncludes ?? []).toHaveLength(PILLARS.length);
     });
 
+    it('emits one /<id>-api/ REST block per pillar', () => {
+      for (const id of PILLARS) {
+        expect(rendered).toContain(`location /${id}-api/ {`);
+      }
+    });
+
+    it('each REST block strips the /<id>-api prefix down to /', () => {
+      for (const id of PILLARS) {
+        expect(rendered).toContain(`rewrite ^/${id}-api/(.*)$ /$1 break;`);
+      }
+    });
+
+    it('each REST block proxies to the same PILLAR_UPSTREAMS host:port as its tRPC block', () => {
+      for (const id of PILLARS) {
+        const { host, port } = PILLAR_UPSTREAMS[id];
+        expect(rendered).toContain(`set $${id}_api_upstream http://${host}:${port};`);
+        expect(rendered).toContain(`proxy_pass $${id}_api_upstream;`);
+      }
+    });
+
+    it('each REST block includes the shared _pillar-proxy.conf partial (mirrors media)', () => {
+      // Known pillar ids carry no hyphens, so their nginx var name == the id.
+      const pillarVarAlternation = PILLAR_RENDER_ORDER.map((id) => id.replace(/-/g, '_')).join('|');
+      const perPillarRestIncludes = rendered.match(
+        new RegExp(
+          `proxy_pass \\$(?:${pillarVarAlternation})_api_upstream;\\n\\s*include /etc/nginx/snippets/_pillar-proxy\\.conf;`,
+          'g'
+        )
+      );
+      expect(perPillarRestIncludes).not.toBeNull();
+      expect(perPillarRestIncludes ?? []).toHaveLength(PILLARS.length);
+    });
+
+    it('renders REST blocks in PILLAR_RENDER_ORDER', () => {
+      const positions = PILLAR_RENDER_ORDER.map((id) => rendered.indexOf(`location /${id}-api/ {`));
+      for (let i = 1; i < positions.length; i += 1) {
+        expect(positions[i]!).toBeGreaterThan(positions[i - 1]!);
+        expect(positions[i]!).toBeGreaterThan(-1);
+      }
+    });
+
+    it('renders every REST block after its matching tRPC block (REST section follows dispatchers)', () => {
+      for (const id of PILLARS) {
+        const trpcIdx = rendered.indexOf(`location /trpc-${id}/ {`);
+        const restIdx = rendered.indexOf(`location /${id}-api/ {`);
+        expect(trpcIdx).toBeGreaterThan(-1);
+        expect(restIdx).toBeGreaterThan(trpcIdx);
+      }
+    });
+
+    it('routes /core-api specifically to the core pillar on :3001', () => {
+      const { host, port } = PILLAR_UPSTREAMS.core;
+      expect(host).toBe('core-api');
+      expect(port).toBe(3001);
+      expect(rendered).toContain('location /core-api/ {');
+      expect(rendered).toContain('set $core_api_upstream http://core-api:3001;');
+    });
+
+    it('routes the core /registry/subscribe SSE stream to the core pillar with buffering off', () => {
+      expect(rendered).toContain('location ~ ^/registry/subscribe/?$ {');
+      expect(rendered).toContain('set $registry_subscribe_upstream http://core-api:3001;');
+      expect(rendered).toMatch(
+        /location ~ \^\/registry\/subscribe\/\?\$ \{[\s\S]*?proxy_buffering off;/
+      );
+    });
+
+    it('keeps /pillars on core-api and /pillars/health on pops-api (health probe unchanged)', () => {
+      expect(rendered).toMatch(
+        /location ~ \^\/pillars\/\?\$ \{[\s\S]*?set \$pillars_upstream http:\/\/core-api:3001;/
+      );
+      expect(rendered).toMatch(
+        /location ~ \^\/pillars\/health\/\?\$ \{[\s\S]*?proxy_pass http:\/\/pops-api:3000;/
+      );
+    });
+
     it('keeps the legacy /trpc fallback proxying to pops-api', () => {
       expect(rendered).toMatch(
         /location \/trpc \{[\s\S]*?proxy_pass http:\/\/pops-api:3000\/trpc;/
@@ -121,6 +196,33 @@ describe('generate-nginx-conf', () => {
 
     it('declares the docker DNS resolver so variable-form proxy_pass works', () => {
       expect(rendered).toContain('resolver 127.0.0.11');
+    });
+
+    it('emits the non-pillar /orchestrator-api/ block to pops-orchestrator:3009', () => {
+      expect(rendered).toContain('location /orchestrator-api/ {');
+      expect(rendered).toContain('rewrite ^/orchestrator-api/(.*)$ /$1 break;');
+      expect(rendered).toContain('set $orchestrator_api_upstream http://pops-orchestrator:3009;');
+      expect(rendered).toContain('proxy_pass $orchestrator_api_upstream;');
+    });
+
+    it('emits exactly one /orchestrator-api/ block (not per-pillar)', () => {
+      const matches = rendered.match(/location \/orchestrator-api\/ \{/g);
+      expect(matches).toHaveLength(1);
+    });
+
+    it('keeps the orchestrator out of PILLAR_UPSTREAMS (it is not a pillar)', () => {
+      expect(PILLARS).not.toContain('orchestrator');
+      expect(Object.keys(PILLAR_UPSTREAMS)).not.toContain('orchestrator');
+    });
+
+    it('renders the orchestrator block after the pillar REST blocks and before the legacy /trpc fallback', () => {
+      const lastRestIdx = Math.max(
+        ...PILLAR_RENDER_ORDER.map((id) => rendered.indexOf(`location /${id}-api/ {`))
+      );
+      const orchestratorIdx = rendered.indexOf('location /orchestrator-api/ {');
+      const legacyTrpcIdx = rendered.indexOf('location /trpc {');
+      expect(orchestratorIdx).toBeGreaterThan(lastRestIdx);
+      expect(legacyTrpcIdx).toBeGreaterThan(orchestratorIdx);
     });
 
     it('renders pillar blocks in PILLAR_RENDER_ORDER', () => {
@@ -276,6 +378,33 @@ describe('generate-nginx-conf', () => {
       expect(rendered).toContain('location /trpc-plugin-fitness/ {');
       expect(rendered).toContain('set $trpc_plugin_fitness_upstream http://fitness-api:4200;');
       expect(rendered).toContain('proxy_pass $trpc_plugin_fitness_upstream;');
+    });
+
+    it('emits a /<id>-api/ REST block alongside the tRPC block for each upstream', () => {
+      const rendered = renderNginxConfFromUpstreams([
+        { pillarId: 'plugin-fitness', host: 'fitness-api', port: 4200 },
+      ]);
+      expect(rendered).toContain('location /plugin-fitness-api/ {');
+      expect(rendered).toContain('rewrite ^/plugin-fitness-api/(.*)$ /$1 break;');
+      expect(rendered).toContain('set $plugin_fitness_api_upstream http://fitness-api:4200;');
+      expect(rendered).toContain('proxy_pass $plugin_fitness_api_upstream;');
+    });
+
+    it('emits zero pillar REST blocks for an empty registry but keeps the orchestrator block', () => {
+      const rendered = renderNginxConfFromUpstreams([]);
+      expect(rendered).not.toMatch(
+        /location \/(?:core|inventory|media|finance|food|lists|cerebrum)-api\/ \{/
+      );
+      expect(rendered).toContain('location /orchestrator-api/ {');
+    });
+
+    it('emits the orchestrator block alongside pillar blocks for a non-empty registry', () => {
+      const rendered = renderNginxConfFromUpstreams([
+        { pillarId: 'plugin-fitness', host: 'fitness-api', port: 4200 },
+      ]);
+      const matches = rendered.match(/location \/orchestrator-api\/ \{/g);
+      expect(matches).toHaveLength(1);
+      expect(rendered).toContain('set $orchestrator_api_upstream http://pops-orchestrator:3009;');
     });
   });
 

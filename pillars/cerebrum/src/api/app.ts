@@ -10,6 +10,10 @@
  * so far (templates). Identity-dependent domains (ego/retrieval/query/ingest)
  * land in later slices behind the pillar auth middleware.
  */
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
 import { createExpressEndpoints } from '@ts-rest/express';
 import express, { type Express, type Request, type Response } from 'express';
 
@@ -27,6 +31,27 @@ import { makeQueryStreamHandler } from './rest/query-stream-route.js';
  */
 const JSON_BODY_LIMIT = '20mb';
 
+/**
+ * The committed OpenAPI projection (`pillars/cerebrum/openapi/cerebrum.openapi.json`),
+ * served verbatim at `GET /openapi` so the pillar SDK can build its route map
+ * from the live pillar rather than a vendored copy.
+ *
+ * Resolved relative to this module — `../../openapi/cerebrum.openapi.json` lands
+ * at the package root in BOTH layouts: `src/api/app.ts` (dev) and
+ * `dist/api/app.js` (prod, `outDir: dist` / `rootDir: src`), since `openapi/`
+ * is a sibling of both `src/` and `dist/`.
+ *
+ * This is a RAW route, NOT a ts-rest contract route, so it does not appear in
+ * the generated document (`generate:openapi` is a pure projection of the
+ * contract) — no drift. Read once at module load: the file is static.
+ */
+const openapiDocument: unknown = JSON.parse(
+  readFileSync(
+    join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'openapi', 'cerebrum.openapi.json'),
+    'utf8'
+  )
+);
+
 export function createCerebrumApiApp(deps: CerebrumApiDeps): Express {
   const app = express();
   app.disable('x-powered-by');
@@ -40,6 +65,14 @@ export function createCerebrumApiApp(deps: CerebrumApiDeps): Express {
 
   app.get('/pillars', (_req: Request, res: Response) => {
     res.json(handlers.pillars());
+  });
+
+  // Self-describing OpenAPI surface. Serves the committed projection verbatim
+  // so a sibling pillar / the pillar SDK can build its operationId route map
+  // against the live pillar. Raw route — intentionally NOT a ts-rest contract
+  // route, so it never appears in the generated document.
+  app.get('/openapi', (_req: Request, res: Response) => {
+    res.json(openapiDocument);
   });
 
   // The ego SSE route (`text/event-stream`) can't be modelled in ts-rest, so it

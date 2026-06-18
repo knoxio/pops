@@ -48,6 +48,14 @@ interface Pagination {
   hasMore: boolean;
 }
 
+export interface SearchHit {
+  uri: string;
+  score: number;
+  matchField: string;
+  matchType: 'exact' | 'prefix' | 'contains';
+  data: Record<string, unknown>;
+}
+
 interface TransactionSnapshot {
   id: string;
   notionId: string | null;
@@ -132,9 +140,52 @@ interface TagRule {
   lastUsedAt: string | null;
 }
 
+interface Correction {
+  id: string;
+  descriptionPattern: string;
+  matchType: 'exact' | 'contains' | 'regex';
+  entityId: string | null;
+  entityName: string | null;
+  location: string | null;
+  tags: string[];
+  transactionType: 'purchase' | 'transfer' | 'income' | null;
+  isActive: boolean;
+  priority: number;
+  confidence: number;
+  timesApplied: number;
+  createdAt: string;
+  lastUsedAt: string | null;
+}
+
+interface PreviewMatchResult {
+  matches: {
+    id: string;
+    description: string;
+    account: string;
+    amount: number;
+    date: string;
+    entityName: string | null;
+    tags: string[];
+  }[];
+  total: number;
+  scanned: number;
+  truncated: boolean;
+}
+
+export interface CorrectionListQuery {
+  minConfidence?: number;
+  matchType?: 'exact' | 'contains' | 'regex';
+  limit?: number;
+  offset?: number;
+}
+
 export function makeClient(app: Express) {
   const r = supertest(app);
   return {
+    search: {
+      run: (body: { query: { text: string; filters?: unknown[] }; context?: unknown }) =>
+        send<{ hits: SearchHit[] }>(r.post('/search').send(body)),
+    },
     wishlist: {
       list: (query: WishListQuery = {}) =>
         send<{ data: WishListItem[]; pagination: Pagination }>(r.get('/wishlist').query(query)),
@@ -191,6 +242,24 @@ export function makeClient(app: Express) {
         send<{ message: string; followUpProposal: TagRuleProposal | null }>(
           r.post('/tag-rules/reject').send(body)
         ),
+    },
+    corrections: {
+      list: (query: CorrectionListQuery = {}) =>
+        send<{ data: Correction[]; pagination: Pagination }>(r.get('/corrections').query(query)),
+      get: (id: string) => send<{ data: Correction }>(r.get(`/corrections/${id}`)),
+      createOrUpdate: (body: Record<string, unknown>) =>
+        send<{ data: Correction; message: string }>(r.post('/corrections').send(body)),
+      update: (id: string, data: Record<string, unknown>) =>
+        send<{ data: Correction; message: string }>(r.patch(`/corrections/${id}`).send(data)),
+      delete: (id: string) => send<{ message: string }>(r.delete(`/corrections/${id}`)),
+      adjustConfidence: (id: string, delta: number) =>
+        send<{ message: string }>(r.post(`/corrections/${id}/adjust-confidence`).send({ delta })),
+      findMatch: (body: { description: string; minConfidence?: number }) =>
+        send<{ data: Correction | null; status: 'matched' | 'uncertain' | null }>(
+          r.post('/corrections/find-match').send(body)
+        ),
+      previewMatches: (body: Record<string, unknown>) =>
+        send<{ data: PreviewMatchResult }>(r.post('/corrections/preview-matches').send(body)),
     },
     imports: {
       processImport: (body: Record<string, unknown>) =>
