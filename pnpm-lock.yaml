@@ -1397,6 +1397,9 @@ importers:
 
   packages/core-db:
     dependencies:
+      '@pops/shared-schema':
+        specifier: workspace:*
+        version: link:../shared-schema
       better-sqlite3:
         specifier: ^12.10.0
         version: 12.10.0
@@ -1652,6 +1655,31 @@ importers:
       react-dom:
         specifier: ^19.2.7
         version: 19.2.7(react@19.2.7)
+      typescript:
+        specifier: ^6.0.3
+        version: 6.0.3
+      vitest:
+        specifier: ^4.1.8
+        version: 4.1.8(@types/node@25.9.3)(@vitest/coverage-v8@4.1.8)(jsdom@29.1.1(@noble/hashes@1.8.0))(msw@2.14.6(@types/node@25.9.3)(typescript@6.0.3))(vite@8.0.16(@types/node@25.9.3)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.46.1)(tsx@4.22.4)(yaml@2.9.0))
+
+  packages/shared-schema:
+    dependencies:
+      drizzle-orm:
+        specifier: ^0.45.2
+        version: 0.45.2(@types/better-sqlite3@7.6.13)(better-sqlite3@12.10.0)
+      drizzle-zod:
+        specifier: ^0.8.3
+        version: 0.8.3(drizzle-orm@0.45.2(@types/better-sqlite3@7.6.13)(better-sqlite3@12.10.0))(zod@4.4.3)
+      zod:
+        specifier: ^4.4.3
+        version: 4.4.3
+    devDependencies:
+      '@types/node':
+        specifier: ^25.9.3
+        version: 25.9.3
+      '@vitest/coverage-v8':
+        specifier: ^4.1.8
+        version: 4.1.8(vitest@4.1.8)
       typescript:
         specifier: ^6.0.3
         version: 6.0.3
@@ -1934,12 +1962,12 @@ importers:
 
   pillars/core:
     dependencies:
-      '@pops/cerebrum-db':
-        specifier: workspace:*
-        version: link:../../packages/cerebrum-db
       '@pops/pillar-sdk':
         specifier: workspace:*
         version: link:../../packages/pillar-sdk
+      '@pops/shared-schema':
+        specifier: workspace:*
+        version: link:../../packages/shared-schema
       '@pops/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -2022,12 +2050,12 @@ importers:
       '@anthropic-ai/sdk':
         specifier: ^0.104.1
         version: 0.104.1(zod@4.4.3)
-      '@pops/core-db':
-        specifier: workspace:*
-        version: link:../../packages/core-db
       '@pops/pillar-sdk':
         specifier: workspace:*
         version: link:../../packages/pillar-sdk
+      '@pops/shared-schema':
+        specifier: workspace:*
+        version: link:../../packages/shared-schema
       '@pops/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -2098,12 +2126,12 @@ importers:
       '@mozilla/readability':
         specifier: ^0.6.0
         version: 0.6.0
-      '@pops/core-db':
-        specifier: workspace:*
-        version: link:../../packages/core-db
       '@pops/pillar-sdk':
         specifier: workspace:*
         version: link:../../packages/pillar-sdk
+      '@pops/shared-schema':
+        specifier: workspace:*
+        version: link:../../packages/shared-schema
       '@pops/types':
         specifier: workspace:*
         version: link:../../packages/types

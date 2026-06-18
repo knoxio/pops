@@ -7,11 +7,12 @@
  * tags, slug registry, recipe-version rejections, prep states) live in
  * `./schema/food-*.ts` files in this directory.
  *
- * `aiInferenceLog` is re-exported from `@pops/core-db` — the AI surface
- * is core-owned (PRD-245 US-07) but food services persist inference
- * results against it.
+ * `aiInferenceLog` is re-exported from `@pops/shared-schema` — the AI
+ * surface is core-owned (PRD-245 US-07) but food services persist
+ * inference results against it, so the table def lives in the shared
+ * cross-pillar package rather than `@pops/core-db`.
  */
-export { aiInferenceLog } from '@pops/core-db';
+export { aiInferenceLog } from '@pops/shared-schema';
 export { batchConsumptions, batches, recipeRuns } from './schema/food-batches.js';
 export { recipeLines, recipeSteps, recipeVersionProposedSlugs } from './schema/food-compile.js';
 export { ingredientWeights, unitConversions } from './schema/food-conversions.js';

@@ -12,6 +12,8 @@
  */
 import type { InferInsertModel, InferSelectModel } from 'drizzle-orm';
 
+export { ENTITY_TYPES, type EntityType } from '@pops/shared-schema';
+
 import type {
   aiAlertRules,
   aiAlerts,
@@ -46,14 +48,3 @@ export type AiAlertRuleInsert = InferInsertModel<typeof aiAlertRules>;
 
 export type AiAlertRow = InferSelectModel<typeof aiAlerts>;
 export type AiAlertInsert = InferInsertModel<typeof aiAlerts>;
-
-export const ENTITY_TYPES = [
-  'company',
-  'person',
-  'government',
-  'bank',
-  'place',
-  'brand',
-  'organisation',
-] as const;
-export type EntityType = (typeof ENTITY_TYPES)[number];

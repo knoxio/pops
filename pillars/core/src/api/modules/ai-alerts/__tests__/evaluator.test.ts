@@ -3,16 +3,15 @@
  * `apps/pops-api/src/modules/core/ai-alerts/evaluator.test.ts`).
  *
  * Runs against an in-memory `core.db` opened per-test; usage + budget rows
- * are seeded via the relocated services. The nudge dispatcher writes to a
- * separate in-memory cerebrum.db opened via `openCerebrumDb`.
+ * are seeded via the relocated services. The nudge dispatcher calls the
+ * cerebrum REST SDK — tests stub the injectable nudge sink, so no cerebrum
+ * db (in-memory or otherwise) is involved.
  */
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
-import { openCerebrumDb, type OpenedCerebrumDb } from '@pops/cerebrum-db';
 
 import {
   aiUsageService,
@@ -23,6 +22,7 @@ import {
 } from '../../../../db/index.js';
 import { insertAlertIfNotDuplicate } from '../alerts-store.js';
 import { dispatchAlert, resolveChannels } from '../dispatch.js';
+import { type CerebrumNudgeCreateBody, type NudgeSink } from '../dispatchers/nudge.js';
 import {
   escapeTelegramMarkdownV2,
   fetchTransport,
@@ -32,25 +32,33 @@ import {
 import { acknowledgeAlert, listAlerts, runEvaluation } from '../evaluator.js';
 import * as service from '../service.js';
 
+import type { CallResult } from '@pops/pillar-sdk/client';
+
 import type { FiredAlert } from '../types.js';
 
 let tmpDir: string;
 let coreDb: OpenedCoreDb;
-let cerebrum: OpenedCerebrumDb;
 let db: CoreDb;
 
 beforeEach(() => {
   tmpDir = mkdtempSync(join(tmpdir(), 'core-api-ai-alerts-test-'));
   coreDb = openCoreDb(join(tmpDir, 'core.db'));
-  cerebrum = openCerebrumDb(join(tmpDir, 'cerebrum.db'));
   db = coreDb.db;
 });
 
 afterEach(() => {
-  cerebrum.raw.close();
   coreDb.raw.close();
   rmSync(tmpDir, { recursive: true, force: true });
 });
+
+function okSink(): NudgeSink & { calls: CerebrumNudgeCreateBody[] } {
+  const calls: CerebrumNudgeCreateBody[] = [];
+  const sink: NudgeSink = (body) => {
+    calls.push(body);
+    return Promise.resolve<CallResult<unknown>>({ kind: 'ok', value: { nudge: { id: 'n_1' } } });
+  };
+  return Object.assign(sink, { calls });
+}
 
 function seedUsage(overrides: Partial<CreateInferenceLogInput> = {}): void {
   aiUsageService.createInferenceLog(db, {
@@ -375,13 +383,71 @@ describe('dispatch facade', () => {
     expect(results[1]).toMatchObject({ channel: 'telegram', delivered: true });
   });
 
-  it('the default nudge dispatcher writes a nudge_log row to the cerebrum db', async () => {
-    const results = await dispatchAlert(buildAlert({ severity: 'warning' }), {
-      cerebrumDb: cerebrum.db,
-    });
+  it('the default nudge dispatcher creates a cerebrum nudge via the injected sink', async () => {
+    const sink = okSink();
+    const results = await dispatchAlert(buildAlert({ severity: 'warning' }), { nudgeSink: sink });
     expect(results[0]).toMatchObject({ channel: 'nudge', delivered: true });
-    const rows = cerebrum.raw.prepare('SELECT COUNT(*) as c FROM nudge_log').get() as { c: number };
-    expect(rows.c).toBe(1);
+    expect(sink.calls).toHaveLength(1);
+    expect(sink.calls[0]).toMatchObject({
+      type: 'insight',
+      title: 'AI alert: budget-threshold',
+      body: 'Budget breach (budget:global)',
+      priority: 'medium',
+      engramIds: [],
+      action: {
+        type: 'review',
+        params: {
+          source: 'ai-alert',
+          alertId: 1,
+          ruleId: 1,
+          alertType: 'budget-threshold',
+          severity: 'warning',
+        },
+      },
+    });
+  });
+
+  it('maps critical severity to a high-priority nudge', async () => {
+    const sink = okSink();
+    await dispatchAlert(buildAlert({ severity: 'critical' }), {
+      nudgeSink: sink,
+      channels: ['nudge'],
+    });
+    expect(sink.calls[0]?.priority).toBe('high');
+  });
+
+  it('swallows an unavailable cerebrum and reports the nudge channel as not delivered', async () => {
+    const sink: NudgeSink = () =>
+      Promise.resolve<CallResult<unknown>>({ kind: 'unavailable', pillar: 'cerebrum' });
+    const results = await dispatchAlert(buildAlert({ severity: 'warning' }), { nudgeSink: sink });
+    expect(results[0]).toMatchObject({ channel: 'nudge', delivered: false, error: null });
+  });
+
+  it('runEvaluation does not break when the nudge sink reports cerebrum unavailable', async () => {
+    seedGlobalCostBudget(10);
+    service.createRule(db, { type: 'budget-threshold', thresholdValue: 80 });
+    seedUsage({ costUsd: 9, createdAt: thisMonthIso(1) });
+
+    const failingSink: NudgeSink = () =>
+      Promise.resolve<CallResult<unknown>>({ kind: 'unavailable', pillar: 'cerebrum' });
+    const result = await runEvaluation(db, { nudgeSink: failingSink });
+
+    expect(result.alerts).toHaveLength(1);
+    expect(result.alerts[0]?.channels).not.toContain('nudge');
+    expect(listAlerts(db).total).toBe(1);
+  });
+
+  it('runEvaluation marks the nudge channel delivered when the sink succeeds', async () => {
+    seedGlobalCostBudget(10);
+    service.createRule(db, { type: 'budget-threshold', thresholdValue: 80 });
+    seedUsage({ costUsd: 9, createdAt: thisMonthIso(1) });
+
+    const sink = okSink();
+    const result = await runEvaluation(db, { nudgeSink: sink });
+
+    expect(result.alerts).toHaveLength(1);
+    expect(result.alerts[0]?.channels).toContain('nudge');
+    expect(sink.calls).toHaveLength(1);
   });
 
   it('renders a markdown telegram message', () => {

@@ -17,12 +17,11 @@
  */
 import { eq } from 'drizzle-orm';
 
-import { type CerebrumDb } from '@pops/cerebrum-db';
-
 import { aiAlertRules, type CoreDb } from '../../../db/index.js';
 import { logger } from '../../shared/logger.js';
 import { insertAlertIfNotDuplicate } from './alerts-store.js';
 import { dispatchAlert } from './dispatch.js';
+import { type NudgeSink } from './dispatchers/nudge.js';
 import { evaluateBudgetThreshold } from './evaluators/budget.js';
 import { evaluateErrorSpike } from './evaluators/error-spike.js';
 import { evaluateLatencyDegradation } from './evaluators/latency.js';
@@ -43,8 +42,8 @@ export interface RunEvaluationOptions {
   now?: Date;
   /** Skip channel dispatch (used in tests that only assert on rows). */
   dispatch?: boolean;
-  /** Cerebrum handle threaded to the nudge dispatcher (tests inject in-memory). */
-  cerebrumDb?: CerebrumDb;
+  /** Cerebrum nudge sink threaded to the nudge dispatcher (tests stub it). */
+  nudgeSink?: NudgeSink;
 }
 
 export interface RunEvaluationResult {
@@ -74,10 +73,10 @@ export function loadEnabledRules(db: CoreDb): AlertRule[] {
 async function dispatchPersistedAlert(
   alert: FiredAlert,
   dispatchEnabled: boolean,
-  cerebrumDb?: CerebrumDb
+  nudgeSink?: NudgeSink
 ): Promise<DispatchedAlert> {
   if (!dispatchEnabled) return { ...alert, channels: [] };
-  const results = await dispatchAlert(alert, cerebrumDb ? { cerebrumDb } : {});
+  const results = await dispatchAlert(alert, nudgeSink ? { nudgeSink } : {});
   const channels = results.filter((r) => r.delivered).map((r) => r.channel);
   return { ...alert, channels };
 }
@@ -107,7 +106,7 @@ export async function runEvaluation(
         dedupedCount += 1;
         continue;
       }
-      fired.push(await dispatchPersistedAlert(persisted, dispatchEnabled, options.cerebrumDb));
+      fired.push(await dispatchPersistedAlert(persisted, dispatchEnabled, options.nudgeSink));
     }
   }
   logger.info(

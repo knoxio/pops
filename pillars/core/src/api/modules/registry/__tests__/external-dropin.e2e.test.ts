@@ -6,7 +6,12 @@
  *
  *   - US-01 register endpoint (`POST /core.registry.register`)
  *   - US-02 heartbeat endpoint + hard-eviction ticker
- *   - US-03 nginx generator dynamic mode (PRD-232)
+ *   - US-03 dynamic source for the nginx generator — `core.registry.list`
+ *     (PRD-232). This test owns only the registry-side contract (the
+ *     `{ pillarId, baseUrl }` list the generator fetches); the rendering
+ *     of that source into nginx blocks is covered by the generator's own
+ *     suite at `apps/pops-shell/scripts/generate-nginx-conf.test.ts`, so
+ *     the core gate stays free of any `apps/pops-shell` import.
  *   - US-04 deregister endpoint (`POST /core.registry.deregister`)
  *
  * The test boots a throwaway in-process HTTP pillar via the wire-format
@@ -17,8 +22,8 @@
  *   1. Boot core-api on an ephemeral port with a temp-dir core.db.
  *   2. Spawn the fixture pillar; capture its `baseUrl`.
  *   3. POST register → assert 200, persisted row, `registered` event.
- *   4. Call `renderNginxConfDynamic` against the live registry — assert
- *      the rendered conf contains the new pillar's `location` block.
+ *   4. GET `core.registry.list` — assert the dynamic source the nginx
+ *      generator consumes now lists the new pillar (pillarId + baseUrl).
  *   5. Backdate the heartbeat + flip status to `unavailable` past the
  *      eviction threshold; run one eviction tick — assert DELETE plus
  *      a `deregistered` event with `reason: 'lost-heartbeat'`.
@@ -40,7 +45,6 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { startFixturePillar, type FixturePillar } from '@pops/wire-conformance/fixture';
 
-import { renderNginxConfDynamic } from '../../../../../../../apps/pops-shell/scripts/generate-nginx-conf.ts';
 import { openCoreDb, pillarRegistryService, type OpenedCoreDb } from '../../../../db/index.js';
 import { createCoreApiApp } from '../../../app.js';
 import { registryEventBus, type RegistryEventPayload } from '../event-bus.js';
@@ -51,6 +55,47 @@ import type { AddressInfo } from 'node:net';
 import type { ManifestPayload } from '@pops/pillar-sdk';
 
 const PILLAR_ID = 'drop-in';
+
+interface RegistryListEntry {
+  readonly pillarId: string;
+  readonly baseUrl: string;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+/**
+ * Hit the exact `GET /trpc/core.registry.list` endpoint the nginx
+ * generator's `fetchRegistryViaTrpc` consumes (PRD-232) and return the
+ * parsed `{ pillarId, baseUrl }` entries. Pinning the wire shape here
+ * proves the dynamic-source contract at the core layer without importing
+ * the pops-shell generator — the rendering of this source into nginx
+ * blocks lives in `apps/pops-shell/scripts/generate-nginx-conf.test.ts`.
+ */
+async function fetchRegistryDynamicSource(): Promise<RegistryListEntry[]> {
+  const res = await request(coreApiBaseUrl).get(
+    `/trpc/core.registry.list?input=${encodeURIComponent('{}')}`
+  );
+  expect(res.status).toBe(200);
+  const body: unknown = res.body;
+  const result = isRecord(body) ? body['result'] : undefined;
+  const data = isRecord(result) ? result['data'] : undefined;
+  const pillars = isRecord(data) ? data['pillars'] : undefined;
+  if (!Array.isArray(pillars)) {
+    throw new Error('core.registry.list response is missing a `pillars` array');
+  }
+  return pillars.map((raw: unknown, index: number) => {
+    if (!isRecord(raw)) {
+      throw new Error(`core.registry.list pillars[${index}] is not an object`);
+    }
+    const { pillarId, baseUrl } = raw;
+    if (typeof pillarId !== 'string' || typeof baseUrl !== 'string') {
+      throw new Error(`core.registry.list pillars[${index}] is malformed`);
+    }
+    return { pillarId, baseUrl };
+  });
+}
 
 function dropInManifest(overrides?: Partial<ManifestPayload>): ManifestPayload {
   return {
@@ -140,11 +185,8 @@ describe('PRD-228 US-05 — external pillar drop-in lifecycle', () => {
     expect(registered).toHaveLength(1);
     expect(registered[0]).toMatchObject({ pillarId: PILLAR_ID });
 
-    const renderedConf = await renderNginxConfDynamic(coreApiBaseUrl);
-    expect(renderedConf).toContain(`location /trpc-${PILLAR_ID}/`);
-    expect(renderedConf).toContain(`rewrite ^/trpc-${PILLAR_ID}/(.*)$ /trpc/$1 break;`);
-    const url = new URL(pillar.baseUrl);
-    expect(renderedConf).toContain(`http://${url.hostname}:${url.port}`);
+    const dynamicSource = await fetchRegistryDynamicSource();
+    expect(dynamicSource).toContainEqual({ pillarId: PILLAR_ID, baseUrl: pillar.baseUrl });
 
     const now = new Date();
     const longAgo = new Date(now.getTime() - (EVICTION_THRESHOLD_MS + 60_000)).toISOString();
@@ -171,8 +213,8 @@ describe('PRD-228 US-05 — external pillar drop-in lifecycle', () => {
       evictedAt: now.toISOString(),
     });
 
-    const renderedAfterEviction = await renderNginxConfDynamic(coreApiBaseUrl);
-    expect(renderedAfterEviction).not.toContain(`location /trpc-${PILLAR_ID}/`);
+    const sourceAfterEviction = await fetchRegistryDynamicSource();
+    expect(sourceAfterEviction.some((e) => e.pillarId === PILLAR_ID)).toBe(false);
 
     capturedEvents = [];
 
@@ -208,19 +250,21 @@ describe('PRD-228 US-05 — external pillar drop-in lifecycle', () => {
       reason: 'requested',
     });
 
-    const renderedAfterDereg = await renderNginxConfDynamic(coreApiBaseUrl);
-    expect(renderedAfterDereg).not.toContain(`location /trpc-${PILLAR_ID}/`);
+    const sourceAfterDereg = await fetchRegistryDynamicSource();
+    expect(sourceAfterDereg.some((e) => e.pillarId === PILLAR_ID)).toBe(false);
   });
 
-  it('an unknown-pillar baseUrl with a non-127.0.0.1 host still renders correctly through the generator', async () => {
+  it('serves an unknown-pillar non-localhost baseUrl verbatim in the dynamic source', async () => {
     await request(coreApiBaseUrl).post('/core.registry.register').send({
       pillarId: PILLAR_ID,
       baseUrl: 'http://drop-in-api:4242',
       manifest: dropInManifest(),
     });
 
-    const rendered = await renderNginxConfDynamic(coreApiBaseUrl);
-    expect(rendered).toContain(`location /trpc-${PILLAR_ID}/`);
-    expect(rendered).toContain('http://drop-in-api:4242');
+    const dynamicSource = await fetchRegistryDynamicSource();
+    expect(dynamicSource).toContainEqual({
+      pillarId: PILLAR_ID,
+      baseUrl: 'http://drop-in-api:4242',
+    });
   });
 });
