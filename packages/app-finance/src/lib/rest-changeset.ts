@@ -43,4 +43,23 @@ export function toRestCorrectionChangeSet(changeSet: ChangeSet): RestCorrectionC
   };
 }
 
+/** Coerce the store's pending ChangeSets into the generated REST `{ changeSet }[]` shape. */
+export function toRestPendingChangeSets(
+  pending: ReadonlyArray<{ changeSet: ChangeSet }>
+): Array<{ changeSet: RestCorrectionChangeSet }> {
+  return pending.map((p) => ({ changeSet: toRestCorrectionChangeSet(p.changeSet) }));
+}
+
+/**
+ * Coerce a correction signal's nullable `transactionType` to the contract's
+ * non-null form (same `null → omitted` rule as the ChangeSet op data).
+ */
+export function toRestSignal<
+  T extends { transactionType?: 'purchase' | 'transfer' | 'income' | null },
+>(
+  signal: T
+): Omit<T, 'transactionType'> & { transactionType?: 'purchase' | 'transfer' | 'income' } {
+  return normalizeData(signal);
+}
+
 export type { RestCorrectionChangeSet };

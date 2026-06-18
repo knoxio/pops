@@ -3,11 +3,15 @@
  *
  * Extracted from CorrectionProposalDialog (tb-364).
  */
+import { useMutation } from '@tanstack/react-query';
 import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
 
-import { usePillarMutation } from '@pops/pillar-sdk/react';
-
+import { unwrap } from '../../../finance-api-helpers.js';
+import {
+  correctionsRejectChangeSet,
+  correctionsReviseChangeSet,
+} from '../../../finance-api/index.js';
 import { useImportStore } from '../../../store/importStore';
 import { localOpsToChangeSet, serverOpToLocalOp } from './useLocalOps';
 
@@ -24,11 +28,6 @@ import type {
 } from './applyRejectTypes';
 
 type ReviseMutateAsync = (input: ReviseChangeSetInput) => Promise<ReviseChangeSetOutput>;
-
-export type {
-  UseApplyRejectMutationsOptions,
-  UseApplyRejectMutationsReturn,
-} from './applyRejectTypes';
 
 function useApplyHandlers(opts: UseApplyRejectMutationsOptions) {
   const addPendingChangeSet = useImportStore((s) => s.addPendingChangeSet);
@@ -116,22 +115,20 @@ function useRejectAndAi(
   }
 ) {
   const { signal, localOps, combinedPreview, onClose } = options;
-  const rejectMutation = usePillarMutation<RejectChangeSetInput, unknown>(
-    'core',
-    ['corrections', 'rejectChangeSet'],
-    {
-      onSuccess: () => {
-        toast.success('Proposal rejected — feedback recorded');
-        onClose();
-      },
-      onError: (err) => toast.error(err.message),
-    }
-  );
-  const reviseMutation = usePillarMutation<ReviseChangeSetInput, ReviseChangeSetOutput>(
-    'core',
-    ['corrections', 'reviseChangeSet'],
-    { retry: false }
-  );
+  const rejectMutation = useMutation({
+    mutationFn: async (vars: RejectChangeSetInput) =>
+      unwrap(await correctionsRejectChangeSet({ body: vars })),
+    onSuccess: () => {
+      toast.success('Proposal rejected — feedback recorded');
+      onClose();
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+  const reviseMutation = useMutation({
+    mutationFn: async (vars: ReviseChangeSetInput): Promise<ReviseChangeSetOutput> =>
+      unwrap(await correctionsReviseChangeSet({ body: vars })),
+    retry: false,
+  });
   const handleConfirmReject = useCallback(() => {
     if (!signal) return;
     const changeSet = localOpsToChangeSet(localOps);

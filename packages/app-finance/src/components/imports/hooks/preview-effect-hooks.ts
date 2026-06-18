@@ -136,20 +136,19 @@ export interface SelectedEffectArgs extends BaseEffectShared {
 
 export function useSelectedOpEffect(args: SelectedEffectArgs): void {
   const { open, selectedOp, minConfidence, previewTransactions, pendingChangeSets } = args;
-  const {
-    selected,
-    normalisedDbTransactions,
-    rerunToken,
-    previewMutateAsync,
-    selectedOpPreviewKeyRef,
-    lastTokenRef,
-  } = args;
+  const { selected, normalisedDbTransactions, rerunToken, previewMutateAsync } = args;
+  const { selectedOpPreviewKeyRef, lastTokenRef } = args;
+  // Depend on the stable React dispatch functions individually rather than on
+  // the `selected` slot object (a fresh literal every render), mirroring
+  // `useCombinedEffect` — otherwise the effect re-runs and cancels its own
+  // in-flight preview on every render.
+  const { setPreview, setDbPreview, setError: setSelectedError, setTruncated } = selected;
   useEffect(() => {
     if (!open) return;
     if (!selectedOp) {
-      selected.setPreview(null);
-      selected.setError(null);
-      selected.setDbPreview(null);
+      setPreview(null);
+      setSelectedError(null);
+      setDbPreview(null);
       selectedOpPreviewKeyRef.current = null;
       return;
     }
@@ -169,10 +168,10 @@ export function useSelectedOpEffect(args: SelectedEffectArgs): void {
       pendingChangeSets,
       previewMutateAsync,
       shouldApply: () => selectedOpPreviewKeyRef.current === previewKey,
-      setSession: (p) => selected.setPreview(p),
-      setDb: (p) => selected.setDbPreview(p),
-      setError: (e) => selected.setError(e),
-      setTruncated: (t) => selected.setTruncated(t),
+      setSession: setPreview,
+      setDb: setDbPreview,
+      setError: setSelectedError,
+      setTruncated,
     });
     return handle.cancel;
   }, [
@@ -184,7 +183,10 @@ export function useSelectedOpEffect(args: SelectedEffectArgs): void {
     minConfidence,
     previewMutateAsync,
     pendingChangeSets,
-    selected,
+    setPreview,
+    setDbPreview,
+    setSelectedError,
+    setTruncated,
     selectedOpPreviewKeyRef,
     lastTokenRef,
   ]);

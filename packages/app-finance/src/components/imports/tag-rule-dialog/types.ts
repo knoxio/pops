@@ -1,16 +1,16 @@
-import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
+import type {
+  TagRulesApplyData,
+  TagRulesProposeData,
+  TagRulesProposeResponse,
+  TagRulesRejectData,
+  TagRulesRejectResponse,
+} from '../../../finance-api/index.js';
 
-import type { AppRouter } from '@pops/api';
-
-export type ProposeInput =
-  inferRouterInputs<AppRouter>['core']['tagRules']['proposeTagRuleChangeSet'];
-export type ProposeOutput =
-  inferRouterOutputs<AppRouter>['core']['tagRules']['proposeTagRuleChangeSet'];
-export type ApplyInput = inferRouterInputs<AppRouter>['core']['tagRules']['applyTagRuleChangeSet'];
-export type RejectInput =
-  inferRouterInputs<AppRouter>['core']['tagRules']['rejectTagRuleChangeSet'];
-export type RejectOutput =
-  inferRouterOutputs<AppRouter>['core']['tagRules']['rejectTagRuleChangeSet'];
+export type ProposeInput = NonNullable<TagRulesProposeData['body']>;
+export type ProposeOutput = TagRulesProposeResponse;
+export type ApplyInput = NonNullable<TagRulesApplyData['body']>;
+export type RejectInput = NonNullable<TagRulesRejectData['body']>;
+export type RejectOutput = TagRulesRejectResponse;
 
 export interface TagRuleLearnSignal {
   descriptionPattern: string;

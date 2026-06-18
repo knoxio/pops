@@ -1,10 +1,13 @@
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 
-import { usePillarMutation, usePillarQuery, usePillarUtils } from '@pops/pillar-sdk/react';
+import { usePillarQuery } from '@pops/pillar-sdk/react';
 
+import { unwrap } from '../../../finance-api-helpers.js';
+import { correctionsCreateOrUpdate, correctionsUpdate } from '../../../finance-api/index.js';
 import { DEFAULT_RULE_FORM_VALUES, type RuleFormValues, RuleFormSchema } from './types';
 
 import type { Correction, MatchType } from '../types';
@@ -46,31 +49,27 @@ interface UpdateRuleInput {
 }
 
 function useRuleMutations(onClose: () => void) {
-  const utils = usePillarUtils('core');
-  const createMutation = usePillarMutation<CreateRulePayload, unknown>(
-    'core',
-    ['corrections', 'createOrUpdate'],
-    {
-      onSuccess: () => {
-        toast.success('Rule saved');
-        void utils.invalidate(['corrections', 'list']);
-        onClose();
-      },
-      onError: (err) => toast.error(err.message),
-    }
-  );
-  const updateMutation = usePillarMutation<UpdateRuleInput, unknown>(
-    'core',
-    ['corrections', 'update'],
-    {
-      onSuccess: () => {
-        toast.success('Rule updated');
-        void utils.invalidate(['corrections', 'list']);
-        onClose();
-      },
-      onError: (err) => toast.error(err.message),
-    }
-  );
+  const queryClient = useQueryClient();
+  const createMutation = useMutation({
+    mutationFn: async (vars: CreateRulePayload) =>
+      unwrap(await correctionsCreateOrUpdate({ body: vars })),
+    onSuccess: () => {
+      toast.success('Rule saved');
+      void queryClient.invalidateQueries({ queryKey: ['finance', 'corrections', 'list'] });
+      onClose();
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+  const updateMutation = useMutation({
+    mutationFn: async (vars: UpdateRuleInput) =>
+      unwrap(await correctionsUpdate({ path: { id: vars.id }, body: vars.data })),
+    onSuccess: () => {
+      toast.success('Rule updated');
+      void queryClient.invalidateQueries({ queryKey: ['finance', 'corrections', 'list'] });
+      onClose();
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
   return { createMutation, updateMutation };
 }
 
@@ -114,15 +113,11 @@ function buildSubmit(
  *     inputs whose value is rewritten via the ref).
  *   - boolean `isActive` is managed via Controller in the dialog (#2175).
  *
- * The dialog supports both:
- *   - Create — `core.corrections.createOrUpdate`
- *   - Edit — `core.corrections.update`
- *
- * Multi-call site: this hook issues two independent `usePillarQuery('core', …)`
- * calls (one for the corrections mutations and one for the entities list).
+ * The dialog supports both create and edit, backed by the finance REST
+ * `corrections.createOrUpdate` / `corrections.update` operations; the entity
+ * picker still reads the core `entities.list` over the pillar SDK.
  * Per PRD-244 Option A, `isSubmitting` aggregates the two mutation `isPending`
- * flags by hand. Flagged as a candidate Option B pain point in the
- * cross-pillar SDK post-mortem (PRD-244 US-03).
+ * flags by hand.
  */
 export function useRuleFormState({ onClose }: UseRuleFormStateOptions) {
   const [editingRule, setEditingRule] = useState<Correction | null>(null);

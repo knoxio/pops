@@ -293,6 +293,1602 @@ export type BudgetsUpdateResponses = {
 
 export type BudgetsUpdateResponse = BudgetsUpdateResponses[keyof BudgetsUpdateResponses];
 
+export type CorrectionsListData = {
+  body?: never;
+  path?: never;
+  query?: {
+    minConfidence?: number;
+    matchType?: 'exact' | 'contains' | 'regex';
+    limit?: number;
+    offset?: number;
+  };
+  url: '/corrections';
+};
+
+export type CorrectionsListErrors = {
+  /**
+   * 400
+   */
+  400: {
+    code?: string;
+    message: string;
+    messageKey?: string;
+  };
+  /**
+   * 404
+   */
+  404: {
+    code?: string;
+    message: string;
+    messageKey?: string;
+  };
+  /**
+   * 409
+   */
+  409: {
+    code?: string;
+    message: string;
+    messageKey?: string;
+  };
+};
+
+export type CorrectionsListError = CorrectionsListErrors[keyof CorrectionsListErrors];
+
+export type CorrectionsListResponses = {
+  /**
+   * 200
+   */
+  200: {
+    data: Array<{
+      confidence: number;
+      createdAt: string;
+      descriptionPattern: string;
+      entityId: string | null;
+      entityName: string | null;
+      id: string;
+      isActive: boolean;
+      lastUsedAt: string | null;
+      location: string | null;
+      matchType: 'exact' | 'contains' | 'regex';
+      priority: number;
+      tags: Array<string>;
+      timesApplied: number;
+      transactionType: 'purchase' | 'transfer' | 'income';
+    }>;
+    pagination: {
+      hasMore: boolean;
+      limit: number;
+      offset: number;
+      total: number;
+    };
+  };
+};
+
+export type CorrectionsListResponse = CorrectionsListResponses[keyof CorrectionsListResponses];
+
+export type CorrectionsCreateOrUpdateData = {
+  /**
+   * Body
+   */
+  body?: {
+    descriptionPattern: string;
+    entityId?: string | null;
+    entityName?: string | null;
+    location?: string | null;
+    matchType: 'exact' | 'contains' | 'regex';
+    priority?: number;
+    tags: Array<string>;
+    transactionType?: 'purchase' | 'transfer' | 'income';
+  };
+  path?: never;
+  query?: never;
+  url: '/corrections';
+};
+
+export type CorrectionsCreateOrUpdateErrors = {
+  /**
+   * 400
+   */
+  400: {
+    code?: string;
+    message: string;
+    messageKey?: string;
+  };
+  /**
+   * 404
+   */
+  404: {
+    code?: string;
+    message: string;
+    messageKey?: string;
+  };
+  /**
+   * 409
+   */
+  409: {
+    code?: string;
+    message: string;
+    messageKey?: string;
+  };
+};
+
+export type CorrectionsCreateOrUpdateError =
+  CorrectionsCreateOrUpdateErrors[keyof CorrectionsCreateOrUpdateErrors];
+
+export type CorrectionsCreateOrUpdateResponses = {
+  /**
+   * 200
+   */
+  200: {
+    data: {
+      confidence: number;
+      createdAt: string;
+      descriptionPattern: string;
+      entityId: string | null;
+      entityName: string | null;
+      id: string;
+      isActive: boolean;
+      lastUsedAt: string | null;
+      location: string | null;
+      matchType: 'exact' | 'contains' | 'regex';
+      priority: number;
+      tags: Array<string>;
+      timesApplied: number;
+      transactionType: 'purchase' | 'transfer' | 'income';
+    };
+    message: string;
+  };
+};
+
+export type CorrectionsCreateOrUpdateResponse =
+  CorrectionsCreateOrUpdateResponses[keyof CorrectionsCreateOrUpdateResponses];
+
+export type CorrectionsAnalyzeCorrectionData = {
+  /**
+   * Body
+   */
+  body?: {
+    amount: number;
+    description: string;
+    entityName: string;
+  };
+  path?: never;
+  query?: never;
+  url: '/corrections/analyze';
+};
+
+export type CorrectionsAnalyzeCorrectionErrors = {
+  /**
+   * 400
+   */
+  400: {
+    code?: string;
+    message: string;
+    messageKey?: string;
+  };
+  /**
+   * 404
+   */
+  404: {
+    code?: string;
+    message: string;
+    messageKey?: string;
+  };
+  /**
+   * 409
+   */
+  409: {
+    code?: string;
+    message: string;
+    messageKey?: string;
+  };
+};
+
+export type CorrectionsAnalyzeCorrectionError =
+  CorrectionsAnalyzeCorrectionErrors[keyof CorrectionsAnalyzeCorrectionErrors];
+
+export type CorrectionsAnalyzeCorrectionResponses = {
+  /**
+   * 200
+   */
+  200: {
+    data: {
+      confidence: number;
+      matchType: 'exact' | 'contains' | 'regex';
+      pattern: string;
+    } | null;
+  };
+};
+
+export type CorrectionsAnalyzeCorrectionResponse =
+  CorrectionsAnalyzeCorrectionResponses[keyof CorrectionsAnalyzeCorrectionResponses];
+
+export type CorrectionsApplyChangeSetData = {
+  /**
+   * Body
+   */
+  body?: {
+    changeSet: {
+      ops: Array<
+        | {
+            data: {
+              confidence?: number;
+              descriptionPattern: string;
+              entityId?: string | null;
+              entityName?: string | null;
+              isActive?: boolean;
+              location?: string | null;
+              matchType: 'exact' | 'contains' | 'regex';
+              priority?: number;
+              tags: Array<string>;
+              transactionType?: 'purchase' | 'transfer' | 'income';
+            };
+            op: 'add';
+          }
+        | {
+            data: {
+              confidence?: number;
+              descriptionPattern?: string;
+              entityId?: string | null;
+              entityName?: string | null;
+              isActive?: boolean;
+              location?: string | null;
+              matchType?: 'exact' | 'contains' | 'regex';
+              priority?: number;
+              tags?: Array<string>;
+              transactionType?: 'purchase' | 'transfer' | 'income';
+            };
+            id: string;
+            op: 'edit';
+          }
+        | {
+            id: string;
+            op: 'disable';
+          }
+        | {
+            id: string;
+            op: 'remove';
+          }
+      >;
+      reason?: string;
+      source?: string;
+    };
+  };
+  path?: never;
+  query?: never;
+  url: '/corrections/apply-changeset';
+};
+
+export type CorrectionsApplyChangeSetErrors = {
+  /**
+   * 400
+   */
+  400: {
+    code?: string;
+    message: string;
+    messageKey?: string;
+  };
+  /**
+   * 404
+   */
+  404: {
+    code?: string;
+    message: string;
+    messageKey?: string;
+  };
+  /**
+   * 409
+   */
+  409: {
+    code?: string;
+    message: string;
+    messageKey?: string;
+  };
+};
+
+export type CorrectionsApplyChangeSetError =
+  CorrectionsApplyChangeSetErrors[keyof CorrectionsApplyChangeSetErrors];
+
+export type CorrectionsApplyChangeSetResponses = {
+  /**
+   * 200
+   */
+  200: {
+    data: Array<{
+      confidence: number;
+      createdAt: string;
+      descriptionPattern: string;
+      entityId: string | null;
+      entityName: string | null;
+      id: string;
+      isActive: boolean;
+      lastUsedAt: string | null;
+      location: string | null;
+      matchType: 'exact' | 'contains' | 'regex';
+      priority: number;
+      tags: Array<string>;
+      timesApplied: number;
+      transactionType: 'purchase' | 'transfer' | 'income';
+    }>;
+    message: string;
+  };
+};
+
+export type CorrectionsApplyChangeSetResponse =
+  CorrectionsApplyChangeSetResponses[keyof CorrectionsApplyChangeSetResponses];
+
+export type CorrectionsFindMatchData = {
+  /**
+   * Body
+   */
+  body?: {
+    description: string;
+    minConfidence: number;
+  };
+  path?: never;
+  query?: never;
+  url: '/corrections/find-match';
+};
+
+export type CorrectionsFindMatchErrors = {
+  /**
+   * 400
+   */
+  400: {
+    code?: string;
+    message: string;
+    messageKey?: string;
+  };
+  /**
+   * 404
+   */
+  404: {
+    code?: string;
+    message: string;
+    messageKey?: string;
+  };
+  /**
+   * 409
+   */
+  409: {
+    code?: string;
+    message: string;
+    messageKey?: string;
+  };
+};
+
+export type CorrectionsFindMatchError =
+  CorrectionsFindMatchErrors[keyof CorrectionsFindMatchErrors];
+
+export type CorrectionsFindMatchResponses = {
+  /**
+   * 200
+   */
+  200: {
+    data: {
+      confidence: number;
+      createdAt: string;
+      descriptionPattern: string;
+      entityId: string | null;
+      entityName: string | null;
+      id: string;
+      isActive: boolean;
+      lastUsedAt: string | null;
+      location: string | null;
+      matchType: 'exact' | 'contains' | 'regex';
+      priority: number;
+      tags: Array<string>;
+      timesApplied: number;
+      transactionType: 'purchase' | 'transfer' | 'income';
+    } | null;
+    status: 'matched' | 'uncertain';
+  };
+};
+
+export type CorrectionsFindMatchResponse =
+  CorrectionsFindMatchResponses[keyof CorrectionsFindMatchResponses];
+
+export type CorrectionsGenerateRulesData = {
+  /**
+   * Body
+   */
+  body?: {
+    transactions: Array<{
+      account: string;
+      amount: number;
+      currentTags: Array<string>;
+      description: string;
+      entityName: string | null;
+    }>;
+  };
+  path?: never;
+  query?: never;
+  url: '/corrections/generate-rules';
+};
+
+export type CorrectionsGenerateRulesErrors = {
+  /**
+   * 400
+   */
+  400: {
+    code?: string;
+    message: string;
+    messageKey?: string;
+  };
+  /**
+   * 404
+   */
+  404: {
+    code?: string;
+    message: string;
+    messageKey?: string;
+  };
+  /**
+   * 409
+   */
+  409: {
+    code?: string;
+    message: string;
+    messageKey?: string;
+  };
+};
+
+export type CorrectionsGenerateRulesError =
+  CorrectionsGenerateRulesErrors[keyof CorrectionsGenerateRulesErrors];
+
+export type CorrectionsGenerateRulesResponses = {
+  /**
+   * 200
+   */
+  200: {
+    proposals: Array<{
+      descriptionPattern: string;
+      matchType: 'exact' | 'contains' | 'regex';
+      reasoning: string;
+      tags: Array<string>;
+    }>;
+  };
+};
+
+export type CorrectionsGenerateRulesResponse =
+  CorrectionsGenerateRulesResponses[keyof CorrectionsGenerateRulesResponses];
+
+export type CorrectionsListMergedData = {
+  /**
+   * Body
+   */
+  body?: {
+    limit?: number;
+    offset?: number;
+    pendingChangeSets?: Array<{
+      changeSet: {
+        ops: Array<
+          | {
+              data: {
+                confidence?: number;
+                descriptionPattern: string;
+                entityId?: string | null;
+                entityName?: string | null;
+                isActive?: boolean;
+                location?: string | null;
+                matchType: 'exact' | 'contains' | 'regex';
+                priority?: number;
+                tags: Array<string>;
+                transactionType?: 'purchase' | 'transfer' | 'income';
+              };
+              op: 'add';
+            }
+          | {
+              data: {
+                confidence?: number;
+                descriptionPattern?: string;
+                entityId?: string | null;
+                entityName?: string | null;
+                isActive?: boolean;
+                location?: string | null;
+                matchType?: 'exact' | 'contains' | 'regex';
+                priority?: number;
+                tags?: Array<string>;
+                transactionType?: 'purchase' | 'transfer' | 'income';
+              };
+              id: string;
+              op: 'edit';
+            }
+          | {
+              id: string;
+              op: 'disable';
+            }
+          | {
+              id: string;
+              op: 'remove';
+            }
+        >;
+        reason?: string;
+        source?: string;
+      };
+    }>;
+  };
+  path?: never;
+  query?: never;
+  url: '/corrections/list-merged';
+};
+
+export type CorrectionsListMergedErrors = {
+  /**
+   * 400
+   */
+  400: {
+    code?: string;
+    message: string;
+    messageKey?: string;
+  };
+  /**
+   * 404
+   */
+  404: {
+    code?: string;
+    message: string;
+    messageKey?: string;
+  };
+  /**
+   * 409
+   */
+  409: {
+    code?: string;
+    message: string;
+    messageKey?: string;
+  };
+};
+
+export type CorrectionsListMergedError =
+  CorrectionsListMergedErrors[keyof CorrectionsListMergedErrors];
+
+export type CorrectionsListMergedResponses = {
+  /**
+   * 200
+   */
+  200: {
+    data: Array<{
+      confidence: number;
+      createdAt: string;
+      descriptionPattern: string;
+      entityId: string | null;
+      entityName: string | null;
+      id: string;
+      isActive: boolean;
+      lastUsedAt: string | null;
+      location: string | null;
+      matchType: 'exact' | 'contains' | 'regex';
+      priority: number;
+      tags: Array<string>;
+      timesApplied: number;
+      transactionType: 'purchase' | 'transfer' | 'income';
+    }>;
+    pagination: {
+      hasMore: boolean;
+      limit: number;
+      offset: number;
+      total: number;
+    };
+  };
+};
+
+export type CorrectionsListMergedResponse =
+  CorrectionsListMergedResponses[keyof CorrectionsListMergedResponses];
+
+export type CorrectionsPreviewChangeSetData = {
+  /**
+   * Body
+   */
+  body?: {
+    changeSet: {
+      ops: Array<
+        | {
+            data: {
+              confidence?: number;
+              descriptionPattern: string;
+              entityId?: string | null;
+              entityName?: string | null;
+              isActive?: boolean;
+              location?: string | null;
+              matchType: 'exact' | 'contains' | 'regex';
+              priority?: number;
+              tags: Array<string>;
+              transactionType?: 'purchase' | 'transfer' | 'income';
+            };
+            op: 'add';
+          }
+        | {
+            data: {
+              confidence?: number;
+              descriptionPattern?: string;
+              entityId?: string | null;
+              entityName?: string | null;
+              isActive?: boolean;
+              location?: string | null;
+              matchType?: 'exact' | 'contains' | 'regex';
+              priority?: number;
+              tags?: Array<string>;
+              transactionType?: 'purchase' | 'transfer' | 'income';
+            };
+            id: string;
+            op: 'edit';
+          }
+        | {
+            id: string;
+            op: 'disable';
+          }
+        | {
+            id: string;
+            op: 'remove';
+          }
+      >;
+      reason?: string;
+      source?: string;
+    };
+    minConfidence: number;
+    pendingChangeSets?: Array<{
+      changeSet: {
+        ops: Array<
+          | {
+              data: {
+                confidence?: number;
+                descriptionPattern: string;
+                entityId?: string | null;
+                entityName?: string | null;
+                isActive?: boolean;
+                location?: string | null;
+                matchType: 'exact' | 'contains' | 'regex';
+                priority?: number;
+                tags: Array<string>;
+                transactionType?: 'purchase' | 'transfer' | 'income';
+              };
+              op: 'add';
+            }
+          | {
+              data: {
+                confidence?: number;
+                descriptionPattern?: string;
+                entityId?: string | null;
+                entityName?: string | null;
+                isActive?: boolean;
+                location?: string | null;
+                matchType?: 'exact' | 'contains' | 'regex';
+                priority?: number;
+                tags?: Array<string>;
+                transactionType?: 'purchase' | 'transfer' | 'income';
+              };
+              id: string;
+              op: 'edit';
+            }
+          | {
+              id: string;
+              op: 'disable';
+            }
+          | {
+              id: string;
+              op: 'remove';
+            }
+        >;
+        reason?: string;
+        source?: string;
+      };
+    }>;
+    transactions: Array<{
+      checksum?: string;
+      description: string;
+    }>;
+  };
+  path?: never;
+  query?: never;
+  url: '/corrections/preview-changeset';
+};
+
+export type CorrectionsPreviewChangeSetErrors = {
+  /**
+   * 400
+   */
+  400: {
+    code?: string;
+    message: string;
+    messageKey?: string;
+  };
+  /**
+   * 404
+   */
+  404: {
+    code?: string;
+    message: string;
+    messageKey?: string;
+  };
+  /**
+   * 409
+   */
+  409: {
+    code?: string;
+    message: string;
+    messageKey?: string;
+  };
+};
+
+export type CorrectionsPreviewChangeSetError =
+  CorrectionsPreviewChangeSetErrors[keyof CorrectionsPreviewChangeSetErrors];
+
+export type CorrectionsPreviewChangeSetResponses = {
+  /**
+   * 200
+   */
+  200: {
+    diffs: Array<{
+      after: {
+        confidence: number | null;
+        matched: boolean;
+        ruleId: string | null;
+        status: 'matched' | 'uncertain';
+      };
+      before: {
+        confidence: number | null;
+        matched: boolean;
+        ruleId: string | null;
+        status: 'matched' | 'uncertain';
+      };
+      changed: boolean;
+      checksum?: string;
+      description: string;
+    }>;
+    summary: {
+      netMatchedDelta: number;
+      newMatches: number;
+      removedMatches: number;
+      statusChanges: number;
+      total: number;
+    };
+  };
+};
+
+export type CorrectionsPreviewChangeSetResponse =
+  CorrectionsPreviewChangeSetResponses[keyof CorrectionsPreviewChangeSetResponses];
+
+export type CorrectionsPreviewMatchesData = {
+  /**
+   * Body
+   */
+  body?: {
+    descriptionPattern: string;
+    limit?: number;
+    matchType: 'exact' | 'contains' | 'regex';
+  };
+  path?: never;
+  query?: never;
+  url: '/corrections/preview-matches';
+};
+
+export type CorrectionsPreviewMatchesErrors = {
+  /**
+   * 400
+   */
+  400: {
+    code?: string;
+    message: string;
+    messageKey?: string;
+  };
+  /**
+   * 404
+   */
+  404: {
+    code?: string;
+    message: string;
+    messageKey?: string;
+  };
+  /**
+   * 409
+   */
+  409: {
+    code?: string;
+    message: string;
+    messageKey?: string;
+  };
+};
+
+export type CorrectionsPreviewMatchesError =
+  CorrectionsPreviewMatchesErrors[keyof CorrectionsPreviewMatchesErrors];
+
+export type CorrectionsPreviewMatchesResponses = {
+  /**
+   * 200
+   */
+  200: {
+    data: {
+      matches: Array<{
+        account: string;
+        amount: number;
+        date: string;
+        description: string;
+        entityName: string | null;
+        id: string;
+        tags: Array<string>;
+      }>;
+      scanned: number;
+      total: number;
+      truncated: boolean;
+    };
+  };
+};
+
+export type CorrectionsPreviewMatchesResponse =
+  CorrectionsPreviewMatchesResponses[keyof CorrectionsPreviewMatchesResponses];
+
+export type CorrectionsProposeChangeSetData = {
+  /**
+   * Body
+   */
+  body?: {
+    maxPreviewItems: number;
+    minConfidence: number;
+    signal: {
+      descriptionPattern: string;
+      entityId?: string | null;
+      entityName?: string | null;
+      location?: string | null;
+      matchType: 'exact' | 'contains' | 'regex';
+      tags?: Array<string>;
+      transactionType?: 'purchase' | 'transfer' | 'income';
+    };
+  };
+  path?: never;
+  query?: never;
+  url: '/corrections/propose-changeset';
+};
+
+export type CorrectionsProposeChangeSetErrors = {
+  /**
+   * 400
+   */
+  400: {
+    code?: string;
+    message: string;
+    messageKey?: string;
+  };
+  /**
+   * 404
+   */
+  404: {
+    code?: string;
+    message: string;
+    messageKey?: string;
+  };
+  /**
+   * 409
+   */
+  409: {
+    code?: string;
+    message: string;
+    messageKey?: string;
+  };
+};
+
+export type CorrectionsProposeChangeSetError =
+  CorrectionsProposeChangeSetErrors[keyof CorrectionsProposeChangeSetErrors];
+
+export type CorrectionsProposeChangeSetResponses = {
+  /**
+   * 200
+   */
+  200: {
+    changeSet: {
+      ops: Array<
+        | {
+            data: {
+              confidence?: number;
+              descriptionPattern: string;
+              entityId?: string | null;
+              entityName?: string | null;
+              isActive?: boolean;
+              location?: string | null;
+              matchType: 'exact' | 'contains' | 'regex';
+              priority?: number;
+              tags: Array<string>;
+              transactionType?: 'purchase' | 'transfer' | 'income';
+            };
+            op: 'add';
+          }
+        | {
+            data: {
+              confidence?: number;
+              descriptionPattern?: string;
+              entityId?: string | null;
+              entityName?: string | null;
+              isActive?: boolean;
+              location?: string | null;
+              matchType?: 'exact' | 'contains' | 'regex';
+              priority?: number;
+              tags?: Array<string>;
+              transactionType?: 'purchase' | 'transfer' | 'income';
+            };
+            id: string;
+            op: 'edit';
+          }
+        | {
+            id: string;
+            op: 'disable';
+          }
+        | {
+            id: string;
+            op: 'remove';
+          }
+      >;
+      reason?: string;
+      source?: string;
+    };
+    preview: {
+      affected: Array<{
+        after: {
+          entityId: string | null;
+          entityName: string | null;
+          location: string | null;
+          ruleId: string | null;
+          tags: Array<string>;
+          transactionType: 'purchase' | 'transfer' | 'income';
+        };
+        before: {
+          entityId: string | null;
+          entityName: string | null;
+          location: string | null;
+          ruleId: string | null;
+          tags: Array<string>;
+          transactionType: 'purchase' | 'transfer' | 'income';
+        };
+        description: string;
+        transactionId: string;
+      }>;
+      counts: {
+        affected: number;
+        entityChanges: number;
+        locationChanges: number;
+        tagChanges: number;
+        typeChanges: number;
+      };
+    };
+    rationale: string;
+    targetRules: {
+      [key: string]: {
+        confidence: number;
+        createdAt: string;
+        descriptionPattern: string;
+        entityId: string | null;
+        entityName: string | null;
+        id: string;
+        isActive: boolean;
+        lastUsedAt: string | null;
+        location: string | null;
+        matchType: 'exact' | 'contains' | 'regex';
+        priority: number;
+        tags: Array<string>;
+        timesApplied: number;
+        transactionType: 'purchase' | 'transfer' | 'income';
+      };
+    };
+  };
+};
+
+export type CorrectionsProposeChangeSetResponse =
+  CorrectionsProposeChangeSetResponses[keyof CorrectionsProposeChangeSetResponses];
+
+export type CorrectionsRejectChangeSetData = {
+  /**
+   * Body
+   */
+  body?: {
+    changeSet: {
+      ops: Array<
+        | {
+            data: {
+              confidence?: number;
+              descriptionPattern: string;
+              entityId?: string | null;
+              entityName?: string | null;
+              isActive?: boolean;
+              location?: string | null;
+              matchType: 'exact' | 'contains' | 'regex';
+              priority?: number;
+              tags: Array<string>;
+              transactionType?: 'purchase' | 'transfer' | 'income';
+            };
+            op: 'add';
+          }
+        | {
+            data: {
+              confidence?: number;
+              descriptionPattern?: string;
+              entityId?: string | null;
+              entityName?: string | null;
+              isActive?: boolean;
+              location?: string | null;
+              matchType?: 'exact' | 'contains' | 'regex';
+              priority?: number;
+              tags?: Array<string>;
+              transactionType?: 'purchase' | 'transfer' | 'income';
+            };
+            id: string;
+            op: 'edit';
+          }
+        | {
+            id: string;
+            op: 'disable';
+          }
+        | {
+            id: string;
+            op: 'remove';
+          }
+      >;
+      reason?: string;
+      source?: string;
+    };
+    feedback: string;
+    impactSummary?: {
+      netMatchedDelta: number;
+      newMatches: number;
+      removedMatches: number;
+      statusChanges: number;
+      total: number;
+    };
+    signal: {
+      descriptionPattern: string;
+      entityId?: string | null;
+      entityName?: string | null;
+      location?: string | null;
+      matchType: 'exact' | 'contains' | 'regex';
+      tags?: Array<string>;
+      transactionType?: 'purchase' | 'transfer' | 'income';
+    };
+  };
+  path?: never;
+  query?: never;
+  url: '/corrections/reject-changeset';
+};
+
+export type CorrectionsRejectChangeSetErrors = {
+  /**
+   * 400
+   */
+  400: {
+    code?: string;
+    message: string;
+    messageKey?: string;
+  };
+  /**
+   * 404
+   */
+  404: {
+    code?: string;
+    message: string;
+    messageKey?: string;
+  };
+  /**
+   * 409
+   */
+  409: {
+    code?: string;
+    message: string;
+    messageKey?: string;
+  };
+};
+
+export type CorrectionsRejectChangeSetError =
+  CorrectionsRejectChangeSetErrors[keyof CorrectionsRejectChangeSetErrors];
+
+export type CorrectionsRejectChangeSetResponses = {
+  /**
+   * 200
+   */
+  200: {
+    message: string;
+  };
+};
+
+export type CorrectionsRejectChangeSetResponse =
+  CorrectionsRejectChangeSetResponses[keyof CorrectionsRejectChangeSetResponses];
+
+export type CorrectionsReviseChangeSetData = {
+  /**
+   * Body
+   */
+  body?: {
+    currentChangeSet: {
+      ops: Array<
+        | {
+            data: {
+              confidence?: number;
+              descriptionPattern: string;
+              entityId?: string | null;
+              entityName?: string | null;
+              isActive?: boolean;
+              location?: string | null;
+              matchType: 'exact' | 'contains' | 'regex';
+              priority?: number;
+              tags: Array<string>;
+              transactionType?: 'purchase' | 'transfer' | 'income';
+            };
+            op: 'add';
+          }
+        | {
+            data: {
+              confidence?: number;
+              descriptionPattern?: string;
+              entityId?: string | null;
+              entityName?: string | null;
+              isActive?: boolean;
+              location?: string | null;
+              matchType?: 'exact' | 'contains' | 'regex';
+              priority?: number;
+              tags?: Array<string>;
+              transactionType?: 'purchase' | 'transfer' | 'income';
+            };
+            id: string;
+            op: 'edit';
+          }
+        | {
+            id: string;
+            op: 'disable';
+          }
+        | {
+            id: string;
+            op: 'remove';
+          }
+      >;
+      reason?: string;
+      source?: string;
+    };
+    instruction: string;
+    signal: {
+      descriptionPattern: string;
+      entityId?: string | null;
+      entityName?: string | null;
+      location?: string | null;
+      matchType: 'exact' | 'contains' | 'regex';
+      tags?: Array<string>;
+      transactionType?: 'purchase' | 'transfer' | 'income';
+    };
+    triggeringTransactions: Array<{
+      checksum?: string;
+      description: string;
+    }>;
+  };
+  path?: never;
+  query?: never;
+  url: '/corrections/revise-changeset';
+};
+
+export type CorrectionsReviseChangeSetErrors = {
+  /**
+   * 400
+   */
+  400: {
+    code?: string;
+    message: string;
+    messageKey?: string;
+  };
+  /**
+   * 404
+   */
+  404: {
+    code?: string;
+    message: string;
+    messageKey?: string;
+  };
+  /**
+   * 409
+   */
+  409: {
+    code?: string;
+    message: string;
+    messageKey?: string;
+  };
+};
+
+export type CorrectionsReviseChangeSetError =
+  CorrectionsReviseChangeSetErrors[keyof CorrectionsReviseChangeSetErrors];
+
+export type CorrectionsReviseChangeSetResponses = {
+  /**
+   * 200
+   */
+  200: {
+    changeSet: {
+      ops: Array<
+        | {
+            data: {
+              confidence?: number;
+              descriptionPattern: string;
+              entityId?: string | null;
+              entityName?: string | null;
+              isActive?: boolean;
+              location?: string | null;
+              matchType: 'exact' | 'contains' | 'regex';
+              priority?: number;
+              tags: Array<string>;
+              transactionType?: 'purchase' | 'transfer' | 'income';
+            };
+            op: 'add';
+          }
+        | {
+            data: {
+              confidence?: number;
+              descriptionPattern?: string;
+              entityId?: string | null;
+              entityName?: string | null;
+              isActive?: boolean;
+              location?: string | null;
+              matchType?: 'exact' | 'contains' | 'regex';
+              priority?: number;
+              tags?: Array<string>;
+              transactionType?: 'purchase' | 'transfer' | 'income';
+            };
+            id: string;
+            op: 'edit';
+          }
+        | {
+            id: string;
+            op: 'disable';
+          }
+        | {
+            id: string;
+            op: 'remove';
+          }
+      >;
+      reason?: string;
+      source?: string;
+    };
+    rationale: string;
+    targetRules: {
+      [key: string]: {
+        confidence: number;
+        createdAt: string;
+        descriptionPattern: string;
+        entityId: string | null;
+        entityName: string | null;
+        id: string;
+        isActive: boolean;
+        lastUsedAt: string | null;
+        location: string | null;
+        matchType: 'exact' | 'contains' | 'regex';
+        priority: number;
+        tags: Array<string>;
+        timesApplied: number;
+        transactionType: 'purchase' | 'transfer' | 'income';
+      };
+    };
+  };
+};
+
+export type CorrectionsReviseChangeSetResponse =
+  CorrectionsReviseChangeSetResponses[keyof CorrectionsReviseChangeSetResponses];
+
+export type CorrectionsDeleteData = {
+  /**
+   * Body
+   */
+  body?: {
+    [key: string]: never;
+  };
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: '/corrections/{id}';
+};
+
+export type CorrectionsDeleteErrors = {
+  /**
+   * 400
+   */
+  400: {
+    code?: string;
+    message: string;
+    messageKey?: string;
+  };
+  /**
+   * 404
+   */
+  404: {
+    code?: string;
+    message: string;
+    messageKey?: string;
+  };
+  /**
+   * 409
+   */
+  409: {
+    code?: string;
+    message: string;
+    messageKey?: string;
+  };
+};
+
+export type CorrectionsDeleteError = CorrectionsDeleteErrors[keyof CorrectionsDeleteErrors];
+
+export type CorrectionsDeleteResponses = {
+  /**
+   * 200
+   */
+  200: {
+    message: string;
+  };
+};
+
+export type CorrectionsDeleteResponse =
+  CorrectionsDeleteResponses[keyof CorrectionsDeleteResponses];
+
+export type CorrectionsGetData = {
+  body?: never;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: '/corrections/{id}';
+};
+
+export type CorrectionsGetErrors = {
+  /**
+   * 400
+   */
+  400: {
+    code?: string;
+    message: string;
+    messageKey?: string;
+  };
+  /**
+   * 404
+   */
+  404: {
+    code?: string;
+    message: string;
+    messageKey?: string;
+  };
+  /**
+   * 409
+   */
+  409: {
+    code?: string;
+    message: string;
+    messageKey?: string;
+  };
+};
+
+export type CorrectionsGetError = CorrectionsGetErrors[keyof CorrectionsGetErrors];
+
+export type CorrectionsGetResponses = {
+  /**
+   * 200
+   */
+  200: {
+    data: {
+      confidence: number;
+      createdAt: string;
+      descriptionPattern: string;
+      entityId: string | null;
+      entityName: string | null;
+      id: string;
+      isActive: boolean;
+      lastUsedAt: string | null;
+      location: string | null;
+      matchType: 'exact' | 'contains' | 'regex';
+      priority: number;
+      tags: Array<string>;
+      timesApplied: number;
+      transactionType: 'purchase' | 'transfer' | 'income';
+    };
+  };
+};
+
+export type CorrectionsGetResponse = CorrectionsGetResponses[keyof CorrectionsGetResponses];
+
+export type CorrectionsUpdateData = {
+  /**
+   * Body
+   */
+  body?: {
+    confidence?: number;
+    descriptionPattern?: string;
+    entityId?: string | null;
+    entityName?: string | null;
+    isActive?: boolean;
+    location?: string | null;
+    matchType?: 'exact' | 'contains' | 'regex';
+    priority?: number;
+    tags?: Array<string>;
+    transactionType?: 'purchase' | 'transfer' | 'income';
+  };
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: '/corrections/{id}';
+};
+
+export type CorrectionsUpdateErrors = {
+  /**
+   * 400
+   */
+  400: {
+    code?: string;
+    message: string;
+    messageKey?: string;
+  };
+  /**
+   * 404
+   */
+  404: {
+    code?: string;
+    message: string;
+    messageKey?: string;
+  };
+  /**
+   * 409
+   */
+  409: {
+    code?: string;
+    message: string;
+    messageKey?: string;
+  };
+};
+
+export type CorrectionsUpdateError = CorrectionsUpdateErrors[keyof CorrectionsUpdateErrors];
+
+export type CorrectionsUpdateResponses = {
+  /**
+   * 200
+   */
+  200: {
+    data: {
+      confidence: number;
+      createdAt: string;
+      descriptionPattern: string;
+      entityId: string | null;
+      entityName: string | null;
+      id: string;
+      isActive: boolean;
+      lastUsedAt: string | null;
+      location: string | null;
+      matchType: 'exact' | 'contains' | 'regex';
+      priority: number;
+      tags: Array<string>;
+      timesApplied: number;
+      transactionType: 'purchase' | 'transfer' | 'income';
+    };
+    message: string;
+  };
+};
+
+export type CorrectionsUpdateResponse =
+  CorrectionsUpdateResponses[keyof CorrectionsUpdateResponses];
+
+export type CorrectionsAdjustConfidenceData = {
+  /**
+   * Body
+   */
+  body?: {
+    delta: number;
+  };
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: '/corrections/{id}/adjust-confidence';
+};
+
+export type CorrectionsAdjustConfidenceErrors = {
+  /**
+   * 400
+   */
+  400: {
+    code?: string;
+    message: string;
+    messageKey?: string;
+  };
+  /**
+   * 404
+   */
+  404: {
+    code?: string;
+    message: string;
+    messageKey?: string;
+  };
+  /**
+   * 409
+   */
+  409: {
+    code?: string;
+    message: string;
+    messageKey?: string;
+  };
+};
+
+export type CorrectionsAdjustConfidenceError =
+  CorrectionsAdjustConfidenceErrors[keyof CorrectionsAdjustConfidenceErrors];
+
+export type CorrectionsAdjustConfidenceResponses = {
+  /**
+   * 200
+   */
+  200: {
+    message: string;
+  };
+};
+
+export type CorrectionsAdjustConfidenceResponse =
+  CorrectionsAdjustConfidenceResponses[keyof CorrectionsAdjustConfidenceResponses];
+
+export type EntityUsageListData = {
+  body?: never;
+  path?: never;
+  query?: {
+    search?: string;
+    type?: 'company' | 'person' | 'government' | 'bank' | 'place' | 'brand' | 'organisation';
+    orphanedOnly?: 'true' | 'false';
+    limit?: number;
+    offset?: number;
+  };
+  url: '/entity-usage';
+};
+
+export type EntityUsageListErrors = {
+  /**
+   * 400
+   */
+  400: {
+    code?: string;
+    message: string;
+    messageKey?: string;
+  };
+  /**
+   * 404
+   */
+  404: {
+    code?: string;
+    message: string;
+    messageKey?: string;
+  };
+  /**
+   * 409
+   */
+  409: {
+    code?: string;
+    message: string;
+    messageKey?: string;
+  };
+};
+
+export type EntityUsageListError = EntityUsageListErrors[keyof EntityUsageListErrors];
+
+export type EntityUsageListResponses = {
+  /**
+   * 200
+   */
+  200: {
+    data: Array<{
+      abn: string | null;
+      aliases: Array<string>;
+      defaultTags: Array<string>;
+      defaultTransactionType: string | null;
+      id: string;
+      lastEditedTime: string;
+      name: string;
+      notes: string | null;
+      transactionCount: number;
+      type: string;
+    }>;
+    pagination: {
+      hasMore: boolean;
+      limit: number;
+      offset: number;
+      total: number;
+    };
+  };
+};
+
+export type EntityUsageListResponse = EntityUsageListResponses[keyof EntityUsageListResponses];
+
 export type ImportsApplyChangeSetAndReevaluateData = {
   /**
    * Body
@@ -1604,6 +3200,56 @@ export type ImportsReevaluateWithPendingRulesResponses = {
 
 export type ImportsReevaluateWithPendingRulesResponse =
   ImportsReevaluateWithPendingRulesResponses[keyof ImportsReevaluateWithPendingRulesResponses];
+
+export type SearchSearchData = {
+  /**
+   * Body
+   */
+  body?: {
+    context?: {
+      app: string | null;
+      entity?: {
+        title: string;
+        type: string;
+        uri: string;
+      };
+      filters?: {
+        [key: string]: string;
+      };
+      page: string | null;
+    };
+    query: {
+      filters?: Array<{
+        field: string;
+        operator: string;
+        value: string;
+      }>;
+      text: string;
+    };
+  };
+  path?: never;
+  query?: never;
+  url: '/search';
+};
+
+export type SearchSearchResponses = {
+  /**
+   * 200
+   */
+  200: {
+    hits: Array<{
+      data: {
+        [key: string]: unknown;
+      };
+      matchField: string;
+      matchType: 'exact' | 'prefix' | 'contains';
+      score: number;
+      uri: string;
+    }>;
+  };
+};
+
+export type SearchSearchResponse = SearchSearchResponses[keyof SearchSearchResponses];
 
 export type TagRulesApplyData = {
   /**

@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { unwrap } from '../../../../finance-api-helpers.js';
 import { transactionsDescriptionsForPreview } from '../../../../finance-api/index.js';
+import { toRestPendingChangeSets } from '../../../../lib/rest-changeset';
 import { useImportStore } from '../../../../store/importStore';
 import { type PreviewView } from '../../CorrectionProposalDialogPanels';
 import { useLocalOps } from '../../hooks/useLocalOps';
@@ -36,7 +37,11 @@ function useDialogState(open: boolean) {
 
 export function useRuleManagerHooks(props: RuleManagerInputs) {
   const { open, minConfidence, previewTransactions } = props;
-  const pendingChangeSets = useImportStore((s) => s.pendingChangeSets);
+  const pendingChangeSetsRaw = useImportStore((s) => s.pendingChangeSets);
+  const pendingChangeSets = useMemo(
+    () => toRestPendingChangeSets(pendingChangeSetsRaw),
+    [pendingChangeSetsRaw]
+  );
   const localOpsHook = useLocalOps({
     open,
     signal: null,
