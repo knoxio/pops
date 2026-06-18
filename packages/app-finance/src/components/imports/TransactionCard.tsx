@@ -7,7 +7,7 @@ import {
 } from './transaction-card/CardChrome';
 import { EntitySection, ReadonlyEntitySummary } from './transaction-card/EntitySection';
 
-import type { ProcessedTransaction } from '@pops/api/modules/finance/imports';
+import type { ProcessedTransaction } from '@pops/finance';
 
 interface TransactionCardProps {
   transaction: ProcessedTransaction;
@@ -19,7 +19,7 @@ interface TransactionCardProps {
   onCreateEntity?: (transaction: ProcessedTransaction) => void;
   onAcceptAiSuggestion?: (transaction: ProcessedTransaction) => void;
   onEdit?: (transaction: ProcessedTransaction) => void;
-  entities?: Array<{ id: string; name: string; type: string }>;
+  entities?: Array<{ id: string; name: string }>;
   readonly?: boolean;
   showMatchType?: boolean;
   variant?: 'matched' | 'uncertain' | 'failed';

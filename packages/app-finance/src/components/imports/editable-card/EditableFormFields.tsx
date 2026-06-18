@@ -1,6 +1,6 @@
 import { Input, Label } from '@pops/ui';
 
-import type { ProcessedTransaction } from '@pops/api/modules/finance/imports';
+import type { ProcessedTransaction } from '@pops/finance';
 
 interface FieldProps {
   editedFields: Partial<ProcessedTransaction>;

@@ -19,7 +19,7 @@ import {
 import { unwrap } from '../../finance-api-helpers.js';
 import { correctionsList } from '../../finance-api/index.js';
 
-import type { Correction } from '@pops/api/modules/core/corrections/types';
+import type { Correction } from '@pops/finance';
 
 export type CorrectionRule = Correction;
 

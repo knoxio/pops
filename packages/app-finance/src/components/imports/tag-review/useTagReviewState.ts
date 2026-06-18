@@ -12,8 +12,12 @@ import {
 } from './useTagReviewActions';
 import { type TagRuleDialogState, useTagRuleDialog } from './useTagRuleDialog';
 
-import type { TagRuleChangeSet, TagRuleImpactItem } from '@pops/api/modules/core/tag-rules/types';
-import type { ConfirmedTransaction, SuggestedTag } from '@pops/api/modules/finance/imports';
+import type {
+  ConfirmedTransaction,
+  SuggestedTag,
+  TagRuleChangeSet,
+  TagRuleImpactItem,
+} from '@pops/finance';
 
 import type { ImportStore as ImportStoreType } from '../../../store/import-store-types';
 import type { ConfirmedGroup } from './tagReviewUtils';

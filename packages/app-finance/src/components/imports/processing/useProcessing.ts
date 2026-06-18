@@ -10,7 +10,7 @@ import {
 } from '../../../finance-api/index.js';
 import { useImportStore } from '../../../store/importStore';
 
-import type { ImportWarning, ProcessImportOutput } from '@pops/api/modules/finance/imports';
+import type { ImportWarning, ProcessImportOutput } from '@pops/finance';
 
 type ProcessImportBody = NonNullable<ImportsProcessImportData['body']>;
 type ProgressResponse = NonNullable<ImportsGetImportProgressResponses[200]>;

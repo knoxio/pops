@@ -2,7 +2,9 @@ import { useTranslation } from 'react-i18next';
 
 import { SkeletonGrid, StatCard, type StatCardColor } from '@pops/ui';
 
-import type { Transaction } from '@pops/api/modules/finance/transactions/types';
+import type { TransactionsListResponse } from '../../finance-api/types.gen.js';
+
+type Transaction = NonNullable<TransactionsListResponse['data']>[number];
 
 interface Stats {
   totalTransactions: number;

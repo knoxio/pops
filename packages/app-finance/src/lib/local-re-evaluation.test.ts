@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { reevaluateTransactions } from './local-re-evaluation';
 
-import type { Correction } from '@pops/api/modules/core/corrections/types';
+import type { Correction } from '@pops/finance';
 
 import type { ProcessedTransaction } from '../store/importStore';
 

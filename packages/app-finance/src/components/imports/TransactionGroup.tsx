@@ -6,7 +6,7 @@ import { EditableTransactionCard } from './EditableTransactionCard';
 import { GroupHeader } from './transaction-group/GroupHeader';
 import { TransactionCard } from './TransactionCard';
 
-import type { ProcessedTransaction } from '@pops/api/modules/finance/imports';
+import type { ProcessedTransaction } from '@pops/finance';
 
 import type { TransactionGroup as TransactionGroupType } from '../../lib/transaction-utils';
 
@@ -29,13 +29,13 @@ interface TransactionGroupProps {
     editedFields: Partial<ProcessedTransaction>
   ) => void;
   onCancelEdit?: () => void;
-  entities?: Array<{ id: string; name: string; type: string }>;
+  entities?: Array<{ id: string; name: string }>;
   variant?: 'uncertain' | 'failed';
 }
 
 interface BulkEntitySelectorProps {
   group: TransactionGroupType;
-  entities: Array<{ id: string; name: string; type: string }>;
+  entities: Array<{ id: string; name: string }>;
   onBulkEntitySelect?: TransactionGroupProps['onBulkEntitySelect'];
   onEntitySelect: TransactionGroupProps['onEntitySelect'];
   onClose: () => void;

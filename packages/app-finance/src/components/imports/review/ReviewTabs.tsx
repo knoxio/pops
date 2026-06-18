@@ -38,7 +38,7 @@ export interface ReviewTabsProps {
   handleAcceptAiSuggestion: (t: ProcessedTransaction) => void;
   handleAcceptAll: (ts: ProcessedTransaction[]) => void;
   handleCreateAndAssignAll: (ts: ProcessedTransaction[], entityName: string) => void;
-  entities?: Array<{ id: string; name: string; type: string }>;
+  entities?: Array<{ id: string; name: string }>;
 }
 
 function buildTabSharedProps(props: ReviewTabsProps) {

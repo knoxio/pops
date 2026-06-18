@@ -851,12 +851,12 @@ importers:
       '@hookform/resolvers':
         specifier: ^5.4.0
         version: 5.4.0(react-hook-form@7.78.0(react@19.2.7))
-      '@pops/api':
-        specifier: workspace:*
-        version: link:../../apps/pops-api
       '@pops/db-types':
         specifier: workspace:*
         version: link:../db-types
+      '@pops/finance':
+        specifier: workspace:*
+        version: link:../../pillars/finance
       '@pops/navigation':
         specifier: workspace:*
         version: link:../navigation

@@ -196,8 +196,7 @@ vi.mock('../../lib/utils', () => ({
 
 import { TagReviewStep } from './TagReviewStep';
 
-import type { TagRuleChangeSet, TagRuleImpactItem } from '@pops/api/modules/core/tag-rules/types';
-import type { ConfirmedTransaction } from '@pops/api/modules/finance/imports';
+import type { ConfirmedTransaction, TagRuleChangeSet, TagRuleImpactItem } from '@pops/finance';
 
 // ---------------------------------------------------------------------------
 // Fixtures

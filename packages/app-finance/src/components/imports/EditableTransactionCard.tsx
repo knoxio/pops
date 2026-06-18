@@ -7,7 +7,7 @@ import { EditableFormFields } from './editable-card/EditableFormFields';
 import { RawDataDisclosure } from './editable-card/RawDataDisclosure';
 import { EntitySelect } from './EntitySelect';
 
-import type { ProcessedTransaction } from '@pops/api/modules/finance/imports';
+import type { ProcessedTransaction } from '@pops/finance';
 
 type TransactionType = 'purchase' | 'transfer' | 'income';
 
@@ -19,7 +19,7 @@ interface EditableTransactionCardProps {
     shouldLearn?: boolean
   ) => void;
   onCancel: () => void;
-  entities?: Array<{ id: string; name: string; type: string }>;
+  entities?: Array<{ id: string; name: string }>;
 }
 
 function parseRaw(rawRow: string): Record<string, string> {
@@ -100,7 +100,7 @@ function EntityOrTransferNotice({
 }: {
   transactionType: TransactionType;
   transaction: ProcessedTransaction;
-  entities?: Array<{ id: string; name: string; type: string }>;
+  entities?: Array<{ id: string; name: string }>;
 }) {
   if (transactionType === 'purchase' && entities && entities.length > 0) {
     return (

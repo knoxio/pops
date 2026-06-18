@@ -7,7 +7,7 @@ import { cn } from '../../../lib/utils';
 import { TagEditor } from '../../TagEditor';
 import { buildTagMetaMap } from './tagReviewUtils';
 
-import type { ConfirmedTransaction, SuggestedTag } from '@pops/api/modules/finance/imports';
+import type { ConfirmedTransaction, SuggestedTag } from '@pops/finance';
 
 export interface TransactionTagRowProps {
   transaction: ConfirmedTransaction;

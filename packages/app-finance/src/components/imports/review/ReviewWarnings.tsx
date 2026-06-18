@@ -1,6 +1,6 @@
 import { AlertTriangle } from 'lucide-react';
 
-import type { ImportWarning } from '@pops/api/modules/finance/imports';
+import type { ImportWarning } from '@pops/finance';
 
 export function ReviewWarnings({ warnings }: { warnings?: ImportWarning[] }) {
   if (!warnings || warnings.length === 0) return null;

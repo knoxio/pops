@@ -3,7 +3,7 @@ import { EntitySelect as UiEntitySelect } from '@pops/ui';
 export interface FinanceEntityOption {
   id: string;
   name: string;
-  type: string;
+  type?: string;
 }
 
 interface FinanceEntitySelectProps {

@@ -1,5 +1,4 @@
-import type { TagRuleChangeSet } from '@pops/api/modules/core/tag-rules/types';
-import type { ConfirmedTransaction } from '@pops/api/modules/finance/imports';
+import type { ConfirmedTransaction, TagRuleChangeSet } from '@pops/finance';
 
 export interface RuleProposal {
   id: string;

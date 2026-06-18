@@ -2,7 +2,9 @@ import { Link } from 'react-router';
 
 import { Badge, Button, Card, SkeletonGrid } from '@pops/ui';
 
-import type { Budget } from '@pops/api/modules/finance/budgets/types';
+import type { BudgetsListResponse } from '../../finance-api/types.gen.js';
+
+type Budget = NonNullable<BudgetsListResponse['data']>[number];
 
 function BudgetCard({ budget }: { budget: Budget }) {
   return (

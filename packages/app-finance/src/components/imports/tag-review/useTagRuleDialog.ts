@@ -3,7 +3,7 @@ import { toast } from 'sonner';
 
 import { unionTags } from './tagReviewUtils';
 
-import type { ConfirmedTransaction } from '@pops/api/modules/finance/imports';
+import type { ConfirmedTransaction } from '@pops/finance';
 
 import type { TagRuleLearnSignal } from '../TagRuleProposalDialog';
 import type { ConfirmedGroup } from './tagReviewUtils';

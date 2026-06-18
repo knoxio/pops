@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 import { TransactionCard } from './TransactionCard';
 
-import type { ProcessedTransaction } from '@pops/api/modules/finance/imports';
+import type { ProcessedTransaction } from '@pops/finance';
 
 function makeTx(overrides: Partial<ProcessedTransaction> = {}): ProcessedTransaction {
   return {
