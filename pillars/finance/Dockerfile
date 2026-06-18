@@ -16,7 +16,6 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json .oxfmtrc
 # resolution to that subgraph; unrelated pillars never need to exist in
 # this image's build context.
 COPY pillars/finance/package.json ./pillars/finance/
-COPY packages/cerebrum-contract/package.json ./packages/cerebrum-contract/
 COPY packages/core-contract/package.json ./packages/core-contract/
 COPY packages/core-db/package.json ./packages/core-db/
 COPY packages/pillar-sdk/package.json ./packages/pillar-sdk/
@@ -26,10 +25,6 @@ RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
     corepack enable && pnpm install --frozen-lockfile --filter "@pops/finance..."
 
 # Phase 2: source for the transitive @pops/* deps, then the pillar itself.
-COPY packages/cerebrum-contract/src ./packages/cerebrum-contract/src
-COPY packages/cerebrum-contract/scripts ./packages/cerebrum-contract/scripts
-COPY packages/cerebrum-contract/openapi ./packages/cerebrum-contract/openapi
-COPY packages/cerebrum-contract/tsconfig.json ./packages/cerebrum-contract/tsconfig.json
 
 COPY packages/core-contract/src ./packages/core-contract/src
 COPY packages/core-contract/scripts ./packages/core-contract/scripts
