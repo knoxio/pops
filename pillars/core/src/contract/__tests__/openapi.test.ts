@@ -82,6 +82,7 @@ describe('@pops/core REST openapi projection', () => {
       '/ai-alerts',
       '/settings',
       '/service-accounts',
+      '/search',
     ];
     const paths = Object.keys(openapi.paths);
     for (const p of paths) {

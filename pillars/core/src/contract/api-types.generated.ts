@@ -386,6 +386,23 @@ export interface paths {
     patch: operations['entities.update'];
     trace?: never;
   };
+  '/search': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Search the core pillar's domains (entities) for the unified search engine */
+    post: operations['search.search'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/service-accounts': {
     parameters: {
       query?: never;
@@ -2202,6 +2219,63 @@ export interface operations {
           'application/json': {
             code?: string;
             message: string;
+          };
+        };
+      };
+    };
+  };
+  'search.search': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          context?: {
+            app: string | null;
+            entity?: {
+              title: string;
+              type: string;
+              uri: string;
+            };
+            filters?: {
+              [key: string]: string;
+            };
+            page: string | null;
+          };
+          query: {
+            filters?: {
+              field: string;
+              operator: string;
+              value: string;
+            }[];
+            text: string;
+          };
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            hits: {
+              data: {
+                [key: string]: unknown;
+              };
+              matchField: string;
+              /** @enum {string} */
+              matchType: 'exact' | 'prefix' | 'contains';
+              score: number;
+              uri: string;
+            }[];
           };
         };
       };

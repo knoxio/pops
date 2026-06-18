@@ -69,6 +69,14 @@ interface Pagination {
   hasMore: boolean;
 }
 
+export interface SearchHit {
+  uri: string;
+  score: number;
+  matchField: string;
+  matchType: 'exact' | 'prefix' | 'contains';
+  data: Record<string, unknown>;
+}
+
 export interface EntityQuery {
   search?: string;
   type?: string;
@@ -96,6 +104,10 @@ export function makeClient(app: Express, headers?: ClientHeaders) {
     delete: (url: string) => withHeaders(base.delete(url), headers),
   };
   return {
+    search: {
+      run: (body: { query: { text: string; filters?: unknown[] }; context?: unknown }) =>
+        send<{ hits: SearchHit[] }>(r.post('/search').send(body)),
+    },
     entities: {
       list: (query: EntityQuery = {}) =>
         send<{ data: Entity[]; pagination: Pagination }>(r.get('/entities').query(query)),

@@ -48,6 +48,14 @@ interface Pagination {
   hasMore: boolean;
 }
 
+export interface SearchHit {
+  uri: string;
+  score: number;
+  matchField: string;
+  matchType: 'exact' | 'prefix' | 'contains';
+  data: Record<string, unknown>;
+}
+
 interface TransactionSnapshot {
   id: string;
   notionId: string | null;
@@ -174,6 +182,10 @@ export interface CorrectionListQuery {
 export function makeClient(app: Express) {
   const r = supertest(app);
   return {
+    search: {
+      run: (body: { query: { text: string; filters?: unknown[] }; context?: unknown }) =>
+        send<{ hits: SearchHit[] }>(r.post('/search').send(body)),
+    },
     wishlist: {
       list: (query: WishListQuery = {}) =>
         send<{ data: WishListItem[]; pagination: Pagination }>(r.get('/wishlist').query(query)),

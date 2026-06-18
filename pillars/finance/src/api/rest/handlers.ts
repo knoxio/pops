@@ -12,6 +12,7 @@ import { type OpenedFinanceDb } from '../../db/index.js';
 import { makeBudgetsHandlers } from './budgets-handlers.js';
 import { makeCorrectionsHandlers } from './corrections-handlers.js';
 import { makeImportsHandlers } from './imports-handlers.js';
+import { makeSearchHandlers } from './search-handlers.js';
 import { makeTagRulesHandlers } from './tag-rules-handlers.js';
 import { makeTransactionsHandlers } from './transactions-handlers.js';
 import { makeWishlistHandlers } from './wishlist-handlers.js';
@@ -29,5 +30,6 @@ export function makeFinanceRestHandlers(deps: {
     tagRules: makeTagRulesHandlers(db),
     corrections: makeCorrectionsHandlers(db),
     imports: makeImportsHandlers(db),
+    search: makeSearchHandlers(db),
   });
 }

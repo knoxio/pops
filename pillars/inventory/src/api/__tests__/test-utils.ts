@@ -43,6 +43,14 @@ interface Pagination {
   hasMore: boolean;
 }
 
+export interface SearchHit {
+  uri: string;
+  score: number;
+  matchField: string;
+  matchType: 'exact' | 'prefix' | 'contains';
+  data: Record<string, unknown>;
+}
+
 interface ItemEnvelope {
   data: InventoryItem;
   message: string;
@@ -79,6 +87,10 @@ export interface ItemListQuery {
 export function makeClient(app: Express) {
   const r = supertest(app);
   return {
+    search: {
+      run: (body: { query: { text: string; filters?: unknown[] }; context?: unknown }) =>
+        send<{ hits: SearchHit[] }>(r.post('/search').send(body)),
+    },
     items: {
       list: (query: ItemListQuery = {}) =>
         send<{

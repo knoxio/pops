@@ -16,6 +16,7 @@ import { makeAiObservabilityHandlers } from './ai-observability-handlers.js';
 import { makeAiProvidersHandlers } from './ai-providers-handlers.js';
 import { makeAiUsageHandlers } from './ai-usage-handlers.js';
 import { makeEntitiesHandlers } from './entities-handlers.js';
+import { makeSearchHandlers } from './search-handlers.js';
 import { makeServiceAccountsHandlers } from './service-accounts-handlers.js';
 import { makeSettingsHandlers } from './settings-handlers.js';
 import { makeShellHandlers } from './shell-handlers.js';
@@ -34,6 +35,7 @@ export function makeCoreRestHandlers(deps: {
     aiProviders: makeAiProvidersHandlers(db),
     aiUsage: makeAiUsageHandlers(db),
     entities: makeEntitiesHandlers(db),
+    search: makeSearchHandlers(db),
     serviceAccounts: makeServiceAccountsHandlers(db),
     settings: makeSettingsHandlers(db),
     shell: makeShellHandlers(),
