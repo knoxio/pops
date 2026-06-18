@@ -1944,6 +1944,9 @@ importers:
 
   pillars/core:
     dependencies:
+      '@pops/pillar-sdk':
+        specifier: workspace:*
+        version: link:../../packages/pillar-sdk
       '@pops/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -1959,19 +1962,40 @@ importers:
       drizzle-zod:
         specifier: ^0.8.3
         version: 0.8.3(drizzle-orm@0.45.2(@types/better-sqlite3@7.6.13)(better-sqlite3@12.10.0))(zod@4.4.3)
+      express:
+        specifier: ^5.1.0
+        version: 5.2.1
+      jsonwebtoken:
+        specifier: ^9.0.3
+        version: 9.0.3
       zod:
         specifier: ^4.4.3
         version: 4.4.3
     devDependencies:
+      '@pops/wire-conformance':
+        specifier: workspace:*
+        version: link:../../packages/wire-conformance
       '@types/better-sqlite3':
         specifier: ^7.6.12
         version: 7.6.13
+      '@types/express':
+        specifier: ^5.0.4
+        version: 5.0.6
+      '@types/jsonwebtoken':
+        specifier: ^9.0.10
+        version: 9.0.10
       '@types/node':
         specifier: ^25.9.3
         version: 25.9.3
+      '@types/supertest':
+        specifier: ^6.0.3
+        version: 6.0.3
       '@vitest/coverage-v8':
         specifier: ^4.1.8
         version: 4.1.8(vitest@4.1.8)
+      supertest:
+        specifier: ^7.1.4
+        version: 7.2.2
       tsx:
         specifier: ^4.22.4
         version: 4.22.4
