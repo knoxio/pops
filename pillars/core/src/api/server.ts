@@ -24,6 +24,8 @@ import { openCoreDb } from '../db/index.js';
 import { createCoreApiApp } from './app.js';
 import { buildCoreManifest } from './core-manifest.js';
 import { resolveCoreSqlitePath } from './core-sqlite-path.js';
+import { startAlertsScheduler } from './modules/ai-alerts/scheduler.js';
+import { startObservabilityScheduler } from './modules/ai-observability/scheduler.js';
 import { reconcileRegistryOnBoot } from './modules/registry/boot.js';
 import { startEvictionTicker } from './modules/registry/eviction-ticker.js';
 import { startHeartbeatTicker } from './modules/registry/ticker.js';
@@ -62,6 +64,12 @@ const server = app.listen(port, () => {
 
 const stopHeartbeatTicker = startHeartbeatTicker(coreDb.db);
 const stopEvictionTicker = startEvictionTicker(coreDb.db);
+// AI Ops summary + retention. OFF unless
+// CORE_AI_OBSERVABILITY_SCHEDULER_ENABLED=true (mirrors the monolith's
+// boot-time BullMQ registration, env-gated and queue-free).
+const stopObservabilityScheduler = startObservabilityScheduler(coreDb.db);
+// AI alert evaluator. OFF unless CORE_AI_ALERTS_SCHEDULER_ENABLED=true.
+const stopAlertsScheduler = startAlertsScheduler(coreDb.db);
 
 // The bootstrap handshake registers core with its own registry once the
 // HTTP server is accepting traffic. Done after `app.listen` because the
@@ -83,6 +91,8 @@ function shutdown(signal: NodeJS.Signals): void {
   console.warn(`[core-api] Shutting down (${signal})`);
   stopHeartbeatTicker();
   stopEvictionTicker();
+  stopObservabilityScheduler();
+  stopAlertsScheduler();
   void (pillarHandle?.stop() ?? Promise.resolve()).finally(() => {
     server.close(() => {
       coreDb.raw.close();

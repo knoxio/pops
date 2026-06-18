@@ -1944,6 +1944,9 @@ importers:
 
   pillars/core:
     dependencies:
+      '@pops/cerebrum-db':
+        specifier: workspace:*
+        version: link:../../packages/cerebrum-db
       '@pops/pillar-sdk':
         specifier: workspace:*
         version: link:../../packages/pillar-sdk
@@ -1968,6 +1971,12 @@ importers:
       jsonwebtoken:
         specifier: ^9.0.3
         version: 9.0.3
+      pino:
+        specifier: ^10.3.1
+        version: 10.3.1
+      pino-pretty:
+        specifier: ^13.1.3
+        version: 13.1.3
       zod:
         specifier: ^4.4.3
         version: 4.4.3
