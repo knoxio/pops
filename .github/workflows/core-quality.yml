@@ -74,5 +74,15 @@ jobs:
       - name: Build pillar
         run: pnpm --filter @pops/core build
 
+      - name: Verify OpenAPI snapshot is up to date
+        run: |
+          pnpm --filter @pops/core generate:openapi
+          git diff --exit-code pillars/core/openapi/core.openapi.json
+
+      - name: Verify api-types.generated.ts is up to date
+        run: |
+          pnpm --filter @pops/core generate:api-types
+          git diff --exit-code pillars/core/src/contract/api-types.generated.ts
+
       - name: Test
         run: pnpm --filter @pops/core test

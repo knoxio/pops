@@ -12,13 +12,16 @@
  * instance without binding a real port.
  */
 import { createExpressMiddleware } from '@trpc/server/adapters/express';
+import { createExpressEndpoints } from '@ts-rest/express';
 import express, { type Express, type NextFunction, type Request, type Response } from 'express';
 
+import { coreContract } from '../contract/rest.js';
 import { type CoreApiDeps, makeRequestHandler } from './handlers.js';
 import { createExternalDeregisterHandler } from './modules/external-registry/deregister.js';
 import { createExternalHeartbeatHandler } from './modules/external-registry/heartbeat.js';
 import { createExternalRegisterHandler } from './modules/external-registry/register.js';
 import { createRegistrySubscribeHandler } from './modules/registry/subscribe.js';
+import { makeCoreRestHandlers } from './rest/handlers.js';
 import { appRouter } from './router.js';
 import { createCoreTrpcContextFactory } from './trpc.js';
 
@@ -87,6 +90,13 @@ export function createCoreApiApp(deps: CoreApiDeps): Express {
       createContext: createCoreTrpcContextFactory(deps.coreDb.db),
     })
   );
+
+  // ts-rest REST surface (core REST migration). Mounted root-relative
+  // (e.g. `/entities`) AFTER the raw routes and the `/trpc` mount: this
+  // runs ALONGSIDE the legacy tRPC router during the migration — both wire
+  // formats serve concurrently. The contract starts with the `entities`
+  // domain and grows as each tRPC slice converts.
+  createExpressEndpoints(coreContract, makeCoreRestHandlers(deps), app);
 
   return app;
 }

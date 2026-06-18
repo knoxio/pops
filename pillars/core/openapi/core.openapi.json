@@ -1,929 +1,48 @@
 {
   "components": {
-    "schemas": {
-      "DeregisterResponse": {
-        "properties": {
-          "message": {
-            "type": "string"
-          }
-        },
-        "required": ["message"],
-        "type": "object"
-      },
-      "HeartbeatInput": {
-        "additionalProperties": false,
-        "properties": {
-          "pillarId": {
-            "minLength": 1,
-            "type": "string"
-          }
-        },
-        "required": ["pillarId"],
-        "type": "object"
-      },
-      "HeartbeatResponse": {
-        "properties": {
-          "data": {
-            "$ref": "#/components/schemas/RegistryEntry"
-          },
-          "message": {
-            "type": "string"
-          }
-        },
-        "required": ["data"],
-        "type": "object"
-      },
-      "Pagination": {
-        "properties": {
-          "hasMore": {
-            "type": "boolean"
-          },
-          "limit": {
-            "minimum": 1,
-            "type": "integer"
-          },
-          "offset": {
-            "minimum": 0,
-            "type": "integer"
-          },
-          "total": {
-            "minimum": 0,
-            "type": "integer"
-          }
-        },
-        "required": ["total", "limit", "offset"],
-        "type": "object"
-      },
-      "Pillar": {
-        "additionalProperties": false,
-        "properties": {
-          "baseUrl": {
-            "type": "string"
-          },
-          "contractPackage": {
-            "type": "string"
-          },
-          "contractTag": {
-            "type": "string"
-          },
-          "contractVersion": {
-            "type": "string"
-          },
-          "lastHeartbeatAt": {
-            "format": "date-time",
-            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$",
-            "type": "string"
-          },
-          "pillarId": {
-            "type": "string"
-          },
-          "registeredAt": {
-            "format": "date-time",
-            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$",
-            "type": "string"
-          },
-          "status": {
-            "enum": ["healthy", "unavailable", "unknown"],
-            "type": "string"
-          },
-          "statusUpdatedAt": {
-            "format": "date-time",
-            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$",
-            "type": "string"
-          }
-        },
-        "required": [
-          "pillarId",
-          "baseUrl",
-          "contractPackage",
-          "contractVersion",
-          "contractTag",
-          "status",
-          "registeredAt",
-          "lastHeartbeatAt",
-          "statusUpdatedAt"
-        ],
-        "type": "object"
-      },
-      "RegisterPillarInput": {
-        "additionalProperties": false,
-        "properties": {
-          "baseUrl": {
-            "format": "uri",
-            "type": "string"
-          },
-          "pillarId": {
-            "minLength": 1,
-            "type": "string"
-          }
-        },
-        "required": ["pillarId", "baseUrl"],
-        "type": "object"
-      },
-      "RegistryEntry": {
-        "additionalProperties": false,
-        "properties": {
-          "baseUrl": {
-            "type": "string"
-          },
-          "pillarId": {
-            "type": "string"
-          },
-          "registeredAt": {
-            "format": "date-time",
-            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$",
-            "type": "string"
-          }
-        },
-        "required": ["pillarId", "baseUrl", "registeredAt"],
-        "type": "object"
-      },
-      "RegistryEntryListResponse": {
-        "properties": {
-          "data": {
-            "items": {
-              "$ref": "#/components/schemas/RegistryEntry"
-            },
-            "type": "array"
-          },
-          "pagination": {
-            "$ref": "#/components/schemas/Pagination"
-          }
-        },
-        "required": ["data", "pagination"],
-        "type": "object"
-      },
-      "RegistryEntryResponse": {
-        "properties": {
-          "data": {
-            "$ref": "#/components/schemas/RegistryEntry"
-          },
-          "message": {
-            "type": "string"
-          }
-        },
-        "required": ["data"],
-        "type": "object"
-      },
-      "ServiceAccount": {
-        "additionalProperties": false,
-        "properties": {
-          "createdAt": {
-            "format": "date-time",
-            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$",
-            "type": "string"
-          },
-          "createdBy": {
-            "nullable": true,
-            "type": "string"
-          },
-          "id": {
-            "type": "string"
-          },
-          "keyPrefix": {
-            "type": "string"
-          },
-          "lastUsedAt": {
-            "format": "date-time",
-            "nullable": true,
-            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$",
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "revokedAt": {
-            "format": "date-time",
-            "nullable": true,
-            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$",
-            "type": "string"
-          },
-          "scopes": {
-            "items": {
-              "type": "string"
-            },
-            "readOnly": true,
-            "type": "array"
-          }
-        },
-        "required": [
-          "id",
-          "name",
-          "keyPrefix",
-          "scopes",
-          "createdAt",
-          "lastUsedAt",
-          "revokedAt",
-          "createdBy"
-        ],
-        "type": "object"
-      },
-      "Setting": {
-        "additionalProperties": false,
-        "properties": {
-          "key": {
-            "type": "string"
-          },
-          "value": {
-            "type": "string"
-          }
-        },
-        "required": ["key", "value"],
-        "type": "object"
-      },
-      "SettingsDeleteInput": {
-        "additionalProperties": false,
-        "properties": {
-          "key": {
-            "enum": [
-              "plex_url",
-              "plex_token",
-              "plex_username",
-              "plex_encryption_seed",
-              "plex_client_identifier",
-              "plex_movie_section_id",
-              "plex_tv_section_id",
-              "plex_scheduler_enabled",
-              "plex_scheduler_interval_ms",
-              "radarr_url",
-              "radarr_api_key",
-              "sonarr_url",
-              "sonarr_api_key",
-              "ai.model",
-              "ai.monthlyTokenBudget",
-              "ai.budgetExceededFallback",
-              "ai.modelOverrides.query",
-              "ai.modelOverrides.emit",
-              "ai.modelOverrides.classifier",
-              "ai.modelOverrides.entityExtractor",
-              "ai.modelOverrides.scopeInference",
-              "ai.modelOverrides.auditorContradiction",
-              "ai.modelOverrides.patternContradiction",
-              "cerebrum.query.maxSources",
-              "cerebrum.query.relevanceThreshold",
-              "cerebrum.query.tokenBudget",
-              "cerebrum.emit.maxTokens",
-              "cerebrum.emit.relevanceThreshold",
-              "cerebrum.emit.maxSources",
-              "cerebrum.emit.tokenBudget",
-              "cerebrum.semantic.defaultLimit",
-              "cerebrum.semantic.defaultThreshold",
-              "cerebrum.semantic.queryCacheTtl",
-              "cerebrum.hybrid.rrfK",
-              "cerebrum.hybrid.defaultLimit",
-              "cerebrum.hybrid.defaultThreshold",
-              "cerebrum.context.tokenBudget",
-              "cerebrum.classifier.confidenceThreshold",
-              "cerebrum.entityExtractor.confidenceThreshold",
-              "cerebrum.captureHotkey",
-              "cerebrum.nudge.consolidationSimilarity",
-              "cerebrum.nudge.consolidationMinCluster",
-              "cerebrum.nudge.stalenessDays",
-              "cerebrum.nudge.patternMinOccurrences",
-              "cerebrum.nudge.maxPending",
-              "cerebrum.nudge.cooldownHours",
-              "cerebrum.engram.fallbackScope",
-              "cerebrum.citation.excerptMaxLength",
-              "cerebrum.plexus.healthIntervalMs",
-              "cerebrum.plexus.healthTimeoutMs",
-              "cerebrum.plexus.maxConsecutiveFailures",
-              "cerebrum.thalamus.crossSourceIntervalMs",
-              "cerebrum.mcp.queryMaxSources",
-              "cerebrum.mcp.searchSnippetLength",
-              "cerebrum.mcp.searchDefaultLimit",
-              "cerebrum.glia.proposeMinApproved",
-              "cerebrum.glia.proposeMaxRejectionRate",
-              "cerebrum.glia.actReportMinDays",
-              "cerebrum.glia.demotionRevertThreshold",
-              "cerebrum.glia.demotionWindowDays",
-              "ego.defaultModel",
-              "ego.maxHistory",
-              "ego.maxRetrieval",
-              "ego.tokenBudget",
-              "ego.relevanceThreshold",
-              "ego.chat.maxTokens",
-              "ego.chat.temperature",
-              "ego.summary.maxTokens",
-              "ego.summary.temperature",
-              "media.comparisons.eloK",
-              "media.comparisons.defaultScore",
-              "media.comparisons.maxTierListMovies",
-              "media.comparisons.stalenessThreshold",
-              "media.comparisons.defaultLimit",
-              "media.discovery.sessionTargetMin",
-              "media.discovery.sessionTargetMax",
-              "media.discovery.maxSeedShelves",
-              "media.discovery.maxGenreShelves",
-              "media.discovery.maxActiveCollections",
-              "media.discovery.maxBecauseYouWatchedSeeds",
-              "media.discovery.maxCreditsSeeds",
-              "media.discovery.maxBestInGenre",
-              "media.discovery.maxCrossoverPairs",
-              "media.thetvdb.rateLimitCapacity",
-              "media.thetvdb.rateLimitRefillRate",
-              "media.thetvdb.maxRetries",
-              "media.tmdb.genreCacheTtlMs",
-              "media.tmdb.imageMaxRetries",
-              "media.tmdb.imageRetryDelayMs",
-              "media.plex.rateLimitDelayMs",
-              "media.plex.clientPageSize",
-              "media.plex.friendsPageSize",
-              "media.defaultLimit",
-              "media.rotation.tmdbDefaultPages",
-              "media.rotation.tmdbMaxPages",
-              "media.rotation.tmdbMinVoteCount",
-              "media.rotation.letterboxdMaxPages",
-              "finance.aiCategorizer.model",
-              "finance.aiCategorizer.maxTokens",
-              "finance.ruleGen.model",
-              "finance.ruleGen.maxTokens",
-              "finance.defaultLimit",
-              "inventory.defaultLimit",
-              "inventory.searchDefaultLimit",
-              "inventory.maxFileSizeBytes",
-              "core.corrections.highConfidenceThreshold",
-              "core.corrections.minPatternLength",
-              "core.corrections.previewLimit",
-              "core.corrections.previewHardLimit",
-              "core.corrections.previewRulesFetchLimit",
-              "core.search.showMoreLimit",
-              "core.aiRetry.maxRetries",
-              "core.aiRetry.baseDelayMs",
-              "core.defaultLimit",
-              "core.queue.syncConcurrency",
-              "core.queue.embeddingsConcurrency",
-              "core.queue.defaultConcurrency",
-              "core.queue.completedRetention",
-              "theme"
-            ],
-            "type": "string"
-          }
-        },
-        "required": ["key"],
-        "type": "object"
-      },
-      "SettingsDeleteOutput": {
-        "additionalProperties": false,
-        "properties": {
-          "message": {
-            "type": "string"
-          }
-        },
-        "required": ["message"],
-        "type": "object"
-      },
-      "SettingsEnsureInput": {
-        "additionalProperties": false,
-        "properties": {
-          "key": {
-            "enum": [
-              "plex_url",
-              "plex_token",
-              "plex_username",
-              "plex_encryption_seed",
-              "plex_client_identifier",
-              "plex_movie_section_id",
-              "plex_tv_section_id",
-              "plex_scheduler_enabled",
-              "plex_scheduler_interval_ms",
-              "radarr_url",
-              "radarr_api_key",
-              "sonarr_url",
-              "sonarr_api_key",
-              "ai.model",
-              "ai.monthlyTokenBudget",
-              "ai.budgetExceededFallback",
-              "ai.modelOverrides.query",
-              "ai.modelOverrides.emit",
-              "ai.modelOverrides.classifier",
-              "ai.modelOverrides.entityExtractor",
-              "ai.modelOverrides.scopeInference",
-              "ai.modelOverrides.auditorContradiction",
-              "ai.modelOverrides.patternContradiction",
-              "cerebrum.query.maxSources",
-              "cerebrum.query.relevanceThreshold",
-              "cerebrum.query.tokenBudget",
-              "cerebrum.emit.maxTokens",
-              "cerebrum.emit.relevanceThreshold",
-              "cerebrum.emit.maxSources",
-              "cerebrum.emit.tokenBudget",
-              "cerebrum.semantic.defaultLimit",
-              "cerebrum.semantic.defaultThreshold",
-              "cerebrum.semantic.queryCacheTtl",
-              "cerebrum.hybrid.rrfK",
-              "cerebrum.hybrid.defaultLimit",
-              "cerebrum.hybrid.defaultThreshold",
-              "cerebrum.context.tokenBudget",
-              "cerebrum.classifier.confidenceThreshold",
-              "cerebrum.entityExtractor.confidenceThreshold",
-              "cerebrum.captureHotkey",
-              "cerebrum.nudge.consolidationSimilarity",
-              "cerebrum.nudge.consolidationMinCluster",
-              "cerebrum.nudge.stalenessDays",
-              "cerebrum.nudge.patternMinOccurrences",
-              "cerebrum.nudge.maxPending",
-              "cerebrum.nudge.cooldownHours",
-              "cerebrum.engram.fallbackScope",
-              "cerebrum.citation.excerptMaxLength",
-              "cerebrum.plexus.healthIntervalMs",
-              "cerebrum.plexus.healthTimeoutMs",
-              "cerebrum.plexus.maxConsecutiveFailures",
-              "cerebrum.thalamus.crossSourceIntervalMs",
-              "cerebrum.mcp.queryMaxSources",
-              "cerebrum.mcp.searchSnippetLength",
-              "cerebrum.mcp.searchDefaultLimit",
-              "cerebrum.glia.proposeMinApproved",
-              "cerebrum.glia.proposeMaxRejectionRate",
-              "cerebrum.glia.actReportMinDays",
-              "cerebrum.glia.demotionRevertThreshold",
-              "cerebrum.glia.demotionWindowDays",
-              "ego.defaultModel",
-              "ego.maxHistory",
-              "ego.maxRetrieval",
-              "ego.tokenBudget",
-              "ego.relevanceThreshold",
-              "ego.chat.maxTokens",
-              "ego.chat.temperature",
-              "ego.summary.maxTokens",
-              "ego.summary.temperature",
-              "media.comparisons.eloK",
-              "media.comparisons.defaultScore",
-              "media.comparisons.maxTierListMovies",
-              "media.comparisons.stalenessThreshold",
-              "media.comparisons.defaultLimit",
-              "media.discovery.sessionTargetMin",
-              "media.discovery.sessionTargetMax",
-              "media.discovery.maxSeedShelves",
-              "media.discovery.maxGenreShelves",
-              "media.discovery.maxActiveCollections",
-              "media.discovery.maxBecauseYouWatchedSeeds",
-              "media.discovery.maxCreditsSeeds",
-              "media.discovery.maxBestInGenre",
-              "media.discovery.maxCrossoverPairs",
-              "media.thetvdb.rateLimitCapacity",
-              "media.thetvdb.rateLimitRefillRate",
-              "media.thetvdb.maxRetries",
-              "media.tmdb.genreCacheTtlMs",
-              "media.tmdb.imageMaxRetries",
-              "media.tmdb.imageRetryDelayMs",
-              "media.plex.rateLimitDelayMs",
-              "media.plex.clientPageSize",
-              "media.plex.friendsPageSize",
-              "media.defaultLimit",
-              "media.rotation.tmdbDefaultPages",
-              "media.rotation.tmdbMaxPages",
-              "media.rotation.tmdbMinVoteCount",
-              "media.rotation.letterboxdMaxPages",
-              "finance.aiCategorizer.model",
-              "finance.aiCategorizer.maxTokens",
-              "finance.ruleGen.model",
-              "finance.ruleGen.maxTokens",
-              "finance.defaultLimit",
-              "inventory.defaultLimit",
-              "inventory.searchDefaultLimit",
-              "inventory.maxFileSizeBytes",
-              "core.corrections.highConfidenceThreshold",
-              "core.corrections.minPatternLength",
-              "core.corrections.previewLimit",
-              "core.corrections.previewHardLimit",
-              "core.corrections.previewRulesFetchLimit",
-              "core.search.showMoreLimit",
-              "core.aiRetry.maxRetries",
-              "core.aiRetry.baseDelayMs",
-              "core.defaultLimit",
-              "core.queue.syncConcurrency",
-              "core.queue.embeddingsConcurrency",
-              "core.queue.defaultConcurrency",
-              "core.queue.completedRetention",
-              "theme"
-            ],
-            "type": "string"
-          },
-          "value": {
-            "type": "string"
-          }
-        },
-        "required": ["key", "value"],
-        "type": "object"
-      },
-      "SettingsEnsureOutput": {
-        "additionalProperties": false,
-        "properties": {
-          "data": {
-            "additionalProperties": false,
-            "properties": {
-              "key": {
-                "type": "string"
-              },
-              "value": {
-                "type": "string"
-              }
-            },
-            "required": ["key", "value"],
-            "type": "object"
-          }
-        },
-        "required": ["data"],
-        "type": "object"
-      },
-      "SettingsGetInput": {
-        "additionalProperties": false,
-        "properties": {
-          "key": {
-            "enum": [
-              "plex_url",
-              "plex_token",
-              "plex_username",
-              "plex_encryption_seed",
-              "plex_client_identifier",
-              "plex_movie_section_id",
-              "plex_tv_section_id",
-              "plex_scheduler_enabled",
-              "plex_scheduler_interval_ms",
-              "radarr_url",
-              "radarr_api_key",
-              "sonarr_url",
-              "sonarr_api_key",
-              "ai.model",
-              "ai.monthlyTokenBudget",
-              "ai.budgetExceededFallback",
-              "ai.modelOverrides.query",
-              "ai.modelOverrides.emit",
-              "ai.modelOverrides.classifier",
-              "ai.modelOverrides.entityExtractor",
-              "ai.modelOverrides.scopeInference",
-              "ai.modelOverrides.auditorContradiction",
-              "ai.modelOverrides.patternContradiction",
-              "cerebrum.query.maxSources",
-              "cerebrum.query.relevanceThreshold",
-              "cerebrum.query.tokenBudget",
-              "cerebrum.emit.maxTokens",
-              "cerebrum.emit.relevanceThreshold",
-              "cerebrum.emit.maxSources",
-              "cerebrum.emit.tokenBudget",
-              "cerebrum.semantic.defaultLimit",
-              "cerebrum.semantic.defaultThreshold",
-              "cerebrum.semantic.queryCacheTtl",
-              "cerebrum.hybrid.rrfK",
-              "cerebrum.hybrid.defaultLimit",
-              "cerebrum.hybrid.defaultThreshold",
-              "cerebrum.context.tokenBudget",
-              "cerebrum.classifier.confidenceThreshold",
-              "cerebrum.entityExtractor.confidenceThreshold",
-              "cerebrum.captureHotkey",
-              "cerebrum.nudge.consolidationSimilarity",
-              "cerebrum.nudge.consolidationMinCluster",
-              "cerebrum.nudge.stalenessDays",
-              "cerebrum.nudge.patternMinOccurrences",
-              "cerebrum.nudge.maxPending",
-              "cerebrum.nudge.cooldownHours",
-              "cerebrum.engram.fallbackScope",
-              "cerebrum.citation.excerptMaxLength",
-              "cerebrum.plexus.healthIntervalMs",
-              "cerebrum.plexus.healthTimeoutMs",
-              "cerebrum.plexus.maxConsecutiveFailures",
-              "cerebrum.thalamus.crossSourceIntervalMs",
-              "cerebrum.mcp.queryMaxSources",
-              "cerebrum.mcp.searchSnippetLength",
-              "cerebrum.mcp.searchDefaultLimit",
-              "cerebrum.glia.proposeMinApproved",
-              "cerebrum.glia.proposeMaxRejectionRate",
-              "cerebrum.glia.actReportMinDays",
-              "cerebrum.glia.demotionRevertThreshold",
-              "cerebrum.glia.demotionWindowDays",
-              "ego.defaultModel",
-              "ego.maxHistory",
-              "ego.maxRetrieval",
-              "ego.tokenBudget",
-              "ego.relevanceThreshold",
-              "ego.chat.maxTokens",
-              "ego.chat.temperature",
-              "ego.summary.maxTokens",
-              "ego.summary.temperature",
-              "media.comparisons.eloK",
-              "media.comparisons.defaultScore",
-              "media.comparisons.maxTierListMovies",
-              "media.comparisons.stalenessThreshold",
-              "media.comparisons.defaultLimit",
-              "media.discovery.sessionTargetMin",
-              "media.discovery.sessionTargetMax",
-              "media.discovery.maxSeedShelves",
-              "media.discovery.maxGenreShelves",
-              "media.discovery.maxActiveCollections",
-              "media.discovery.maxBecauseYouWatchedSeeds",
-              "media.discovery.maxCreditsSeeds",
-              "media.discovery.maxBestInGenre",
-              "media.discovery.maxCrossoverPairs",
-              "media.thetvdb.rateLimitCapacity",
-              "media.thetvdb.rateLimitRefillRate",
-              "media.thetvdb.maxRetries",
-              "media.tmdb.genreCacheTtlMs",
-              "media.tmdb.imageMaxRetries",
-              "media.tmdb.imageRetryDelayMs",
-              "media.plex.rateLimitDelayMs",
-              "media.plex.clientPageSize",
-              "media.plex.friendsPageSize",
-              "media.defaultLimit",
-              "media.rotation.tmdbDefaultPages",
-              "media.rotation.tmdbMaxPages",
-              "media.rotation.tmdbMinVoteCount",
-              "media.rotation.letterboxdMaxPages",
-              "finance.aiCategorizer.model",
-              "finance.aiCategorizer.maxTokens",
-              "finance.ruleGen.model",
-              "finance.ruleGen.maxTokens",
-              "finance.defaultLimit",
-              "inventory.defaultLimit",
-              "inventory.searchDefaultLimit",
-              "inventory.maxFileSizeBytes",
-              "core.corrections.highConfidenceThreshold",
-              "core.corrections.minPatternLength",
-              "core.corrections.previewLimit",
-              "core.corrections.previewHardLimit",
-              "core.corrections.previewRulesFetchLimit",
-              "core.search.showMoreLimit",
-              "core.aiRetry.maxRetries",
-              "core.aiRetry.baseDelayMs",
-              "core.defaultLimit",
-              "core.queue.syncConcurrency",
-              "core.queue.embeddingsConcurrency",
-              "core.queue.defaultConcurrency",
-              "core.queue.completedRetention",
-              "theme"
-            ],
-            "type": "string"
-          }
-        },
-        "required": ["key"],
-        "type": "object"
-      },
-      "SettingsGetManyInput": {
-        "additionalProperties": false,
-        "properties": {
-          "keys": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array"
-          }
-        },
-        "required": ["keys"],
-        "type": "object"
-      },
-      "SettingsGetManyOutput": {
-        "additionalProperties": false,
-        "properties": {
-          "settings": {
-            "additionalProperties": {
-              "type": "string"
-            },
-            "type": "object"
-          }
-        },
-        "required": ["settings"],
-        "type": "object"
-      },
-      "SettingsGetOutput": {
-        "additionalProperties": false,
-        "properties": {
-          "data": {
-            "additionalProperties": false,
-            "nullable": true,
-            "properties": {
-              "key": {
-                "type": "string"
-              },
-              "value": {
-                "type": "string"
-              }
-            },
-            "required": ["key", "value"],
-            "type": "object"
-          }
-        },
-        "required": ["data"],
-        "type": "object"
-      },
-      "SettingsSetInput": {
-        "additionalProperties": false,
-        "properties": {
-          "key": {
-            "enum": [
-              "plex_url",
-              "plex_token",
-              "plex_username",
-              "plex_encryption_seed",
-              "plex_client_identifier",
-              "plex_movie_section_id",
-              "plex_tv_section_id",
-              "plex_scheduler_enabled",
-              "plex_scheduler_interval_ms",
-              "radarr_url",
-              "radarr_api_key",
-              "sonarr_url",
-              "sonarr_api_key",
-              "ai.model",
-              "ai.monthlyTokenBudget",
-              "ai.budgetExceededFallback",
-              "ai.modelOverrides.query",
-              "ai.modelOverrides.emit",
-              "ai.modelOverrides.classifier",
-              "ai.modelOverrides.entityExtractor",
-              "ai.modelOverrides.scopeInference",
-              "ai.modelOverrides.auditorContradiction",
-              "ai.modelOverrides.patternContradiction",
-              "cerebrum.query.maxSources",
-              "cerebrum.query.relevanceThreshold",
-              "cerebrum.query.tokenBudget",
-              "cerebrum.emit.maxTokens",
-              "cerebrum.emit.relevanceThreshold",
-              "cerebrum.emit.maxSources",
-              "cerebrum.emit.tokenBudget",
-              "cerebrum.semantic.defaultLimit",
-              "cerebrum.semantic.defaultThreshold",
-              "cerebrum.semantic.queryCacheTtl",
-              "cerebrum.hybrid.rrfK",
-              "cerebrum.hybrid.defaultLimit",
-              "cerebrum.hybrid.defaultThreshold",
-              "cerebrum.context.tokenBudget",
-              "cerebrum.classifier.confidenceThreshold",
-              "cerebrum.entityExtractor.confidenceThreshold",
-              "cerebrum.captureHotkey",
-              "cerebrum.nudge.consolidationSimilarity",
-              "cerebrum.nudge.consolidationMinCluster",
-              "cerebrum.nudge.stalenessDays",
-              "cerebrum.nudge.patternMinOccurrences",
-              "cerebrum.nudge.maxPending",
-              "cerebrum.nudge.cooldownHours",
-              "cerebrum.engram.fallbackScope",
-              "cerebrum.citation.excerptMaxLength",
-              "cerebrum.plexus.healthIntervalMs",
-              "cerebrum.plexus.healthTimeoutMs",
-              "cerebrum.plexus.maxConsecutiveFailures",
-              "cerebrum.thalamus.crossSourceIntervalMs",
-              "cerebrum.mcp.queryMaxSources",
-              "cerebrum.mcp.searchSnippetLength",
-              "cerebrum.mcp.searchDefaultLimit",
-              "cerebrum.glia.proposeMinApproved",
-              "cerebrum.glia.proposeMaxRejectionRate",
-              "cerebrum.glia.actReportMinDays",
-              "cerebrum.glia.demotionRevertThreshold",
-              "cerebrum.glia.demotionWindowDays",
-              "ego.defaultModel",
-              "ego.maxHistory",
-              "ego.maxRetrieval",
-              "ego.tokenBudget",
-              "ego.relevanceThreshold",
-              "ego.chat.maxTokens",
-              "ego.chat.temperature",
-              "ego.summary.maxTokens",
-              "ego.summary.temperature",
-              "media.comparisons.eloK",
-              "media.comparisons.defaultScore",
-              "media.comparisons.maxTierListMovies",
-              "media.comparisons.stalenessThreshold",
-              "media.comparisons.defaultLimit",
-              "media.discovery.sessionTargetMin",
-              "media.discovery.sessionTargetMax",
-              "media.discovery.maxSeedShelves",
-              "media.discovery.maxGenreShelves",
-              "media.discovery.maxActiveCollections",
-              "media.discovery.maxBecauseYouWatchedSeeds",
-              "media.discovery.maxCreditsSeeds",
-              "media.discovery.maxBestInGenre",
-              "media.discovery.maxCrossoverPairs",
-              "media.thetvdb.rateLimitCapacity",
-              "media.thetvdb.rateLimitRefillRate",
-              "media.thetvdb.maxRetries",
-              "media.tmdb.genreCacheTtlMs",
-              "media.tmdb.imageMaxRetries",
-              "media.tmdb.imageRetryDelayMs",
-              "media.plex.rateLimitDelayMs",
-              "media.plex.clientPageSize",
-              "media.plex.friendsPageSize",
-              "media.defaultLimit",
-              "media.rotation.tmdbDefaultPages",
-              "media.rotation.tmdbMaxPages",
-              "media.rotation.tmdbMinVoteCount",
-              "media.rotation.letterboxdMaxPages",
-              "finance.aiCategorizer.model",
-              "finance.aiCategorizer.maxTokens",
-              "finance.ruleGen.model",
-              "finance.ruleGen.maxTokens",
-              "finance.defaultLimit",
-              "inventory.defaultLimit",
-              "inventory.searchDefaultLimit",
-              "inventory.maxFileSizeBytes",
-              "core.corrections.highConfidenceThreshold",
-              "core.corrections.minPatternLength",
-              "core.corrections.previewLimit",
-              "core.corrections.previewHardLimit",
-              "core.corrections.previewRulesFetchLimit",
-              "core.search.showMoreLimit",
-              "core.aiRetry.maxRetries",
-              "core.aiRetry.baseDelayMs",
-              "core.defaultLimit",
-              "core.queue.syncConcurrency",
-              "core.queue.embeddingsConcurrency",
-              "core.queue.defaultConcurrency",
-              "core.queue.completedRetention",
-              "theme"
-            ],
-            "type": "string"
-          },
-          "value": {
-            "type": "string"
-          }
-        },
-        "required": ["key", "value"],
-        "type": "object"
-      },
-      "SettingsSetManyInput": {
-        "additionalProperties": false,
-        "properties": {
-          "entries": {
-            "items": {
-              "additionalProperties": false,
-              "properties": {
-                "key": {
-                  "type": "string"
-                },
-                "value": {
-                  "type": "string"
-                }
-              },
-              "required": ["key", "value"],
-              "type": "object"
-            },
-            "type": "array"
-          }
-        },
-        "required": ["entries"],
-        "type": "object"
-      },
-      "SettingsSetManyOutput": {
-        "additionalProperties": false,
-        "properties": {
-          "settings": {
-            "additionalProperties": {
-              "type": "string"
-            },
-            "type": "object"
-          }
-        },
-        "required": ["settings"],
-        "type": "object"
-      },
-      "SettingsSetOutput": {
-        "additionalProperties": false,
-        "properties": {
-          "data": {
-            "additionalProperties": false,
-            "properties": {
-              "key": {
-                "type": "string"
-              },
-              "value": {
-                "type": "string"
-              }
-            },
-            "required": ["key", "value"],
-            "type": "object"
-          },
-          "message": {
-            "type": "string"
-          }
-        },
-        "required": ["data", "message"],
-        "type": "object"
-      }
-    }
+    "schemas": {}
   },
   "info": {
-    "description": "OpenAPI snapshot of the core pillar's public wire surface. Derived from the contract's Zod schemas. Consumed by iOS Swift codegen.",
-    "title": "@pops/core-contract",
+    "description": "OpenAPI projection of the core pillar's REST contract. Authored as a ts-rest contract (src/contract/rest.ts); consumed directly by polyglot clients and via openapi-typescript by TS consumers. Covers the domains migrated from tRPC so far and grows as each slice converts.",
+    "title": "@pops/core",
     "version": "0.1.0"
   },
-  "openapi": "3.0.3",
+  "openapi": "3.0.2",
   "paths": {
-    "/core/registry": {
+    "/entities": {
       "get": {
-        "operationId": "core.registry.list",
+        "operationId": "entities.list",
         "parameters": [
           {
             "in": "query",
-            "name": "limit",
-            "required": false,
+            "name": "search",
             "schema": {
-              "minimum": 1,
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "type",
+            "schema": {
+              "enum": ["company", "person", "government", "bank", "place", "brand", "organisation"],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "exclusiveMinimum": true,
+              "maximum": 9007199254740991,
+              "minimum": 0,
               "type": "integer"
             }
           },
           {
             "in": "query",
             "name": "offset",
-            "required": false,
             "schema": {
+              "maximum": 9007199254740991,
               "minimum": 0,
               "type": "integer"
             }
@@ -934,81 +53,404 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/RegistryEntryListResponse"
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "abn": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "aliases": {
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array"
+                          },
+                          "defaultTags": {
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array"
+                          },
+                          "defaultTransactionType": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "id": {
+                            "type": "string"
+                          },
+                          "lastEditedTime": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "notes": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "type": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "name",
+                          "type",
+                          "abn",
+                          "aliases",
+                          "defaultTransactionType",
+                          "defaultTags",
+                          "notes",
+                          "lastEditedTime"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "pagination": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "hasMore": {
+                          "type": "boolean"
+                        },
+                        "limit": {
+                          "type": "number"
+                        },
+                        "offset": {
+                          "type": "number"
+                        },
+                        "total": {
+                          "type": "number"
+                        }
+                      },
+                      "required": ["total", "limit", "offset", "hasMore"],
+                      "type": "object"
+                    }
+                  },
+                  "required": ["data", "pagination"],
+                  "type": "object"
                 }
               }
             },
-            "description": "Registered pillars list"
+            "description": "200"
           }
         },
-        "summary": "List registered pillars",
-        "tags": ["registry"]
+        "summary": "List entities with optional search / type filters and pagination",
+        "tags": ["entities"]
       },
       "post": {
-        "operationId": "core.registry.register",
+        "operationId": "entities.create",
+        "parameters": [],
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/RegisterPillarInput"
+                "additionalProperties": false,
+                "properties": {
+                  "abn": {
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "aliases": {
+                    "default": [],
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "defaultTags": {
+                    "default": [],
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "defaultTransactionType": {
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "name": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "notes": {
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "type": {
+                    "default": "company",
+                    "enum": [
+                      "company",
+                      "person",
+                      "government",
+                      "bank",
+                      "place",
+                      "brand",
+                      "organisation"
+                    ],
+                    "type": "string"
+                  }
+                },
+                "required": ["name", "type", "aliases", "defaultTags"],
+                "type": "object"
               }
             }
           },
-          "required": true
+          "description": "Body"
         },
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/RegistryEntryResponse"
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "abn": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "aliases": {
+                          "items": {
+                            "type": "string"
+                          },
+                          "type": "array"
+                        },
+                        "defaultTags": {
+                          "items": {
+                            "type": "string"
+                          },
+                          "type": "array"
+                        },
+                        "defaultTransactionType": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "id": {
+                          "type": "string"
+                        },
+                        "lastEditedTime": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "notes": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "type": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "name",
+                        "type",
+                        "abn",
+                        "aliases",
+                        "defaultTransactionType",
+                        "defaultTags",
+                        "notes",
+                        "lastEditedTime"
+                      ],
+                      "type": "object"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["data", "message"],
+                  "type": "object"
                 }
               }
             },
-            "description": "Registered pillar entry"
+            "description": "201"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "404"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "409"
           }
         },
-        "summary": "Register a pillar",
-        "tags": ["registry"]
+        "summary": "Create an entity",
+        "tags": ["entities"]
       }
     },
-    "/core/registry/{pillar}": {
+    "/entities/{id}": {
       "delete": {
-        "operationId": "core.registry.deregister",
+        "operationId": "entities.delete",
         "parameters": [
           {
             "in": "path",
-            "name": "pillar",
+            "name": "id",
             "required": true,
             "schema": {
               "type": "string"
             }
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {},
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DeregisterResponse"
+                  "additionalProperties": false,
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
                 }
               }
             },
-            "description": "Acknowledgement"
+            "description": "200"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
           },
           "404": {
-            "description": "Pillar not registered"
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "404"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "409"
           }
         },
-        "summary": "Deregister a pillar",
-        "tags": ["registry"]
+        "summary": "Delete an entity",
+        "tags": ["entities"]
       },
       "get": {
-        "operationId": "core.registry.get",
+        "operationId": "entities.get",
         "parameters": [
           {
             "in": "path",
-            "name": "pillar",
+            "name": "id",
             "required": true,
             "schema": {
               "type": "string"
@@ -1020,27 +462,139 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/RegistryEntryResponse"
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "abn": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "aliases": {
+                          "items": {
+                            "type": "string"
+                          },
+                          "type": "array"
+                        },
+                        "defaultTags": {
+                          "items": {
+                            "type": "string"
+                          },
+                          "type": "array"
+                        },
+                        "defaultTransactionType": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "id": {
+                          "type": "string"
+                        },
+                        "lastEditedTime": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "notes": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "type": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "name",
+                        "type",
+                        "abn",
+                        "aliases",
+                        "defaultTransactionType",
+                        "defaultTags",
+                        "notes",
+                        "lastEditedTime"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": ["data"],
+                  "type": "object"
                 }
               }
             },
-            "description": "Registry entry"
+            "description": "200"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
           },
           "404": {
-            "description": "Pillar not registered"
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "404"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "409"
           }
         },
-        "summary": "Get a registered pillar by id",
-        "tags": ["registry"]
-      }
-    },
-    "/core/registry/{pillar}/heartbeat": {
-      "post": {
-        "operationId": "core.registry.heartbeat",
+        "summary": "Get a single entity",
+        "tags": ["entities"]
+      },
+      "patch": {
+        "operationId": "entities.update",
         "parameters": [
           {
             "in": "path",
-            "name": "pillar",
+            "name": "id",
             "required": true,
             "schema": {
               "type": "string"
@@ -1051,223 +605,190 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/HeartbeatInput"
+                "additionalProperties": false,
+                "properties": {
+                  "abn": {
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "aliases": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "defaultTags": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "defaultTransactionType": {
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "name": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "notes": {
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "type": {
+                    "enum": [
+                      "company",
+                      "person",
+                      "government",
+                      "bank",
+                      "place",
+                      "brand",
+                      "organisation"
+                    ],
+                    "type": "string"
+                  }
+                },
+                "type": "object"
               }
             }
           },
-          "required": true
+          "description": "Body"
         },
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HeartbeatResponse"
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "abn": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "aliases": {
+                          "items": {
+                            "type": "string"
+                          },
+                          "type": "array"
+                        },
+                        "defaultTags": {
+                          "items": {
+                            "type": "string"
+                          },
+                          "type": "array"
+                        },
+                        "defaultTransactionType": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "id": {
+                          "type": "string"
+                        },
+                        "lastEditedTime": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "notes": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "type": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "name",
+                        "type",
+                        "abn",
+                        "aliases",
+                        "defaultTransactionType",
+                        "defaultTags",
+                        "notes",
+                        "lastEditedTime"
+                      ],
+                      "type": "object"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["data", "message"],
+                  "type": "object"
                 }
               }
             },
-            "description": "Heartbeat acknowledgement"
+            "description": "200"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
           },
           "404": {
-            "description": "Pillar not registered"
-          }
-        },
-        "summary": "Record a pillar heartbeat",
-        "tags": ["registry"]
-      }
-    },
-    "/core/settings/delete": {
-      "post": {
-        "operationId": "core.settings.delete",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SettingsDeleteInput"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SettingsDeleteOutput"
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
                 }
               }
             },
-            "description": "Acknowledgement"
+            "description": "404"
           },
-          "404": {
-            "description": "Setting key not found"
-          }
-        },
-        "summary": "Delete a setting by key",
-        "tags": ["settings"]
-      }
-    },
-    "/core/settings/ensure": {
-      "post": {
-        "operationId": "core.settings.ensure",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SettingsEnsureInput"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
+          "409": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SettingsEnsureOutput"
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
                 }
               }
             },
-            "description": "Persisted setting (existing or newly inserted)"
+            "description": "409"
           }
         },
-        "summary": "Ensure a setting exists — upsert-and-return",
-        "tags": ["settings"]
-      }
-    },
-    "/core/settings/get": {
-      "post": {
-        "operationId": "core.settings.get",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SettingsGetInput"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SettingsGetOutput"
-                }
-              }
-            },
-            "description": "Setting value or null"
-          }
-        },
-        "summary": "Get a setting by key (returns null if missing)",
-        "tags": ["settings"]
-      }
-    },
-    "/core/settings/getMany": {
-      "post": {
-        "operationId": "core.settings.getMany",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SettingsGetManyInput"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SettingsGetManyOutput"
-                }
-              }
-            },
-            "description": "Map of present key→value"
-          }
-        },
-        "summary": "Bulk read settings by key — missing keys omitted from result",
-        "tags": ["settings"]
-      }
-    },
-    "/core/settings/set": {
-      "post": {
-        "operationId": "core.settings.set",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SettingsSetInput"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SettingsSetOutput"
-                }
-              }
-            },
-            "description": "Persisted setting"
-          }
-        },
-        "summary": "Upsert a setting value",
-        "tags": ["settings"]
-      }
-    },
-    "/core/settings/setMany": {
-      "post": {
-        "operationId": "core.settings.setMany",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SettingsSetManyInput"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SettingsSetManyOutput"
-                }
-              }
-            },
-            "description": "Map of persisted key→value"
-          }
-        },
-        "summary": "Bulk write settings transactionally — rolls back all on any failure",
-        "tags": ["settings"]
+        "summary": "Update an entity",
+        "tags": ["entities"]
       }
     }
-  },
-  "servers": [
-    {
-      "description": "Core pillar API",
-      "url": "/api/v1"
-    }
-  ],
-  "tags": [
-    {
-      "description": "Core pillar registry",
-      "name": "registry"
-    },
-    {
-      "description": "Core pillar settings (key/value)",
-      "name": "settings"
-    }
-  ]
+  }
 }
