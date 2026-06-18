@@ -16,7 +16,7 @@
 import { initServer } from '@ts-rest/express';
 
 import { cerebrumNudgesContract } from '../../contract/rest-nudges.js';
-import { type CerebrumDb } from '../../db/index.js';
+import { type CerebrumDb, nudgeLogService } from '../../db/index.js';
 import { extractContradiction } from '../modules/nudges/contradiction.js';
 import { createNudgeReadService } from '../modules/nudges/service.js';
 import { createNudgeWriteService, type ThresholdsStore } from '../modules/nudges/write-service.js';
@@ -51,6 +51,21 @@ export function makeNudgesHandlers(
   });
 
   return server.router(cerebrumNudgesContract, {
+    create: async ({ body }) => ({
+      status: 200,
+      body: {
+        nudge: nudgeLogService.createNudge(deps.db, {
+          type: body.type,
+          title: body.title,
+          body: body.body,
+          priority: body.priority,
+          engramIds: body.engramIds,
+          expiresAt: body.expiresAt,
+          action: body.action,
+        }),
+      },
+    }),
+
     list: async ({ body }) => ({
       status: 200,
       body: service.list(body),

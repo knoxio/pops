@@ -958,6 +958,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/nudges': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Create a single nudge (alert-driven; no cooldown dedup). */
+    post: operations['nudges.create'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/nudges/configure': {
     parameters: {
       query?: never;
@@ -4803,6 +4820,72 @@ export interface operations {
             code?: string;
             message: string;
             messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'nudges.create': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          action?: {
+            label: string;
+            params: {
+              [key: string]: unknown;
+            };
+            /** @enum {string} */
+            type: 'consolidate' | 'archive' | 'review' | 'link';
+          } | null;
+          body: string;
+          engramIds?: string[];
+          expiresAt?: string | null;
+          /** @enum {string} */
+          priority: 'low' | 'medium' | 'high';
+          title: string;
+          /** @enum {string} */
+          type?: 'consolidation' | 'staleness' | 'pattern' | 'insight';
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            nudge: {
+              actedAt: string | null;
+              action: {
+                label: string;
+                params: {
+                  [key: string]: unknown;
+                };
+                /** @enum {string} */
+                type: 'consolidate' | 'archive' | 'review' | 'link';
+              } | null;
+              body: string;
+              createdAt: string;
+              engramIds: string[];
+              expiresAt: string | null;
+              id: string;
+              /** @enum {string} */
+              priority: 'low' | 'medium' | 'high';
+              /** @enum {string} */
+              status: 'pending' | 'dismissed' | 'acted' | 'expired';
+              title: string;
+              /** @enum {string} */
+              type: 'consolidation' | 'staleness' | 'pattern' | 'insight';
+            };
           };
         };
       };

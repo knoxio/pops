@@ -7566,6 +7566,163 @@
         "tags": ["ingest"]
       }
     },
+    "/nudges": {
+      "post": {
+        "operationId": "nudges.create",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "action": {
+                    "additionalProperties": false,
+                    "nullable": true,
+                    "properties": {
+                      "label": {
+                        "type": "string"
+                      },
+                      "params": {
+                        "additionalProperties": {},
+                        "type": "object"
+                      },
+                      "type": {
+                        "enum": ["consolidate", "archive", "review", "link"],
+                        "type": "string"
+                      }
+                    },
+                    "required": ["type", "label", "params"],
+                    "type": "object"
+                  },
+                  "body": {
+                    "type": "string"
+                  },
+                  "engramIds": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "expiresAt": {
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "priority": {
+                    "enum": ["low", "medium", "high"],
+                    "type": "string"
+                  },
+                  "title": {
+                    "type": "string"
+                  },
+                  "type": {
+                    "enum": ["consolidation", "staleness", "pattern", "insight"],
+                    "type": "string"
+                  }
+                },
+                "required": ["title", "body", "priority"],
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "nudge": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "actedAt": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "action": {
+                          "additionalProperties": false,
+                          "nullable": true,
+                          "properties": {
+                            "label": {
+                              "type": "string"
+                            },
+                            "params": {
+                              "additionalProperties": {},
+                              "type": "object"
+                            },
+                            "type": {
+                              "enum": ["consolidate", "archive", "review", "link"],
+                              "type": "string"
+                            }
+                          },
+                          "required": ["type", "label", "params"],
+                          "type": "object"
+                        },
+                        "body": {
+                          "type": "string"
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "engramIds": {
+                          "items": {
+                            "type": "string"
+                          },
+                          "type": "array"
+                        },
+                        "expiresAt": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "id": {
+                          "type": "string"
+                        },
+                        "priority": {
+                          "enum": ["low", "medium", "high"],
+                          "type": "string"
+                        },
+                        "status": {
+                          "enum": ["pending", "dismissed", "acted", "expired"],
+                          "type": "string"
+                        },
+                        "title": {
+                          "type": "string"
+                        },
+                        "type": {
+                          "enum": ["consolidation", "staleness", "pattern", "insight"],
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "type",
+                        "title",
+                        "body",
+                        "engramIds",
+                        "priority",
+                        "status",
+                        "createdAt",
+                        "expiresAt",
+                        "actedAt",
+                        "action"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": ["nudge"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "Create a single nudge (alert-driven; no cooldown dedup).",
+        "tags": ["nudges"]
+      }
+    },
     "/nudges/configure": {
       "post": {
         "operationId": "nudges.configure",

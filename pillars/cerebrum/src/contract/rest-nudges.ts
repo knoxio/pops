@@ -12,6 +12,7 @@
  *
  * The write surface completes the domain:
  *
+ *   - `create`    → POST /nudges            (alert-driven single insert, no dedup)
  *   - `scan`      → POST /nudges/scan       (runs detectors, persists nudges)
  *   - `act`       → POST /nudges/:id/act    (executes the suggested action)
  *   - `configure` → POST /nudges/configure  (updates detection thresholds)
@@ -101,6 +102,23 @@ export const nudgeConfigureSchema = z.object({
 export type NudgeConfigureWire = z.infer<typeof nudgeConfigureSchema>;
 
 export const cerebrumNudgesContract = c.router({
+  create: {
+    method: 'POST',
+    path: '/nudges',
+    summary: 'Create a single nudge (alert-driven; no cooldown dedup).',
+    body: z.object({
+      type: nudgeTypeSchema.optional(),
+      title: z.string(),
+      body: z.string(),
+      priority: nudgePrioritySchema,
+      engramIds: z.array(z.string()).optional(),
+      expiresAt: z.string().nullable().optional(),
+      action: nudgeActionSchema.nullable().optional(),
+    }),
+    responses: {
+      200: z.object({ nudge: nudgeSchema }),
+    },
+  },
   list: {
     method: 'POST',
     path: '/nudges/search',

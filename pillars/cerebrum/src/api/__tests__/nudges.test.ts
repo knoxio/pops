@@ -139,6 +139,75 @@ function engramService(now?: () => Date): EngramService {
   });
 }
 
+describe('cerebrum.nudges.create', () => {
+  it('persists an insight nudge and surfaces it in get/list', async () => {
+    const c = client();
+
+    const { nudge } = await c.nudges.create({
+      title: 'AI alert: budget-threshold',
+      body: 'Monthly spend exceeded the cap (provider=openai)',
+      priority: 'high',
+      action: {
+        type: 'review',
+        label: 'Inspect alert',
+        params: { source: 'ai-alert', alertId: 42 },
+      },
+    });
+
+    expect(nudge).toMatchObject({
+      type: 'insight',
+      title: 'AI alert: budget-threshold',
+      body: 'Monthly spend exceeded the cap (provider=openai)',
+      priority: 'high',
+      status: 'pending',
+      engramIds: [],
+      expiresAt: null,
+      actedAt: null,
+      action: {
+        type: 'review',
+        label: 'Inspect alert',
+        params: { source: 'ai-alert', alertId: 42 },
+      },
+    });
+    expect(nudge.id).toMatch(/^nudge_\d{8}_\d{4}_insight_/);
+
+    const fetched = await c.nudges.get(nudge.id);
+    expect(fetched.nudge).toMatchObject({ id: nudge.id, title: 'AI alert: budget-threshold' });
+
+    const listed = await c.nudges.list({ type: 'insight' });
+    expect(listed.total).toBe(1);
+    expect(listed.nudges[0]?.id).toBe(nudge.id);
+  });
+
+  it('defaults type to insight, engramIds to [], action to null', async () => {
+    const c = client();
+    const { nudge } = await c.nudges.create({
+      title: 'Bare nudge',
+      body: 'no action, no engrams',
+      priority: 'medium',
+    });
+    expect(nudge.type).toBe('insight');
+    expect(nudge.engramIds).toEqual([]);
+    expect(nudge.action).toBeNull();
+    expect(nudge.status).toBe('pending');
+  });
+
+  it('does not dedup repeated alert-driven creates (no cooldown)', async () => {
+    const c = client();
+    const payload = {
+      title: 'AI alert: error-spike',
+      body: 'errors spiking',
+      priority: 'high' as const,
+    };
+    const first = await c.nudges.create(payload);
+    const second = await c.nudges.create(payload);
+    expect(first.nudge.id).not.toBe(second.nudge.id);
+
+    const { total } = await c.nudges.list({ type: 'insight' });
+    expect(total).toBe(2);
+  });
+});
+
 describe('cerebrum.nudges.list', () => {
   it('returns an empty page when nudge_log is empty', async () => {
     const { nudges, total } = await client().nudges.list();

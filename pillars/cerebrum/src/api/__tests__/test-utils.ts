@@ -339,6 +339,20 @@ export interface ListNudgesFilters {
   offset?: number;
 }
 
+export interface CreateNudgeInput {
+  type?: NudgeTypeWire;
+  title: string;
+  body: string;
+  priority: NudgePriorityWire;
+  engramIds?: string[];
+  expiresAt?: string | null;
+  action?: {
+    type: 'consolidate' | 'archive' | 'review' | 'link';
+    label: string;
+    params: Record<string, unknown>;
+  } | null;
+}
+
 export interface ListContradictionsFilters {
   status?: NudgeStatusWire | null;
   limit?: number;
@@ -565,6 +579,8 @@ export function makeClient(app: Express) {
         ),
     },
     nudges: {
+      create: (input: CreateNudgeInput) =>
+        send<{ nudge: NudgeWire }>(r.post('/nudges').send(input)),
       list: (filters: ListNudgesFilters = {}) =>
         send<{ nudges: NudgeWire[]; total: number }>(r.post('/nudges/search').send(filters)),
       get: (id: string) => send<{ nudge: NudgeWire }>(r.get(`/nudges/${id}`)),
