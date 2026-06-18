@@ -36,6 +36,7 @@ export function createPillarOwnerUriLookup(): ReconcileLookupFn {
         return { kind: 'not-found' };
       case 'bad-request':
         return { kind: 'bad-uri', reason: result.message ?? 'bad-request' };
+      case 'unauthorized':
       case 'unavailable':
       case 'degraded':
       case 'contract-mismatch':

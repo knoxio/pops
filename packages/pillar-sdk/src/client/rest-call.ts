@@ -197,17 +197,16 @@ async function mapResponse(pillarId: string, response: Response): Promise<CallRe
  *
  * The collapsed pillars return a `{ message, code? }` envelope for the mapped
  * statuses (see `pillars/*\/src/api/rest/error-mapping.ts`): 400 → bad-request,
- * 404 → not-found, 409 → conflict. There is no `unauthorized` kind in
- * {@link CallFailure}, so 401 maps to `bad-request` (the closest "the caller
- * sent something the pillar rejected" kind); the gap is reported in the
- * increment notes. Any other status → `unavailable`.
+ * 401 → unauthorized, 404 → not-found, 409 → conflict. Any other status →
+ * `unavailable`.
  */
 function mapHttpFailure(pillarId: string, status: number, body: unknown): CallFailure {
   const message = extractErrorMessage(body);
   switch (status) {
     case 400:
-    case 401:
       return withMessage({ kind: 'bad-request', pillar: pillarId }, message);
+    case 401:
+      return withMessage({ kind: 'unauthorized', pillar: pillarId }, message);
     case 404:
       return withMessage({ kind: 'not-found', pillar: pillarId }, message);
     case 409:
@@ -217,7 +216,10 @@ function mapHttpFailure(pillarId: string, status: number, body: unknown): CallFa
   }
 }
 
-type FailureWithMessage = Extract<CallFailure, { kind: 'not-found' | 'conflict' | 'bad-request' }>;
+type FailureWithMessage = Extract<
+  CallFailure,
+  { kind: 'not-found' | 'conflict' | 'bad-request' | 'unauthorized' }
+>;
 
 function withMessage(failure: FailureWithMessage, message: string | undefined): FailureWithMessage {
   if (!message) return failure;

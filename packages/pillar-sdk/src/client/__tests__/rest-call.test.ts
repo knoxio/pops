@@ -193,10 +193,16 @@ describe('performRestCall — response / error mapping', () => {
     expect(result).toEqual({ kind: 'conflict', pillar: 'core', message: 'already exists' });
   });
 
-  it('maps 401 → bad-request (no unauthorized kind exists; documented gap)', async () => {
+  it('maps 401 → unauthorized with the envelope message', async () => {
     const { fetchImpl } = recordingRest(() => jsonOk({ message: 'denied' }, 401));
     const result = await performRestCall(ctx(['entities', 'get'], { id: 'ent-1' }, fetchImpl));
-    expect(result).toEqual({ kind: 'bad-request', pillar: 'core', message: 'denied' });
+    expect(result).toEqual({ kind: 'unauthorized', pillar: 'core', message: 'denied' });
+  });
+
+  it('maps 401 → unauthorized with no message when the body has none', async () => {
+    const { fetchImpl } = recordingRest(() => jsonOk({}, 401));
+    const result = await performRestCall(ctx(['entities', 'get'], { id: 'ent-1' }, fetchImpl));
+    expect(result).toEqual({ kind: 'unauthorized', pillar: 'core' });
   });
 
   it('maps an unmapped 5xx → unavailable', async () => {
