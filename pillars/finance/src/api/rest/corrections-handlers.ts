@@ -15,6 +15,7 @@ import {
   previewChangeSetImpact,
 } from '../modules/corrections/index.js';
 import { paginationMeta } from '../shared/pagination.js';
+import { makeCorrectionsAiHandlers } from './corrections-ai-handlers.js';
 import {
   DEFAULT_LIMIT,
   DEFAULT_OFFSET,
@@ -159,5 +160,7 @@ export function makeCorrectionsHandlers(db: FinanceDb) {
           message: 'ChangeSet applied',
         },
       })),
+
+    ...makeCorrectionsAiHandlers(db),
   };
 }

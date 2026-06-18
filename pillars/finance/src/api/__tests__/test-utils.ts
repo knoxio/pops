@@ -315,6 +315,34 @@ export function makeClient(app: Express) {
         send<{ data: Correction[]; message: string }>(
           r.post('/corrections/apply-changeset').send(body)
         ),
+      analyzeCorrection: (body: Record<string, unknown>) =>
+        send<{ data: { matchType: string; pattern: string; confidence: number } | null }>(
+          r.post('/corrections/analyze').send(body)
+        ),
+      generateRules: (body: Record<string, unknown>) =>
+        send<{
+          proposals: {
+            descriptionPattern: string;
+            matchType: string;
+            tags: string[];
+            reasoning: string;
+          }[];
+        }>(r.post('/corrections/generate-rules').send(body)),
+      proposeChangeSet: (body: Record<string, unknown>) =>
+        send<{
+          changeSet: { source?: string; reason?: string; ops: { op: string; id?: string }[] };
+          rationale: string;
+          preview: { counts: { affected: number }; affected: unknown[] };
+          targetRules: Record<string, Correction>;
+        }>(r.post('/corrections/propose-changeset').send(body)),
+      reviseChangeSet: (body: Record<string, unknown>) =>
+        send<{
+          changeSet: { ops: { op: string }[] };
+          rationale: string;
+          targetRules: Record<string, Correction>;
+        }>(r.post('/corrections/revise-changeset').send(body)),
+      rejectChangeSet: (body: Record<string, unknown>) =>
+        send<{ message: string }>(r.post('/corrections/reject-changeset').send(body)),
     },
     entityUsage: {
       list: (query: EntityUsageQuery = {}) =>
