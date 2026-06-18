@@ -89,3 +89,11 @@ export {
 } from './services/transaction-corrections.js';
 
 export * as crossPillarService from './services/cross-pillar.js';
+
+export { listEntityUsage } from './services/entity-usage.js';
+
+export type {
+  EntityUsageRow,
+  EntityUsageListResult,
+  ListEntityUsageOptions,
+} from './services/entity-usage.js';

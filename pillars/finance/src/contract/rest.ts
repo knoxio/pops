@@ -14,6 +14,7 @@ import { initContract } from '@ts-rest/core';
 
 import { financeBudgetsContract } from './rest-budgets.js';
 import { financeCorrectionsContract } from './rest-corrections.js';
+import { financeEntityUsageContract } from './rest-entity-usage.js';
 import { financeImportsContract } from './rest-imports.js';
 import { financeSearchContract } from './rest-search.js';
 import { financeTagRulesContract } from './rest-tag-rules.js';
@@ -29,6 +30,7 @@ export const financeContract = c.router(
     transactions: financeTransactionsContract,
     tagRules: financeTagRulesContract,
     corrections: financeCorrectionsContract,
+    entityUsage: financeEntityUsageContract,
     imports: financeImportsContract,
     search: financeSearchContract,
   },
