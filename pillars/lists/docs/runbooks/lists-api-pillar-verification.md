@@ -81,10 +81,10 @@ Record any unexpected behaviour in the **Lessons captured** section of `.claude/
 - `apps/pops-lists-api/src/server.ts` — boot sequence
 - `apps/pops-api/src/db/lists-handle.ts` — lazy open + env-aware handle
 - `apps/pops-shell/src/app/pillars/pillar-registry-client.ts` — soft-fallback behaviour (shared with core)
-- `docs/runbooks/core-api-pillar-verification.md` — sibling runbook for the core pillar
-- `docs/runbooks/inventory-api-pillar-verification.md` — sibling runbook for the inventory pillar
-- `docs/runbooks/media-api-pillar-verification.md` — sibling runbook for the media pillar
-- `docs/runbooks/finance-api-pillar-verification.md` — sibling runbook for the finance pillar
-- `docs/runbooks/food-api-pillar-verification.md` — sibling runbook for the food pillar
-- `docs/runbooks/cerebrum-api-pillar-verification.md` — sibling runbook for the cerebrum pillar
+- [`../../../core/docs/runbooks/core-api-pillar-verification.md`](../../../core/docs/runbooks/core-api-pillar-verification.md) — sibling runbook for the core pillar
+- [`../../../inventory/docs/runbooks/inventory-api-pillar-verification.md`](../../../inventory/docs/runbooks/inventory-api-pillar-verification.md) — sibling runbook for the inventory pillar
+- [`../../../media/docs/runbooks/media-api-pillar-verification.md`](../../../media/docs/runbooks/media-api-pillar-verification.md) — sibling runbook for the media pillar
+- [`../../../finance/docs/runbooks/finance-api-pillar-verification.md`](../../../finance/docs/runbooks/finance-api-pillar-verification.md) — sibling runbook for the finance pillar
+- [`../../../food/docs/runbooks/food-api-pillar-verification.md`](../../../food/docs/runbooks/food-api-pillar-verification.md) — sibling runbook for the food pillar
+- [`../../../cerebrum/docs/runbooks/cerebrum-api-pillar-verification.md`](../../../cerebrum/docs/runbooks/cerebrum-api-pillar-verification.md) — sibling runbook for the cerebrum pillar
 - `.claude/pillar-migration-roadmap.md` — Track K status + lessons captured (gitignored, local-only)
