@@ -1,6 +1,6 @@
 /**
- * Integration tests for the Express dispatcher surface mounted before
- * `/trpc` in `app.ts` (ADR-026 P2/P3):
+ * Integration tests for the raw Express dispatcher surface in `app.ts`
+ * (ADR-026 P2/P3):
  *
  *   - POST /uri/resolve   — cross-pillar URI dispatcher
  *   - GET  /pillars/health — aggregated cross-pillar health fan-out

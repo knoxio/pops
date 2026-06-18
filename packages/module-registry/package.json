@@ -24,7 +24,8 @@
     "@pops/types": "workspace:*"
   },
   "devDependencies": {
-    "@pops/core-contract": "workspace:*",
+    "@pops/cerebrum": "workspace:*",
+    "@pops/core": "workspace:*",
     "@pops/finance": "workspace:*",
     "@pops/food": "workspace:*",
     "@pops/inventory": "workspace:*",

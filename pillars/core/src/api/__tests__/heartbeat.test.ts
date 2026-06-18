@@ -1,13 +1,14 @@
 /**
- * Heartbeat lifecycle tests for `core.registry.*` (Theme 13 PRD-162).
+ * Heartbeat lifecycle tests for the registry (Theme 13 PRD-162).
  *
- * Covers the registry side of the heartbeat contract: the `heartbeat`
- * mutation, the background reconciliation ticker, the lazy-compute
- * status path on `list`/`get`, and the recovery cycle.
+ * Covers the registry side of the heartbeat contract: `recordHeartbeat`, the
+ * background reconciliation ticker, the lazy-compute status path on the
+ * discovery snapshot, and the recovery cycle.
  *
- * Drives `appRouter.createCaller(ctx)` against a per-test in-memory
- * core.db plus an injected clock so missed heartbeats can be simulated
- * without sleeping in real time.
+ * Drives `pillarRegistryService` + `buildRegistrySnapshot` against a per-test
+ * in-memory core.db plus an injected clock so missed heartbeats can be
+ * simulated without sleeping in real time. (The heartbeat wire route itself is
+ * covered over HTTP in `external-heartbeat.test.ts`.)
  */
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -16,6 +17,7 @@ import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { openCoreDb, pillarRegistryService, type OpenedCoreDb } from '../../db/index.js';
+import { buildRegistrySnapshot } from '../modules/registry/snapshot.js';
 import {
   HEARTBEAT_INTERVAL_MS,
   HEALTHY_STALENESS_REFRESH_MS,
@@ -24,8 +26,6 @@ import {
   resetRegistryClock,
 } from '../modules/registry/status.js';
 import { runHeartbeatTick } from '../modules/registry/ticker.js';
-import { appRouter } from '../router.js';
-import { type Context } from '../trpc.js';
 
 import type { ManifestPayload } from '@pops/pillar-sdk';
 
@@ -46,17 +46,22 @@ afterEach(() => {
   rmSync(tmpDir, { recursive: true, force: true });
 });
 
-function caller(): ReturnType<typeof appRouter.createCaller> {
-  const ctx: Context = {
-    user: { email: 'dev@example.com' },
-    serviceAccount: null,
-    coreDb: coreDb.db,
-  };
-  return appRouter.createCaller(ctx);
+function nowIso(): string {
+  return clock.now.toISOString();
 }
 
 function advance(ms: number): void {
   clock.now = new Date(clock.now.getTime() + ms);
+}
+
+function heartbeat(pillar: string): ReturnType<typeof pillarRegistryService.recordHeartbeat> {
+  return pillarRegistryService.recordHeartbeat(coreDb.db, pillar, { now: nowIso() });
+}
+
+function snapshotEntry(
+  pillar: string
+): ReturnType<typeof buildRegistrySnapshot>['pillars'][number] | undefined {
+  return buildRegistrySnapshot(coreDb.db).pillars.find((p) => p.pillarId === pillar);
 }
 
 function financeManifest(): ManifestPayload {
@@ -73,21 +78,7 @@ function financeManifest(): ManifestPayload {
       mutations: ['finance.transactions.create'],
       subscriptions: [],
     },
-    search: {
-      adapters: [
-        {
-          name: 'transactionsAdapter',
-          entityType: 'transaction',
-          queryShape: {
-            supportsText: true,
-            supportsTags: false,
-            supportsDateRange: false,
-            supportsScope: [],
-          },
-          procedurePath: 'finance.transactions.search',
-        },
-      ],
-    },
+    search: { adapters: [] },
     ai: { tools: [] },
     uri: { types: ['finance/transaction'] },
     consumedSettings: { keys: [] },
@@ -104,26 +95,8 @@ function mediaManifest(): ManifestPayload {
       version: '0.5.0',
       tag: 'contract-media@v0.5.0',
     },
-    routes: {
-      queries: ['media.library.list', 'media.library.search'],
-      mutations: [],
-      subscriptions: [],
-    },
-    search: {
-      adapters: [
-        {
-          name: 'libraryAdapter',
-          entityType: 'movie',
-          queryShape: {
-            supportsText: true,
-            supportsTags: false,
-            supportsDateRange: false,
-            supportsScope: [],
-          },
-          procedurePath: 'media.library.search',
-        },
-      ],
-    },
+    routes: { queries: ['media.library.list'], mutations: [], subscriptions: [] },
+    search: { adapters: [] },
     ai: { tools: [] },
     uri: { types: ['media/movie'] },
     consumedSettings: { keys: [] },
@@ -131,42 +104,39 @@ function mediaManifest(): ManifestPayload {
   };
 }
 
-async function registerFinance(): Promise<string> {
-  const result = await caller().core.registry.register({
+function registerFinance(): string {
+  pillarRegistryService.upsertPillarRegistration(coreDb.db, {
     baseUrl: 'http://finance-api:3004',
     manifest: financeManifest(),
+    now: nowIso(),
   });
-  if (!result.ok) throw new Error('register fixture failed');
-  return result.pillarId;
+  return 'finance';
 }
 
-describe('core.registry.heartbeat (PRD-162)', () => {
-  it('returns ok=false reason=not-registered for an unknown pillar', async () => {
-    const res = await caller().core.registry.heartbeat({ pillar: 'finance' });
-    expect(res).toEqual({ ok: false, reason: 'not-registered' });
+describe('registry heartbeat (PRD-162)', () => {
+  it('returns recorded=false for an unknown pillar', () => {
+    const res = heartbeat('finance');
+    expect(res.recorded).toBe(false);
+    expect(res.registration).toBeNull();
   });
 
-  it('updates lastHeartbeatAt to NOW() and reports statusChanged=false when already healthy', async () => {
-    await registerFinance();
-    const registeredAt = (await caller().core.registry.get({ pillar: 'finance' }))!.lastHeartbeatAt;
+  it('updates lastHeartbeatAt to NOW() and reports statusChanged=false when already healthy', () => {
+    registerFinance();
+    const registeredAt = snapshotEntry('finance')!.lastHeartbeatAt;
 
     advance(HEARTBEAT_INTERVAL_MS);
-    const beforeHeartbeat = clock.now.toISOString();
-
-    pillarRegistryService.recordHeartbeat(coreDb.db, 'finance', { now: beforeHeartbeat });
-
-    const res = await caller().core.registry.heartbeat({ pillar: 'finance' });
-    if (!res.ok) throw new Error('expected ok=true');
-    expect(res.pillarId).toBe('finance');
-    expect(res.status).toBe('healthy');
+    const res = heartbeat('finance');
+    expect(res.recorded).toBe(true);
+    expect(res.registration?.pillarId).toBe('finance');
     expect(res.statusChanged).toBe(false);
-    expect(new Date(res.lastHeartbeatAt).getTime()).toBeGreaterThanOrEqual(
+    expect(snapshotEntry('finance')?.status).toBe('healthy');
+    expect(new Date(res.registration!.lastHeartbeatAt).getTime()).toBeGreaterThanOrEqual(
       new Date(registeredAt).getTime()
     );
   });
 
-  it('flips status back to healthy and reports statusChanged=true after an unavailable transition', async () => {
-    await registerFinance();
+  it('flips status back to healthy and reports statusChanged=true after an unavailable transition', () => {
+    registerFinance();
 
     advance(UNAVAILABLE_AFTER_MS + 1_000);
     runHeartbeatTick(coreDb.db);
@@ -175,67 +145,57 @@ describe('core.registry.heartbeat (PRD-162)', () => {
     expect(persisted?.status).toBe('unavailable');
 
     advance(1_000);
-    const res = await caller().core.registry.heartbeat({ pillar: 'finance' });
-    if (!res.ok) throw new Error('expected ok=true');
-    expect(res.status).toBe('healthy');
+    const res = heartbeat('finance');
+    expect(res.recorded).toBe(true);
+    expect(res.registration?.status).toBe('healthy');
     expect(res.statusChanged).toBe(true);
 
-    const back = await caller().core.registry.get({ pillar: 'finance' });
-    expect(back?.status).toBe('healthy');
+    expect(snapshotEntry('finance')?.status).toBe('healthy');
   });
 
-  it('is idempotent under concurrent heartbeats — last write wins', async () => {
-    await registerFinance();
-    const c = caller();
+  it('is idempotent under repeated heartbeats — last write wins', () => {
+    registerFinance();
 
-    const t1 = c.core.registry.heartbeat({ pillar: 'finance' });
-    const t2 = c.core.registry.heartbeat({ pillar: 'finance' });
-    const t3 = c.core.registry.heartbeat({ pillar: 'finance' });
-    const results = await Promise.all([t1, t2, t3]);
-
-    for (const r of results) {
-      if (!r.ok) throw new Error('expected ok=true');
-      expect(r.status).toBe('healthy');
+    for (let i = 0; i < 3; i += 1) {
+      const r = heartbeat('finance');
+      expect(r.recorded).toBe(true);
     }
 
-    const entry = await c.core.registry.get({ pillar: 'finance' });
-    expect(entry?.status).toBe('healthy');
+    expect(snapshotEntry('finance')?.status).toBe('healthy');
   });
 });
 
-describe('lazy snapshot compute on list / get (PRD-162 us-03)', () => {
-  it('reports unavailable on list() once age exceeds UNAVAILABLE_AFTER_MS, even before the ticker runs', async () => {
-    await registerFinance();
+describe('lazy snapshot compute (PRD-162 us-03)', () => {
+  it('reports unavailable on the snapshot once age exceeds UNAVAILABLE_AFTER_MS, even before the ticker runs', () => {
+    registerFinance();
     advance(UNAVAILABLE_AFTER_MS + 1);
 
-    const res = await caller().core.registry.list();
-    expect(res.pillars).toHaveLength(1);
-    expect(res.pillars[0]?.status).toBe('unavailable');
+    const snapshot = buildRegistrySnapshot(coreDb.db);
+    expect(snapshot.pillars).toHaveLength(1);
+    expect(snapshot.pillars[0]?.status).toBe('unavailable');
 
     const persisted = pillarRegistryService.getPillarRegistration(coreDb.db, 'finance');
     expect(persisted?.status).toBe('healthy');
   });
 
-  it('boundary: exactly UNAVAILABLE_AFTER_MS old is unavailable (boundary owned by unavailable)', async () => {
-    await registerFinance();
+  it('boundary: exactly UNAVAILABLE_AFTER_MS old is unavailable (boundary owned by unavailable)', () => {
+    registerFinance();
     advance(UNAVAILABLE_AFTER_MS);
 
-    const entry = await caller().core.registry.get({ pillar: 'finance' });
-    expect(entry?.status).toBe('unavailable');
+    expect(snapshotEntry('finance')?.status).toBe('unavailable');
   });
 
-  it('clock skew (lastHeartbeatAt in the future) is treated as healthy', async () => {
-    await registerFinance();
+  it('clock skew (lastHeartbeatAt in the future) is treated as healthy', () => {
+    registerFinance();
     clock.now = new Date(clock.now.getTime() - 60_000);
 
-    const entry = await caller().core.registry.get({ pillar: 'finance' });
-    expect(entry?.status).toBe('healthy');
+    expect(snapshotEntry('finance')?.status).toBe('healthy');
   });
 });
 
 describe('background reconciliation ticker (PRD-162 us-02)', () => {
-  it('emits a healthy → unavailable transition once the heartbeat age exceeds the threshold', async () => {
-    await registerFinance();
+  it('emits a healthy → unavailable transition once the heartbeat age exceeds the threshold', () => {
+    registerFinance();
     advance(UNAVAILABLE_AFTER_MS + 1);
 
     const transitions: Array<{ pillarId: string; previousStatus: string; nextStatus: string }> = [];
@@ -259,8 +219,8 @@ describe('background reconciliation ticker (PRD-162 us-02)', () => {
     expect(persisted?.statusUpdatedAt).toBe(clock.now.toISOString());
   });
 
-  it('does not emit a transition when no status changes', async () => {
-    await registerFinance();
+  it('does not emit a transition when no status changes', () => {
+    registerFinance();
     advance(HEARTBEAT_INTERVAL_MS);
 
     const transitions: unknown[] = [];
@@ -272,8 +232,8 @@ describe('background reconciliation ticker (PRD-162 us-02)', () => {
     expect(transitions).toEqual([]);
   });
 
-  it('drives an unavailable → healthy transition after a heartbeat arrives', async () => {
-    await registerFinance();
+  it('drives an unavailable → healthy transition after a heartbeat arrives', () => {
+    registerFinance();
     advance(UNAVAILABLE_AFTER_MS + 1_000);
     runHeartbeatTick(coreDb.db);
 
@@ -282,8 +242,8 @@ describe('background reconciliation ticker (PRD-162 us-02)', () => {
     );
 
     advance(1_000);
-    const beat = await caller().core.registry.heartbeat({ pillar: 'finance' });
-    if (!beat.ok) throw new Error('expected ok=true');
+    const beat = heartbeat('finance');
+    expect(beat.recorded).toBe(true);
 
     advance(HEARTBEAT_INTERVAL_MS);
     const transitions: Array<{ pillarId: string; nextStatus: string }> = [];
@@ -297,8 +257,8 @@ describe('background reconciliation ticker (PRD-162 us-02)', () => {
     );
   });
 
-  it('refreshes status_updated_at on healthy pillars once HEALTHY_STALENESS_REFRESH_MS has elapsed', async () => {
-    await registerFinance();
+  it('refreshes status_updated_at on healthy pillars once HEALTHY_STALENESS_REFRESH_MS has elapsed', () => {
+    registerFinance();
     const before = pillarRegistryService.getPillarRegistration(coreDb.db, 'finance')!;
 
     advance(HEALTHY_STALENESS_REFRESH_MS + 5_000);
@@ -312,14 +272,16 @@ describe('background reconciliation ticker (PRD-162 us-02)', () => {
     expect(after.statusUpdatedAt).toBe(clock.now.toISOString());
   });
 
-  it('handles many pillars: one tick emits a transition per missed pillar', async () => {
-    await caller().core.registry.register({
+  it('handles many pillars: one tick emits a transition per missed pillar', () => {
+    pillarRegistryService.upsertPillarRegistration(coreDb.db, {
       baseUrl: 'http://finance-api:3004',
       manifest: financeManifest(),
+      now: nowIso(),
     });
-    await caller().core.registry.register({
+    pillarRegistryService.upsertPillarRegistration(coreDb.db, {
       baseUrl: 'http://media-api:3006',
       manifest: mediaManifest(),
+      now: nowIso(),
     });
 
     advance(UNAVAILABLE_AFTER_MS + 1);

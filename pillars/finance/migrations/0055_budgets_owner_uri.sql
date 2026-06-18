@@ -8,7 +8,7 @@
 -- `budgets` today, so the backfill is a no-op and existing rows stay
 -- NULL until a write populates `owner_uri`).
 --
--- `entities` (re-exported from `@pops/core-db` per PRD-245 US-07) also
+-- `entities` (now owned by `@pops/shared-schema` per PRD-245 US-07) also
 -- gets the same column pair because the finance package barrel re-uses
 -- the core drizzle schema and finance.db keeps a local `entities` copy
 -- for FK targets — keeping the columns in sync prevents drizzle from

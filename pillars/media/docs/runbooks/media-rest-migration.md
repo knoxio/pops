@@ -57,8 +57,8 @@ route and four external integrations — nothing is in `pillars/media/` yet:
     `stopScheduler`, gated by `PLEX_SCHEDULER_ENABLED` / `PLEX_SCHEDULER_INTERVAL_MS`),
     with `sync-logs` / `sync-job-results` tables. Scheduler-based (setInterval),
     **not** bullmq — closer to finance's reconcile cron than food's worker.
-- **Cross-pillar coupling**: media imports `@pops/core-db` (shared `entities`/`users`
-  tables) + `@pops/pillar-sdk`. (The `@pops/finance-db` mentions in `media-db` are
+- **Cross-pillar coupling**: media used to import the shared core schema (shared
+  `entities`/`users` tables) + `@pops/pillar-sdk`. (The `@pops/finance-db` mentions in `media-db` are
   comments mirroring its error pattern — not real imports.) **`cerebrum`** consumes
   `@pops/media-db` (`semantic-search-metadata`, `thalamus/cross-source`) — the one
   cross-pillar reader, analogous to inventory's read of finance.

@@ -13,7 +13,7 @@
  * `MEDIA_SQLITE_PATH` env-var read in pops-api, the boot-time call, and
  * the data backfill from the shared pops.db.
  *
- * Mirrors `@pops/core-db`'s `openCoreDb`.
+ * Follows the standard per-pillar database-opener pattern.
  */
 import { mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';

@@ -17,8 +17,8 @@
  *
  * Functions take a `CerebrumDb` handle as their first argument; the
  * calling layer (pops-api modules, eventually `cerebrum-api`) resolves
- * the singleton or transaction handle to pass in. Mirrors the
- * `@pops/core-db` / `@pops/inventory-db` db-arg pattern.
+ * the singleton or transaction handle to pass in. Follows the standard
+ * per-pillar db-arg service pattern.
  *
  * The cross-table read helper `loadActiveEngrams` (which the detector
  * scans depend on) stays in pops-api for now — it reads

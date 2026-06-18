@@ -3,7 +3,7 @@
  *
  * Plain Error subclasses — the service layer doesn't know about HTTP.
  * Pops-api routers map them to the appropriate tRPC codes when surfacing
- * to clients. Mirrors `@pops/core-db`'s error pattern.
+ * to clients. Follows the standard typed-error pattern.
  */
 
 export class LocationNotFoundError extends Error {

@@ -66,7 +66,7 @@ export async function fetchRegistrySnapshot(options: FetcherOptions): Promise<Re
 }
 
 function buildRegistryListUrl(registryUrl: string): string {
-  return `${registryUrl.replace(/\/$/, '')}/trpc/core.registry.list`;
+  return `${registryUrl.replace(/\/$/, '')}/core.registry.list`;
 }
 
 async function readJson(response: Response): Promise<unknown> {

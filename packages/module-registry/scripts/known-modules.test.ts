@@ -87,7 +87,7 @@ describe('discoverManifestSources', () => {
     const result = await discoverManifestSources({
       log: (msg) => messages.push(msg),
       importManifest: async (pkg) => {
-        if (pkg.name === '@pops/core-contract') {
+        if (pkg.name === '@pops/core') {
           return { unrelated: { foo: 'bar' } };
         }
         const { pathToFileURL } = await import('node:url');
@@ -100,7 +100,7 @@ describe('discoverManifestSources', () => {
     const ids = result.map((m) => m.id);
     expect(ids).not.toContain('core');
     expect(ids).not.toContain('ai');
-    expect(messages.some((m) => m.includes('@pops/core-contract'))).toBe(true);
+    expect(messages.some((m) => m.includes('@pops/core'))).toBe(true);
   });
 
   it('every discovered contract package is pinned as a devDependency of @pops/module-registry', async () => {

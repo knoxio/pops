@@ -66,22 +66,19 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 /**
- * Hit the exact `GET /trpc/core.registry.list` endpoint the nginx
- * generator's `fetchRegistryViaTrpc` consumes (PRD-232) and return the
- * parsed `{ pillarId, baseUrl }` entries. Pinning the wire shape here
- * proves the dynamic-source contract at the core layer without importing
- * the pops-shell generator — the rendering of this source into nginx
- * blocks lives in `apps/pops-shell/scripts/generate-nginx-conf.test.ts`.
+ * Hit the raw `GET /core.registry.list` discovery snapshot the nginx
+ * generator consumes (PRD-232) and return the parsed `{ pillarId, baseUrl }`
+ * entries. Pinning the wire shape here proves the dynamic-source contract at
+ * the core layer without importing the pops-shell generator — the rendering of
+ * this source into nginx blocks lives in
+ * `apps/pops-shell/scripts/generate-nginx-conf.test.ts`. The body is the bare
+ * `{ pillars, fetchedAt }` shape (no tRPC envelope).
  */
 async function fetchRegistryDynamicSource(): Promise<RegistryListEntry[]> {
-  const res = await request(coreApiBaseUrl).get(
-    `/trpc/core.registry.list?input=${encodeURIComponent('{}')}`
-  );
+  const res = await request(coreApiBaseUrl).get('/core.registry.list');
   expect(res.status).toBe(200);
   const body: unknown = res.body;
-  const result = isRecord(body) ? body['result'] : undefined;
-  const data = isRecord(result) ? result['data'] : undefined;
-  const pillars = isRecord(data) ? data['pillars'] : undefined;
+  const pillars = isRecord(body) ? body['pillars'] : undefined;
   if (!Array.isArray(pillars)) {
     throw new Error('core.registry.list response is missing a `pillars` array');
   }

@@ -1,18 +1,16 @@
-import type { AnyTRPCRouter } from '@trpc/server';
+import type { CoreRestContract } from './rest.js';
 
 /**
- * Opaque tRPC router type for the core pillar. Until PRD-155 ships the
- * declaration bundler, `CoreRouter` is the generic `AnyTRPCRouter` —
- * consumers using `pillar<CoreRouter>('core')` get a fully opaque
- * `PillarHandle` with no route or procedure keys preserved. The committed
- * OpenAPI snapshot at `openapi/core.openapi.json` is the wire-typed
- * alternative until PRD-155 lands.
+ * Typed ts-rest contract for the core pillar.
  *
- * This shape was previously `typeof coreRouter` (re-exporting from
- * `@pops/core-api`), but that import-type closed a build-graph cycle
- * (`pillar-sdk → core-contract → core-api → pillar-sdk`) once
- * `pillar-sdk/settings` re-exported `aiConfigManifest` from this package
- * (PRD-239 US-01). Mirrors the precedent established for
- * `@pops/finance-contract` in #2998.
+ * `CoreRouter` is the contract shape consumers reference via
+ * `pillar<CoreRouter>('core')`. It replaces the opaque tRPC-router shim from
+ * the tRPC era — the pillar now serves a real ts-rest surface, so the contract
+ * type is the actual `coreContract` router (`./rest.ts`). The wire-typed
+ * sources of truth remain the committed OpenAPI projection
+ * (`openapi/core.openapi.json`) and the generated `api-types.generated.ts`.
  */
-export type CoreRouter = AnyTRPCRouter;
+export type CoreRouter = CoreRestContract;
+
+export { coreContract } from './rest.js';
+export type { CoreRestContract } from './rest.js';

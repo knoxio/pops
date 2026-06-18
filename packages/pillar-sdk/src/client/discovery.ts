@@ -38,12 +38,15 @@ const DEFAULT_REGISTRY_URL = 'http://core-api:3001';
 const DEFAULT_FETCH_TIMEOUT_MS = 5_000;
 
 /**
- * Default HTTP transport. Calls `core.registry.list` over the tRPC
- * GET wire format and reshapes the response into `DiscoveredPillar[]`.
+ * Default HTTP transport. Fetches the core registry's DB-backed snapshot over
+ * the raw HTTP wire and reshapes the response into `DiscoveredPillar[]`.
  *
- * tRPC's HTTP GET shape:
- *   GET /trpc/core.registry.list
- *   → { result: { data: { pillars: [...], fetchedAt: ... } } }
+ * Wire shape (raw — no tRPC):
+ *   GET /core.registry.list
+ *   → { pillars: [...], fetchedAt: ... }
+ *
+ * The body parser still tolerates a `{ result: { data } }` envelope so a
+ * mixed deployment (legacy tRPC registry + collapsed pillar) reads either.
  */
 export class HttpDiscoveryTransport implements DiscoveryTransport {
   private readonly registryUrl: string;
@@ -59,7 +62,7 @@ export class HttpDiscoveryTransport implements DiscoveryTransport {
   }
 
   async fetchSnapshot(): Promise<readonly DiscoveredPillar[]> {
-    const url = `${this.registryUrl.replace(/\/$/, '')}/trpc/core.registry.list`;
+    const url = `${this.registryUrl.replace(/\/$/, '')}/core.registry.list`;
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), this.timeoutMs);
 

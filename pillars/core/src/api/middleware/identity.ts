@@ -1,8 +1,8 @@
 /**
- * Express identity middleware for the core pillar's ts-rest surface.
+ * Express identity middleware — the core pillar's canonical principal
+ * resolver for its REST surface.
  *
- * Reproduces, verbatim, the principal-resolution logic that
- * `createCoreTrpcContextFactory` in `../trpc.ts` runs per request:
+ * Resolution order per request:
  *
  *   1. `x-api-key` → `serviceAccountsService.authenticateServiceAccount`.
  *   2. non-production → dev fallback user (`dev@example.com`).
@@ -12,8 +12,8 @@
  *   5. otherwise → anonymous (`{ user: null, serviceAccount: null }`).
  *
  * The middleware RESOLVES identity — it never rejects globally. Per-route
- * gating lives in the handlers via {@link requireUser} / {@link requireProtected},
- * matching the tRPC split where `publicProcedure` needs no principal at all.
+ * gating lives in the handlers via {@link requireUser} / {@link requireProtected};
+ * public routes need no principal at all.
  *
  * The resolved principal is attached to `res.locals.principal`, which the
  * ts-rest/express handlers read through the `res` they are handed (see
@@ -30,12 +30,15 @@ import { verifyCloudflareJWT } from './cloudflare-jwt.js';
 
 import type { NextFunction, Request, RequestHandler, Response } from 'express';
 
-import type { User } from '../trpc.js';
+/** The authenticated human principal — a Cloudflare Access session identity. */
+export interface User {
+  email: string;
+}
 
 /**
- * The principal resolved per request. Mirrors the auth-relevant slice of the
- * tRPC `Context` (`user` + `serviceAccount`); the DB handle is injected into
- * handlers separately, so it is not carried here.
+ * The principal resolved per request: the human `user` and/or the
+ * authenticated `serviceAccount`. The DB handle is injected into handlers
+ * separately, so it is not carried here.
  */
 export interface Principal {
   user: User | null;
@@ -69,8 +72,8 @@ async function tryServiceAccountAuth(
 }
 
 /**
- * Resolve the request principal exactly as `createCoreTrpcContextFactory`
- * does. Pure of Express response concerns so it can be unit-tested directly.
+ * Resolve the request principal. Pure of Express response concerns so it can
+ * be unit-tested directly.
  */
 export async function resolvePrincipal(coreDb: CoreDb, req: Request): Promise<Principal> {
   const serviceAccount = await tryServiceAccountAuth(coreDb, req);
@@ -131,9 +134,8 @@ export function readPrincipal(res: Response): Principal {
 
 /**
  * `userOnly` gate — requires a human (Cloudflare Access) session. Service-
- * account principals are rejected unconditionally. Mirrors
- * `userOnlyProcedure` in `trpc.ts`. Throws {@link UnauthorizedError} (401)
- * which `runHttp` maps to the wire envelope.
+ * account principals are rejected unconditionally. Throws
+ * {@link UnauthorizedError} (401) which `runHttp` maps to the wire envelope.
  */
 export function requireUser(principal: Principal): User {
   if (!principal.user) {
@@ -144,12 +146,11 @@ export function requireUser(principal: Principal): User {
 
 /**
  * `protected` gate — a human session OR a service account whose granted
- * scopes cover `path`. Mirrors `protectedProcedure` in `trpc.ts`: a user
- * passes unconditionally; a service account passes only with the matching
- * scope; an anonymous caller is rejected. The tRPC layer distinguishes the
- * scope miss (FORBIDDEN) from the anonymous case (UNAUTHORIZED), but both
- * collapse to a single 401 on the REST surface — the caller cannot reach the
- * resource either way. Throws {@link UnauthorizedError} (401).
+ * scopes cover `path`: a user passes unconditionally; a service account passes
+ * only with the matching scope; an anonymous caller is rejected. A scope miss
+ * and the anonymous case both collapse to a single 401 on the REST surface —
+ * the caller cannot reach the resource either way. Throws
+ * {@link UnauthorizedError} (401).
  */
 export function requireProtected(principal: Principal, path: string): Principal {
   if (principal.user) return principal;

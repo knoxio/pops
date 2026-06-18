@@ -1,9 +1,8 @@
 /**
  * Integration tests for the `service-accounts.*` REST surface (admin
- * CLI/MCP), driven through the real Express app via supertest. Runs against
- * the SAME app that still serves the legacy `/trpc` router (dual-serve).
+ * CLI/MCP), driven through the real Express app via supertest.
  *
- * Coverage mirrors the tRPC router test plus the REST-specific concerns:
+ * Coverage:
  *   - mint → list → revoke happy path (dev-fallback user).
  *   - Error mapping: 400 (duplicate name / zod boundary), 404 (unknown
  *     revoke), 409 (double revoke).

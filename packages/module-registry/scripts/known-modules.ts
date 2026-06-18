@@ -6,11 +6,11 @@
  *   - Enumerate workspace packages matching `@pops/*-contract`
  *     (`packages/*-contract/package.json`).
  *   - For each contract package that declares a `./manifest` subpath in its
- *     `exports`, dynamically import `@pops/<x>-contract/manifest` and collect
- *     every exported value that satisfies `ModuleManifest` (a contract
- *     package may export more than one — `@pops/core-contract/manifest`
- *     carries both `coreManifest` and `aiManifest`; `@pops/cerebrum`
- *     carries `cerebrumManifest` and `egoManifest`).
+ *     `exports`, dynamically import its `./manifest` and collect every
+ *     exported value that satisfies `ModuleManifest` (a package may export
+ *     more than one — the collapsed `@pops/core` pillar carries both
+ *     `coreManifest` and `aiManifest`; `@pops/cerebrum` carries
+ *     `cerebrumManifest` and `egoManifest`).
  *   - Packages without a `./manifest` subpath (e.g. the legacy
  *     `@pops/food-contracts` plural variant, or contracts for surfaces not
  *     yet promoted to pillar) are skipped with a build-log info line.

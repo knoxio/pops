@@ -10,7 +10,7 @@
  * `aiInferenceLog` is re-exported from `@pops/shared-schema` — the AI
  * surface is core-owned (PRD-245 US-07) but food services persist
  * inference results against it, so the table def lives in the shared
- * cross-pillar package rather than `@pops/core-db`.
+ * cross-pillar package `@pops/shared-schema`.
  */
 export { aiInferenceLog } from '@pops/shared-schema';
 export { batchConsumptions, batches, recipeRuns } from './schema/food-batches.js';

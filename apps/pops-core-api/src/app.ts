@@ -18,6 +18,7 @@ import { type CoreApiDeps, makeRequestHandler } from './handlers.js';
 import { createExternalDeregisterHandler } from './modules/external-registry/deregister.js';
 import { createExternalHeartbeatHandler } from './modules/external-registry/heartbeat.js';
 import { createExternalRegisterHandler } from './modules/external-registry/register.js';
+import { createRegistrySnapshotHandler } from './modules/registry/snapshot.js';
 import { createRegistrySubscribeHandler } from './modules/registry/subscribe.js';
 import { appRouter } from './router.js';
 import { createCoreTrpcContextFactory } from './trpc.js';
@@ -38,6 +39,11 @@ export function createCoreApiApp(deps: CoreApiDeps): Express {
   });
 
   app.get('/registry/subscribe', createRegistrySubscribeHandler(deps.coreDb.db));
+
+  // DB-backed discovery snapshot. Raw HTTP (no tRPC envelope) so the pillar
+  // SDK's `HttpDiscoveryTransport` resolves against the predecessor and the
+  // collapsed pillar identically during the migration window.
+  app.get('/core.registry.list', createRegistrySnapshotHandler(deps.coreDb.db));
 
   app.post('/core.registry.register', createExternalRegisterHandler({ coreDb: deps.coreDb.db }));
 

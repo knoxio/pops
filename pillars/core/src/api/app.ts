@@ -1,12 +1,13 @@
 /**
  * Express app factory for the core pillar container.
  *
- * Phase 3 PR 2 of the core pillar migration added the pillar registry
- * snapshot endpoint (`GET /pillars`) alongside the existing `/health`
- * probe. Phase A made the pillar REST-only EXCEPT for the wire surfaces
- * sibling pillars / the pillar SDK still call with no REST replacement: the
- * `/trpc` mount now serves only `core.registry.*`, `core.settings.*` and
- * `core.users.get` (see `router.ts` for the per-procedure rationale).
+ * The pillar is fully REST: the ts-rest `coreContract` surface (mounted via
+ * `createExpressEndpoints`) plus the handful of raw HTTP/SSE routes the
+ * registry needs and ts-rest cannot model — `GET /pillars`, `GET /pillars/health`,
+ * `POST /uri/resolve`, the SSE `GET /registry/subscribe`, the DB-backed
+ * discovery snapshot `GET /core.registry.list`, and the raw
+ * `POST /core.registry.{register,heartbeat,deregister}` mutations. The pillar
+ * serves no tRPC.
  *
  * Kept as a factory so the test suite can spin up an in-process `supertest`
  * instance without binding a real port.
@@ -15,7 +16,6 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { createExpressMiddleware } from '@trpc/server/adapters/express';
 import { createExpressEndpoints } from '@ts-rest/express';
 import express, { type Express, type NextFunction, type Request, type Response } from 'express';
 
@@ -25,10 +25,9 @@ import { createIdentityMiddleware } from './middleware/identity.js';
 import { createExternalDeregisterHandler } from './modules/external-registry/deregister.js';
 import { createExternalHeartbeatHandler } from './modules/external-registry/heartbeat.js';
 import { createExternalRegisterHandler } from './modules/external-registry/register.js';
+import { createRegistrySnapshotHandler } from './modules/registry/snapshot.js';
 import { createRegistrySubscribeHandler } from './modules/registry/subscribe.js';
 import { makeCoreRestHandlers } from './rest/handlers.js';
-import { appRouter } from './router.js';
-import { createCoreTrpcContextFactory } from './trpc.js';
 
 /**
  * The committed OpenAPI projection (`pillars/core/openapi/core.openapi.json`),
@@ -74,10 +73,10 @@ export function createCoreApiApp(deps: CoreApiDeps): Express {
     res.json(openapiDocument);
   });
 
-  // Cross-pillar URI dispatcher (ADR-026 P2). Raw HTTP, mounted before
-  // `/trpc`: pillars POST `{ uri }` here and core resolves in-process or
-  // proxies to the owning pillar via `POPS_PILLARS`. Never throws — every
-  // error path is a typed `UriResolverResult`.
+  // Cross-pillar URI dispatcher (ADR-026 P2). Raw HTTP: pillars POST
+  // `{ uri }` here and core resolves in-process or proxies to the owning
+  // pillar via `POPS_PILLARS`. Never throws — every error path is a typed
+  // `UriResolverResult`.
   app.post('/uri/resolve', (req: Request, res: Response, next: NextFunction) => {
     const body: unknown = req.body;
     const rawUri = typeof body === 'object' && body !== null ? Reflect.get(body, 'uri') : undefined;
@@ -108,6 +107,12 @@ export function createCoreApiApp(deps: CoreApiDeps): Express {
 
   app.get('/registry/subscribe', createRegistrySubscribeHandler(deps.coreDb.db));
 
+  // DB-backed registry snapshot — the discovery surface the pillar SDK's
+  // `HttpDiscoveryTransport` reads. Raw HTTP (not ts-rest / not tRPC); returns
+  // the bare `{ pillars, fetchedAt }` shape. Distinct from `GET /pillars`,
+  // which reflects the static `POPS_PILLARS` env, not the DB registry table.
+  app.get('/core.registry.list', createRegistrySnapshotHandler(deps.coreDb.db));
+
   app.post('/core.registry.register', createExternalRegisterHandler({ coreDb: deps.coreDb.db }));
 
   app.post('/core.registry.heartbeat', createExternalHeartbeatHandler({ coreDb: deps.coreDb.db }));
@@ -117,30 +122,18 @@ export function createCoreApiApp(deps: CoreApiDeps): Express {
     createExternalDeregisterHandler({ coreDb: deps.coreDb.db })
   );
 
-  // tRPC mount — the residual cross-pillar wire surface (`core.registry.*`,
-  // `core.settings.*`, `core.users.get`). The other per-domain tRPC routers
-  // were retired in Phase A; these stay because sibling pillars / the pillar
-  // SDK call them and there is no REST replacement yet (see `router.ts`).
-  app.use(
-    '/trpc',
-    createExpressMiddleware({
-      router: appRouter,
-      createContext: createCoreTrpcContextFactory(deps.coreDb.db),
-    })
-  );
-
   // Identity middleware (REST surface). Resolves the per-request principal
-  // EXACTLY as the tRPC context factory does and stashes it on
-  // `res.locals.principal`. It never rejects globally — per-route gating
-  // (`userOnly` / `protected`) is enforced inside the handlers. Mounted
-  // BEFORE `createExpressEndpoints` so every REST handler sees the principal.
+  // (`x-pops-user` from the dispatcher / `x-api-key` service accounts) and
+  // stashes it on `res.locals.principal`. It never rejects globally —
+  // per-route gating (`userOnly` / `protected`) is enforced inside the
+  // handlers. Mounted BEFORE `createExpressEndpoints` so every REST handler
+  // sees the principal.
   app.use(createIdentityMiddleware(deps.coreDb.db));
 
-  // ts-rest REST surface (core REST migration). Mounted root-relative
-  // (e.g. `/entities`) AFTER the raw routes and the `/trpc` mount. This is
-  // the canonical wire surface for every domain; the only tRPC procedures
-  // still served are the cross-pillar residue (`core.registry.*`,
-  // `core.settings.*`, `core.users.get`).
+  // ts-rest REST surface — the canonical wire for every domain. Mounted
+  // root-relative (e.g. `/entities`, `/settings/:key`, `/users`) AFTER the raw
+  // registry routes. This is the only contract surface; the pillar serves no
+  // tRPC.
   createExpressEndpoints(coreContract, makeCoreRestHandlers(deps), app);
 
   return app;
