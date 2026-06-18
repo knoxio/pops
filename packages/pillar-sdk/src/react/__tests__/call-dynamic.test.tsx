@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
@@ -7,62 +7,22 @@ import {
   discoveredPillar,
   fakeFetch,
   FakeRegistryTransport,
+  FINANCE_OPENAPI,
   jsonResponse,
 } from '../../client/__tests__/fixtures.js';
-import { __resetSharedPillarClient } from '../../client/factory.js';
 import { usePillarCallDynamic, usePillarCallDynamicMutation } from '../hooks.js';
 import { PillarSdkProvider } from '../provider.js';
+import { buildHarness, resetReactSdkCaches } from './rest-harness.js';
 
 import type { ReactNode } from 'react';
 
-import type { PillarClientOptions } from '../../client/factory.js';
-
-type FetchScript = (url: string, body: unknown) => Response | Promise<Response>;
-
-type Harness = {
-  wrapper: (props: { children: ReactNode }) => ReactNode;
-  queryClient: QueryClient;
-  calls: { url: string; body: unknown }[];
-};
-
-function buildHarness(transport: FakeRegistryTransport, script: FetchScript): Harness {
-  const calls: { url: string; body: unknown }[] = [];
-  const fetchImpl = fakeFetch(async (url, init) => {
-    let parsed: unknown = null;
-    if (init?.body && typeof init.body === 'string') {
-      try {
-        parsed = JSON.parse(init.body);
-      } catch {
-        parsed = init.body;
-      }
-    }
-    calls.push({ url, body: parsed });
-    return script(url, parsed);
-  });
-  const options: PillarClientOptions = { transport, fetchImpl };
-  const queryClient = new QueryClient({
-    defaultOptions: {
-      queries: { retry: false },
-      mutations: { retry: false },
-    },
-  });
-  const wrapper = ({ children }: { children: ReactNode }): ReactNode => (
-    <QueryClientProvider client={queryClient}>
-      <PillarSdkProvider options={options}>{children}</PillarSdkProvider>
-    </QueryClientProvider>
-  );
-  return { wrapper, queryClient, calls };
-}
-
 describe('usePillarCallDynamic — query path', () => {
-  beforeEach(() => __resetSharedPillarClient());
-  afterEach(() => __resetSharedPillarClient());
+  beforeEach(resetReactSdkCaches);
+  afterEach(resetReactSdkCaches);
 
   it('runs a runtime-path query and returns the data', async () => {
     const transport = new FakeRegistryTransport({ pillars: [discoveredPillar()] });
-    const harness = buildHarness(transport, () =>
-      jsonResponse({ result: { data: [{ id: 'wish-1' }] } })
-    );
+    const harness = buildHarness(transport, () => jsonResponse([{ id: 'wish-1' }]));
     const { result } = renderHook(
       () =>
         usePillarCallDynamic({
@@ -97,18 +57,17 @@ describe('usePillarCallDynamic — query path', () => {
     expect(result.current.isUnavailable).toBe(true);
   });
 
-  it('surfaces a 404 path-not-found via isNotFound', async () => {
+  it('surfaces a 404 resource-not-found via isNotFound', async () => {
     const transport = new FakeRegistryTransport({ pillars: [discoveredPillar()] });
-    const calls: { url: string; body: unknown }[] = [];
+    const harness = buildHarness(transport, () => jsonResponse({}));
+    const domainCalls: { url: string }[] = [];
     const fetchImpl = fakeFetch(async (url) => {
-      calls.push({ url, body: null });
-      return new Response('not found', { status: 404 });
-    });
-    const queryClient = new QueryClient({
-      defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+      if (url.endsWith('/openapi')) return jsonResponse(FINANCE_OPENAPI);
+      domainCalls.push({ url });
+      return jsonResponse({ message: 'no such wish' }, { status: 404 });
     });
     const wrapper = ({ children }: { children: ReactNode }): ReactNode => (
-      <QueryClientProvider client={queryClient}>
+      <QueryClientProvider client={harness.queryClient}>
         <PillarSdkProvider options={{ transport, fetchImpl }}>{children}</PillarSdkProvider>
       </QueryClientProvider>
     );
@@ -117,27 +76,44 @@ describe('usePillarCallDynamic — query path', () => {
         usePillarCallDynamic({
           pillarId: 'finance',
           routerName: 'wishlist',
-          procName: 'nope',
-          input: {},
+          procName: 'get',
+          input: { id: 'missing' },
         }),
       { wrapper }
     );
     await waitFor(() => expect(result.current.isError).toBe(true));
     expect(result.current.isNotFound).toBe(true);
     expect(result.current.isContractMismatch).toBe(false);
-    expect(calls[0]?.url).toBe('http://finance-api:3004/trpc/finance.wishlist.nope');
+    expect(domainCalls[0]?.url).toBe('http://finance-api:3004/wishlist/get');
+  });
+
+  it('surfaces an unknown procedure (absent from the contract) via isContractMismatch', async () => {
+    const transport = new FakeRegistryTransport({ pillars: [discoveredPillar()] });
+    const harness = buildHarness(transport, () => jsonResponse({}));
+    const { result } = renderHook(
+      () =>
+        usePillarCallDynamic({
+          pillarId: 'finance',
+          routerName: 'wishlist',
+          procName: 'nope',
+          input: {},
+        }),
+      { wrapper: harness.wrapper }
+    );
+    await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(result.current.isContractMismatch).toBe(true);
+    expect(result.current.isNotFound).toBe(false);
+    expect(harness.calls).toHaveLength(0);
   });
 });
 
 describe('usePillarCallDynamicMutation', () => {
-  beforeEach(() => __resetSharedPillarClient());
-  afterEach(() => __resetSharedPillarClient());
+  beforeEach(resetReactSdkCaches);
+  afterEach(resetReactSdkCaches);
 
   it('returns a mutation handle that POSTs the input to the dynamic path', async () => {
     const transport = new FakeRegistryTransport({ pillars: [discoveredPillar()] });
-    const harness = buildHarness(transport, () =>
-      jsonResponse({ result: { data: { id: 'created' } } })
-    );
+    const harness = buildHarness(transport, () => jsonResponse({ id: 'created' }));
     const { result } = renderHook(
       () =>
         usePillarCallDynamicMutation({
@@ -152,7 +128,7 @@ describe('usePillarCallDynamicMutation', () => {
     });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.data).toEqual({ id: 'created' });
-    expect(harness.calls[0]?.url).toBe('http://finance-api:3004/trpc/finance.wishlist.create');
+    expect(harness.calls[0]?.url).toBe('http://finance-api:3004/wishlist/create');
     expect(harness.calls[0]?.body).toEqual({ name: 'new wish' });
   });
 

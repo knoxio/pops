@@ -5,10 +5,12 @@ import {
   type HttpDiscoveryTransportOptions,
 } from './discovery.js';
 import { PillarSdkError, type CallFailure, type CallResult } from './errors.js';
-import { performHttpCall } from './http-call.js';
+import { getRouteMap } from './openapi-source.js';
 import { buildPillarProxy, type PillarHandle } from './proxy.js';
+import { performRestCall } from './rest-call.js';
 
 import type { DiscoveredPillar } from './discovery.js';
+import type { RouteMap } from './openapi-route-map.js';
 
 export type { PillarHandle } from './proxy.js';
 
@@ -97,15 +99,44 @@ async function invoke(
   const guard = guardAvailability(ctx.pillarId, discovered, ctx.options.contractVersion);
   if (guard) return guard;
 
-  return performHttpCall({
+  const resolved = discovered as DiscoveredPillar;
+  const routes = await safeRouteMap(ctx.pillarId, resolved, ctx.client.fetchImpl);
+  if (routes === undefined) {
+    return { kind: 'unavailable', pillar: ctx.pillarId };
+  }
+
+  return performRestCall({
     pillarId: ctx.pillarId,
-    discovered: discovered as DiscoveredPillar,
+    discovered: resolved,
     path,
     input,
+    routes,
     fetchImpl: ctx.client.fetchImpl,
     authHeaders: ctx.options.authHeaders,
     callTimeoutMs: ctx.options.callTimeoutMs,
   });
+}
+
+/**
+ * Resolve the target pillar's OpenAPI route map for the REST transport.
+ *
+ * A failed fetch/parse throws a {@link PillarSdkError} (see `openapi-source.ts`);
+ * that is collapsed to `undefined` here so the caller maps it to
+ * `{ kind: 'unavailable' }` — "the pillar's contract could not be read" is, from
+ * the consumer's side, indistinguishable from "the pillar did not answer". Any
+ * non-SDK error (a programming fault) propagates.
+ */
+async function safeRouteMap(
+  pillarId: string,
+  discovered: DiscoveredPillar,
+  fetchImpl: typeof fetch
+): Promise<RouteMap | undefined> {
+  try {
+    return await getRouteMap(pillarId, discovered, fetchImpl);
+  } catch (cause) {
+    if (cause instanceof PillarSdkError) return undefined;
+    throw cause;
+  }
 }
 
 async function safeLookup(

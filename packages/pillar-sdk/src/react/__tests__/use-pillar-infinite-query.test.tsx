@@ -1,64 +1,20 @@
 // @vitest-environment jsdom
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import {
   discoveredPillar,
-  fakeFetch,
   FakeRegistryTransport,
   jsonResponse,
 } from '../../client/__tests__/fixtures.js';
-import { __resetSharedPillarClient } from '../../client/factory.js';
 import { usePillarInfiniteQuery } from '../hooks.js';
-import { PillarSdkProvider } from '../provider.js';
-
-import type { ReactNode } from 'react';
-
-import type { PillarClientOptions } from '../../client/factory.js';
+import { buildHarness, resetReactSdkCaches } from './rest-harness.js';
 
 type Page = { items: readonly { id: string }[]; nextCursor: string | null };
 
-type FetchScript = (url: string, body: unknown) => Response | Promise<Response>;
-
-type Harness = {
-  wrapper: (props: { children: ReactNode }) => ReactNode;
-  queryClient: QueryClient;
-  calls: { url: string; body: unknown }[];
-};
-
-function buildHarness(transport: FakeRegistryTransport, script: FetchScript): Harness {
-  const calls: { url: string; body: unknown }[] = [];
-  const fetchImpl = fakeFetch(async (url, init) => {
-    let parsed: unknown = null;
-    if (init?.body && typeof init.body === 'string') {
-      try {
-        parsed = JSON.parse(init.body);
-      } catch {
-        parsed = init.body;
-      }
-    }
-    calls.push({ url, body: parsed });
-    return script(url, parsed);
-  });
-  const options: PillarClientOptions = { transport, fetchImpl };
-  const queryClient = new QueryClient({
-    defaultOptions: {
-      queries: { retry: false },
-      mutations: { retry: false },
-    },
-  });
-  const wrapper = ({ children }: { children: ReactNode }): ReactNode => (
-    <QueryClientProvider client={queryClient}>
-      <PillarSdkProvider options={options}>{children}</PillarSdkProvider>
-    </QueryClientProvider>
-  );
-  return { wrapper, queryClient, calls };
-}
-
 describe('usePillarInfiniteQuery', () => {
-  beforeEach(() => __resetSharedPillarClient());
-  afterEach(() => __resetSharedPillarClient());
+  beforeEach(resetReactSdkCaches);
+  afterEach(resetReactSdkCaches);
 
   it('fetches the first page and then a subsequent page via fetchNextPage', async () => {
     const transport = new FakeRegistryTransport({ pillars: [discoveredPillar()] });
@@ -68,7 +24,7 @@ describe('usePillarInfiniteQuery', () => {
     };
     const harness = buildHarness(transport, (_url, body) => {
       const cursor = (body as { cursor: string }).cursor;
-      return jsonResponse({ result: { data: pages[cursor] } });
+      return jsonResponse(pages[cursor]);
     });
 
     const { result } = renderHook(
@@ -102,7 +58,7 @@ describe('usePillarInfiniteQuery', () => {
   it('stops paging once getNextPageParam returns undefined', async () => {
     const transport = new FakeRegistryTransport({ pillars: [discoveredPillar()] });
     const harness = buildHarness(transport, () =>
-      jsonResponse({ result: { data: { items: [{ id: 'only' }], nextCursor: null } } })
+      jsonResponse({ items: [{ id: 'only' }], nextCursor: null })
     );
 
     const { result } = renderHook(
@@ -150,7 +106,7 @@ describe('usePillarInfiniteQuery', () => {
   it('refetch reissues the first-page request', async () => {
     const transport = new FakeRegistryTransport({ pillars: [discoveredPillar()] });
     const harness = buildHarness(transport, () =>
-      jsonResponse({ result: { data: { items: [{ id: 'x' }], nextCursor: null } } })
+      jsonResponse({ items: [{ id: 'x' }], nextCursor: null })
     );
 
     const { result } = renderHook(
@@ -180,7 +136,7 @@ describe('usePillarInfiniteQuery', () => {
   it('honours a custom buildInput when paging', async () => {
     const transport = new FakeRegistryTransport({ pillars: [discoveredPillar()] });
     const harness = buildHarness(transport, () =>
-      jsonResponse({ result: { data: { items: [{ id: 'y' }], nextCursor: 'next' } } })
+      jsonResponse({ items: [{ id: 'y' }], nextCursor: 'next' })
     );
 
     const { result } = renderHook(
