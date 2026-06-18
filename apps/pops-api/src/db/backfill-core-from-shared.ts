@@ -14,7 +14,7 @@
  * isn't a ghost. After a cutover lands and is verified in prod, the
  * corresponding `TABLE_COPIES` entry is retired (matching the
  * cerebrum/finance/media pattern documented in
- * `backfill-cerebrum-from-shared.ts`).
+ * the former cerebrum backfill, now retired).
  *
  * Subsequent boots find the core copy already populated and become a
  * no-op via the `WHERE NOT EXISTS (...)` existence filter.
@@ -24,7 +24,7 @@
  * leave the core copy partially populated; the next deploy retries and
  * the idempotent filter picks up only the still-missing rows.
  *
- * Mirrors `backfill-cerebrum-from-shared.ts` /
+ * Mirrors
  * `backfill-finance-from-shared.ts` / `backfill-media-from-shared.ts`.
  */
 import type Database from 'better-sqlite3';

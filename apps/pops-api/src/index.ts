@@ -7,13 +7,11 @@ config({ path: '../../.env', override: false }); // loads root .env without over
 
 import { createApp } from './app.js';
 import { backfillCoreFromSharedDb, closeDb, getCoreDrizzle } from './db.js';
-import { backfillCerebrumFromSharedDb, getCerebrumDrizzle } from './db/cerebrum-handle.js';
 import { getFinanceDrizzle } from './db/finance-handle.js';
 import { getInventoryDrizzle } from './db/inventory-handle.js';
 import { getListsDrizzle } from './db/lists-handle.js';
 import { resolveSqlitePath } from './db/sqlite-path.js';
 import { closeQueues } from './jobs/queues.js';
-import { startThalamus, stopThalamus } from './modules/cerebrum/thalamus/instance.js';
 import {
   registerAiAlertsScheduler,
   unregisterAiAlertsScheduler,
@@ -78,20 +76,6 @@ try {
   throw err;
 }
 
-// Eagerly open the cerebrum pillar's SQLite + apply its journal at
-// boot. The nudge_log slice now reads/writes against this handle
-// (phase 2 PR 3); the one-shot `backfillCerebrumFromSharedDb` carries
-// any rows that still live in the legacy pops.db across. The backfill
-// is idempotent (per-table `WHERE id NOT IN (...)` filters) and
-// non-fatal (partial failure logs + continues).
-try {
-  getCerebrumDrizzle();
-  backfillCerebrumFromSharedDb(resolveSqlitePath());
-} catch (err) {
-  console.error('[db] Failed to bootstrap the cerebrum pillar SQLite:', err);
-  throw err;
-}
-
 // Eagerly open the lists pillar's SQLite + apply its journal at boot.
 // Every lists-owned table (`lists` + `list_items`) now writes directly
 // to lists.db via getListsDrizzle(), so the boot-time ATTACH bridge
@@ -123,11 +107,6 @@ getRedisClient()
 // Periodically purge expired named environments
 const ttlWatcher = startTtlWatcher();
 
-// Start Thalamus file watcher (Cerebrum indexing middleware)
-startThalamus().catch((err) => {
-  console.error('[thalamus] Failed to start:', err);
-});
-
 // Convert legacy `ai.monthlyTokenBudget` / `ai.budgetExceededFallback`
 // settings into a row in `ai_budgets` (PRD-092 US-04). Idempotent.
 try {
@@ -155,8 +134,6 @@ async function shutdown(signal: string): Promise<void> {
   console.warn(`[pops-api] ${signal} — shutting down`);
   // 1. Stop accepting new requests
   server.close();
-  // 2. Stop Thalamus file watcher
-  await stopThalamus();
   await unregisterAiLogRetentionScheduler();
   await unregisterAiAlertsScheduler();
   await unregisterAiObservabilitySummaryScheduler();

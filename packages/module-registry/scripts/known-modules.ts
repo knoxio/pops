@@ -9,7 +9,7 @@
  *     `exports`, dynamically import `@pops/<x>-contract/manifest` and collect
  *     every exported value that satisfies `ModuleManifest` (a contract
  *     package may export more than one — `@pops/core-contract/manifest`
- *     carries both `coreManifest` and `aiManifest`; `@pops/cerebrum-contract`
+ *     carries both `coreManifest` and `aiManifest`; `@pops/cerebrum`
  *     carries `cerebrumManifest` and `egoManifest`).
  *   - Packages without a `./manifest` subpath (e.g. the legacy
  *     `@pops/food-contracts` plural variant, or contracts for surfaces not

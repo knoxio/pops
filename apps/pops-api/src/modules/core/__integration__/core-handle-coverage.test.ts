@@ -16,13 +16,11 @@
  */
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { openCerebrumDb, type OpenedCerebrumDb } from '@pops/cerebrum-db';
 import { openCoreDb, type OpenedCoreDb } from '@pops/core-db';
 import { openFinanceDb, type OpenedFinanceDb } from '@pops/finance-db';
 import { openInventoryDb, type OpenedInventoryDb } from '@pops/inventory-db';
 
 import { closeDb, setCoreDb, setDb } from '../../../db.js';
-import { setCerebrumDb } from '../../../db/cerebrum-handle.js';
 import { setFinanceDb } from '../../../db/finance-handle.js';
 import { setInventoryDb } from '../../../db/inventory-handle.js';
 import { appRouter } from '../../../router.js';
@@ -46,7 +44,6 @@ const CORE_INPUTS: PillarSmokeInputs = {
   // still send a valid input so the resolver enters its body (and gets
   // swallowed by the per-procedure timeout when Redis is unavailable).
   'core.jobs.get': { jobId: 'nonexistent-job-id', queue: 'pops-default' },
-  'core.embeddings.search': { query: 'smoke probe', limit: 1 },
   'core.tagRules.proposeTagRuleChangeSet': {
     signal: { description: 'Smoke probe', tags: ['Smoke'] },
     transactions: [],
@@ -72,33 +69,27 @@ const CORE_INPUTS: PillarSmokeInputs = {
 let coreHandle: OpenedCoreDb | null = null;
 let financeHandle: OpenedFinanceDb | null = null;
 let inventoryHandle: OpenedInventoryDb | null = null;
-let cerebrumHandle: OpenedCerebrumDb | null = null;
 
 beforeEach(() => {
   setDb(createTestDb());
   coreHandle = openCoreDb(':memory:');
   financeHandle = openFinanceDb(':memory:');
   inventoryHandle = openInventoryDb(':memory:');
-  cerebrumHandle = openCerebrumDb(':memory:');
   setCoreDb(coreHandle);
   setFinanceDb(financeHandle);
   setInventoryDb(inventoryHandle);
-  setCerebrumDb(cerebrumHandle);
 });
 
 afterEach(() => {
   setCoreDb(null);
   setFinanceDb(null);
   setInventoryDb(null);
-  setCerebrumDb(null);
   coreHandle?.raw.close();
   financeHandle?.raw.close();
   inventoryHandle?.raw.close();
-  cerebrumHandle?.raw.close();
   coreHandle = null;
   financeHandle = null;
   inventoryHandle = null;
-  cerebrumHandle = null;
   closeDb();
 });
 

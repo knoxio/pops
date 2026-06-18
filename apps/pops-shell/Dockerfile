@@ -18,7 +18,6 @@ COPY packages/app-lists-db/package.json ./packages/app-lists-db/
 COPY packages/core-db/package.json ./packages/core-db/
 COPY packages/finance-db/package.json ./packages/finance-db/
 COPY packages/inventory-db/package.json ./packages/inventory-db/
-COPY packages/cerebrum-db/package.json ./packages/cerebrum-db/
 COPY packages/food-db/package.json ./packages/food-db/
 COPY packages/lists-db/package.json ./packages/lists-db/
 COPY packages/app-media/package.json ./packages/app-media/
@@ -31,7 +30,6 @@ COPY packages/navigation/package.json ./packages/navigation/
 COPY packages/types/package.json ./packages/types/
 COPY packages/module-registry/package.json ./packages/module-registry/
 COPY packages/finance-contract/package.json ./packages/finance-contract/
-COPY packages/cerebrum-contract/package.json ./packages/cerebrum-contract/
 COPY packages/core-contract/package.json ./packages/core-contract/
 COPY packages/inventory-contract/package.json ./packages/inventory-contract/
 COPY packages/food-contract/package.json ./packages/food-contract/
@@ -55,12 +53,10 @@ COPY packages/app-food-db/ ./packages/app-food-db/
 COPY packages/core-db/ ./packages/core-db/
 COPY packages/finance-db/ ./packages/finance-db/
 COPY packages/inventory-db/ ./packages/inventory-db/
-COPY packages/cerebrum-db/ ./packages/cerebrum-db/
 COPY packages/food-db/ ./packages/food-db/
 COPY packages/lists-db/ ./packages/lists-db/
 COPY packages/food-contracts/ ./packages/food-contracts/
 COPY packages/finance-contract/ ./packages/finance-contract/
-COPY packages/cerebrum-contract/ ./packages/cerebrum-contract/
 COPY packages/core-contract/ ./packages/core-contract/
 COPY packages/inventory-contract/ ./packages/inventory-contract/
 COPY packages/food-contract/ ./packages/food-contract/
@@ -74,8 +70,6 @@ COPY packages/pillar-sdk/ ./packages/pillar-sdk/
 WORKDIR /app/packages/inventory-db
 RUN pnpm build
 WORKDIR /app/packages/app-lists-db
-RUN pnpm build
-WORKDIR /app/packages/cerebrum-db
 RUN pnpm build
 WORKDIR /app/packages/food-db
 RUN pnpm build
@@ -96,8 +90,6 @@ RUN pnpm build
 WORKDIR /app/packages/app-food-db
 RUN pnpm build
 WORKDIR /app/packages/finance-contract
-RUN pnpm build
-WORKDIR /app/packages/cerebrum-contract
 RUN pnpm build
 WORKDIR /app/packages/core-contract
 RUN pnpm build

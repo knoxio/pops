@@ -16,7 +16,6 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json .oxfmtrc
 # (audit follow-up to PRD-253 — kills the "every pillar's package.json
 # in every pillar's image" coupling).
 COPY apps/pops-core-api/package.json ./apps/pops-core-api/
-COPY packages/cerebrum-contract/package.json ./packages/cerebrum-contract/
 COPY packages/core-contract/package.json ./packages/core-contract/
 COPY packages/core-db/package.json ./packages/core-db/
 COPY packages/finance-contract/package.json ./packages/finance-contract/
@@ -33,11 +32,6 @@ RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
 # (resolved via `pnpm m ls --filter "@pops/core-api..." --json`).
 # A change in a non-listed package does NOT invalidate this image's
 # Phase 2 layer.
-# @pops/cerebrum-contract
-COPY packages/cerebrum-contract/src ./packages/cerebrum-contract/src
-COPY packages/cerebrum-contract/scripts ./packages/cerebrum-contract/scripts
-COPY packages/cerebrum-contract/openapi ./packages/cerebrum-contract/openapi
-COPY packages/cerebrum-contract/tsconfig.json ./packages/cerebrum-contract/tsconfig.json
 # @pops/core-contract
 COPY packages/core-contract/src ./packages/core-contract/src
 COPY packages/core-contract/scripts ./packages/core-contract/scripts

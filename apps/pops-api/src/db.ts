@@ -8,7 +8,6 @@ import { openCoreDb, type CoreDb, type OpenedCoreDb } from '@pops/core-db';
 
 import { backfillCoreFromShared } from './db/backfill-core-from-shared.js';
 import { createPreMigrationBackup, isFreshDatabase } from './db/backup.js';
-import { closeCerebrumDb } from './db/cerebrum-handle.js';
 import { resolveCoreSqlitePath } from './db/core-sqlite-path.js';
 import { closeFinanceDb } from './db/finance-handle.js';
 import { closeInventoryDb } from './db/inventory-handle.js';
@@ -55,14 +54,6 @@ function configureConnection(db: BetterSqlite3.Database): void {
   db.pragma('journal_mode = WAL');
   db.pragma('busy_timeout = 5000');
   db.pragma('foreign_keys = ON');
-}
-
-function ensureEmbeddingsVecTable(db: BetterSqlite3.Database): void {
-  try {
-    db.exec(`CREATE VIRTUAL TABLE IF NOT EXISTS embeddings_vec USING vec0(vector float[1536])`);
-  } catch {
-    // Should not happen since vec is loaded, but don't crash
-  }
 }
 
 function initializeFreshDatabase(db: BetterSqlite3.Database): void {
@@ -174,7 +165,6 @@ function openDatabase(path: string): BetterSqlite3.Database {
   configureConnection(db);
 
   const vecLoaded = tryLoadVecExtension(db);
-  if (vecLoaded) ensureEmbeddingsVecTable(db);
 
   if (isFreshDatabase(db)) {
     initializeFreshDatabase(db);
@@ -239,7 +229,6 @@ export function closeDb(): void {
   closeCoreDb();
   closeFinanceDb();
   closeInventoryDb();
-  closeCerebrumDb();
   closeListsDb();
 }
 
