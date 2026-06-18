@@ -3,9 +3,9 @@
  *
  * Finance-owned (the `transaction_corrections` table lives in the finance db).
  * Serves the deterministic CRUD + the ChangeSet preview/apply/merged-list
- * surface. Deferred (kept in the monolith for now): the AI procedures
- * (analyzeCorrection / generateRules / propose / revise / reject) — they pull
- * in the Anthropic SDK and a cross-pillar core.db settings write.
+ * surface, plus the AI cluster (analyze / generate-rules / propose / revise /
+ * reject) — Anthropic via the finance env key; rejection-feedback + AI config
+ * reached over the core settings server SDK, best-effort.
  *
  * tRPC `query` procedures that carry a request body (`findMatch`,
  * `previewMatches`, `listMerged`, `previewChangeSet`) become `POST` here — a GET
@@ -18,6 +18,17 @@
 import { initContract } from '@ts-rest/core';
 import { z } from 'zod';
 
+import {
+  AnalyzeCorrectionBody,
+  ChangeSetProposalSchema,
+  CorrectionAnalysisSchema,
+  GenerateRulesBody,
+  ProposedRuleSchema,
+  ProposeChangeSetBody,
+  RejectChangeSetBody,
+  ReviseChangeSetBody,
+  ReviseResultSchema,
+} from './rest-corrections-ai-schemas.js';
 import {
   ChangeSetPreviewDiffSchema,
   ChangeSetPreviewSummarySchema,
@@ -144,5 +155,44 @@ export const financeCorrectionsContract = c.router({
       ...ERR_RESPONSES,
     },
     summary: 'Apply a correction-rule ChangeSet atomically; returns the full rule set',
+  },
+  analyzeCorrection: {
+    method: 'POST',
+    path: '/corrections/analyze',
+    body: AnalyzeCorrectionBody,
+    responses: {
+      200: z.object({ data: CorrectionAnalysisSchema.nullable() }),
+      ...ERR_RESPONSES,
+    },
+    summary:
+      'AI-derive a reusable rule (matchType/pattern/confidence) from one labelled transaction',
+  },
+  generateRules: {
+    method: 'POST',
+    path: '/corrections/generate-rules',
+    body: GenerateRulesBody,
+    responses: { 200: z.object({ proposals: z.array(ProposedRuleSchema) }), ...ERR_RESPONSES },
+    summary: 'AI-propose reusable tagging rules from a batch of transactions',
+  },
+  proposeChangeSet: {
+    method: 'POST',
+    path: '/corrections/propose-changeset',
+    body: ProposeChangeSetBody,
+    responses: { 200: ChangeSetProposalSchema, ...ERR_RESPONSES },
+    summary: 'Propose an add/edit ChangeSet for a correction signal (adapts to prior rejections)',
+  },
+  reviseChangeSet: {
+    method: 'POST',
+    path: '/corrections/revise-changeset',
+    body: ReviseChangeSetBody,
+    responses: { 200: ReviseResultSchema, ...ERR_RESPONSES },
+    summary: 'AI-revise an in-progress ChangeSet from a free-text instruction',
+  },
+  rejectChangeSet: {
+    method: 'POST',
+    path: '/corrections/reject-changeset',
+    body: RejectChangeSetBody,
+    responses: { 200: MessageSchema, ...ERR_RESPONSES },
+    summary: 'Record rejection feedback for a ChangeSet (best-effort; feeds the next proposal)',
   },
 });
