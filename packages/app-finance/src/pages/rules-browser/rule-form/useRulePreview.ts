@@ -1,5 +1,9 @@
-import { usePillarQuery } from '@pops/pillar-sdk/react';
+import { useQuery } from '@tanstack/react-query';
+
 import { useDebouncedValue } from '@pops/ui';
+
+import { unwrap } from '../../../finance-api-helpers.js';
+import { correctionsPreviewMatches } from '../../../finance-api/index.js';
 
 import type { MatchType } from '../types';
 import type { RulePreviewResult } from './types';
@@ -63,15 +67,22 @@ export function useRulePreview({
   const trimmed = debouncedPattern.trim();
   const isIdle = trimmed.length === 0;
 
-  const query = usePillarQuery<PreviewMatchesOutput>(
-    'core',
-    ['corrections', 'previewMatches'],
-    { descriptionPattern: trimmed, matchType: debouncedMatchType },
-    {
-      enabled: enabled && !isIdle,
-      staleTime: 5_000,
-    }
-  );
+  const query = useQuery({
+    queryKey: [
+      'finance',
+      'corrections',
+      'previewMatches',
+      { descriptionPattern: trimmed, matchType: debouncedMatchType },
+    ],
+    queryFn: async (): Promise<PreviewMatchesOutput> =>
+      unwrap(
+        await correctionsPreviewMatches({
+          body: { descriptionPattern: trimmed, matchType: debouncedMatchType },
+        })
+      ),
+    enabled: enabled && !isIdle,
+    staleTime: 5_000,
+  });
 
   return {
     data: query.data?.data,

@@ -39,72 +39,43 @@ const { mockDescriptionsForPreview } = vi.hoisted(() => ({
   mockDescriptionsForPreview: vi.fn(),
 }));
 
-// Finance-served transaction descriptions preview moved to the generated REST
-// SDK; everything else here is still core-served via the pillar-sdk.
+// All corrections operations are now finance REST; the generated SDK fns
+// delegate to the per-operation mock vars so the existing test controls
+// (mockProposeData / mockPreviewMutateAsync / …) keep driving the flow. They
+// return Hey API `{ data }` envelopes so the real `unwrap` resolves them.
 vi.mock('../../finance-api/index.js', () => ({
   transactionsDescriptionsForPreview: (...args: unknown[]) => mockDescriptionsForPreview(...args),
-}));
-
-let rejectOnSuccess: (() => void) | undefined;
-
-vi.mock('../../store/importStore', () => ({
-  useImportStore: (selector: (s: Record<string, unknown>) => unknown) => {
-    const state = { addPendingChangeSet: mockAddPendingChangeSet, pendingChangeSets: [] };
-    return selector(state);
+  correctionsProposeChangeSet: () => Promise.resolve({ data: mockProposeData }),
+  correctionsPreviewChangeSet: async (arg: { body: unknown }) => ({
+    data: await mockPreviewMutateAsync(arg.body),
+  }),
+  correctionsReviseChangeSet: async (arg: { body: unknown }) => ({
+    data: await mockReviseMutateAsync(arg.body),
+  }),
+  correctionsRejectChangeSet: async (arg: { body: unknown }) => {
+    mockRejectMutate(arg.body);
+    return { data: { message: 'rejected' } };
   },
+  correctionsList: (arg: unknown) => Promise.resolve({ data: mockListQuery(arg).data }),
+  correctionsListMerged: (arg: { body: unknown }) =>
+    Promise.resolve({ data: mockListQuery(arg.body).data }),
 }));
+
+vi.mock('../../store/importStore', () => {
+  // Stable references: zustand returns the same slice until it mutates, and the
+  // combined-preview effect keys on `pendingChangeSets` identity — a fresh array
+  // per render would re-run (and cancel) the in-flight preview every render.
+  const pendingChangeSets: unknown[] = [];
+  return {
+    useImportStore: (selector: (s: Record<string, unknown>) => unknown) =>
+      selector({ addPendingChangeSet: mockAddPendingChangeSet, pendingChangeSets }),
+  };
+});
 
 vi.mock('@pops/pillar-sdk/react', () => ({
-  usePillarQuery: (_pillarId: string, path: readonly string[], ...args: unknown[]) => {
-    const key = path.join('.');
-    if (key === 'corrections.proposeChangeSet') {
-      return {
-        data: mockProposeData,
-        isFetching: false,
-        isError: false,
-        error: null,
-        isLoading: mockProposeData === null,
-      };
-    }
-    if (key === 'corrections.list') return mockListQuery(...args);
-    if (key === 'corrections.listMerged') return mockListQuery(...args);
-    return { data: undefined };
-  },
-  usePillarMutation: (
-    _pillarId: string,
-    path: readonly string[],
-    opts?: { onSuccess?: () => void; onError?: (err: Error) => void }
-  ) => {
-    const key = path.join('.');
-    if (key === 'corrections.previewChangeSet') {
-      return {
-        mutateAsync: mockPreviewMutateAsync,
-        isPending: false,
-      };
-    }
-    if (key === 'corrections.rejectChangeSet') {
-      rejectOnSuccess = opts?.onSuccess;
-      return {
-        mutate: (...args: unknown[]) => {
-          mockRejectMutate(...args);
-          rejectOnSuccess?.();
-        },
-        isPending: false,
-      };
-    }
-    if (key === 'corrections.reviseChangeSet') {
-      return {
-        mutateAsync: mockReviseMutateAsync,
-        isPending: false,
-      };
-    }
-    return { mutate: vi.fn(), mutateAsync: vi.fn(), isPending: false };
-  },
-  usePillarUtils: () => ({
-    invalidate: vi.fn(),
-    setData: vi.fn(),
-    fetchQuery: vi.fn(),
-  }),
+  usePillarQuery: () => ({ data: undefined, isLoading: false }),
+  usePillarMutation: () => ({ mutate: vi.fn(), mutateAsync: vi.fn(), isPending: false }),
+  usePillarUtils: () => ({ invalidate: vi.fn(), setData: vi.fn(), fetchQuery: vi.fn() }),
 }));
 
 vi.mock('sonner', () => ({
@@ -673,7 +644,7 @@ describe('CorrectionProposalDialog', () => {
     expect(confirmBtn).not.toBeDisabled();
     fireEvent.click(confirmBtn);
 
-    expect(mockRejectMutate).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(mockRejectMutate).toHaveBeenCalledTimes(1));
     const call = mockRejectMutate.mock.calls[0]?.[0] as {
       feedback: string;
       changeSet: { ops: unknown[] };

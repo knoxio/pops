@@ -1,7 +1,9 @@
+import { useMutation, type UseMutationResult } from '@tanstack/react-query';
 import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
 
-import { usePillarMutation, type UsePillarMutationResult } from '@pops/pillar-sdk/react';
+import { unwrap } from '../../../finance-api-helpers.js';
+import { correctionsAnalyzeCorrection } from '../../../finance-api/index.js';
 
 import type { ProcessedTransaction } from '../../../store/importStore';
 
@@ -18,9 +20,10 @@ interface AnalyzeCorrectionOutput {
   } | null;
 }
 
-type AnalyzeCorrectionMutation = UsePillarMutationResult<
-  AnalyzeCorrectionInput,
-  AnalyzeCorrectionOutput
+type AnalyzeCorrectionMutation = UseMutationResult<
+  AnalyzeCorrectionOutput,
+  Error,
+  AnalyzeCorrectionInput
 >;
 
 export interface ProposalSignal {
@@ -127,10 +130,10 @@ export function useProposalGeneration() {
     useState<TriggeringTransaction | null>(null);
   const [browseOpen, setBrowseOpen] = useState(false);
 
-  const analyzeCorrectionMutation = usePillarMutation<
-    AnalyzeCorrectionInput,
-    AnalyzeCorrectionOutput
-  >('core', ['corrections', 'analyzeCorrection']);
+  const analyzeCorrectionMutation = useMutation({
+    mutationFn: async (vars: AnalyzeCorrectionInput): Promise<AnalyzeCorrectionOutput> =>
+      unwrap(await correctionsAnalyzeCorrection({ body: vars })),
+  });
 
   const generateProposal = useCallback(
     (args: GenerateArgs) =>

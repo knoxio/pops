@@ -1,7 +1,10 @@
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { usePillarMutation, usePillarUtils } from '@pops/pillar-sdk/react';
 import { Slider, useDebouncedCallback } from '@pops/ui';
+
+import { unwrap } from '../finance-api-helpers.js';
+import { correctionsAdjustConfidence } from '../finance-api/index.js';
 
 interface ConfidenceSliderProps {
   ruleId: string;
@@ -17,7 +20,7 @@ interface AdjustConfidenceInput {
 export function ConfidenceSlider({ ruleId, initial, onAutoDelete }: ConfidenceSliderProps) {
   const [value, setValue] = useState(initial);
   const initialRef = useRef(initial);
-  const utils = usePillarUtils('core');
+  const queryClient = useQueryClient();
 
   // Keep initialRef in sync when the prop changes (e.g. after query invalidation)
   useEffect(() => {
@@ -25,15 +28,15 @@ export function ConfidenceSlider({ ruleId, initial, onAutoDelete }: ConfidenceSl
     setValue(initial);
   }, [initial]);
 
-  const adjustMutation = usePillarMutation<AdjustConfidenceInput, unknown>(
-    'core',
-    ['corrections', 'adjustConfidence'],
-    {
-      onSuccess: () => {
-        void utils.invalidate(['corrections', 'list']);
-      },
-    }
-  );
+  const adjustMutation = useMutation({
+    mutationFn: async (vars: AdjustConfidenceInput) =>
+      unwrap(
+        await correctionsAdjustConfidence({ path: { id: vars.id }, body: { delta: vars.delta } })
+      ),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['finance', 'corrections', 'list'] });
+    },
+  });
 
   const commit = useCallback(
     (newValue: number) => {

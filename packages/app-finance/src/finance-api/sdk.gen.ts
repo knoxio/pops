@@ -18,6 +18,57 @@ import type {
   BudgetsUpdateData,
   BudgetsUpdateErrors,
   BudgetsUpdateResponses,
+  CorrectionsAdjustConfidenceData,
+  CorrectionsAdjustConfidenceErrors,
+  CorrectionsAdjustConfidenceResponses,
+  CorrectionsAnalyzeCorrectionData,
+  CorrectionsAnalyzeCorrectionErrors,
+  CorrectionsAnalyzeCorrectionResponses,
+  CorrectionsApplyChangeSetData,
+  CorrectionsApplyChangeSetErrors,
+  CorrectionsApplyChangeSetResponses,
+  CorrectionsCreateOrUpdateData,
+  CorrectionsCreateOrUpdateErrors,
+  CorrectionsCreateOrUpdateResponses,
+  CorrectionsDeleteData,
+  CorrectionsDeleteErrors,
+  CorrectionsDeleteResponses,
+  CorrectionsFindMatchData,
+  CorrectionsFindMatchErrors,
+  CorrectionsFindMatchResponses,
+  CorrectionsGenerateRulesData,
+  CorrectionsGenerateRulesErrors,
+  CorrectionsGenerateRulesResponses,
+  CorrectionsGetData,
+  CorrectionsGetErrors,
+  CorrectionsGetResponses,
+  CorrectionsListData,
+  CorrectionsListErrors,
+  CorrectionsListMergedData,
+  CorrectionsListMergedErrors,
+  CorrectionsListMergedResponses,
+  CorrectionsListResponses,
+  CorrectionsPreviewChangeSetData,
+  CorrectionsPreviewChangeSetErrors,
+  CorrectionsPreviewChangeSetResponses,
+  CorrectionsPreviewMatchesData,
+  CorrectionsPreviewMatchesErrors,
+  CorrectionsPreviewMatchesResponses,
+  CorrectionsProposeChangeSetData,
+  CorrectionsProposeChangeSetErrors,
+  CorrectionsProposeChangeSetResponses,
+  CorrectionsRejectChangeSetData,
+  CorrectionsRejectChangeSetErrors,
+  CorrectionsRejectChangeSetResponses,
+  CorrectionsReviseChangeSetData,
+  CorrectionsReviseChangeSetErrors,
+  CorrectionsReviseChangeSetResponses,
+  CorrectionsUpdateData,
+  CorrectionsUpdateErrors,
+  CorrectionsUpdateResponses,
+  EntityUsageListData,
+  EntityUsageListErrors,
+  EntityUsageListResponses,
   ImportsApplyChangeSetAndReevaluateData,
   ImportsApplyChangeSetAndReevaluateErrors,
   ImportsApplyChangeSetAndReevaluateResponses,
@@ -39,6 +90,8 @@ import type {
   ImportsReevaluateWithPendingRulesData,
   ImportsReevaluateWithPendingRulesErrors,
   ImportsReevaluateWithPendingRulesResponses,
+  SearchSearchData,
+  SearchSearchResponses,
   TagRulesApplyData,
   TagRulesApplyErrors,
   TagRulesApplyResponses,
@@ -178,6 +231,341 @@ export const budgetsUpdate = <ThrowOnError extends boolean = false>(
   });
 
 /**
+ * List corrections with optional minConfidence / matchType filters and pagination
+ */
+export const correctionsList = <ThrowOnError extends boolean = false>(
+  options?: Options<CorrectionsListData, ThrowOnError>
+): RequestResult<CorrectionsListResponses, CorrectionsListErrors, ThrowOnError> =>
+  (options?.client ?? client).get<CorrectionsListResponses, CorrectionsListErrors, ThrowOnError>({
+    url: '/corrections',
+    ...options,
+  });
+
+/**
+ * Create a correction, or reinforce an existing one keyed on (pattern, matchType)
+ */
+export const correctionsCreateOrUpdate = <ThrowOnError extends boolean = false>(
+  options?: Options<CorrectionsCreateOrUpdateData, ThrowOnError>
+): RequestResult<
+  CorrectionsCreateOrUpdateResponses,
+  CorrectionsCreateOrUpdateErrors,
+  ThrowOnError
+> =>
+  (options?.client ?? client).post<
+    CorrectionsCreateOrUpdateResponses,
+    CorrectionsCreateOrUpdateErrors,
+    ThrowOnError
+  >({
+    url: '/corrections',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options?.headers,
+    },
+  });
+
+/**
+ * AI-derive a reusable rule (matchType/pattern/confidence) from one labelled transaction
+ */
+export const correctionsAnalyzeCorrection = <ThrowOnError extends boolean = false>(
+  options?: Options<CorrectionsAnalyzeCorrectionData, ThrowOnError>
+): RequestResult<
+  CorrectionsAnalyzeCorrectionResponses,
+  CorrectionsAnalyzeCorrectionErrors,
+  ThrowOnError
+> =>
+  (options?.client ?? client).post<
+    CorrectionsAnalyzeCorrectionResponses,
+    CorrectionsAnalyzeCorrectionErrors,
+    ThrowOnError
+  >({
+    url: '/corrections/analyze',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options?.headers,
+    },
+  });
+
+/**
+ * Apply a correction-rule ChangeSet atomically; returns the full rule set
+ */
+export const correctionsApplyChangeSet = <ThrowOnError extends boolean = false>(
+  options?: Options<CorrectionsApplyChangeSetData, ThrowOnError>
+): RequestResult<
+  CorrectionsApplyChangeSetResponses,
+  CorrectionsApplyChangeSetErrors,
+  ThrowOnError
+> =>
+  (options?.client ?? client).post<
+    CorrectionsApplyChangeSetResponses,
+    CorrectionsApplyChangeSetErrors,
+    ThrowOnError
+  >({
+    url: '/corrections/apply-changeset',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options?.headers,
+    },
+  });
+
+/**
+ * Find the winning correction for a description (null when none match)
+ */
+export const correctionsFindMatch = <ThrowOnError extends boolean = false>(
+  options?: Options<CorrectionsFindMatchData, ThrowOnError>
+): RequestResult<CorrectionsFindMatchResponses, CorrectionsFindMatchErrors, ThrowOnError> =>
+  (options?.client ?? client).post<
+    CorrectionsFindMatchResponses,
+    CorrectionsFindMatchErrors,
+    ThrowOnError
+  >({
+    url: '/corrections/find-match',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options?.headers,
+    },
+  });
+
+/**
+ * AI-propose reusable tagging rules from a batch of transactions
+ */
+export const correctionsGenerateRules = <ThrowOnError extends boolean = false>(
+  options?: Options<CorrectionsGenerateRulesData, ThrowOnError>
+): RequestResult<CorrectionsGenerateRulesResponses, CorrectionsGenerateRulesErrors, ThrowOnError> =>
+  (options?.client ?? client).post<
+    CorrectionsGenerateRulesResponses,
+    CorrectionsGenerateRulesErrors,
+    ThrowOnError
+  >({
+    url: '/corrections/generate-rules',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options?.headers,
+    },
+  });
+
+/**
+ * List corrections with pending (un-persisted) ChangeSets folded in (temp: rows included), paginated
+ */
+export const correctionsListMerged = <ThrowOnError extends boolean = false>(
+  options?: Options<CorrectionsListMergedData, ThrowOnError>
+): RequestResult<CorrectionsListMergedResponses, CorrectionsListMergedErrors, ThrowOnError> =>
+  (options?.client ?? client).post<
+    CorrectionsListMergedResponses,
+    CorrectionsListMergedErrors,
+    ThrowOnError
+  >({
+    url: '/corrections/list-merged',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options?.headers,
+    },
+  });
+
+/**
+ * Preview the before/after match impact of a ChangeSet against caller-supplied transactions
+ */
+export const correctionsPreviewChangeSet = <ThrowOnError extends boolean = false>(
+  options?: Options<CorrectionsPreviewChangeSetData, ThrowOnError>
+): RequestResult<
+  CorrectionsPreviewChangeSetResponses,
+  CorrectionsPreviewChangeSetErrors,
+  ThrowOnError
+> =>
+  (options?.client ?? client).post<
+    CorrectionsPreviewChangeSetResponses,
+    CorrectionsPreviewChangeSetErrors,
+    ThrowOnError
+  >({
+    url: '/corrections/preview-changeset',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options?.headers,
+    },
+  });
+
+/**
+ * Preview the transactions a candidate (pattern, matchType) rule would match
+ */
+export const correctionsPreviewMatches = <ThrowOnError extends boolean = false>(
+  options?: Options<CorrectionsPreviewMatchesData, ThrowOnError>
+): RequestResult<
+  CorrectionsPreviewMatchesResponses,
+  CorrectionsPreviewMatchesErrors,
+  ThrowOnError
+> =>
+  (options?.client ?? client).post<
+    CorrectionsPreviewMatchesResponses,
+    CorrectionsPreviewMatchesErrors,
+    ThrowOnError
+  >({
+    url: '/corrections/preview-matches',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options?.headers,
+    },
+  });
+
+/**
+ * Propose an add/edit ChangeSet for a correction signal (adapts to prior rejections)
+ */
+export const correctionsProposeChangeSet = <ThrowOnError extends boolean = false>(
+  options?: Options<CorrectionsProposeChangeSetData, ThrowOnError>
+): RequestResult<
+  CorrectionsProposeChangeSetResponses,
+  CorrectionsProposeChangeSetErrors,
+  ThrowOnError
+> =>
+  (options?.client ?? client).post<
+    CorrectionsProposeChangeSetResponses,
+    CorrectionsProposeChangeSetErrors,
+    ThrowOnError
+  >({
+    url: '/corrections/propose-changeset',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options?.headers,
+    },
+  });
+
+/**
+ * Record rejection feedback for a ChangeSet (best-effort; feeds the next proposal)
+ */
+export const correctionsRejectChangeSet = <ThrowOnError extends boolean = false>(
+  options?: Options<CorrectionsRejectChangeSetData, ThrowOnError>
+): RequestResult<
+  CorrectionsRejectChangeSetResponses,
+  CorrectionsRejectChangeSetErrors,
+  ThrowOnError
+> =>
+  (options?.client ?? client).post<
+    CorrectionsRejectChangeSetResponses,
+    CorrectionsRejectChangeSetErrors,
+    ThrowOnError
+  >({
+    url: '/corrections/reject-changeset',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options?.headers,
+    },
+  });
+
+/**
+ * AI-revise an in-progress ChangeSet from a free-text instruction
+ */
+export const correctionsReviseChangeSet = <ThrowOnError extends boolean = false>(
+  options?: Options<CorrectionsReviseChangeSetData, ThrowOnError>
+): RequestResult<
+  CorrectionsReviseChangeSetResponses,
+  CorrectionsReviseChangeSetErrors,
+  ThrowOnError
+> =>
+  (options?.client ?? client).post<
+    CorrectionsReviseChangeSetResponses,
+    CorrectionsReviseChangeSetErrors,
+    ThrowOnError
+  >({
+    url: '/corrections/revise-changeset',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options?.headers,
+    },
+  });
+
+/**
+ * Delete a correction
+ */
+export const correctionsDelete = <ThrowOnError extends boolean = false>(
+  options: Options<CorrectionsDeleteData, ThrowOnError>
+): RequestResult<CorrectionsDeleteResponses, CorrectionsDeleteErrors, ThrowOnError> =>
+  (options.client ?? client).delete<
+    CorrectionsDeleteResponses,
+    CorrectionsDeleteErrors,
+    ThrowOnError
+  >({
+    url: '/corrections/{id}',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * Get a single correction by id
+ */
+export const correctionsGet = <ThrowOnError extends boolean = false>(
+  options: Options<CorrectionsGetData, ThrowOnError>
+): RequestResult<CorrectionsGetResponses, CorrectionsGetErrors, ThrowOnError> =>
+  (options.client ?? client).get<CorrectionsGetResponses, CorrectionsGetErrors, ThrowOnError>({
+    url: '/corrections/{id}',
+    ...options,
+  });
+
+/**
+ * Update a correction
+ */
+export const correctionsUpdate = <ThrowOnError extends boolean = false>(
+  options: Options<CorrectionsUpdateData, ThrowOnError>
+): RequestResult<CorrectionsUpdateResponses, CorrectionsUpdateErrors, ThrowOnError> =>
+  (options.client ?? client).patch<
+    CorrectionsUpdateResponses,
+    CorrectionsUpdateErrors,
+    ThrowOnError
+  >({
+    url: '/corrections/{id}',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * Nudge a correction confidence by delta (deletes the row when it drops below 0.3)
+ */
+export const correctionsAdjustConfidence = <ThrowOnError extends boolean = false>(
+  options: Options<CorrectionsAdjustConfidenceData, ThrowOnError>
+): RequestResult<
+  CorrectionsAdjustConfidenceResponses,
+  CorrectionsAdjustConfidenceErrors,
+  ThrowOnError
+> =>
+  (options.client ?? client).post<
+    CorrectionsAdjustConfidenceResponses,
+    CorrectionsAdjustConfidenceErrors,
+    ThrowOnError
+  >({
+    url: '/corrections/{id}/adjust-confidence',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * List entities with per-entity transactionCount; orphanedOnly=true returns count===0
+ */
+export const entityUsageList = <ThrowOnError extends boolean = false>(
+  options?: Options<EntityUsageListData, ThrowOnError>
+): RequestResult<EntityUsageListResponses, EntityUsageListErrors, ThrowOnError> =>
+  (options?.client ?? client).get<EntityUsageListResponses, EntityUsageListErrors, ThrowOnError>({
+    url: '/entity-usage',
+    ...options,
+  });
+
+/**
  * Apply a correction ChangeSet atomically, then re-evaluate the import session
  */
 export const importsApplyChangeSetAndReevaluate = <ThrowOnError extends boolean = false>(
@@ -304,6 +692,21 @@ export const importsReevaluateWithPendingRules = <ThrowOnError extends boolean =
     ThrowOnError
   >({
     url: '/imports/reevaluate-pending',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options?.headers,
+    },
+  });
+
+/**
+ * Search the finance pillar's domains (transactions, budgets, wishlist) for the unified search engine
+ */
+export const searchSearch = <ThrowOnError extends boolean = false>(
+  options?: Options<SearchSearchData, ThrowOnError>
+): RequestResult<SearchSearchResponses, unknown, ThrowOnError> =>
+  (options?.client ?? client).post<SearchSearchResponses, unknown, ThrowOnError>({
+    url: '/search',
     ...options,
     headers: {
       'Content-Type': 'application/json',

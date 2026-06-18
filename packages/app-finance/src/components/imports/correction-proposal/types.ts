@@ -1,34 +1,27 @@
-import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
-
 /**
  * Shared types for the CorrectionProposalDialog system.
  *
  * Extracted from correction-proposal-shared.ts and CorrectionProposalDialogPanels.tsx (tb-365).
  */
-import type { AppRouter } from '@pops/api';
-
+import type {
+  CorrectionsPreviewChangeSetData,
+  CorrectionsPreviewChangeSetResponse,
+  CorrectionsProposeChangeSetData,
+  CorrectionsProposeChangeSetResponse,
+  CorrectionsRejectChangeSetData,
+  CorrectionsReviseChangeSetData,
+  CorrectionsReviseChangeSetResponse,
+} from '../../../finance-api/index.js';
 import type { CorrectionRule } from '../RulePicker';
 
-// ---------------------------------------------------------------------------
-// tRPC type helpers
-// ---------------------------------------------------------------------------
-
-export type CorrectionSignal =
-  inferRouterInputs<AppRouter>['core']['corrections']['proposeChangeSet']['signal'];
-export type PreviewChangeSetInput =
-  inferRouterInputs<AppRouter>['core']['corrections']['previewChangeSet'];
-export type PreviewChangeSetOutput =
-  inferRouterOutputs<AppRouter>['core']['corrections']['previewChangeSet'];
-export type RejectChangeSetInput =
-  inferRouterInputs<AppRouter>['core']['corrections']['rejectChangeSet'];
-export type ReviseChangeSetInput =
-  inferRouterInputs<AppRouter>['core']['corrections']['reviseChangeSet'];
-export type ReviseChangeSetOutput =
-  inferRouterOutputs<AppRouter>['core']['corrections']['reviseChangeSet'];
-export type ProposeChangeSetInput =
-  inferRouterInputs<AppRouter>['core']['corrections']['proposeChangeSet'];
-export type ProposeChangeSetOutput =
-  inferRouterOutputs<AppRouter>['core']['corrections']['proposeChangeSet'];
+export type CorrectionSignal = NonNullable<CorrectionsProposeChangeSetData['body']>['signal'];
+export type PreviewChangeSetInput = NonNullable<CorrectionsPreviewChangeSetData['body']>;
+export type PreviewChangeSetOutput = CorrectionsPreviewChangeSetResponse;
+export type RejectChangeSetInput = NonNullable<CorrectionsRejectChangeSetData['body']>;
+export type ReviseChangeSetInput = NonNullable<CorrectionsReviseChangeSetData['body']>;
+export type ReviseChangeSetOutput = CorrectionsReviseChangeSetResponse;
+export type ProposeChangeSetInput = NonNullable<CorrectionsProposeChangeSetData['body']>;
+export type ProposeChangeSetOutput = CorrectionsProposeChangeSetResponse;
 type ServerChangeSet = ProposeChangeSetOutput['changeSet'];
 type ServerChangeSetOp = ServerChangeSet['ops'][number];
 export type AddRuleData = Extract<ServerChangeSetOp, { op: 'add' }>['data'];

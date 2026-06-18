@@ -15,50 +15,21 @@ const { mockReevaluate } = vi.hoisted(() => ({ mockReevaluate: vi.fn() }));
 
 vi.mock('../../finance-api/index.js', () => ({
   importsReevaluateWithPendingRules: (...args: unknown[]) => mockReevaluate(...args),
+  correctionsAnalyzeCorrection: async (arg: { body: unknown }) => ({
+    data: await mockAnalyzeCorrectionMutateAsync(arg.body),
+  }),
 }));
 
-// Core-served corrections/entities remain on the pillar-sdk.
+// The entity picker still reads `entities.list` over the core pillar SDK;
+// corrections are finance REST (mocked above) and the proposal dialog itself
+// is stubbed below, so no corrections call escapes this file.
 vi.mock('@pops/pillar-sdk/react', () => ({
   usePillarQuery: (_pillarId: string, path: readonly string[], ...args: unknown[]) => {
-    const key = path.join('.');
-    if (key === 'entities.list') return mockEntitiesQuery(...args);
-    if (key === 'corrections.list') return { data: { data: [] }, isLoading: false, isError: false };
-    if (key === 'corrections.proposeChangeSet') return { data: null, isFetching: false };
-    return { data: undefined };
+    if (path.join('.') === 'entities.list') return mockEntitiesQuery(...args);
+    return { data: undefined, isLoading: false };
   },
-  usePillarMutation: (_pillarId: string, path: readonly string[]) => {
-    const key = path.join('.');
-    if (key === 'corrections.analyzeCorrection') {
-      return {
-        mutateAsync: mockAnalyzeCorrectionMutateAsync,
-        isPending: false,
-      };
-    }
-    if (key === 'corrections.previewChangeSet') {
-      return {
-        mutate: vi.fn(),
-        mutateAsync: vi.fn().mockResolvedValue({
-          diffs: [],
-          summary: {
-            total: 0,
-            newMatches: 0,
-            removedMatches: 0,
-            statusChanges: 0,
-            netMatchedDelta: 0,
-          },
-        }),
-        isPending: false,
-        isError: false,
-        error: null,
-      };
-    }
-    return { mutate: vi.fn(), mutateAsync: vi.fn(), isPending: false };
-  },
-  usePillarUtils: () => ({
-    invalidate: vi.fn(),
-    setData: vi.fn(),
-    fetchQuery: vi.fn(),
-  }),
+  usePillarMutation: () => ({ mutate: vi.fn(), mutateAsync: vi.fn(), isPending: false }),
+  usePillarUtils: () => ({ invalidate: vi.fn(), setData: vi.fn(), fetchQuery: vi.fn() }),
 }));
 
 const mockToastSuccess = vi.fn();
@@ -769,12 +740,14 @@ describe('ReviewStep — AI correction analysis', () => {
     fireEvent.click(screen.getByTestId('accept-WOOLWORTHS 1234 SYDNEY'));
 
     // Should call analyzeCorrection with transaction context (no account — PII rule)
-    expect(mockAnalyzeCorrectionMutateAsync).toHaveBeenCalledWith(
-      expect.objectContaining({
-        description: 'WOOLWORTHS 1234 SYDNEY',
-        entityName: 'Woolworths',
-        amount: -42.5,
-      })
+    await vi.waitFor(() =>
+      expect(mockAnalyzeCorrectionMutateAsync).toHaveBeenCalledWith(
+        expect.objectContaining({
+          description: 'WOOLWORTHS 1234 SYDNEY',
+          entityName: 'Woolworths',
+          amount: -42.5,
+        })
+      )
     );
     // Verify account is NOT sent to AI
     expect(mockAnalyzeCorrectionMutateAsync).not.toHaveBeenCalledWith(

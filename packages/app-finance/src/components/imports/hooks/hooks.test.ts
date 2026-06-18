@@ -12,7 +12,7 @@ import type { CorrectionRule } from '../RulePicker';
 import type {
   UseApplyRejectMutationsOptions,
   UseApplyRejectMutationsReturn,
-} from './useApplyRejectMutations';
+} from './applyRejectTypes';
 import type { UsePreviewEffectsOptions } from './usePreviewEffects';
 
 // ---------------------------------------------------------------------------

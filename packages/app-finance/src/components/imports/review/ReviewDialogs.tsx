@@ -6,7 +6,7 @@ import {
   importsReevaluateWithPendingRules,
   type ImportsReevaluateWithPendingRulesData,
 } from '../../../finance-api/index.js';
-import { toRestCorrectionChangeSet } from '../../../lib/rest-changeset';
+import { toRestCorrectionChangeSet, toRestSignal } from '../../../lib/rest-changeset';
 import { useImportStore } from '../../../store/importStore';
 import { CorrectionProposalDialog } from '../CorrectionProposalDialog';
 import { EntityCreateDialog } from '../EntityCreateDialog';
@@ -93,7 +93,7 @@ export function ReviewDialogs({
         open={proposal.proposalOpen}
         onOpenChange={proposal.setProposalOpen}
         sessionId={processSessionId}
-        signal={proposal.proposalSignal}
+        signal={proposal.proposalSignal ? toRestSignal(proposal.proposalSignal) : null}
         triggeringTransaction={proposal.proposalTriggeringTransaction}
         previewTransactions={allPreviewTransactions}
         onApproved={() => toast.success('Rules saved locally')}
