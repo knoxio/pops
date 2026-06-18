@@ -1,18 +1,13 @@
-import { usePillarQuery } from '@pops/pillar-sdk/react';
+import { useQuery } from '@tanstack/react-query';
+
 import { Badge, Card, Skeleton } from '@pops/ui';
 
-interface BudgetStatus {
-  id: string;
-  scopeType: string;
-  scopeValue: string | null;
-  monthlyTokenLimit: number | null;
-  monthlyCostLimit: number | null;
-  action: string;
-  currentTokenUsage: number;
-  currentCostUsage: number;
-  percentageUsed: number | null;
-  projectedExhaustionDate: string | null;
-}
+import { unwrap } from '../../core-api-helpers.js';
+import { aiBudgetsGetBudgetStatus } from '../../core-api/index.js';
+
+import type { AiBudgetsGetBudgetStatusResponse } from '../../core-api/types.gen.js';
+
+type BudgetStatus = AiBudgetsGetBudgetStatusResponse[number];
 
 function budgetUsageLabel(b: {
   monthlyCostLimit: number | null;
@@ -36,11 +31,10 @@ function barColorClass(pct: number) {
 }
 
 export function BudgetStatusSection() {
-  const { data: budgetStatuses, isLoading } = usePillarQuery<BudgetStatus[]>(
-    'core',
-    ['aiBudgets', 'getBudgetStatus'],
-    undefined
-  );
+  const { data: budgetStatuses, isLoading } = useQuery<AiBudgetsGetBudgetStatusResponse>({
+    queryKey: ['core', 'aiBudgets', 'getBudgetStatus'],
+    queryFn: async () => unwrap(await aiBudgetsGetBudgetStatus()),
+  });
 
   if (isLoading) return <Skeleton className="h-24" />;
   if (!budgetStatuses?.length) return null;
@@ -49,7 +43,7 @@ export function BudgetStatusSection() {
     <div className="space-y-3">
       <h2 className="text-xl font-semibold">Budgets</h2>
       <div className="grid gap-3 sm:grid-cols-2">
-        {budgetStatuses.map((b) => {
+        {budgetStatuses.map((b: BudgetStatus) => {
           const pct = b.percentageUsed ?? 0;
           return (
             <Card key={b.id} className="p-4 space-y-2">
