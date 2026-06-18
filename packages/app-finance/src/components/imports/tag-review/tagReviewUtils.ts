@@ -1,4 +1,4 @@
-import type { ConfirmedTransaction, SuggestedTag } from '@pops/api/modules/finance/imports';
+import type { ConfirmedTransaction, SuggestedTag } from '@pops/finance';
 
 import type { TagMetaEntry } from '../../TagEditor';
 

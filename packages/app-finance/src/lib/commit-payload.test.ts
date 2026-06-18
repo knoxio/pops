@@ -2,9 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { buildCommitPayload, type DanglingEntityRefError } from './commit-payload';
 
-import type { ChangeSet } from '@pops/api/modules/core/corrections/types';
-import type { TagRuleChangeSet } from '@pops/api/modules/core/tag-rules/types';
-import type { ConfirmedTransaction } from '@pops/api/modules/finance/imports';
+import type { ChangeSet, ConfirmedTransaction, TagRuleChangeSet } from '@pops/finance';
 
 import type {
   PendingChangeSet,

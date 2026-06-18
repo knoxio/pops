@@ -84,6 +84,9 @@ const TagRuleImpactItemSchema = z.object({
   after: TagRuleSuggestionOutcomeSchema,
 });
 
+/** One transaction's before/after tag-suggestion outcome in a tag-rule preview. */
+export type TagRuleImpactItem = z.infer<typeof TagRuleImpactItemSchema>;
+
 const TagRuleImpactCountsSchema = z.object({
   affected: z.number(),
   suggestionChanges: z.number(),

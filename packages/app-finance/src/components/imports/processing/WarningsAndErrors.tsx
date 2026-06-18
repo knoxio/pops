@@ -2,7 +2,7 @@ import { AlertTriangle, RefreshCw } from 'lucide-react';
 
 import { Button } from '@pops/ui';
 
-import type { ImportWarning } from '@pops/api/modules/finance/imports';
+import type { ImportWarning } from '@pops/finance';
 
 export function WarningCard({ warning }: { warning: ImportWarning }) {
   return (

@@ -6,7 +6,7 @@ import { Button, Collapsible, CollapsibleContent, CollapsibleTrigger } from '@po
 import { LocationField } from '../LocationField';
 import { HeaderBadges } from './badges';
 
-import type { ProcessedTransaction } from '@pops/api/modules/finance/imports';
+import type { ProcessedTransaction } from '@pops/finance';
 
 export function getCardClasses(variant: 'matched' | 'uncertain' | 'failed') {
   if (variant === 'uncertain') return { border: 'border-warning/20', bg: 'bg-warning/5' };

@@ -2,8 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { computeMergedEntities, computeMergedRules } from './merged-state';
 
-import type { Correction } from '@pops/api/modules/core/corrections/types';
-import type { Entity } from '@pops/api/modules/core/entities/types';
+import type { Correction, Entity } from '@pops/finance';
 
 import type { ChangeSet, PendingChangeSet, PendingEntity } from '../store/importStore';
 
@@ -48,12 +47,7 @@ function makeEntity(overrides: Partial<Entity> = {}): Entity {
   return {
     id: 'entity-1',
     name: 'Woolworths',
-    type: 'company',
-    abn: null,
     aliases: [],
-    defaultTransactionType: null,
-    defaultTags: [],
-    notes: null,
     lastEditedTime: '2026-01-01T00:00:00Z',
     ...overrides,
   };
@@ -264,13 +258,14 @@ describe('computeMergedEntities', () => {
   });
 
   it('replaces DB entity when pending entity has same name', () => {
-    const dbEntities = [makeEntity({ id: 'e1', name: 'Woolworths', type: 'company' })];
+    const dbEntities = [makeEntity({ id: 'e1', name: 'Woolworths' })];
     const pending = [makePendingEntity({ name: 'Woolworths', type: 'supermarket' })];
 
     const result = computeMergedEntities(dbEntities, pending);
     expect(result).toHaveLength(1);
+    // The pending entity replaces the DB one — proven by the temp id, not 'e1'.
     expect(result[0].id).toMatch(/^temp:entity:/);
-    expect(result[0].type).toBe('supermarket');
+    expect(result[0].name).toBe('Woolworths');
   });
 
   it('handles multiple collisions', () => {
@@ -290,9 +285,9 @@ describe('computeMergedEntities', () => {
     expect(result[0].name).toBe('Aldi');
     expect(result[0].id).toBe('e3');
     expect(result[1].name).toBe('Coles');
-    expect(result[1].type).toBe('updated');
+    expect(result[1].id).toMatch(/^temp:entity:/);
     expect(result[2].name).toBe('Woolworths');
-    expect(result[2].type).toBe('updated');
+    expect(result[2].id).toMatch(/^temp:entity:/);
   });
 
   it('handles case-insensitive collision', () => {
@@ -317,10 +312,8 @@ describe('computeMergedEntities', () => {
     expect(result[0].name).toBe('Another Corp');
     expect(result[1].name).toBe('New Corp');
     expect(result[0].aliases).toEqual([]);
-    expect(result[0].abn).toBeNull();
-    expect(result[0].defaultTransactionType).toBeNull();
-    expect(result[0].defaultTags).toEqual([]);
-    expect(result[0].notes).toBeNull();
+    expect(result[0].id).toMatch(/^temp:entity:/);
+    expect(typeof result[0].lastEditedTime).toBe('string');
   });
 
   it('is memoized — same input refs return same output ref', () => {

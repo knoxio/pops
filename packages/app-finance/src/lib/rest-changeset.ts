@@ -1,4 +1,4 @@
-import type { ChangeSet, ChangeSetOp } from '@pops/api/modules/core/corrections/types';
+import type { ChangeSet, ChangeSetOp } from '@pops/finance';
 
 import type { ImportsReevaluateWithPendingRulesData } from '../finance-api/index.js';
 
@@ -10,7 +10,7 @@ type RestCorrectionOpData = Extract<RestCorrectionOp, { op: 'add' }>['data'];
 
 /**
  * The finance REST contract narrows correction-rule `transactionType` to a
- * non-null enum, while the legacy `@pops/api` correction op data permits
+ * non-null enum, while the `@pops/finance` ChangeSet op data permits
  * `null`. The two are runtime-compatible: a `null` transactionType means
  * "unset", which the contract expresses by omitting the field. Coerce
  * `null` → omitted so the value satisfies the generated body losslessly.

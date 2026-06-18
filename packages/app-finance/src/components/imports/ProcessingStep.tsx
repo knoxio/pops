@@ -12,7 +12,7 @@ import {
 } from './processing/useProcessing';
 import { FatalErrorPanel, WarningCard } from './processing/WarningsAndErrors';
 
-import type { ImportWarning, ProcessImportOutput } from '@pops/api/modules/finance/imports';
+import type { ImportWarning, ProcessImportOutput } from '@pops/finance';
 
 function AlreadyProcessedView({ onContinue }: { onContinue: () => void }) {
   return (

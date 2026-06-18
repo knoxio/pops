@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 
 import { type ChangeSet, type ProcessedTransaction, useImportStore } from './importStore';
 
-import type { ParsedTransaction } from '@pops/api/modules/finance/imports';
+import type { ParsedTransaction } from '@pops/finance';
 
 // ---------------------------------------------------------------------------
 // importStore — parsedTransactionsFingerprint / processedForFingerprint tests

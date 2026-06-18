@@ -1,4 +1,4 @@
-import type { ConfirmedTransaction } from '@pops/api/modules/finance/imports';
+import type { ConfirmedTransaction } from '@pops/finance';
 
 /**
  * Longest common prefix of normalized descriptions (uppercase, collapsed spaces).

@@ -1,8 +1,6 @@
-import { applyChangeSetToRules } from '@pops/api/modules/core/corrections/pure-service';
-import { correctionToRow, toCorrection } from '@pops/api/modules/core/corrections/types';
+import { applyChangeSetToRules, correctionToRow, toCorrection } from '@pops/finance';
 
-import type { Correction, CorrectionRow } from '@pops/api/modules/core/corrections/types';
-import type { Entity } from '@pops/api/modules/core/entities/types';
+import type { Correction, CorrectionRow, Entity } from '@pops/finance';
 
 import type { PendingChangeSet, PendingEntity } from '../store/importStore';
 
@@ -96,16 +94,13 @@ export function computeMergedEntities(
   // Build a set of pending entity names (lowercased) for collision detection
   const pendingNameSet = new Set(pendingEntities.map((pe) => pe.name.toLowerCase()));
 
-  // Map pending entities to the Entity interface
+  // Map pending entities to the consumable Entity shape (id + name + aliases +
+  // lastEditedTime). The merged list feeds the rule-form entity picker, which
+  // references entities by id/name only.
   const adaptedPending: Entity[] = pendingEntities.map((pe) => ({
     id: pe.tempId,
     name: pe.name,
-    type: pe.type,
-    abn: null,
     aliases: [],
-    defaultTransactionType: null,
-    defaultTags: [],
-    notes: null,
     lastEditedTime: new Date().toISOString(),
   }));
 

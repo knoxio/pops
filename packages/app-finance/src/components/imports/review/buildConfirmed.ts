@@ -1,4 +1,4 @@
-import type { ConfirmedTransaction } from '@pops/api/modules/finance/imports';
+import type { ConfirmedTransaction } from '@pops/finance';
 
 import type { ProcessedTransaction } from '../../../store/importStore';
 

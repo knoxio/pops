@@ -10,7 +10,7 @@ import { type LocalTxState, moveToMatched, pluralize, type UseBulkAssignmentArgs
 
 import type { Dispatch, SetStateAction } from 'react';
 
-import type { Entity } from '@pops/api/modules/core/entities/types';
+import type { Entity } from '@pops/finance';
 
 import type { ProcessedTransaction } from '../../../../store/importStore';
 
