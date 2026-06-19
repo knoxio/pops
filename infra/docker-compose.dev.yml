@@ -276,9 +276,9 @@ services:
       retries: 3
 
   # Cerebrum pillar API (ADR-026). Hosts the cerebrum REST surface on
-  # port 3007; nginx routes /cerebrum-api/ and /trpc-cerebrum/ here. Built
-  # from the pillar Dockerfile (its default CMD is the API server) — same
-  # image the cerebrum-worker ships.
+  # port 3007; nginx routes /cerebrum-api/ here. Built from the pillar
+  # Dockerfile (its default CMD is the API server) — same image the
+  # cerebrum-worker ships.
   cerebrum-api:
     build:
       context: ..

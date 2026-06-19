@@ -13,7 +13,7 @@ import {
   getFetchCall,
   getFetchJson,
   mockFetchOk,
-  mockFetchTrpcError,
+  mockFetchRestError,
   mockFetchUnreachable,
   pipedStdin,
   ttyStdin,
@@ -47,7 +47,7 @@ describe('runCapture', () => {
 
     expect(code).toBe(0);
     const { url, init } = getFetchCall(fetchSpy);
-    expect(url).toBe('http://api.test/trpc/cerebrum.ingest.quickCapture');
+    expect(url).toBe('http://api.test/ingest/quick-capture');
     expect(init.method).toBe('POST');
     expect(getFetchJson(fetchSpy)).toEqual({
       text: 'a quick thought',
@@ -150,7 +150,7 @@ describe('runCapture', () => {
   it('surfaces server-side validation errors with the API message', async () => {
     const stdout = new CaptureStream();
     const stderr = new CaptureStream();
-    mockFetchTrpcError('text must be a non-empty string', 400);
+    mockFetchRestError('text must be a non-empty string', 400);
 
     const code = await runCapture({
       text: 'whatever',

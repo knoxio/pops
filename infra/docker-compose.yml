@@ -318,9 +318,9 @@ services:
 
   # Cerebrum pillar API (ADR-026). Hosts the cerebrum REST surface
   # (/health, /pillars, nudges, query, ingest, …) on port 3007. nginx
-  # routes both /cerebrum-api/ and /trpc-cerebrum/ here. Built from the
-  # pillar Dockerfile (its default CMD is the API server) — shares the
-  # image the cerebrum-worker ships. No published image yet.
+  # routes /cerebrum-api/ here. Built from the pillar Dockerfile (its
+  # default CMD is the API server) — shares the image the cerebrum-worker
+  # ships. No published image yet.
   cerebrum-api:
     build:
       context: ..

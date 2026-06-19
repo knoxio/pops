@@ -1,23 +1,20 @@
 /**
  * Idiomatic-REST transport for the server-side pillar SDK.
  *
- * Mirrors `performHttpCall`'s `HttpCallContext` / `CallResult` shape but speaks
- * the collapsed pillars' root-mounted ts-rest surface instead of the tRPC
- * envelope. A call's `[domain, proc]` path is resolved against the target
- * pillar's OpenAPI route map (operationId `'<domain>.<proc>'`, NO pillarId
- * prefix), then turned into a concrete request:
+ * Speaks the collapsed pillars' root-mounted ts-rest surface. A call's
+ * `[domain, proc]` path is resolved against the target pillar's OpenAPI route
+ * map (operationId `'<domain>.<proc>'`, NO pillarId prefix), then turned into a
+ * concrete request:
  *
  * - `path` params are substituted into the path template from `input`,
  * - `query` params are appended to the URL from `input`,
  * - for `hasBody` operations the remaining `input` (everything that is not a
  *   path/query param) is sent as the JSON body,
  * - success bodies are decoded as the raw value (REST handlers return the
- *   value directly, not a tRPC `{ result: { data } }` envelope),
+ *   value directly),
  * - non-2xx responses are mapped via the REST error envelope `{ message, code? }`.
  *
- * This is ADDITIVE: it does not touch the tRPC transport. Pillar OpenAPI
- * fetching is wired in a later increment; for now the caller supplies the
- * route map (or the raw document, resolved here).
+ * The caller supplies the route map (or the raw document, resolved here).
  */
 import {
   buildRouteMap,

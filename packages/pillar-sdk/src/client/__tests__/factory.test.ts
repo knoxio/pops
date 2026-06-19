@@ -136,33 +136,25 @@ describe('pillar() factory — failure modes (REST transport)', () => {
     expect(result.kind).toBe('unavailable');
   });
 
-  it('falls back to the tRPC transport when the pillar serves no OpenAPI document', async () => {
-    // A tRPC-only peer (e.g. a PRD-242 external dropin) does not serve /openapi;
-    // the REST default degrades to tRPC rather than failing.
+  it("returns REST-only 'contract-mismatch' when the pillar serves no OpenAPI document", async () => {
+    // The lake is REST-only: a pillar that does not publish /openapi has no
+    // contract the SDK can call. There is no tRPC fallback to degrade to.
     const transport = new FakeRegistryTransport({ pillars: [discoveredPillar()] });
-    let calledUrl: string | undefined;
+    let calledNonOpenApiUrl: string | undefined;
     const fetchImpl = fakeFetch((url) => {
       if (url.endsWith('/openapi')) return new Response('boom', { status: 503 });
-      calledUrl = url;
+      calledNonOpenApiUrl = url;
       return jsonResponse({ result: { data: { items: [] } } });
     });
     const finance = pillar('finance', { transport, fetchImpl });
     const result = await finance.wishlist.list({});
-    expect(result.kind).toBe('ok');
-    if (result.kind === 'ok') expect(result.value).toEqual({ items: [] });
-    expect(calledUrl).toMatch(/\/trpc\/finance\.wishlist\.list$/);
-  });
-
-  it("returns 'unavailable' when neither OpenAPI nor the tRPC fallback answer", async () => {
-    const transport = new FakeRegistryTransport({ pillars: [discoveredPillar()] });
-    const fetchImpl = fakeFetch((url) => {
-      if (url.endsWith('/openapi')) return new Response('boom', { status: 503 });
-      throw new Error('connection refused');
-    });
-    const finance = pillar('finance', { transport, fetchImpl });
-    const result = await finance.wishlist.list({});
-    expect(result.kind).toBe('unavailable');
-    if (result.kind === 'unavailable') expect(result.pillar).toBe('finance');
+    expect(result.kind).toBe('contract-mismatch');
+    if (result.kind === 'contract-mismatch') {
+      expect(result.pillar).toBe('finance');
+      expect(result.expected).toBe('wishlist.list');
+      expect(result.message).toBe('pillar serves no /openapi contract');
+    }
+    expect(calledNonOpenApiUrl).toBeUndefined();
   });
 
   it("returns 'not-found' when the pillar replies 404 with a REST envelope", async () => {

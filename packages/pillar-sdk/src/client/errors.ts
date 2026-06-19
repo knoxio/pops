@@ -38,6 +38,7 @@ export type CallFailure =
       pillar: string;
       expected?: string;
       actual?: string;
+      message?: string;
     }
   | { kind: 'not-found'; pillar: string; message?: string }
   | { kind: 'conflict'; pillar: string; message?: string }

@@ -1,17 +1,16 @@
 /**
  * `batch-call-sites.ts` — PRD-189.
  *
- * Scans every shell + app-package source file for tRPC call sites
+ * Scans every shell + app-package source file for legacy tRPC call sites
  * (`trpc.<pillar>.<...>.useQuery|useMutation|...` plus `useUtils()`
  * derivatives) and reports them grouped by file and pillar namespace.
  *
- * Why this exists: PRD-187 swapped the shell's single `httpBatchLink`
- * for `splitLink`. PRD-188 made the splitLink throw
- * `CrossPillarBatchError` if a single batch ever mixes pillars. This
- * audit enumerates the call sites that today live in the same file
- * across pillar boundaries so we can decide which to refactor (combine
- * into one aggregator), accept (document as N independent requests),
- * or defer to a future Epic.
+ * Why this exists (PRD-189, historical): the shell once batched all pillar
+ * calls onto a single transport, then a per-pillar dispatch that rejected a
+ * batch mixing pillars. This audit enumerated the call sites that lived in
+ * the same file across pillar boundaries so the team could decide which to
+ * refactor, accept, or defer. The shell has since migrated off tRPC hooks
+ * onto core REST; the report should now come back empty.
  *
  * The script is greppy on purpose. A full TypeScript parse would catch
  * aliasing (`const q = trpc.finance.transactions; q.list.useQuery(...)`)

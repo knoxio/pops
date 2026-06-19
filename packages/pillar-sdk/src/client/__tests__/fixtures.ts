@@ -82,9 +82,8 @@ export function jsonResponse(
  *
  * operationIds are the `[domain, proc].join('.')` paths the typed proxy /
  * `callDynamic` produce. Every operation is a body-carrying POST so the call
- * `input` passes through verbatim as the JSON body — this mirrors the old tRPC
- * POST-body semantics and keeps the body assertions stable across the flip; the
- * only thing that changes is the URL shape (`/trpc/<dotted>` → idiomatic REST).
+ * `input` passes through verbatim as the JSON body, addressed by the idiomatic
+ * REST URL the route map resolves from the operationId.
  */
 export const FINANCE_OPENAPI = {
   openapi: '3.0.2',

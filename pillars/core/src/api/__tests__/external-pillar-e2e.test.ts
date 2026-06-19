@@ -102,12 +102,12 @@ interface ThrowawayPillar {
 }
 
 /**
- * Boot a minimal tRPC-compatible HTTP server that answers the two
- * procedures PRD-242 US-04 calls. The SDK's `performHttpCall` sends
- * `JSON.stringify(input)` as the raw body and reads `{ result: { data } }`
- * back, so the server speaks that wire shape directly without spinning up
- * a real tRPC router — keeping the test focused on the registry +
- * `callDynamic` path rather than tRPC framework wiring.
+ * Boot a minimal REST HTTP server that answers the two procedures PRD-242
+ * US-04 calls. It serves an `/openapi` document plus two POST routes; the
+ * SDK's REST transport sends `JSON.stringify(input)` as the raw body and
+ * reads the value back verbatim, so the server speaks that wire shape
+ * directly without a framework — keeping the test focused on the registry +
+ * `callDynamic` path rather than transport wiring.
  *
  * Per US-04 the pillar is in-process and bound to a free TCP port via
  * `listen(0)` so it tears down cleanly with no leaked sockets in CI.
@@ -122,11 +122,7 @@ async function startThrowawayPillar(): Promise<ThrowawayPillar> {
         res.setHeader('content-type', 'application/json; charset=utf-8');
         res.end(
           JSON.stringify({
-            error: {
-              code: 'INTERNAL_SERVER_ERROR',
-              message: err instanceof Error ? err.message : 'unknown error',
-              data: { code: 'INTERNAL_SERVER_ERROR', httpStatus: 500 },
-            },
+            message: err instanceof Error ? err.message : 'unknown error',
           })
         );
       }
