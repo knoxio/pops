@@ -26,6 +26,17 @@ export function buildCerebrumManifest(version: string): ManifestPayload {
     uri: { types: [] },
     consumedSettings: { keys: [] },
     settings: { manifests: [cerebrumManifest, egoManifest] },
+    features: [
+      {
+        key: 'cerebrum.vectorSearch',
+        label: 'Vector search (sqlite-vec)',
+        description:
+          'Semantic and hybrid retrieval. Disabled when the sqlite-vec extension fails to load at startup.',
+        default: true,
+        scope: 'capability',
+        capability: { pillar: 'cerebrum', key: 'vectorSearch' },
+      },
+    ],
     healthcheck: { path: '/health' },
   };
 }

@@ -40,6 +40,18 @@ export function buildCoreManifest(version: string): ManifestPayload {
     uri: { types: [] },
     consumedSettings: { keys: [] },
     settings: { manifests: [aiConfigManifest, coreOperationalManifest] },
+    features: [
+      {
+        key: 'core.redis',
+        label: 'Redis',
+        description:
+          'Job queues and request cache. When unavailable, the API runs in degraded mode (queues + cache disabled).',
+        default: true,
+        scope: 'capability',
+        capability: { pillar: 'core', key: 'redis' },
+        requiresEnv: ['REDIS_HOST'],
+      },
+    ],
     healthcheck: { path: '/health' },
   };
 }

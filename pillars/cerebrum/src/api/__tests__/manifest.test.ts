@@ -38,6 +38,21 @@ describe('buildCerebrumManifest', () => {
     expect(payload.pages).toBeUndefined();
   });
 
+  it('declares cerebrum.vectorSearch as a capability feature (epic 05 / S0)', () => {
+    const payload = buildCerebrumManifest('1.2.3');
+    expect(payload.features).toEqual([
+      {
+        key: 'cerebrum.vectorSearch',
+        label: 'Vector search (sqlite-vec)',
+        description:
+          'Semantic and hybrid retrieval. Disabled when the sqlite-vec extension fails to load at startup.',
+        default: true,
+        scope: 'capability',
+        capability: { pillar: 'cerebrum', key: 'vectorSearch' },
+      },
+    ]);
+  });
+
   it('passes wire-shaped validation', () => {
     const payload = buildCerebrumManifest('1.2.3');
     const result = validateManifestPayload(payload);

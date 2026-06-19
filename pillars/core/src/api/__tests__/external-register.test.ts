@@ -22,6 +22,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { openCoreDb, pillarRegistryService, type OpenedCoreDb } from '../../db/index.js';
 import { createCoreApiApp } from '../app.js';
 import { registryEventBus, type RegistryEventPayload } from '../modules/registry/event-bus.js';
+import { buildRegistrySnapshot } from '../modules/registry/snapshot.js';
 
 import type { ManifestPayload } from '@pops/pillar-sdk';
 
@@ -282,5 +283,52 @@ describe('POST /core.registry.register — duplicate registration', () => {
 
     const registered = capturedEvents.filter((e) => e.event === 'registered');
     expect(registered).toHaveLength(2);
+  });
+});
+
+describe('POST /core.registry.register — features slot round-trip (epic 05 / S0)', () => {
+  const recipesFeatures: NonNullable<ManifestPayload['features']> = [
+    {
+      key: 'recipes.smartImport',
+      label: 'Smart import',
+      description: 'Parse recipes from a pasted URL.',
+      default: true,
+      scope: 'capability',
+      capability: { pillar: 'recipes', key: 'smartImport' },
+      requiresEnv: ['RECIPES_PARSER_URL'],
+    },
+  ];
+
+  it('persists a features slot and surfaces it verbatim in the registry snapshot', async () => {
+    const res = await request(app)
+      .post('/core.registry.register')
+      .send({
+        pillarId: 'recipes',
+        baseUrl: 'http://recipes-api:4010',
+        manifest: recipesManifest({ features: recipesFeatures }),
+      });
+    expect(res.status).toBe(200);
+
+    const snapshot = buildRegistrySnapshot(coreDb.db);
+    const entry = snapshot.pillars.find((p) => p.pillarId === 'recipes');
+    expect(entry).toBeDefined();
+    // The snapshot re-validates the manifest through ManifestPayloadSchema, so a
+    // present `features` array proves the optional slot survives validation +
+    // persistence + the snapshot re-parse end to end.
+    expect(entry?.manifest.features).toEqual(recipesFeatures);
+  });
+
+  it('still registers a pillar whose manifest carries no features slot', async () => {
+    const res = await request(app).post('/core.registry.register').send({
+      pillarId: 'recipes',
+      baseUrl: 'http://recipes-api:4010',
+      manifest: recipesManifest(),
+    });
+    expect(res.status).toBe(200);
+
+    const snapshot = buildRegistrySnapshot(coreDb.db);
+    const entry = snapshot.pillars.find((p) => p.pillarId === 'recipes');
+    expect(entry).toBeDefined();
+    expect(entry?.manifest.features).toBeUndefined();
   });
 });

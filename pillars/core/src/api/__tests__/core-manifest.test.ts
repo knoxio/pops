@@ -30,6 +30,30 @@ describe('buildCoreManifest — PRD-240 US-03 settings dimension', () => {
     expect(ids).toContain('core.operational');
   });
 
+  describe('epic 05 / S0 — capability features', () => {
+    it('declares core.redis as a capability feature with a declarative capability probe', () => {
+      const manifest = buildCoreManifest('0.0.1-test');
+      expect(manifest.features).toEqual([
+        {
+          key: 'core.redis',
+          label: 'Redis',
+          description:
+            'Job queues and request cache. When unavailable, the API runs in degraded mode (queues + cache disabled).',
+          default: true,
+          scope: 'capability',
+          capability: { pillar: 'core', key: 'redis' },
+          requiresEnv: ['REDIS_HOST'],
+        },
+      ]);
+    });
+
+    it('carries no runtime capabilityCheck function on the serialized feature', () => {
+      const manifest = buildCoreManifest('0.0.1-test');
+      const [redis] = manifest.features ?? [];
+      expect(redis).not.toHaveProperty('capabilityCheck');
+    });
+  });
+
   describe('PRD-243 US-02 — backend-only pillar omits UI dimensions', () => {
     it('does not declare a nav block', () => {
       const manifest = buildCoreManifest('0.0.1-test');
