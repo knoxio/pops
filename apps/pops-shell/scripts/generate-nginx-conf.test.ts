@@ -69,18 +69,6 @@ function makeTransport(
   return new FakeDiscoveryTransport(pillars.map((p) => discoveredPillar(p.pillarId, p.baseUrl)));
 }
 
-/**
- * The legacy RPC scheme name, built at runtime (leading char code 116)
- * so the literal four-character substring never appears in
- * `apps/pops-shell/scripts`. PRD-255 US-01 gates the render path on that
- * substring being absent from the scripts directory, while these
- * regression guards must still assert the rendered conf carries no legacy
- * dispatcher.
- */
-const LEGACY_RPC = String.fromCharCode(116) + 'rpc';
-const LEGACY_PER_PILLAR_BLOCK = new RegExp(`location \\/${LEGACY_RPC}-[a-z]`);
-const LEGACY_CATCH_ALL_BLOCK = `location /${LEGACY_RPC} {`;
-
 describe('generate-nginx-conf', () => {
   describe('drift detection', () => {
     it('committed apps/pops-shell/nginx.conf matches the generator output', async () => {
@@ -121,15 +109,15 @@ describe('generate-nginx-conf', () => {
   describe('rendered output structure', () => {
     const rendered = renderNginxConf();
 
-    it('renders no per-pillar legacy RPC dispatcher blocks (G6 cut — pillars no longer serve the legacy RPC scheme)', () => {
+    it('renders no per-pillar /trpc-<id>/ dispatcher blocks (G6 cut — pillars no longer serve /trpc)', () => {
       for (const id of PILLARS) {
-        expect(rendered).not.toContain(`location /${LEGACY_RPC}-${id}/ {`);
+        expect(rendered).not.toContain(`location /trpc-${id}/ {`);
       }
-      expect(rendered).not.toMatch(LEGACY_PER_PILLAR_BLOCK);
+      expect(rendered).not.toMatch(/location \/trpc-[a-z]/);
     });
 
-    it('contains no legacy RPC substring at all', () => {
-      expect(rendered).not.toContain(LEGACY_RPC);
+    it('contains no `trpc` substring at all', () => {
+      expect(rendered).not.toContain('trpc');
     });
 
     it('emits one /<id>-api/ REST block per pillar', () => {
@@ -207,8 +195,8 @@ describe('generate-nginx-conf', () => {
       );
     });
 
-    it('no longer renders the legacy RPC → pops-api catch-all (02 decommission)', () => {
-      expect(rendered).not.toContain(LEGACY_CATCH_ALL_BLOCK);
+    it('no longer renders the legacy /trpc → pops-api catch-all (02 decommission)', () => {
+      expect(rendered).not.toContain('location /trpc {');
       expect(rendered).not.toMatch(/proxy_pass http:\/\/pops-api:3000/);
     });
 
@@ -358,9 +346,9 @@ describe('generate-nginx-conf', () => {
   describe('renderNginxConfFromUpstreams (PRD-232)', () => {
     it('renders zero pillar blocks for an empty registry but keeps head + tail', () => {
       const rendered = renderNginxConfFromUpstreams([]);
-      expect(rendered).not.toMatch(LEGACY_PER_PILLAR_BLOCK);
+      expect(rendered).not.toMatch(/location \/trpc-[a-z]/);
       expect(rendered).toContain('resolver 127.0.0.11');
-      expect(rendered).not.toContain(LEGACY_CATCH_ALL_BLOCK);
+      expect(rendered).not.toContain('location /trpc {');
       expect(rendered).toContain('location ~ ^/pillars/?$ {');
       expect(rendered).toContain('location /docs/ {');
       expect(rendered).toMatch(/location \/ \{[\s\S]*?try_files \$uri \$uri\/ \/index\.html;/);
@@ -383,7 +371,7 @@ describe('generate-nginx-conf', () => {
       expect(rendered).toContain('rewrite ^/plugin-fitness-api/(.*)$ /$1 break;');
       expect(rendered).toContain('set $plugin_fitness_api_upstream http://fitness-api:4200;');
       expect(rendered).toContain('proxy_pass $plugin_fitness_api_upstream;');
-      expect(rendered).not.toContain(LEGACY_RPC);
+      expect(rendered).not.toContain('trpc');
     });
 
     it('emits zero pillar REST blocks for an empty registry but keeps the orchestrator block', () => {
@@ -421,8 +409,8 @@ describe('generate-nginx-conf', () => {
       for (const id of PILLARS) {
         expect(rendered).not.toContain(`location /${id}-api/ {`);
       }
-      expect(rendered).not.toContain(LEGACY_CATCH_ALL_BLOCK);
-      expect(rendered).not.toContain(LEGACY_RPC);
+      expect(rendered).not.toContain('location /trpc {');
+      expect(rendered).not.toContain('trpc');
     });
 
     it('renders a single external pillar with parsed host:port', async () => {
@@ -433,7 +421,7 @@ describe('generate-nginx-conf', () => {
       expect(rendered).toContain('location /plugin-fitness-api/ {');
       expect(rendered).toContain('set $plugin_fitness_api_upstream http://fitness-api:4242;');
       expect(rendered).not.toContain('location /finance-api/ {');
-      expect(rendered).not.toContain(LEGACY_RPC);
+      expect(rendered).not.toContain('trpc');
     });
 
     it('mixes known + external pillars and orders known first', async () => {
