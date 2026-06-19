@@ -36,6 +36,7 @@ export type { ModelPrice, PricingCache } from './services/ai-model-pricing.js';
 
 export type {
   ApplyStatusUpdate,
+  CapabilityStatuses,
   HeartbeatResult,
   PersistableManifest,
   PillarRegistration,

@@ -97,6 +97,11 @@ if (process.env['POPS_REGISTRY_ENABLED'] === 'true') {
   pillarHandle = await bootstrapPillar({
     manifest: buildCerebrumManifest(version),
     baseUrl: selfBaseUrl,
+    // Cerebrum owns the `cerebrum.vectorSearch` capability. Its live status is
+    // whether sqlite-vec loaded on this connection (probed once at open). The
+    // value is stable for the process lifetime, but reporting it per heartbeat
+    // keeps the contract uniform and lets a future hot-reload surface here.
+    capabilityReporter: () => ({ vectorSearch: cerebrumDb.vecAvailable }),
   });
 }
 

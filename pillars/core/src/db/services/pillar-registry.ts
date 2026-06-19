@@ -21,8 +21,15 @@
 import { eq, sql } from 'drizzle-orm';
 
 import { pillarRegistry } from '../schema.js';
+import {
+  parseCapabilitiesBlob,
+  serializeCapabilities,
+  type CapabilityStatuses,
+} from './pillar-registry-capabilities.js';
 
 import type { CoreDb } from './internal.js';
+
+export type { CapabilityStatuses } from './pillar-registry-capabilities.js';
 
 export type PillarStatus = 'healthy' | 'unavailable' | 'unknown';
 
@@ -57,6 +64,12 @@ export interface UpsertPillarRegistrationInput {
    * network (ADR-027) rather than per-request key auth.
    */
   readonly apiKeyHash?: string | null;
+  /**
+   * Capability statuses reported at register time (epic 05 / S3). Omitted
+   * (or `undefined`) when the pillar reports none — the column is then left
+   * NULL. The snapshot reader surfaces it as `pillars[].capabilities`.
+   */
+  readonly capabilities?: CapabilityStatuses;
 }
 
 export interface PillarRegistration {
@@ -73,6 +86,8 @@ export interface PillarRegistration {
   readonly origin: PillarOrigin;
   readonly apiKeyHash: string | null;
   readonly evictedAt: string | null;
+  /** Latest reported capability statuses; `null` when the pillar reported none. */
+  readonly capabilities: CapabilityStatuses | null;
 }
 
 interface PillarRegistryRow {
@@ -89,6 +104,7 @@ interface PillarRegistryRow {
   origin: string;
   apiKeyHash: string | null;
   evictedAt: string | null;
+  capabilitiesJson: string | null;
 }
 
 function parseStatus(raw: string): PillarStatus {
@@ -123,6 +139,7 @@ function rowToRegistration(row: PillarRegistryRow): PillarRegistration {
     origin: parseOrigin(row.origin),
     apiKeyHash: row.apiKeyHash,
     evictedAt: row.evictedAt,
+    capabilities: parseCapabilitiesBlob(row.capabilitiesJson),
   };
 }
 
@@ -135,6 +152,7 @@ export function upsertPillarRegistration(
   const manifestJson = JSON.stringify(input.manifest);
   const origin: PillarOrigin = input.origin ?? 'internal';
   const apiKeyHash = origin === 'external' ? (input.apiKeyHash ?? null) : null;
+  const capabilitiesJson = serializeCapabilities(input.capabilities);
 
   db.insert(pillarRegistry)
     .values({
@@ -151,6 +169,7 @@ export function upsertPillarRegistration(
       origin,
       apiKeyHash,
       evictedAt: null,
+      capabilitiesJson,
     })
     .onConflictDoUpdate({
       target: pillarRegistry.pillarId,
@@ -166,6 +185,7 @@ export function upsertPillarRegistration(
         origin: sql`excluded.origin`,
         apiKeyHash: sql`excluded.api_key_hash`,
         evictedAt: sql`excluded.evicted_at`,
+        capabilitiesJson: sql`excluded.capabilities_json`,
       },
     })
     .run();
@@ -223,11 +243,15 @@ export interface HeartbeatResult {
  * status (e.g. `unavailable → healthy`). `statusUpdatedAt` is rewritten
  * only on a transition; a healthy-to-healthy heartbeat leaves it as is.
  * The background ticker handles the healthy-staleness refresh.
+ *
+ * `options.capabilities` overwrites the stored capability snapshot with the
+ * freshest reported status (epic 05 / S3). Omitted ⇒ the stored value is left
+ * untouched (a pillar with no reporter, or a pre-S3 SDK, never clobbers it).
  */
 export function recordHeartbeat(
   db: CoreDb,
   pillarId: string,
-  options?: { now?: string }
+  options?: { now?: string; capabilities?: CapabilityStatuses }
 ): HeartbeatResult {
   const existing = getPillarRegistration(db, pillarId);
   if (!existing) {
@@ -242,6 +266,9 @@ export function recordHeartbeat(
       lastHeartbeatAt: now,
       status: 'healthy',
       ...(statusChanged ? { statusUpdatedAt: now } : {}),
+      ...(options?.capabilities === undefined
+        ? {}
+        : { capabilitiesJson: serializeCapabilities(options.capabilities) }),
     })
     .where(eq(pillarRegistry.pillarId, pillarId))
     .run();

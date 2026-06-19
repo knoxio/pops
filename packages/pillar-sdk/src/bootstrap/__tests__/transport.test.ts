@@ -66,6 +66,43 @@ describe('createHttpRegistryTransport', () => {
     expect(Object.prototype.hasOwnProperty.call(sent, 'apiKey')).toBe(false);
   });
 
+  it('carries reported capabilities on the register envelope', async () => {
+    const fetchImpl = mockFetch([{ status: 200, body: { pillarId: 'finance' } }]);
+    const transport = createHttpRegistryTransport({ baseUrl: 'http://registry.test', fetchImpl });
+
+    await transport.register({ ...envelope(), capabilities: { ledger: true } });
+    const [, init] = (fetchImpl as ReturnType<typeof vi.fn>).mock.calls[0]!;
+    const sent = JSON.parse((init as RequestInit).body as string) as {
+      capabilities?: Record<string, boolean>;
+    };
+    expect(sent.capabilities).toEqual({ ledger: true });
+  });
+
+  it('POSTs { pillarId } only when no capabilities are passed to heartbeat', async () => {
+    const fetchImpl = mockFetch([{ status: 200, body: { ok: true } }]);
+    const transport = createHttpRegistryTransport({ baseUrl: 'http://registry.test', fetchImpl });
+
+    await transport.heartbeat('finance');
+    const [url, init] = (fetchImpl as ReturnType<typeof vi.fn>).mock.calls[0]!;
+    expect(url).toBe('http://registry.test/core.registry.heartbeat');
+    const sent = JSON.parse((init as RequestInit).body as string) as Record<string, unknown>;
+    expect(sent).toEqual({ pillarId: 'finance' });
+    expect(Object.prototype.hasOwnProperty.call(sent, 'capabilities')).toBe(false);
+  });
+
+  it('carries reported capabilities on the heartbeat body when provided', async () => {
+    const fetchImpl = mockFetch([{ status: 200, body: { ok: true } }]);
+    const transport = createHttpRegistryTransport({ baseUrl: 'http://registry.test', fetchImpl });
+
+    await transport.heartbeat('cerebrum', { vectorSearch: false });
+    const [, init] = (fetchImpl as ReturnType<typeof vi.fn>).mock.calls[0]!;
+    const sent = JSON.parse((init as RequestInit).body as string) as {
+      pillarId: string;
+      capabilities?: Record<string, boolean>;
+    };
+    expect(sent).toEqual({ pillarId: 'cerebrum', capabilities: { vectorSearch: false } });
+  });
+
   it('throws RegistryNetworkError when fetch rejects', async () => {
     const fetchImpl = mockFetch([{ status: 0, throwOnce: true }]);
     const transport = createHttpRegistryTransport({

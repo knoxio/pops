@@ -10,6 +10,7 @@ import {
 import {
   RegistryNetworkError,
   RegistryTransportError,
+  type CapabilityStatuses,
   type RegisterRequest,
   type RegistryTransport,
 } from '../transport.js';
@@ -23,6 +24,7 @@ interface RecordedTransport extends RegistryTransport {
   heartbeatCalls: number;
   unregisterCalls: number;
   heartbeats: string[];
+  heartbeatCapabilities: (CapabilityStatuses | undefined)[];
   lastRegisterPayload: () => RegisterRequest | undefined;
   lastRegisterManifest: () => ManifestPayload | undefined;
 }
@@ -40,6 +42,7 @@ function makeTransport(options: MakeTransportOptions = {}): RecordedTransport {
     heartbeatCalls: 0,
     unregisterCalls: 0,
     heartbeats: [],
+    heartbeatCapabilities: [],
     lastRegisterPayload: () => lastPayload,
     lastRegisterManifest: () => lastPayload?.manifest,
     async register(payload) {
@@ -48,9 +51,10 @@ function makeTransport(options: MakeTransportOptions = {}): RecordedTransport {
       if (options.registerImpl) return options.registerImpl();
       return { pillarId: payload.manifest.pillar };
     },
-    async heartbeat(pillarId) {
+    async heartbeat(pillarId, capabilities) {
       state.heartbeatCalls += 1;
       state.heartbeats.push(pillarId);
+      state.heartbeatCapabilities.push(capabilities);
       if (options.heartbeatImpl) return options.heartbeatImpl();
       return { pillarId, acknowledgedAt: new Date().toISOString() };
     },
@@ -94,6 +98,49 @@ describe('bootstrapPillar', () => {
 
     await handle.stop();
     expect(transport.unregisterCalls).toBe(1);
+  });
+
+  it('omits capabilities from register + heartbeat when no reporter is supplied', async () => {
+    const transport = makeTransport();
+    const handle = await bootstrapPillar({
+      manifest: validManifest(),
+      baseUrl: TEST_BASE_URL,
+      transport,
+      logger: silentLogger(),
+      heartbeatMs: 1_000,
+    });
+
+    expect(transport.lastRegisterPayload()?.capabilities).toBeUndefined();
+    await vi.advanceTimersByTimeAsync(1_000);
+    expect(transport.heartbeatCapabilities[0]).toBeUndefined();
+
+    await handle.stop();
+  });
+
+  it('snapshots the capability reporter on register and each heartbeat', async () => {
+    const transport = makeTransport();
+    let vectorUp = true;
+    const reporter = vi.fn(() => ({ vectorSearch: vectorUp }));
+    const handle = await bootstrapPillar({
+      manifest: validManifest(),
+      baseUrl: TEST_BASE_URL,
+      transport,
+      logger: silentLogger(),
+      heartbeatMs: 1_000,
+      capabilityReporter: reporter,
+    });
+
+    expect(transport.lastRegisterPayload()?.capabilities).toEqual({ vectorSearch: true });
+
+    await vi.advanceTimersByTimeAsync(1_000);
+    expect(transport.heartbeatCapabilities[0]).toEqual({ vectorSearch: true });
+
+    // The reporter is re-snapshotted per heartbeat — flipping it down is seen.
+    vectorUp = false;
+    await vi.advanceTimersByTimeAsync(1_000);
+    expect(transport.heartbeatCapabilities[1]).toEqual({ vectorSearch: false });
+
+    await handle.stop();
   });
 
   it('coerces a non-semver version (e.g. git SHA) into a valid semver prerelease', async () => {

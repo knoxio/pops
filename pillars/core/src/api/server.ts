@@ -56,6 +56,18 @@ const coreDb = openCoreDb(resolveCoreSqlitePath());
 
 reconcileRegistryOnBoot(coreDb.db);
 
+/**
+ * Live status of core's `redis` capability. The core pillar container ships
+ * no Redis/BullMQ client (the AI schedulers under `modules/ai-*` run
+ * queue-free), so there is nothing to probe and the honest answer is `false`:
+ * the `core.redis` capability feature resolves to `unavailable`/degraded
+ * rather than fabricating readiness against a connection that does not exist.
+ * Replace this with a real readiness check when core gains a Redis client.
+ */
+function isCoreRedisReady(): boolean {
+  return false;
+}
+
 const app = createCoreApiApp({ coreDb, version, selfBaseUrl });
 
 const server = app.listen(port, () => {
@@ -81,6 +93,7 @@ if (process.env['POPS_REGISTRY_ENABLED'] === 'true') {
   pillarHandle = await bootstrapPillar({
     manifest: buildCoreManifest(version),
     baseUrl: selfBaseUrl,
+    capabilityReporter: () => ({ redis: isCoreRedisReady() }),
   });
 }
 

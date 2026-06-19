@@ -18,7 +18,7 @@ import { parseHeartbeatBody } from './heartbeat-helpers.js';
 
 import type { Request, Response } from 'express';
 
-import type { PillarRegistration } from '../../../db/index.js';
+import type { CapabilityStatuses, PillarRegistration } from '../../../db/index.js';
 
 export interface ExternalHeartbeatDeps {
   readonly coreDb: CoreDb;
@@ -33,10 +33,12 @@ function rejectNotRegistered(res: Response): void {
 function applyHeartbeat(
   deps: ExternalHeartbeatDeps,
   existing: PillarRegistration,
+  capabilities: CapabilityStatuses | undefined,
   res: Response
 ): void {
   const result = pillarRegistryService.recordHeartbeat(deps.coreDb, existing.pillarId, {
     now: registryNow().toISOString(),
+    ...(capabilities === undefined ? {} : { capabilities }),
   });
   if (!result.recorded || !result.registration) {
     rejectNotRegistered(res);
@@ -83,6 +85,6 @@ export function createExternalHeartbeatHandler(
       return;
     }
 
-    applyHeartbeat(deps, existing, res);
+    applyHeartbeat(deps, existing, parsed.value.capabilities, res);
   };
 }

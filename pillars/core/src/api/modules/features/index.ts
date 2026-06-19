@@ -16,11 +16,13 @@ export {
   listFeatures,
   setFeatureEnabled,
   setUserPreference,
-  type CapabilityProbes,
-  type FeatureServiceOptions,
   type UserContext,
 } from './service.js';
-export type { RegistryFeatureView, ResolutionContext } from './resolution.js';
+export type {
+  CapabilityStatusesByPillar,
+  RegistryFeatureView,
+  ResolutionContext,
+} from './resolution.js';
 export {
   buildSettingsFieldIndex,
   resolveCredentials,

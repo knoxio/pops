@@ -76,7 +76,7 @@ function persistAndRespond(
   body: ValidRegisterBody,
   res: Response
 ): void {
-  const { pillarId, baseUrl, manifest } = body;
+  const { pillarId, baseUrl, manifest, capabilities } = body;
   const validation = validateManifestPayload(manifest);
   if (!validation.ok) {
     res.status(400).json({ ok: false, issues: validation.issues });
@@ -91,6 +91,7 @@ function persistAndRespond(
     now: now.toISOString(),
     origin: 'external',
     apiKeyHash: null,
+    ...(capabilities === undefined ? {} : { capabilities }),
   });
 
   const entry = toRegistryEntry(persisted, now);

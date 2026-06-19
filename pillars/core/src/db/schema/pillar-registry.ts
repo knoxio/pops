@@ -30,6 +30,13 @@ import { index, sqliteTable, text } from 'drizzle-orm/sqlite-core';
  *   are left as-is for backward compat. `evictedAt` is set by the
  *   hard-eviction ticker for external pillars that never heartbeated;
  *   internal pillars are never hard-evicted.
+ * - `capabilitiesJson` is the latest reported capability-status snapshot
+ *   (`<capabilityKey> → up/down`) the pillar POSTed on register or
+ *   heartbeat, serialized as JSON (epic 05 / S3). NULL when the pillar
+ *   reports no capabilities; the snapshot reader then omits the
+ *   `capabilities` field. Distinct from `manifestJson`, which carries the
+ *   *declarative* `capability: { pillar, key }` descriptors — this column
+ *   carries their *live status*.
  */
 export const pillarRegistry = sqliteTable(
   'pillar_registry',
@@ -47,6 +54,7 @@ export const pillarRegistry = sqliteTable(
     origin: text('origin').notNull().default('internal'),
     apiKeyHash: text('api_key_hash'),
     evictedAt: text('evicted_at'),
+    capabilitiesJson: text('capabilities_json'),
   },
   (table) => [
     index('idx_pillar_registry_status').on(table.status),

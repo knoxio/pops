@@ -25,6 +25,7 @@ import type { CoreDb } from '../services/internal.js';
 const MIGRATION_PATHS = [
   join(__dirname, '../../../migrations/0055_pillar_registry.sql'),
   join(__dirname, '../../../migrations/0058_pillar_registry_external_origin.sql'),
+  join(__dirname, '../../../migrations/0068_pillar_registry_capabilities.sql'),
 ];
 
 function freshDb(): CoreDb {
@@ -130,6 +131,40 @@ describe('upsertPillarRegistration', () => {
     });
     const back = getPillarRegistration(db, 'finance');
     expect(back?.manifest).toEqual(richManifest);
+  });
+
+  it('leaves capabilities null when the registration reports none', () => {
+    upsertPillarRegistration(db, {
+      baseUrl: 'http://finance-api:3004',
+      manifest: financeManifest(),
+    });
+    expect(getPillarRegistration(db, 'finance')?.capabilities).toBeNull();
+  });
+
+  it('persists reported capabilities and parses them back', () => {
+    upsertPillarRegistration(db, {
+      baseUrl: 'http://finance-api:3004',
+      manifest: financeManifest(),
+      capabilities: { ledgerSync: true, fxRates: false },
+    });
+    expect(getPillarRegistration(db, 'finance')?.capabilities).toEqual({
+      ledgerSync: true,
+      fxRates: false,
+    });
+  });
+
+  it('overwrites the stored capabilities on re-register', () => {
+    upsertPillarRegistration(db, {
+      baseUrl: 'http://finance-api:3004',
+      manifest: financeManifest(),
+      capabilities: { ledgerSync: true },
+    });
+    upsertPillarRegistration(db, {
+      baseUrl: 'http://finance-api:3004',
+      manifest: financeManifest(),
+      capabilities: { ledgerSync: false },
+    });
+    expect(getPillarRegistration(db, 'finance')?.capabilities).toEqual({ ledgerSync: false });
   });
 });
 
@@ -251,6 +286,26 @@ describe('recordHeartbeat', () => {
     expect(result.registration?.status).toBe('healthy');
     expect(result.registration?.statusUpdatedAt).toBe(beat);
     expect(result.registration?.lastHeartbeatAt).toBe(beat);
+  });
+
+  it('overwrites the stored capabilities when the heartbeat reports them', () => {
+    upsertPillarRegistration(db, {
+      baseUrl: 'http://finance-api:3004',
+      manifest: financeManifest(),
+      capabilities: { ledgerSync: true },
+    });
+    const result = recordHeartbeat(db, 'finance', { capabilities: { ledgerSync: false } });
+    expect(result.registration?.capabilities).toEqual({ ledgerSync: false });
+  });
+
+  it('leaves the stored capabilities untouched when the heartbeat omits them', () => {
+    upsertPillarRegistration(db, {
+      baseUrl: 'http://finance-api:3004',
+      manifest: financeManifest(),
+      capabilities: { ledgerSync: true },
+    });
+    const result = recordHeartbeat(db, 'finance', { now: '2026-06-12T12:00:10.000Z' });
+    expect(result.registration?.capabilities).toEqual({ ledgerSync: true });
   });
 });
 

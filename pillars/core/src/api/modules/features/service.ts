@@ -17,12 +17,12 @@
  *   - per-user prefs → `user_settings` (per email, key `feature.<key>`)
  *
  * Capability resolution is the declarative `capability: { pillar, key }`
- * descriptor (S0 replaced the non-serializable `capabilityCheck()` fn).
- * Core-local capabilities (`pillar: 'core'`) resolve against an in-process
- * probe map supplied by the caller; cross-pillar capabilities resolve to
- * `unavailable` for now (deferred to S3 — the extended heartbeat will report
- * live per-pillar capability status into the registry snapshot). See
- * `resolution.ts` for the gate machinery.
+ * descriptor (S0 replaced the non-serializable `capabilityCheck()` fn). Every
+ * capability feature — core's own `core.redis` included — resolves uniformly
+ * against the owning pillar's last-reported status on the registry snapshot
+ * (`pillars[].capabilities`, self-reported on register / heartbeat, epic 05 /
+ * S3). A pillar that has not reported a capability resolves to `unavailable`,
+ * preserving graceful degradation. See `resolution.ts` for the gate machinery.
  */
 import { setRawSetting } from '../../../db/services/settings.js';
 import { deleteUserSetting, setUserSetting } from '../../../db/services/user-settings.js';
@@ -36,7 +36,6 @@ import {
   readUserOverride,
   resolveCapabilityOk,
   userSettingKey,
-  type CapabilityProbes,
   type RegistryFeatureView,
   type ResolvedFeatureEntry,
   type UserContext,
@@ -48,16 +47,7 @@ import type { FeatureCredentialStatus, FeatureManifest, FeatureStatus } from '@p
 import type { CoreDb } from '../../../db/services/internal.js';
 
 export { FeatureGateError, FeatureNotFoundError, FeatureScopeError } from './errors.js';
-export type { CapabilityProbes, UserContext } from './resolution.js';
-
-export interface FeatureServiceOptions {
-  /**
-   * In-process probes for core-local capabilities. When a `core` capability
-   * feature names a probe that is absent here, the feature resolves to
-   * `unavailable` (the runtime that backs it is not wired in this process).
-   */
-  capabilityProbes?: CapabilityProbes;
-}
+export type { UserContext } from './resolution.js';
 
 interface IsEnabledOptions {
   user?: UserContext | null;
@@ -73,28 +63,19 @@ function requireFeature(view: RegistryFeatureView, key: string): ResolvedFeature
   throw new FeatureNotFoundError(key, view.pillarIds);
 }
 
-function probesOf(options: FeatureServiceOptions): CapabilityProbes {
-  return options.capabilityProbes ?? {};
-}
-
 /**
  * The single read path for runtime feature gating. Resolves in order:
- * capability probe → required credentials → user override → system value → default.
+ * capability status → required credentials → user override → system value → default.
  *
  * Throws `FeatureNotFoundError` when the key is not declared by any registered
  * pillar — a deliberate breaking change from the pre-PRD-101 silent-`false`
  * behaviour: manifest-declared features can't drift, so a missing key is a bug.
  */
-export function isEnabled(
-  db: CoreDb,
-  key: string,
-  options: IsEnabledOptions = {},
-  serviceOptions: FeatureServiceOptions = {}
-): boolean {
+export function isEnabled(db: CoreDb, key: string, options: IsEnabledOptions = {}): boolean {
   const view = readRegistryFeatureView(db);
   const { feature } = requireFeature(view, key);
 
-  if (feature.capability && !resolveCapabilityOk(feature, probesOf(serviceOptions))) return false;
+  if (feature.capability && !resolveCapabilityOk(feature, view.capabilities)) return false;
 
   const { allConfigured } = resolveCredentials(db, feature, view.settingsFields);
   if (!allConfigured) return false;
@@ -109,14 +90,9 @@ export function isEnabled(
 }
 
 /** Build the `FeatureStatus` list for the admin Features page. */
-export function listFeatures(
-  db: CoreDb,
-  user: UserContext | null = null,
-  serviceOptions: FeatureServiceOptions = {}
-): FeatureStatus[] {
+export function listFeatures(db: CoreDb, user: UserContext | null = null): FeatureStatus[] {
   const view = readRegistryFeatureView(db);
-  const ctx = { probes: probesOf(serviceOptions), user };
-  return view.features.map((entry) => buildFeatureStatus(db, entry, view, ctx));
+  return view.features.map((entry) => buildFeatureStatus(db, entry, view, { user }));
 }
 
 function toManifestFeature(
@@ -174,10 +150,9 @@ function missingCredentials(credentials: FeatureCredentialStatus[]): FeatureCred
 function ensureCanEnable(
   db: CoreDb,
   feature: FeatureManifestDescriptor,
-  view: RegistryFeatureView,
-  probes: CapabilityProbes
+  view: RegistryFeatureView
 ): void {
-  if (feature.capability && !resolveCapabilityOk(feature, probes)) {
+  if (feature.capability && !resolveCapabilityOk(feature, view.capabilities)) {
     throw new FeatureGateError(feature.key, [{ key: feature.key, source: 'missing' }]);
   }
   const { credentials, allConfigured } = resolveCredentials(db, feature, view.settingsFields);
@@ -190,19 +165,14 @@ function ensureCanEnable(
  * Set the system-level enabled state. Rejects `capability`-scoped features
  * (read-only runtime probes) and rejects enabling while gating is failing.
  */
-export function setFeatureEnabled(
-  db: CoreDb,
-  key: string,
-  enabled: boolean,
-  serviceOptions: FeatureServiceOptions = {}
-): boolean {
+export function setFeatureEnabled(db: CoreDb, key: string, enabled: boolean): boolean {
   const view = readRegistryFeatureView(db);
   const { feature } = requireFeature(view, key);
 
   if (feature.scope === 'capability') {
     throw new FeatureScopeError(key, 'system|user', feature.scope);
   }
-  if (enabled) ensureCanEnable(db, feature, view, probesOf(serviceOptions));
+  if (enabled) ensureCanEnable(db, feature, view);
 
   setRawSetting(db, feature.settingKey ?? feature.key, enabled ? 'true' : 'false');
   return enabled;

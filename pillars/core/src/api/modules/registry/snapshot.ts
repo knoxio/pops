@@ -44,6 +44,7 @@ export function toRegistryEntry(reg: PillarRegistration, now: Date): RegistryEnt
     lastHeartbeatAt: reg.lastHeartbeatAt,
     status: liveStatus(reg, now),
     statusUpdatedAt: reg.statusUpdatedAt,
+    ...(reg.capabilities === null ? {} : { capabilities: reg.capabilities }),
   };
 }
 

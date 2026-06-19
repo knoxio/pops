@@ -12,6 +12,16 @@ export const PillarStatusSchema = z.enum(['healthy', 'unavailable', 'unknown']);
 
 export type PillarStatusWire = z.infer<typeof PillarStatusSchema>;
 
+/**
+ * Live per-pillar capability statuses (`<capabilityKey> → up/down`),
+ * epic 05 / S3. Self-reported on register + heartbeat; absent when the
+ * pillar reports none (graceful degradation — an unreported capability
+ * resolves to `unavailable`). Serializable: a plain boolean record.
+ */
+export const CapabilityStatusesSchema = z.record(z.string(), z.boolean());
+
+export type CapabilityStatusesWire = z.infer<typeof CapabilityStatusesSchema>;
+
 export const RegistryEntrySchema = z.object({
   pillarId: z.string(),
   baseUrl: z.string(),
@@ -25,6 +35,7 @@ export const RegistryEntrySchema = z.object({
   lastHeartbeatAt: z.string(),
   status: PillarStatusSchema,
   statusUpdatedAt: z.string(),
+  capabilities: CapabilityStatusesSchema.optional(),
 });
 
 export type RegistryEntry = z.infer<typeof RegistryEntrySchema>;

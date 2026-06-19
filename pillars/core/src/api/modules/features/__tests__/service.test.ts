@@ -9,7 +9,9 @@
  *     with a `features` slot), NOT a static module list;
  *   - service functions take a `CoreDb` handle first;
  *   - the runtime `capabilityCheck()` fn is replaced by the declarative
- *     `capability: { pillar, key }` descriptor + an injected probe map;
+ *     `capability: { pillar, key }` descriptor, resolved against the owning
+ *     pillar's self-reported capability status on the registry snapshot
+ *     (`pillars[].capabilities`, S3) — no injected probe map;
  *   - credential `envFallback` is sourced from the pillar's own manifest
  *     `settings` block carried on the same registration.
  *
@@ -39,8 +41,6 @@ import {
   listFeatures,
   setFeatureEnabled,
   setUserPreference,
-  type CapabilityProbes,
-  type FeatureServiceOptions,
 } from '../service.js';
 
 import type {
@@ -49,17 +49,12 @@ import type {
   SettingsManifestDescriptor,
 } from '@pops/pillar-sdk';
 
+import type { CapabilityStatuses } from '../../../../db/index.js';
 import type { CoreDb } from '../../../../db/services/internal.js';
 
 let tmpDir: string;
 let coreDb: OpenedCoreDb;
 let db: CoreDb;
-
-/** Probe map enabling a single core-local capability. */
-function coreProbes(key: string, value: boolean): FeatureServiceOptions {
-  const probes: CapabilityProbes = { core: { [key]: () => value } };
-  return { capabilityProbes: probes };
-}
 
 function baseManifest(
   pillar: string,
@@ -86,12 +81,23 @@ function baseManifest(
 }
 
 /** Register a fake pillar into the live registry snapshot. */
-function registerPillar(manifest: ManifestPayload): void {
+function registerPillar(manifest: ManifestPayload, capabilities?: CapabilityStatuses): void {
   pillarRegistryService.upsertPillarRegistration(db, {
     baseUrl: `http://${manifest.pillar}-api:4010`,
     manifest,
     origin: 'external',
+    ...(capabilities === undefined ? {} : { capabilities }),
   });
+}
+
+/**
+ * Register a bare `core` pillar (no features) reporting its `redis` capability
+ * status — the registry-snapshot replacement for the deleted in-process probe
+ * map. The feature under test declares `capability: { pillar: 'core', key:
+ * 'redis' }`; core self-reports the live status here.
+ */
+function reportCoreRedis(value: boolean): void {
+  registerPillar(baseManifest('core', []), { redis: value });
 }
 
 /**
@@ -220,34 +226,37 @@ describe('isEnabled', () => {
     expect(isEnabled(db, 'test.simple')).toBe(true);
   });
 
-  it('returns false when a core-local capability probe returns false', () => {
+  it('returns false when the owning pillar reports the capability down', () => {
     registerSimpleFeature({
       default: true,
       scope: 'capability',
       capability: { pillar: 'core', key: 'redis' },
     });
-    expect(isEnabled(db, 'test.simple', {}, coreProbes('redis', false))).toBe(false);
-  });
-
-  it('returns true when a core-local capability probe returns true', () => {
-    registerSimpleFeature({
-      default: true,
-      scope: 'capability',
-      capability: { pillar: 'core', key: 'redis' },
-    });
-    expect(isEnabled(db, 'test.simple', {}, coreProbes('redis', true))).toBe(true);
-  });
-
-  it('treats a core capability with no wired probe as unavailable', () => {
-    registerSimpleFeature({
-      default: true,
-      scope: 'capability',
-      capability: { pillar: 'core', key: 'redis' },
-    });
+    reportCoreRedis(false);
     expect(isEnabled(db, 'test.simple')).toBe(false);
   });
 
-  it('treats a cross-pillar capability as unavailable (deferred to S3)', () => {
+  it('returns true when the owning pillar reports the capability up', () => {
+    registerSimpleFeature({
+      default: true,
+      scope: 'capability',
+      capability: { pillar: 'core', key: 'redis' },
+    });
+    reportCoreRedis(true);
+    expect(isEnabled(db, 'test.simple')).toBe(true);
+  });
+
+  it('treats a capability whose owner never reported it as unavailable', () => {
+    registerSimpleFeature({
+      default: true,
+      scope: 'capability',
+      capability: { pillar: 'core', key: 'redis' },
+    });
+    // No `core` pillar reported `redis` → absent from the snapshot → false.
+    expect(isEnabled(db, 'test.simple')).toBe(false);
+  });
+
+  it('resolves a cross-pillar capability from the owning pillar reported status', () => {
     registerPillar(
       baseManifest('cerebrum', [
         {
@@ -257,12 +266,54 @@ describe('isEnabled', () => {
           scope: 'capability',
           capability: { pillar: 'cerebrum', key: 'vectorSearch' },
         },
-      ])
+      ]),
+      { vectorSearch: true }
+    );
+    expect(isEnabled(db, 'cerebrum.vectorSearch')).toBe(true);
+    const [feature] = listFeatures(db);
+    expect(feature?.state).toBe('enabled');
+    expect(feature?.capabilityMissing).toBeUndefined();
+  });
+
+  it('marks a cross-pillar capability unavailable when the owner reports it down', () => {
+    registerPillar(
+      baseManifest('cerebrum', [
+        {
+          key: 'cerebrum.vectorSearch',
+          label: 'Vector search',
+          default: true,
+          scope: 'capability',
+          capability: { pillar: 'cerebrum', key: 'vectorSearch' },
+        },
+      ]),
+      { vectorSearch: false }
     );
     expect(isEnabled(db, 'cerebrum.vectorSearch')).toBe(false);
     const [feature] = listFeatures(db);
     expect(feature?.state).toBe('unavailable');
     expect(feature?.capabilityMissing).toBe(true);
+  });
+
+  it('flips a capability live when the owning pillar re-reports a new status', () => {
+    registerPillar(
+      baseManifest('cerebrum', [
+        {
+          key: 'cerebrum.vectorSearch',
+          label: 'Vector search',
+          default: true,
+          scope: 'capability',
+          capability: { pillar: 'cerebrum', key: 'vectorSearch' },
+        },
+      ]),
+      { vectorSearch: true }
+    );
+    expect(isEnabled(db, 'cerebrum.vectorSearch')).toBe(true);
+
+    // Heartbeat re-reports the capability as down — resolution follows.
+    pillarRegistryService.recordHeartbeat(db, 'cerebrum', {
+      capabilities: { vectorSearch: false },
+    });
+    expect(isEnabled(db, 'cerebrum.vectorSearch')).toBe(false);
   });
 
   it('returns false when a required setting is missing', () => {
@@ -332,13 +383,14 @@ describe('listFeatures', () => {
     expect(feature?.credentials).toEqual([{ key: 'cred.a', source: 'database' }]);
   });
 
-  it('marks features unavailable when a core capability probe is missing', () => {
+  it('marks features unavailable when the owning pillar reports the capability down', () => {
     registerSimpleFeature({
       default: true,
       scope: 'capability',
       capability: { pillar: 'core', key: 'redis' },
     });
-    const [feature] = listFeatures(db, null, coreProbes('redis', false));
+    reportCoreRedis(false);
+    const [feature] = listFeatures(db).filter((f) => f.key === 'test.simple');
     expect(feature?.state).toBe('unavailable');
     expect(feature?.capabilityMissing).toBe(true);
     expect(feature?.enabled).toBe(false);
@@ -363,9 +415,8 @@ describe('setFeatureEnabled', () => {
       scope: 'capability',
       capability: { pillar: 'core', key: 'redis' },
     });
-    expect(() => setFeatureEnabled(db, 'test.simple', true, coreProbes('redis', true))).toThrow(
-      FeatureScopeError
-    );
+    reportCoreRedis(true);
+    expect(() => setFeatureEnabled(db, 'test.simple', true)).toThrow(FeatureScopeError);
   });
 
   it('rejects when required credentials are missing', () => {

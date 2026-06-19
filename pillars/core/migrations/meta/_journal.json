@@ -92,6 +92,13 @@
       "when": 1782432000000,
       "tag": "0067_entities_owner_uri",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1782518400000,
+      "tag": "0068_pillar_registry_capabilities",
+      "breakpoints": true
     }
   ]
 }

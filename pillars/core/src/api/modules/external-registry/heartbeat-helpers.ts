@@ -5,11 +5,19 @@
  * difference is what they do once the row has been resolved. The
  * shared parser lives here so neither handler grows its own copy of
  * the structured validation issues that callers consume.
+ *
+ * Heartbeat additionally carries an optional `capabilities` snapshot
+ * (epic 05 / S3); deregister never sends it and simply ignores the field.
  */
+import { parseCapabilitiesField } from './register-helpers.js';
+
 import type { ValidationIssue } from '@pops/pillar-sdk';
+
+import type { CapabilityStatuses } from '../../../db/index.js';
 
 export interface ValidHeartbeatBody {
   readonly pillarId: string;
+  readonly capabilities?: CapabilityStatuses;
 }
 
 export type HeartbeatBodyParseResult =
@@ -42,6 +50,7 @@ export function parseHeartbeatBody(input: unknown): HeartbeatBodyParseResult {
   }
   const issues: ValidationIssue[] = [];
   const pillarId = takeNonEmptyString(input.pillarId, 'pillarId', issues);
-  if (pillarId === undefined) return { ok: false, issues };
-  return { ok: true, value: { pillarId } };
+  const capabilities = parseCapabilitiesField(input.capabilities, 'capabilities', issues);
+  if (pillarId === undefined || issues.length > 0) return { ok: false, issues };
+  return { ok: true, value: { pillarId, ...(capabilities === undefined ? {} : { capabilities }) } };
 }

@@ -22,6 +22,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { openCoreDb, pillarRegistryService, type OpenedCoreDb } from '../../db/index.js';
 import { createCoreApiApp } from '../app.js';
 import { registryEventBus, type RegistryEventPayload } from '../modules/registry/event-bus.js';
+import { buildRegistrySnapshot } from '../modules/registry/snapshot.js';
 
 import type { ManifestPayload } from '@pops/pillar-sdk';
 
@@ -133,6 +134,55 @@ describe('POST /core.registry.heartbeat — happy path', () => {
     expect(healthChanged).toHaveLength(1);
     expect(healthChanged[0].pillarId).toBe('recipes');
     expect(healthChanged[0].origin).toBe('external');
+  });
+});
+
+describe('POST /core.registry.heartbeat — reported capabilities', () => {
+  function snapshotCapabilities(pillar: string): Record<string, boolean> | undefined {
+    return buildRegistrySnapshot(coreDb.db).pillars.find((p) => p.pillarId === pillar)
+      ?.capabilities;
+  }
+
+  it('persists a reported capability snapshot and surfaces it on the registry snapshot', async () => {
+    await registerRecipes(app);
+    expect(snapshotCapabilities('recipes')).toBeUndefined();
+
+    const res = await request(app)
+      .post('/core.registry.heartbeat')
+      .send({ pillarId: 'recipes', capabilities: { smartImport: true } });
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({ ok: true });
+    expect(snapshotCapabilities('recipes')).toEqual({ smartImport: true });
+  });
+
+  it('overwrites the stored snapshot with the freshest reported status', async () => {
+    await registerRecipes(app);
+    await request(app)
+      .post('/core.registry.heartbeat')
+      .send({ pillarId: 'recipes', capabilities: { smartImport: true } });
+    await request(app)
+      .post('/core.registry.heartbeat')
+      .send({ pillarId: 'recipes', capabilities: { smartImport: false } });
+    expect(snapshotCapabilities('recipes')).toEqual({ smartImport: false });
+  });
+
+  it('leaves a previously reported snapshot untouched when a heartbeat omits capabilities', async () => {
+    await registerRecipes(app);
+    await request(app)
+      .post('/core.registry.heartbeat')
+      .send({ pillarId: 'recipes', capabilities: { smartImport: true } });
+    await request(app).post('/core.registry.heartbeat').send({ pillarId: 'recipes' });
+    expect(snapshotCapabilities('recipes')).toEqual({ smartImport: true });
+  });
+
+  it('400s a malformed capabilities report (non-boolean value)', async () => {
+    await registerRecipes(app);
+    const res = await request(app)
+      .post('/core.registry.heartbeat')
+      .send({ pillarId: 'recipes', capabilities: { smartImport: 'yes' } });
+    expect(res.status).toBe(400);
+    const fields = res.body.issues.map((i: { field: string }) => i.field);
+    expect(fields).toContain('capabilities.smartImport');
   });
 });
 
