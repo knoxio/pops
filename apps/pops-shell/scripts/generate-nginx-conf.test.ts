@@ -73,32 +73,15 @@ describe('generate-nginx-conf', () => {
   describe('rendered output structure', () => {
     const rendered = renderNginxConf();
 
-    it('emits one /trpc-<id>/ location block per pillar', () => {
+    it('renders no per-pillar /trpc-<id>/ dispatcher blocks (G6 cut — pillars no longer serve /trpc)', () => {
       for (const id of PILLARS) {
-        expect(rendered).toContain(`location /trpc-${id}/ {`);
+        expect(rendered).not.toContain(`location /trpc-${id}/ {`);
       }
+      expect(rendered).not.toMatch(/location \/trpc-[a-z]/);
     });
 
-    it('each pillar block rewrites /trpc-<id>/ to /trpc/', () => {
-      for (const id of PILLARS) {
-        expect(rendered).toContain(`rewrite ^/trpc-${id}/(.*)$ /trpc/$1 break;`);
-      }
-    });
-
-    it('each pillar block proxies to the variable-form upstream from PILLAR_UPSTREAMS', () => {
-      for (const id of PILLARS) {
-        const { host, port } = PILLAR_UPSTREAMS[id];
-        expect(rendered).toContain(`set $trpc_${id}_upstream http://${host}:${port};`);
-        expect(rendered).toContain(`proxy_pass $trpc_${id}_upstream;`);
-      }
-    });
-
-    it('each pillar block includes the shared _pillar-proxy.conf partial', () => {
-      const perPillarIncludes = rendered.match(
-        /proxy_pass \$trpc_\w+_upstream;\n\s*include \/etc\/nginx\/snippets\/_pillar-proxy\.conf;/g
-      );
-      expect(perPillarIncludes).not.toBeNull();
-      expect(perPillarIncludes ?? []).toHaveLength(PILLARS.length);
+    it('contains no `trpc` substring at all', () => {
+      expect(rendered).not.toContain('trpc');
     });
 
     it('emits one /<id>-api/ REST block per pillar', () => {
@@ -113,7 +96,7 @@ describe('generate-nginx-conf', () => {
       }
     });
 
-    it('each REST block proxies to the same PILLAR_UPSTREAMS host:port as its tRPC block', () => {
+    it('each REST block proxies to its PILLAR_UPSTREAMS host:port', () => {
       for (const id of PILLARS) {
         const { host, port } = PILLAR_UPSTREAMS[id];
         expect(rendered).toContain(`set $${id}_api_upstream http://${host}:${port};`);
@@ -142,12 +125,12 @@ describe('generate-nginx-conf', () => {
       }
     });
 
-    it('renders every REST block after its matching tRPC block (REST section follows dispatchers)', () => {
+    it('renders every REST block after the REST-surfaces intro comment', () => {
+      const introIdx = rendered.indexOf('Per-pillar REST surfaces');
+      expect(introIdx).toBeGreaterThan(-1);
       for (const id of PILLARS) {
-        const trpcIdx = rendered.indexOf(`location /trpc-${id}/ {`);
         const restIdx = rendered.indexOf(`location /${id}-api/ {`);
-        expect(trpcIdx).toBeGreaterThan(-1);
-        expect(restIdx).toBeGreaterThan(trpcIdx);
+        expect(restIdx).toBeGreaterThan(introIdx);
       }
     });
 
@@ -236,7 +219,7 @@ describe('generate-nginx-conf', () => {
     it('renders pillar blocks in PILLAR_RENDER_ORDER', () => {
       const positions = PILLAR_RENDER_ORDER.map((id) => ({
         id,
-        index: rendered.indexOf(`location /trpc-${id}/ {`),
+        index: rendered.indexOf(`location /${id}-api/ {`),
       }));
       for (let i = 1; i < positions.length; i += 1) {
         expect(positions[i]!.index).toBeGreaterThan(positions[i - 1]!.index);
@@ -255,7 +238,7 @@ describe('generate-nginx-conf', () => {
       const reversed = renderNginxConf(PILLAR_RENDER_ORDER.toReversed());
       expect(reversed).not.toBe(canonical);
       for (const id of PILLARS) {
-        expect(reversed).toContain(`location /trpc-${id}/ {`);
+        expect(reversed).toContain(`location /${id}-api/ {`);
       }
     });
   });
@@ -383,12 +366,12 @@ describe('generate-nginx-conf', () => {
       const rendered = renderNginxConfFromUpstreams([
         { pillarId: 'plugin-fitness', host: 'fitness-api', port: 4200 },
       ]);
-      expect(rendered).toContain('location /trpc-plugin-fitness/ {');
-      expect(rendered).toContain('set $trpc_plugin_fitness_upstream http://fitness-api:4200;');
-      expect(rendered).toContain('proxy_pass $trpc_plugin_fitness_upstream;');
+      expect(rendered).toContain('location /plugin-fitness-api/ {');
+      expect(rendered).toContain('set $plugin_fitness_api_upstream http://fitness-api:4200;');
+      expect(rendered).toContain('proxy_pass $plugin_fitness_api_upstream;');
     });
 
-    it('emits a /<id>-api/ REST block alongside the tRPC block for each upstream', () => {
+    it('emits a /<id>-api/ REST block for each upstream', () => {
       const rendered = renderNginxConfFromUpstreams([
         { pillarId: 'plugin-fitness', host: 'fitness-api', port: 4200 },
       ]);
@@ -396,6 +379,7 @@ describe('generate-nginx-conf', () => {
       expect(rendered).toContain('rewrite ^/plugin-fitness-api/(.*)$ /$1 break;');
       expect(rendered).toContain('set $plugin_fitness_api_upstream http://fitness-api:4200;');
       expect(rendered).toContain('proxy_pass $plugin_fitness_api_upstream;');
+      expect(rendered).not.toContain('trpc');
     });
 
     it('emits zero pillar REST blocks for an empty registry but keeps the orchestrator block', () => {
@@ -434,9 +418,10 @@ describe('generate-nginx-conf', () => {
         makeFetcher({ pillars: [] })
       );
       for (const id of PILLARS) {
-        expect(rendered).not.toContain(`location /trpc-${id}/ {`);
+        expect(rendered).not.toContain(`location /${id}-api/ {`);
       }
       expect(rendered).not.toContain('location /trpc {');
+      expect(rendered).not.toContain('trpc');
     });
 
     it('renders a single external pillar with parsed host:port', async () => {
@@ -444,9 +429,10 @@ describe('generate-nginx-conf', () => {
         pillars: [{ pillarId: 'plugin-fitness', baseUrl: 'http://fitness-api:4242' }],
       });
       const rendered = await renderNginxConfDynamic('http://core-api:3001', fetcher);
-      expect(rendered).toContain('location /trpc-plugin-fitness/ {');
-      expect(rendered).toContain('set $trpc_plugin_fitness_upstream http://fitness-api:4242;');
-      expect(rendered).not.toContain('location /trpc-finance/ {');
+      expect(rendered).toContain('location /plugin-fitness-api/ {');
+      expect(rendered).toContain('set $plugin_fitness_api_upstream http://fitness-api:4242;');
+      expect(rendered).not.toContain('location /finance-api/ {');
+      expect(rendered).not.toContain('trpc');
     });
 
     it('mixes known + external pillars and orders known first', async () => {
@@ -457,13 +443,13 @@ describe('generate-nginx-conf', () => {
         ],
       });
       const rendered = await renderNginxConfDynamic('http://core-api:3001', fetcher);
-      const financeIdx = rendered.indexOf('location /trpc-finance/ {');
-      const fitnessIdx = rendered.indexOf('location /trpc-plugin-fitness/ {');
+      const financeIdx = rendered.indexOf('location /finance-api/ {');
+      const fitnessIdx = rendered.indexOf('location /plugin-fitness-api/ {');
       expect(financeIdx).toBeGreaterThan(-1);
       expect(fitnessIdx).toBeGreaterThan(-1);
       expect(financeIdx).toBeLessThan(fitnessIdx);
       const { host, port } = PILLAR_UPSTREAMS.finance;
-      expect(rendered).toContain(`set $trpc_finance_upstream http://${host}:${port};`);
+      expect(rendered).toContain(`set $finance_api_upstream http://${host}:${port};`);
     });
 
     it('is deterministic — fetcher returning the same payload yields byte-identical output', async () => {

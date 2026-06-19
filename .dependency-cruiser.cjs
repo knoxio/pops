@@ -90,6 +90,14 @@ module.exports = {
       from: { path: '.*' },
       to: { path: '^@pops/(app-media-db|media-db|media-contract|media-api)(/|$)' },
     },
+    {
+      name: 'no-dead-core-pkgs',
+      severity: 'error',
+      comment:
+        'Core has collapsed into `pillars/core/` — `@pops/core-db`, `@pops/core-contract`, and `@pops/core-api` are the retirement tombstone (deleted in the 02 decommission). No new code may import them; consumers go through `@pops/core` (contract types + api-types + openapi) and the core REST API for cross-pillar calls.',
+      from: { path: '.*' },
+      to: { path: '^@pops/(core-db|core-contract|core-api)(/|$)' },
+    },
     ...contractBoundaryRules,
   ],
   options: {

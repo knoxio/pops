@@ -11,8 +11,8 @@
  *
  *   - **Dynamic** (`--dynamic`) — PRD-232, Wave 6 BE-lego. Reads the
  *     live `pillar_registry` via `core.registry.list` (HTTP tRPC GET)
- *     and emits one `/trpc-<pillar>/` block per registered pillar. Used
- *     at boot-time inside the cluster: an init container (or a future
+ *     and emits one `/<pillar>-api/` REST block per registered pillar.
+ *     Used at boot-time inside the cluster: an init container (or a future
  *     subscription-bus watcher, PRD-163) runs the script with
  *     `--dynamic` so newly-registered external pillars (PRD-228) pick
  *     up routing without a fresh shell image.
@@ -73,7 +73,7 @@ export const PILLAR_UPSTREAMS: Record<KnownPillarId, { host: string; port: numbe
 };
 
 /**
- * Stable ordering for the rendered `/trpc-<id>/` blocks. Matches the
+ * Stable ordering for the rendered `/<id>-api/` blocks. Matches the
  * order PRD-190 shipped in the hand-written conf so the generator's
  * first run produces a byte-identical (modulo header comment) file.
  */
@@ -122,25 +122,9 @@ function nginxVarName(pillarId: string): string {
   return pillarId.replace(/-/g, '_');
 }
 
-function renderPillarBlockFromUpstream(upstream: PillarUpstream): string {
-  const varName = nginxVarName(upstream.pillarId);
-  return [
-    `    location /trpc-${upstream.pillarId}/ {`,
-    `        rewrite ^/trpc-${upstream.pillarId}/(.*)$ /trpc/$1 break;`,
-    `        set $trpc_${varName}_upstream http://${upstream.host}:${upstream.port};`,
-    `        proxy_pass $trpc_${varName}_upstream;`,
-    `        include /etc/nginx/snippets/_pillar-proxy.conf;`,
-    `    }`,
-  ].join('\n');
-}
-
 function upstreamForId(id: KnownPillarId): PillarUpstream {
   const upstream = PILLAR_UPSTREAMS[id];
   return { pillarId: id, host: upstream.host, port: upstream.port };
-}
-
-function renderPillarBlock(id: KnownPillarId): string {
-  return renderPillarBlockFromUpstream(upstreamForId(id));
 }
 
 /**
@@ -171,24 +155,22 @@ function renderPillarRestBlock(id: KnownPillarId): string {
  * call it without touching the filesystem.
  */
 export function renderNginxConf(order: readonly KnownPillarId[] = PILLAR_RENDER_ORDER): string {
-  const trpcBlocks = order.map(renderPillarBlock).join('\n\n');
   const restBlocks = order.map(renderPillarRestBlock).join('\n\n');
-  return `${NGINX_CONF_HEAD}\n${trpcBlocks}\n\n${NGINX_CONF_REST_INTRO}\n${restBlocks}\n\n${NGINX_CONF_ORCHESTRATOR}\n${NGINX_CONF_TAIL}`;
+  return `${NGINX_CONF_HEAD}\n${NGINX_CONF_REST_INTRO}\n${restBlocks}\n\n${NGINX_CONF_ORCHESTRATOR}\n${NGINX_CONF_TAIL}`;
 }
 
 /**
  * Pure renderer (dynamic mode). Takes an explicit list of upstreams in
  * the order they should appear in the output. Empty input is valid and
- * produces a config with zero `/trpc-<pillar>/` dispatchers (the monolith
- * `/trpc` catch-all is gone after the 02 decommission).
+ * produces a config with zero per-pillar `/<pillar>-api/` REST blocks (the
+ * monolith `/trpc` catch-all is gone after the 02 decommission).
  */
 export function renderNginxConfFromUpstreams(upstreams: readonly PillarUpstream[]): string {
   if (upstreams.length === 0) {
     return `${NGINX_CONF_HEAD}\n${NGINX_CONF_ORCHESTRATOR}\n${NGINX_CONF_TAIL}`;
   }
-  const trpcBlocks = upstreams.map(renderPillarBlockFromUpstream).join('\n\n');
   const restBlocks = upstreams.map(renderPillarRestBlockFromUpstream).join('\n\n');
-  return `${NGINX_CONF_HEAD}\n${trpcBlocks}\n\n${NGINX_CONF_REST_INTRO}\n${restBlocks}\n\n${NGINX_CONF_ORCHESTRATOR}\n${NGINX_CONF_TAIL}`;
+  return `${NGINX_CONF_HEAD}\n${NGINX_CONF_REST_INTRO}\n${restBlocks}\n\n${NGINX_CONF_ORCHESTRATOR}\n${NGINX_CONF_TAIL}`;
 }
 
 /**
