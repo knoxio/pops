@@ -72,12 +72,6 @@ vi.mock('../../store/importStore', () => {
   };
 });
 
-vi.mock('@pops/pillar-sdk/react', () => ({
-  usePillarQuery: () => ({ data: undefined, isLoading: false }),
-  usePillarMutation: () => ({ mutate: vi.fn(), mutateAsync: vi.fn(), isPending: false }),
-  usePillarUtils: () => ({ invalidate: vi.fn(), setData: vi.fn(), fetchQuery: vi.fn() }),
-}));
-
 vi.mock('sonner', () => ({
   toast: {
     success: vi.fn(),

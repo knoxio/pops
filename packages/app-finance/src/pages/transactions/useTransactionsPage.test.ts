@@ -23,12 +23,11 @@ vi.mock('../../finance-api/index.js', () => ({
   transactionsRestore: (...args: unknown[]) => transactionsRestoreMock(...args),
 }));
 
-vi.mock('@pops/pillar-sdk/react', () => ({
-  usePillarQuery: (_pillarId: string, path: readonly string[], input?: unknown) => {
-    const key = path.join('.');
-    if (key === 'entities.list') return entitiesListMock(input);
-    return { data: undefined, isLoading: false };
-  },
+// The entity picker now reads `entities.list` over the generated core REST
+// client; the mock resolves the Hey API `{ data, error }` envelope so the
+// hook's `unwrap` returns the list payload.
+vi.mock('../../core-api/index.js', () => ({
+  entitiesList: (...args: unknown[]) => entitiesListMock(...args),
 }));
 
 vi.mock('sonner', () => ({
@@ -101,13 +100,15 @@ beforeEach(() => {
     data: { data: makeTransaction() },
     error: undefined,
   });
-  entitiesListMock.mockReturnValue({
+  entitiesListMock.mockResolvedValue({
     data: {
       data: [
         { id: 'ent-1', name: 'Woolworths', type: 'company' },
         { id: 'ent-2', name: 'Coles', type: 'company' },
       ],
+      pagination: { total: 2, limit: 500, offset: 0, hasMore: false },
     },
+    error: undefined,
   });
 });
 
@@ -275,6 +276,8 @@ describe('useTransactionsPage — onSubmit (create)', () => {
     const { wrapper } = makeWrapper();
     const { result } = renderHook(() => useTransactionsPage(), { wrapper });
 
+    // Entity-name resolution reads the async core entities list — wait for it.
+    await waitFor(() => expect(result.current.entities).toHaveLength(2));
     act(() => {
       result.current.onSubmit(makeValues({ entityId: 'ent-1' }));
     });
@@ -307,6 +310,8 @@ describe('useTransactionsPage — onSubmit (update)', () => {
     const { wrapper } = makeWrapper();
     const { result } = renderHook(() => useTransactionsPage(), { wrapper });
 
+    // Entity-name resolution reads the async core entities list — wait for it.
+    await waitFor(() => expect(result.current.entities).toHaveLength(2));
     act(() => {
       result.current.handleEdit(makeTransaction({ id: 'txn-42' }));
     });

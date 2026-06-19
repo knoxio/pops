@@ -3,8 +3,8 @@ import { useQuery } from '@tanstack/react-query';
 import { useCallback, useState } from 'react';
 import { useForm } from 'react-hook-form';
 
-import { usePillarQuery } from '@pops/pillar-sdk/react';
-
+import { unwrap as unwrapCore } from '../../core-api-helpers.js';
+import { entitiesList } from '../../core-api/index.js';
 import { unwrap } from '../../finance-api-helpers.js';
 import { transactionsAvailableTags, transactionsList } from '../../finance-api/index.js';
 import {
@@ -16,17 +16,7 @@ import {
 import { useTransactionMutations } from './useTransactionMutations';
 
 const TRANSACTIONS_LIST_INPUT = { limit: 100 } as const;
-
-interface EntityRef {
-  id: string;
-  name: string;
-  type: string;
-}
-
-interface EntitiesListResult {
-  data: EntityRef[];
-  pagination: { total: number };
-}
+const ENTITIES_LIST_INPUT = { limit: 500 } as const;
 
 /**
  * Build the API payload from the form values.
@@ -127,8 +117,9 @@ function useTransactionsPageQueries() {
     queryKey: ['finance', 'transactions', 'availableTags'],
     queryFn: async () => unwrap(await transactionsAvailableTags()),
   });
-  const entitiesQuery = usePillarQuery<EntitiesListResult>('core', ['entities', 'list'], {
-    limit: 500,
+  const entitiesQuery = useQuery({
+    queryKey: ['core', 'entities', 'list', ENTITIES_LIST_INPUT],
+    queryFn: async () => unwrapCore(await entitiesList({ query: ENTITIES_LIST_INPUT })),
   });
   return { query, availableTags: availableTagsData?.tags ?? [], entitiesQuery };
 }

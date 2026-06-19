@@ -1,11 +1,11 @@
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 
-import { usePillarQuery } from '@pops/pillar-sdk/react';
-
+import { unwrap as unwrapCore } from '../../../core-api-helpers.js';
+import { entitiesList } from '../../../core-api/index.js';
 import { unwrap } from '../../../finance-api-helpers.js';
 import { correctionsCreateOrUpdate, correctionsUpdate } from '../../../finance-api/index.js';
 import { DEFAULT_RULE_FORM_VALUES, type RuleFormValues, RuleFormSchema } from './types';
@@ -16,15 +16,7 @@ interface UseRuleFormStateOptions {
   onClose: () => void;
 }
 
-interface RuleEntityRef {
-  id: string;
-  name: string;
-}
-
-interface EntitiesListResult {
-  data: RuleEntityRef[];
-  pagination: { total: number };
-}
+const ENTITIES_LIST_INPUT = { limit: 500 } as const;
 
 interface CreateRulePayload {
   descriptionPattern: string;
@@ -115,7 +107,7 @@ function buildSubmit(
  *
  * The dialog supports both create and edit, backed by the finance REST
  * `corrections.createOrUpdate` / `corrections.update` operations; the entity
- * picker still reads the core `entities.list` over the pillar SDK.
+ * picker reads the core `entities.list` over the generated core REST client.
  * Per PRD-244 Option A, `isSubmitting` aggregates the two mutation `isPending`
  * flags by hand.
  */
@@ -129,8 +121,9 @@ export function useRuleFormState({ onClose }: UseRuleFormStateOptions) {
     defaultValues: DEFAULT_RULE_FORM_VALUES,
   });
   const { createMutation, updateMutation } = useRuleMutations(onClose);
-  const entitiesQuery = usePillarQuery<EntitiesListResult>('core', ['entities', 'list'], {
-    limit: 500,
+  const entitiesQuery = useQuery({
+    queryKey: ['core', 'entities', 'list', ENTITIES_LIST_INPUT],
+    queryFn: async () => unwrapCore(await entitiesList({ query: ENTITIES_LIST_INPUT })),
   });
   const entities = (entitiesQuery.data?.data ?? []).map((e) => ({ id: e.id, name: e.name }));
 

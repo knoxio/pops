@@ -21,18 +21,15 @@ vi.mock('../finance-api/index.js', () => ({
   correctionsPreviewMatches: (...a: unknown[]) => correctionsPreviewMatches(...a),
 }));
 
-// The manual rule-form's entity picker still reads `entities.list` over the
-// core pillar SDK; corrections themselves are now finance REST (mocked above).
-vi.mock('@pops/pillar-sdk/react', () => ({
-  usePillarQuery: (_pillarId: string, path: readonly string[]) => {
-    if (path.join('.') === 'entities.list') {
-      return {
-        data: { data: [], pagination: { total: 0, limit: 500, offset: 0 } },
-        isLoading: false,
-      };
-    }
-    return { data: undefined, isLoading: false };
-  },
+// The manual rule-form's entity picker reads `entities.list` over the
+// generated core REST client; corrections themselves are now finance REST
+// (mocked above). The mock resolves the Hey API `{ data, error }` envelope.
+vi.mock('../core-api/index.js', () => ({
+  entitiesList: () =>
+    Promise.resolve({
+      data: { data: [], pagination: { total: 0, limit: 500, offset: 0, hasMore: false } },
+      error: undefined,
+    }),
 }));
 
 vi.mock('@pops/ui', async () => {

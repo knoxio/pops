@@ -20,16 +20,12 @@ vi.mock('../../finance-api/index.js', () => ({
   }),
 }));
 
-// The entity picker still reads `entities.list` over the core pillar SDK;
-// corrections are finance REST (mocked above) and the proposal dialog itself
-// is stubbed below, so no corrections call escapes this file.
-vi.mock('@pops/pillar-sdk/react', () => ({
-  usePillarQuery: (_pillarId: string, path: readonly string[], ...args: unknown[]) => {
-    if (path.join('.') === 'entities.list') return mockEntitiesQuery(...args);
-    return { data: undefined, isLoading: false };
-  },
-  usePillarMutation: () => ({ mutate: vi.fn(), mutateAsync: vi.fn(), isPending: false }),
-  usePillarUtils: () => ({ invalidate: vi.fn(), setData: vi.fn(), fetchQuery: vi.fn() }),
+// The entity picker reads `entities.list` over the generated core REST client;
+// the mock resolves the Hey API `{ data, error }` envelope so the picker's
+// `unwrap` returns the list payload. Corrections are finance REST (mocked
+// above) and the proposal dialog itself is stubbed below.
+vi.mock('../../core-api/index.js', () => ({
+  entitiesList: (...args: unknown[]) => mockEntitiesQuery(...args),
 }));
 
 const mockToastSuccess = vi.fn();
@@ -355,13 +351,15 @@ beforeEach(() => {
   proposalDialogApproveMode = 'success';
   mockPendingEntities = [];
   mockPendingChangeSets = [];
-  mockEntitiesQuery.mockReturnValue({
+  mockEntitiesQuery.mockResolvedValue({
     data: {
       data: [
         { id: 'ent-1', name: 'Woolworths', type: 'company' },
         { id: 'ent-2', name: 'Coles', type: 'company' },
       ],
+      pagination: { total: 2, limit: 100, offset: 0, hasMore: false },
     },
+    error: undefined,
   });
   // Default: AI analysis returns null (fallback to contains pattern)
   mockAnalyzeCorrectionMutateAsync.mockResolvedValue({ data: null });
@@ -629,13 +627,15 @@ describe('ReviewStep — low-confidence confirmation flow', () => {
     const tx = makeTx('SPOTIFY PREMIUM', {
       entity: { entityId: 'ent-3', entityName: 'Spotify', matchType: 'ai', confidence: 0.6 },
     });
-    mockEntitiesQuery.mockReturnValue({
+    mockEntitiesQuery.mockResolvedValue({
       data: {
         data: [
           { id: 'ent-1', name: 'Woolworths', type: 'company' },
           { id: 'ent-3', name: 'Spotify', type: 'company' },
         ],
+        pagination: { total: 2, limit: 100, offset: 0, hasMore: false },
       },
+      error: undefined,
     });
     mockProcessedTransactions = {
       matched: [],
@@ -681,10 +681,12 @@ describe('ReviewStep — low-confidence confirmation flow', () => {
     const tx2 = makeTx('SPOTIFY FAMILY PLAN', {
       entity: { entityId: 'ent-3', entityName: 'Spotify', matchType: 'ai', confidence: 0.5 },
     });
-    mockEntitiesQuery.mockReturnValue({
+    mockEntitiesQuery.mockResolvedValue({
       data: {
         data: [{ id: 'ent-3', name: 'Spotify', type: 'company' }],
+        pagination: { total: 1, limit: 100, offset: 0, hasMore: false },
       },
+      error: undefined,
     });
     mockProcessedTransactions = {
       matched: [],
@@ -707,10 +709,12 @@ describe('ReviewStep — low-confidence confirmation flow', () => {
     const tx = makeTx('SPOTIFY PREMIUM', {
       entity: { entityId: 'ent-3', entityName: 'Spotify', matchType: 'ai', confidence: 0.4 },
     });
-    mockEntitiesQuery.mockReturnValue({
+    mockEntitiesQuery.mockResolvedValue({
       data: {
         data: [{ id: 'ent-3', name: 'Spotify', type: 'company' }],
+        pagination: { total: 1, limit: 100, offset: 0, hasMore: false },
       },
+      error: undefined,
     });
     mockProcessedTransactions = { matched: [], uncertain: [tx], failed: [], skipped: [] };
     render(reviewStepTree());
