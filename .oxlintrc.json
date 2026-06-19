@@ -360,7 +360,9 @@
         "packages/app-*/src/**/*.gen.ts",
         "packages/app-*/src/*-api/**/*.{ts,tsx}",
         "packages/overlay-*/src/**/*.gen.ts",
-        "packages/overlay-*/src/*-api/**/*.{ts,tsx}"
+        "packages/overlay-*/src/*-api/**/*.{ts,tsx}",
+        "apps/pops-shell/src/**/*.gen.ts",
+        "apps/pops-shell/src/*-api/**/*.{ts,tsx}"
       ],
       "rules": {
         "max-lines": "off",

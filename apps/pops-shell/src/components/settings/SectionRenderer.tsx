@@ -1,23 +1,42 @@
+import { settingsGetMany, settingsSetMany } from '@/core-api';
+import { unwrap } from '@/core-api-helpers';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useMemo } from 'react';
 
-import { usePillarMutation, usePillarQuery } from '@pops/pillar-sdk/react';
 import { Skeleton } from '@pops/ui';
 
 import { GroupRenderer } from './section-renderer/GroupRenderer';
 import { useAutoSave } from './section-renderer/useAutoSave';
 import { useDynamicOptions } from './section-renderer/useDynamicOptions';
+import { useDynamicOptionsLoaders } from './section-renderer/useDynamicOptionsLoaders';
 import { useSettingsValues } from './section-renderer/useSettingsValues';
-import { useTrpcOptionsLoaders } from './section-renderer/useTrpcOptionsLoaders';
 
 import type { SettingsManifest } from '@pops/types';
 
-type GetBulkResult = { settings: Record<string, string> };
-type SetBulkInput = { entries: { key: string; value: string }[] };
-type SetBulkResult = { settings: Record<string, string> };
-
+/**
+ * Reads and writes the section's settings over core's REST surface
+ * (`settings.getMany` / `settings.setMany`). Both round-trip the
+ * `{ settings: Record<string, string> }` shape `useSettingsValues` and
+ * `useAutoSave` expect. The setter invalidates the matching `getMany` query
+ * so the loaded baseline reflects the saved value.
+ */
 function useBulkSettings(allKeys: string[]) {
-  const query = usePillarQuery<GetBulkResult>('core', ['settings', 'getBulk'], { keys: allKeys });
-  const mutation = usePillarMutation<SetBulkInput, SetBulkResult>('core', ['settings', 'setBulk']);
+  const queryClient = useQueryClient();
+  const queryKey = ['core', 'settings', 'getMany', allKeys] as const;
+
+  const query = useQuery({
+    queryKey,
+    queryFn: async () => unwrap(await settingsGetMany({ body: { keys: allKeys } })),
+  });
+
+  const mutation = useMutation({
+    mutationFn: async (input: { entries: { key: string; value: string }[] }) =>
+      unwrap(await settingsSetMany({ body: { entries: input.entries } })),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['core', 'settings', 'getMany'] });
+    },
+  });
+
   return { query, mutation };
 }
 
@@ -54,13 +73,13 @@ export function SectionRenderer({ manifest, optionsLoaders, onTestAction }: Sect
   );
 
   const { query: bulkQuery, mutation: setBulkMutation } = useBulkSettings(allKeys);
-  const { data, isLoading, isUnavailable, isContractMismatch } = bulkQuery;
+  const { data, isLoading } = bulkQuery;
 
   const { values, setValues, loadedKeys } = useSettingsValues({ data, manifest });
-  const trpcLoaders = useTrpcOptionsLoaders(manifest);
+  const dynamicLoaders = useDynamicOptionsLoaders(manifest);
   const mergedLoaders = useMemo(
-    () => (optionsLoaders ? { ...trpcLoaders, ...optionsLoaders } : trpcLoaders),
-    [trpcLoaders, optionsLoaders]
+    () => (optionsLoaders ? { ...dynamicLoaders, ...optionsLoaders } : dynamicLoaders),
+    [dynamicLoaders, optionsLoaders]
   );
   const { dynamicOptions, loadingOptionKeys } = useDynamicOptions(
     Object.keys(mergedLoaders).length > 0 ? mergedLoaders : undefined
@@ -78,7 +97,11 @@ export function SectionRenderer({ manifest, optionsLoaders, onTestAction }: Sect
     [onTestAction]
   );
 
-  if (isLoading && !isUnavailable && !isContractMismatch) {
+  // `isLoading` is true only on the genuine first fetch; a failed load (pillar
+  // unavailable / drifted contract) reports `isError` instead, so we fall
+  // through and render the groups with their static defaults rather than hang
+  // on a skeleton.
+  if (isLoading) {
     return (
       <div className="space-y-3">
         <Skeleton className="h-32 w-full" />

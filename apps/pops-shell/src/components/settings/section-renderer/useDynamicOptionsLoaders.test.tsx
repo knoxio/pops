@@ -18,7 +18,7 @@ vi.mock('@pops/pillar-sdk/react', () => ({
   usePillarSdkOptions: () => ({}),
 }));
 
-import { useTrpcOptionsLoaders } from './useTrpcOptionsLoaders';
+import { useDynamicOptionsLoaders } from './useDynamicOptionsLoaders';
 
 function getLoader(
   loaders: Record<string, () => Promise<{ value: string; label: string }[]>>,
@@ -55,14 +55,14 @@ function manifestWithLoader(
   };
 }
 
-describe('useTrpcOptionsLoaders', () => {
+describe('useDynamicOptionsLoaders', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   it('returns no loaders for fields without optionsLoader', () => {
     const { result } = renderHook(() =>
-      useTrpcOptionsLoaders({
+      useDynamicOptionsLoaders({
         id: 'test',
         title: 'Test',
         order: 0,
@@ -79,7 +79,9 @@ describe('useTrpcOptionsLoaders', () => {
   });
 
   it('builds one loader per optionsLoader field, keyed by field.key', () => {
-    const { result } = renderHook(() => useTrpcOptionsLoaders(manifestWithLoader('media.arr.x')));
+    const { result } = renderHook(() =>
+      useDynamicOptionsLoaders(manifestWithLoader('media.arr.x'))
+    );
     expect(Object.keys(result.current)).toEqual(['library']);
   });
 
@@ -87,7 +89,7 @@ describe('useTrpcOptionsLoaders', () => {
     mocks.callDynamic.mockResolvedValue({ kind: 'ok', value: { data: [] } });
 
     const { result } = renderHook(() =>
-      useTrpcOptionsLoaders(manifestWithLoader('media.arr.getRootFolders'))
+      useDynamicOptionsLoaders(manifestWithLoader('media.arr.getRootFolders'))
     );
 
     await getLoader(result.current, 'library')();
@@ -113,7 +115,7 @@ describe('useTrpcOptionsLoaders', () => {
     });
 
     const { result } = renderHook(() =>
-      useTrpcOptionsLoaders(manifestWithLoader('media.arr.getRootFolders', 'path', 'path'))
+      useDynamicOptionsLoaders(manifestWithLoader('media.arr.getRootFolders', 'path', 'path'))
     );
 
     const options = await getLoader(result.current, 'library')();
@@ -131,7 +133,7 @@ describe('useTrpcOptionsLoaders', () => {
     });
 
     const { result } = renderHook(() =>
-      useTrpcOptionsLoaders(manifestWithLoader('media.arr.getQualityProfiles'))
+      useDynamicOptionsLoaders(manifestWithLoader('media.arr.getQualityProfiles'))
     );
 
     const options = await getLoader(result.current, 'library')();
@@ -142,13 +144,13 @@ describe('useTrpcOptionsLoaders', () => {
   it('returns an empty list when the envelope has no data field', async () => {
     mocks.callDynamic.mockResolvedValue({ kind: 'ok', value: {} });
 
-    const { result } = renderHook(() => useTrpcOptionsLoaders(manifestWithLoader('p.r.x')));
+    const { result } = renderHook(() => useDynamicOptionsLoaders(manifestWithLoader('p.r.x')));
 
     await expect(getLoader(result.current, 'library')()).resolves.toEqual([]);
   });
 
   it('throws when the procedure path is malformed', async () => {
-    const { result } = renderHook(() => useTrpcOptionsLoaders(manifestWithLoader('only.two')));
+    const { result } = renderHook(() => useDynamicOptionsLoaders(manifestWithLoader('only.two')));
 
     await expect(getLoader(result.current, 'library')()).rejects.toThrow(
       'Cannot call procedure: only.two'
@@ -159,7 +161,9 @@ describe('useTrpcOptionsLoaders', () => {
   it('throws when the pillar is unavailable', async () => {
     mocks.callDynamic.mockResolvedValue({ kind: 'unavailable', pillar: 'media' });
 
-    const { result } = renderHook(() => useTrpcOptionsLoaders(manifestWithLoader('media.arr.x')));
+    const { result } = renderHook(() =>
+      useDynamicOptionsLoaders(manifestWithLoader('media.arr.x'))
+    );
 
     await expect(getLoader(result.current, 'library')()).rejects.toThrow(
       "Pillar 'media' is unavailable"
@@ -173,7 +177,9 @@ describe('useTrpcOptionsLoaders', () => {
       reason: 'reconciling',
     });
 
-    const { result } = renderHook(() => useTrpcOptionsLoaders(manifestWithLoader('media.arr.x')));
+    const { result } = renderHook(() =>
+      useDynamicOptionsLoaders(manifestWithLoader('media.arr.x'))
+    );
 
     await expect(getLoader(result.current, 'library')()).rejects.toThrow(
       "Pillar 'media' is degraded (reconciling)"
@@ -187,7 +193,9 @@ describe('useTrpcOptionsLoaders', () => {
       actual: 'arr.x',
     });
 
-    const { result } = renderHook(() => useTrpcOptionsLoaders(manifestWithLoader('media.arr.x')));
+    const { result } = renderHook(() =>
+      useDynamicOptionsLoaders(manifestWithLoader('media.arr.x'))
+    );
 
     await expect(getLoader(result.current, 'library')()).rejects.toThrow(
       'Cannot call procedure: media.arr.x'

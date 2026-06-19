@@ -18,9 +18,11 @@
     "gen:nginx:check": "tsx scripts/generate-nginx-conf.ts --check",
     "gen:nginx:dynamic": "tsx scripts/generate-nginx-conf.ts --dynamic",
     "gen:nginx:watch": "tsx scripts/watch-registry-and-reload-cli.ts",
-    "registry:register": "tsx scripts/register-with-registry.ts"
+    "registry:register": "tsx scripts/register-with-registry.ts",
+    "generate:core-client": "openapi-ts && oxfmt --write src/core-api"
   },
   "dependencies": {
+    "@hey-api/client-fetch": "^0.13.1",
     "@pops/app-ai": "workspace:*",
     "@pops/app-cerebrum": "workspace:*",
     "@pops/app-finance": "workspace:*",
@@ -47,6 +49,7 @@
     "zustand": "5.0.14"
   },
   "devDependencies": {
+    "@hey-api/openapi-ts": "^0.98.2",
     "@playwright/test": "^1.60.0",
     "@tanstack/react-query-devtools": "^5.101.0",
     "@testing-library/jest-dom": "^6.9.1",

@@ -1,24 +1,28 @@
-import { renderHook } from '@testing-library/react';
+import { CoreApiError } from '@/core-api-helpers';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { renderHook, waitFor } from '@testing-library/react';
+import { createElement, type ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
-  query: vi.fn(),
+  isEnabled: vi.fn(),
 }));
 
-vi.mock('@pops/pillar-sdk/react', () => ({
-  usePillarQuery: (pillarId: string, path: readonly string[], input: unknown) =>
-    mocks.query({ pillarId, path: [...path], input }),
+vi.mock('@/core-api', () => ({
+  featuresIsEnabled: (...args: unknown[]) => mocks.isEnabled(...args),
 }));
 
 import { useFeatureEnabled } from './use-feature-enabled';
 
-function queryResult(extra: Record<string, unknown>) {
-  return {
-    data: undefined,
-    isUnavailable: false,
-    isContractMismatch: false,
-    ...extra,
-  };
+function wrapper() {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return ({ children }: { children: ReactNode }) =>
+    createElement(QueryClientProvider, { client }, children);
+}
+
+/** Resolves the Hey API `{ data }` envelope the SDK functions return. */
+function ok(enabled: boolean) {
+  return Promise.resolve({ data: { enabled } });
 }
 
 describe('useFeatureEnabled', () => {
@@ -26,37 +30,36 @@ describe('useFeatureEnabled', () => {
     vi.clearAllMocks();
   });
 
-  it('queries core.features.isEnabled with the supplied key', () => {
-    mocks.query.mockReturnValue(queryResult({}));
-    renderHook(() => useFeatureEnabled('plex-importer'));
-    expect(mocks.query).toHaveBeenCalledWith({
-      pillarId: 'core',
-      path: ['features', 'isEnabled'],
-      input: { key: 'plex-importer' },
-    });
+  it('queries core.features.isEnabled with the supplied key', async () => {
+    mocks.isEnabled.mockReturnValue(ok(true));
+    const { result } = renderHook(() => useFeatureEnabled('plex-importer'), { wrapper: wrapper() });
+    await waitFor(() => expect(result.current).toBe(true));
+    expect(mocks.isEnabled).toHaveBeenCalledWith({ path: { key: 'plex-importer' } });
   });
 
   it('returns the fallback while the query has no data', () => {
-    mocks.query.mockReturnValue(queryResult({}));
-    const { result } = renderHook(() => useFeatureEnabled('plex', true));
+    mocks.isEnabled.mockReturnValue(new Promise(() => undefined));
+    const { result } = renderHook(() => useFeatureEnabled('plex', true), { wrapper: wrapper() });
     expect(result.current).toBe(true);
   });
 
-  it('returns the SDK boolean once the query resolves', () => {
-    mocks.query.mockReturnValue(queryResult({ data: { enabled: true } }));
-    const { result } = renderHook(() => useFeatureEnabled('plex'));
-    expect(result.current).toBe(true);
+  it('returns the SDK boolean once the query resolves', async () => {
+    mocks.isEnabled.mockReturnValue(ok(true));
+    const { result } = renderHook(() => useFeatureEnabled('plex'), { wrapper: wrapper() });
+    await waitFor(() => expect(result.current).toBe(true));
   });
 
-  it('falls back when the SDK reports the core pillar unavailable', () => {
-    mocks.query.mockReturnValue(queryResult({ isUnavailable: true, data: { enabled: true } }));
-    const { result } = renderHook(() => useFeatureEnabled('plex', false));
+  it('falls back when the core pillar is unavailable (5xx)', async () => {
+    mocks.isEnabled.mockResolvedValue({ error: { message: 'boom' }, response: { status: 503 } });
+    const { result } = renderHook(() => useFeatureEnabled('plex', false), { wrapper: wrapper() });
+    await waitFor(() => expect(mocks.isEnabled).toHaveBeenCalled());
     expect(result.current).toBe(false);
   });
 
-  it('falls back when the SDK reports a contract mismatch', () => {
-    mocks.query.mockReturnValue(queryResult({ isContractMismatch: true, data: { enabled: true } }));
-    const { result } = renderHook(() => useFeatureEnabled('plex', false));
+  it('falls back when the feature key is unknown (404)', async () => {
+    mocks.isEnabled.mockRejectedValue(new CoreApiError('not found', 404));
+    const { result } = renderHook(() => useFeatureEnabled('ghost', false), { wrapper: wrapper() });
+    await waitFor(() => expect(mocks.isEnabled).toHaveBeenCalled());
     expect(result.current).toBe(false);
   });
 });

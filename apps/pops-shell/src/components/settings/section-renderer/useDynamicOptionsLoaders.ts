@@ -10,15 +10,15 @@ type Loaders = Record<string, () => Promise<Options>>;
 
 /**
  * Builds per-field option loaders for `select` settings whose options come
- * from a runtime procedure. The procedure string is supplied by manifest
- * data in the shape `pillarId.routerName.procName`, which is why the SDK's
- * typed proxy can't be used directly here — `pillar(id).callDynamic(router,
- * proc, input)` (PRD-204 + PR #3131) is the supported escape hatch.
+ * from a runtime procedure. The procedure string is supplied by manifest data
+ * at runtime in the shape `pillarId.routerName.procName`, so a generated
+ * per-pillar client can't express the call — the path isn't known at build
+ * time. This stays on the generic REST SDK escape hatch
+ * `pillar(id).callDynamic(router, proc, input)` (PRD-204 + PR #3131).
  *
- * The procedure is expected to return `{ data: Record<string, unknown>[] }`
- * (the same envelope the legacy tRPC traversal expected).
+ * The procedure is expected to return `{ data: Record<string, unknown>[] }`.
  */
-export function useTrpcOptionsLoaders(manifest: SettingsManifest): Loaders {
+export function useDynamicOptionsLoaders(manifest: SettingsManifest): Loaders {
   const sdkOptions = usePillarSdkOptions();
   const sdkOptionsRef = useRef(sdkOptions);
   sdkOptionsRef.current = sdkOptions;

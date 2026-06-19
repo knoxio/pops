@@ -1,4 +1,10 @@
-import { usePillarMutation } from '@pops/pillar-sdk/react';
+import {
+  featuresClearUserPreference,
+  featuresSetEnabled,
+  featuresSetUserPreference,
+} from '@/core-api';
+import { unwrap } from '@/core-api-helpers';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import type { FeatureStatus } from '@pops/types';
 
@@ -9,32 +15,43 @@ interface FeatureToggleHandlers {
   pending: boolean;
 }
 
-type SetEnabledInput = { key: string; enabled: boolean };
-type SetEnabledResult = { enabled: boolean };
-type ClearPreferenceInput = { key: string };
-type ClearPreferenceResult = { cleared: boolean };
-
 /**
- * Bundles the SDK mutations a feature card needs (system enable, per-user
+ * Bundles the core mutations a feature card needs (system enable, per-user
  * override, user override clear) so the card stays small.
  *
- * `usePillarMutation` auto-invalidates the `[core, features]` router prefix
- * on success — that covers `features.list`, `features.getManifests`, and
- * `features.isEnabled`, so no manual `utils.*.invalidate()` is required.
+ * Each mutation invalidates the `['core', 'features']` query prefix on success
+ * — that covers `features.list`, `features.getManifests`, and the per-key
+ * `features.isEnabled` gates, mirroring the router-prefix invalidation the
+ * legacy `usePillarMutation` did automatically.
  */
 export function useFeatureMutations(feature: FeatureStatus): FeatureToggleHandlers {
-  const setEnabled = usePillarMutation<SetEnabledInput, SetEnabledResult>('core', [
-    'features',
-    'setEnabled',
-  ]);
-  const setUserPreference = usePillarMutation<SetEnabledInput, SetEnabledResult>('core', [
-    'features',
-    'setUserPreference',
-  ]);
-  const clearUserPreference = usePillarMutation<ClearPreferenceInput, ClearPreferenceResult>(
-    'core',
-    ['features', 'clearUserPreference']
-  );
+  const queryClient = useQueryClient();
+  const invalidateFeatures = () => {
+    void queryClient.invalidateQueries({ queryKey: ['core', 'features'] });
+  };
+
+  const setEnabled = useMutation({
+    mutationFn: async (input: { key: string; enabled: boolean }) =>
+      unwrap(
+        await featuresSetEnabled({ path: { key: input.key }, body: { enabled: input.enabled } })
+      ),
+    onSuccess: invalidateFeatures,
+  });
+  const setUserPreference = useMutation({
+    mutationFn: async (input: { key: string; enabled: boolean }) =>
+      unwrap(
+        await featuresSetUserPreference({
+          path: { key: input.key },
+          body: { enabled: input.enabled },
+        })
+      ),
+    onSuccess: invalidateFeatures,
+  });
+  const clearUserPreference = useMutation({
+    mutationFn: async (input: { key: string }) =>
+      unwrap(await featuresClearUserPreference({ path: { key: input.key }, body: {} })),
+    onSuccess: invalidateFeatures,
+  });
 
   const toggle = (checked: boolean) => {
     if (feature.scope === 'user') {

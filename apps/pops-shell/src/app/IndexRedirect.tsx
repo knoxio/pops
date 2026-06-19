@@ -1,6 +1,7 @@
+import { shellManifest } from '@/core-api';
+import { unwrap } from '@/core-api-helpers';
+import { useQuery } from '@tanstack/react-query';
 import { Navigate } from 'react-router';
-
-import { usePillarQuery } from '@pops/pillar-sdk/react';
 
 import { registeredApps } from './nav/registry';
 
@@ -14,24 +15,19 @@ import { registeredApps } from './nav/registry';
  * because finance carries the lowest `nav.order` (10) in the workspace
  * bundle map.
  */
-type ShellManifest = {
-  apps: readonly string[];
-  overlays: readonly string[];
-};
-
 export function IndexRedirect() {
-  const { data, isUnavailable, isContractMismatch } = usePillarQuery<ShellManifest>(
-    'core',
-    ['shell', 'manifest'],
-    undefined,
-    { staleTime: Infinity }
-  );
+  const { data } = useQuery({
+    queryKey: ['core', 'shell', 'manifest'],
+    queryFn: async () => unwrap(await shellManifest()),
+    staleTime: Infinity,
+  });
 
   // Manifest hasn't loaded yet, the pillar is unreachable, or the contract
-  // shape has drifted — optimistically pick the historical default so the
-  // URL change is instant. The router's catch-all (`UnmatchedRoute`) will
-  // flip to NotInstalledPage if finance turns out to be absent.
-  if (!data || isUnavailable || isContractMismatch) {
+  // shape has drifted — `data` is undefined on any of those (the query errors
+  // on a failed fetch). Optimistically pick the historical default so the URL
+  // change is instant. The router's catch-all (`UnmatchedRoute`) will flip to
+  // NotInstalledPage if finance turns out to be absent.
+  if (!data) {
     return <Navigate to="/finance" replace />;
   }
 
