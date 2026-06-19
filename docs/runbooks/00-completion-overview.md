@@ -11,8 +11,7 @@ that stayed central are kept here as `DEPRECATED_*.md` for history.
 A finished lake has **no monolith and no shared anything**. Concretely:
 
 1. **No monolith.** `apps/pops-api` and the `apps/pops-core-api` predecessor are deleted.
-   No `apps/pops-*-api` service remains (the one open question is `pops-ha-bridge-api` —
-   see below).
+   No `apps/pops-*-api` service remains (`pops-ha-bridge-api` deleted — not in use).
 2. **Seven clean pillars.** Each `pillars/<x>/` owns its DB (`src/db`, its own sqlite),
    serves a **ts-rest** contract (`src/contract`) built from **zod** schemas, projects an
    **honest OpenAPI** doc (`openapi/<x>.openapi.json`, generated, idempotent), generates
@@ -33,7 +32,7 @@ The migration is done when **all** of these pass from a clean checkout of `main`
 | #   | Check                           | Command / signal                                                                                                                                                                                                              |
 | --- | ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | G1  | No tRPC anywhere in source      | `rg -n -e '@trpc/' -e 'initTRPC' -e 'createTRPCRouter' -e 'Procedure\b' -e 'createTRPCReact' -e 'httpBatchLink' -e 'splitLink' -e 'usePillar' -e 'TRPC_PILLARS' -e 'AnyTRPCRouter' -e '/trpc' --glob '!docs/**'` → **0 hits** |
-| G2  | No monolith / predecessors      | `apps/pops-api`, `apps/pops-core-api` do not exist; `ls apps/` shows no `pops-*-api` (modulo ha-bridge decision)                                                                                                              |
+| G2  | No monolith / predecessors      | `apps/pops-api`, `apps/pops-core-api` do not exist; `ls apps/` shows no `pops-*-api`                                                                                                                                          |
 | G3  | No shared DB                    | `rg -n "getDrizzle\|getDb\(\|pops\.db\|backfill.*from.shared\|-handle\.(ts\|js)" --type ts --glob '!**/*.test.ts'` → **0 hits**                                                                                               |
 | G4  | Repo-wide typecheck green       | `pnpm typecheck` green **repo-wide** (the "monolith is red-by-design" exception is gone once the monolith is gone)                                                                                                            |
 | G5  | Boundaries enforced & in sync   | `pnpm lint:boundaries:verify` green; a `no-dead-<x>-pkgs` ban exists for **all 7** pillars (incl. core); the known-violations baseline is **empty**                                                                           |
@@ -130,12 +129,13 @@ moltbot/worker-food consumer rewrites ([#3460](https://github.com/knoxio/pops/is
 - When the dep-cruiser baseline / `pnpm-lock.yaml` / shared routing files conflict, **rebase and
   regenerate** — never hand-merge.
 
-## Open question — `apps/pops-ha-bridge-api`
+## Resolved decisions
 
-`pops-ha-bridge-api` (Home Assistant WebSocket bridge, port 3008, 36 src files) is live but is
-**not** one of the 7 target pillars and has no `pillars/ha-bridge`. Decide before `02`:
-
-- **Keep** as a deliberate standalone service (then it is out of scope and `02`'s "no `pops-*-api`"
-  gate is amended to exclude it), **or**
-- **Collapse** it into a `pillars/ha-bridge/` pillar (then it gets its own mini-runbook mirroring
-  the leaf recipe). This plan assumes **keep-standalone** until decided.
+- **`apps/pops-ha-bridge-api` — DELETED** (not in use). Removed the app + `@pops/ha-bridge-db`
+  (no importers, not in compose/nginx/CI). G2's "no `apps/pops-*-api`" now holds with no exception.
+  The pillar-finale PRDs that plan ha-bridge work (229, 237, epic 13) are left as future plans.
+- **PRD-255 dynamic-nginx + the static-pillar-lists cleanup (`06-static-pillar-lists.md`) are
+  POST-RELEASE.** Prod ships static nginx (works for the 7); the "add-a-pillar-auto-routes"
+  invariant is deferred until after the current release.
+- **wire-format-v2** — the v1 spec + conformance harness are tRPC-shaped and now obsolete (the lake
+  is REST-only); to be done-or-dropped (owner's discretion), tracked separately.
