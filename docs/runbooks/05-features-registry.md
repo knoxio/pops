@@ -42,15 +42,22 @@ user override → system value → `default`. `FeatureStatus.state` ∈ `enabled
 
 ## The crux — two cross-pillar pieces
 
-### 1. Manifest aggregation (straightforward — the mechanism exists)
+### 1. Manifest aggregation — registry-driven, **no static pillar list**
 
-The monolith read `installedManifests().flatMap(m => m.features)`. The pillar-world equivalent is
-**`@pops/module-registry`**, which already aggregates every pillar's `ModuleManifest`. So:
+The monolith read `installedManifests().flatMap(m => m.features)` from a build-time module list.
+**Do NOT replace it with `@pops/module-registry`** — `KNOWN_MODULES`/`MODULES` are hand-listed in
+`scripts/known-modules.ts` and regenerated; adding a pillar there is exactly the static-list edit this
+project forbids. Source features from the **runtime core registry** instead:
 
-- Each pillar declares its features in its `ModuleManifest.features` slot (static `FeatureManifest`).
-- The core features service reads the aggregated set from `@pops/module-registry` (`MODULES.flatMap(m => m.features ?? [])`) instead of the deleted `installed-modules.js`.
+- Each pillar declares its features in its `ModuleManifest.features` slot, which it **already
+  self-reports** to the core registry on register/heartbeat (`RegisterInputSchema.manifest` carries the
+  full manifest today).
+- Core's features service aggregates from the **live registry snapshot** (the manifests registered
+  pillars sent), not any build-time list.
 
-This is data + a new read source. No runtime cross-pillar calls.
+**Self-registration invariant: a pillar joins the network → registers with its manifest → its features
+appear automatically. No pillar list, no `known-modules.ts` edit, no regen.** This epic adds zero static
+pillar enumerations.
 
 ### 2. Capability probes (the genuinely-new design)
 
@@ -74,10 +81,10 @@ carries per-pillar liveness.
 
 | #      | Slice                                                      | Parallel? | What                                                                                                                                                                                                                                                                                                                  |
 | ------ | ---------------------------------------------------------- | --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **S1** | features service → `pillars/core/src/api/modules/features` | — (first) | Port `service.ts` + `user-settings`/`credentials`/`errors`; source manifests from `@pops/module-registry`; flags→`settings`, prefs→`user_settings`. Capability resolution stubbed to core-local for now.                                                                                                              |
+| **S1** | features service → `pillars/core/src/api/modules/features` | — (first) | Port `service.ts` + `user-settings`/`credentials`/`errors`; source manifests from the **runtime registry snapshot** (self-reported on register/heartbeat), NOT `@pops/module-registry`; flags→`settings`, prefs→`user_settings`. Capability resolution stubbed to core-local for now.                                 |
 | **S2** | ts-rest `features.*` contract + handlers + identity        | after S1  | `rest-features.ts` (6 ops), handler factories over S1's service, `x-pops-user`→`ctx.user` (reuse core's middleware), `generate:openapi` (adds `features.*`), `api-types`.                                                                                                                                             |
 | **S3** | capability registry mechanism                              | ∥ with S4 | Declarative `capability:{pillar,key}`; extend pillar register/heartbeat to report capability flags; core resolves against the registry snapshot. (Or v1-defer per the decision above.)                                                                                                                                |
-| **S4** | declare feature manifests in pillar `ModuleManifest`s      | ∥ with S3 | Move the capability/feature declarations into the owning pillars' manifests (`core.redis`→core, `cerebrum.vectorSearch`→cerebrum, app features→their pillars); regen `module-registry`.                                                                                                                               |
+| **S4** | declare feature manifests in pillar `ModuleManifest`s      | ∥ with S3 | Move the capability/feature declarations into the owning pillars' `ModuleManifest`s (`core.redis`→core, `cerebrum.vectorSearch`→cerebrum, app features→their pillars) — each pillar **self-reports** them to the runtime registry on register; no static `module-registry` regen for features.                        |
 | **S5** | shell conversion + bug fix + hook retirement               | after S2  | Convert the shell's 6 `usePillar*` files (features + `settings.getBulk`→**`getMany`** + `setBulk`→**`setMany`** + `shell.manifest`) to the `core-api` Hey client; keep the generic `callDynamic` loaders (rename `useTrpcOptionsLoaders.ts`); delete the now-unused pillar-sdk `usePillarQuery/Mutation/Utils` hooks. |
 
 S1→S2→S5 is the critical path; S3 ∥ S4 fill in the registry. A **v1 cut** (core-local capabilities,
