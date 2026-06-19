@@ -10,12 +10,12 @@ never heard of while in-repo call sites keep their compile-time typo safety.
 
 ## Acceptance Criteria
 
-- [ ] `@pops/pillar-sdk` exports `type PillarId = string` (a documented alias) alongside the existing `KnownPillarId`; JSDoc states which tier each is for.
-- [ ] `KnownPillarId`, `PILLARS`, and `isKnownPillarId(id: string): id is KnownPillarId` are unchanged in shape and still exported.
-- [ ] The capability projection from [PRD-160](../160-capability-projection-types/README.md) is unchanged: `pillar<P extends KnownPillarId>()` still rejects an unknown literal at compile time. The open path for unknown ids is the explicit string/`callDynamic` overload ([PRD-242](../242-dynamic-approuter/README.md)), not an accidental widening of the typed projection.
-- [ ] A short doc (SDK README section or `capabilities/` module doc) records the rule: closed union on `PILLAR_UPSTREAMS` + `MODULE_PARENT_PILLAR` + typed `pillar()`; open `PillarId` on registry/routing/nav.
-- [ ] No `as any`, `as unknown as`, or `eslint-disable` is introduced. Narrowing `PillarId → KnownPillarId` is only ever via `isKnownPillarId`.
-- [ ] `pnpm typecheck` green repo-wide.
+- [x] `@pops/pillar-sdk` exports `type PillarId = string` (a documented alias) alongside the existing `KnownPillarId`; JSDoc states which tier each is for.
+- [x] `KnownPillarId`, `PILLARS`, and `isKnownPillarId(id: string): id is KnownPillarId` are unchanged in shape and still exported.
+- [x] The capability projection from [PRD-160](../160-capability-projection-types/README.md) is unchanged: `pillar<P extends KnownPillarId>()` still rejects an unknown literal at compile time. The open path for unknown ids is the explicit string/`callDynamic` overload ([PRD-242](../242-dynamic-approuter/README.md)), not an accidental widening of the typed projection.
+- [x] A short doc (SDK README section or `capabilities/` module doc) records the rule: closed union on `PILLAR_UPSTREAMS` + `MODULE_PARENT_PILLAR` + typed `pillar()`; open `PillarId` on registry/routing/nav.
+- [x] No `as any`, `as unknown as`, or `eslint-disable` is introduced. Narrowing `PillarId → KnownPillarId` is only ever via `isKnownPillarId`.
+- [x] `pnpm typecheck` green repo-wide.
 
 ## Notes
 

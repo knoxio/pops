@@ -5,7 +5,16 @@
  * import from here without creating circular dependencies.
  */
 
-/** Known app identifiers. */
+import type { PillarId } from '@pops/pillar-sdk';
+
+/**
+ * Built-in app identifiers backing the shell's finite default-route table
+ * (`APP_BASE_PATHS` / `detectApp` in `AppContextProvider`). This stays a
+ * closed union because the path→app mapping is an in-repo fact the build
+ * owns. The *active-surface* id is the open `PillarId` (see `AppContext.app`):
+ * a registry-discovered pillar can be the active app even though it is not a
+ * built-in here (PRD-256 / PRD-243).
+ */
 export type AppName = 'finance' | 'food' | 'lists' | 'media' | 'inventory' | 'ai' | 'cerebrum';
 
 /**
@@ -70,8 +79,8 @@ export interface AppContextEntity {
  * are applied.
  */
 export interface AppContext {
-  /** Active app, or null at root / or unmatched paths. */
-  app: AppName | null;
+  /** Active app/nav surface, or null at root / unmatched paths. Open to any registry-discovered pillar. */
+  app: PillarId | null;
   /** Current page identifier set by the active page component, or null. */
   page: string | null;
   /** Whether the current page is a top-level list/dashboard or a drill-down detail view. */

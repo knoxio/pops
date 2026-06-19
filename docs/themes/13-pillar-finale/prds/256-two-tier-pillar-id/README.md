@@ -2,7 +2,7 @@
 
 > Epic: [Pillar SDK](../../epics/01-pillar-sdk.md)
 >
-> Status: Not started
+> Status: In progress
 
 ## Overview
 
@@ -68,11 +68,11 @@ that is additive.)
 
 ## User Stories
 
-| #   | Story                                                             | Summary                                                                                                                                                                                      | Parallelisable     |
-| --- | ----------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ |
-| 01  | [us-01-introduce-open-pillarid](us-01-introduce-open-pillarid.md) | Add `PillarId = string` to `@pops/pillar-sdk`; document the two-tier rule; keep `KnownPillarId` + `isKnownPillarId`. Reconcile with PRD-160 (typed projection unchanged).                    | Yes — foundational |
-| 02  | [us-02-open-routing-surfaces](us-02-open-routing-surfaces.md)     | Route the nginx generator's registry/render surfaces onto `PillarId`; unknown ids append to render order; `PILLAR_UPSTREAMS` + `MODULE_PARENT_PILLAR` stay `KnownPillarId` behind the guard. | Blocked by us-01   |
-| 03  | [us-03-open-nav-appname](us-03-open-nav-appname.md)               | `packages/navigation/src/types.ts` `AppName` / app-context accept `PillarId`; keep a closed set only where a `switch` genuinely earns it. Composes with PRD-243's registry walk.             | Blocked by us-01   |
+| #   | Story                                                             | Summary                                                                                                                                                                                      | Parallelisable     | Status |
+| --- | ----------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ | ------ |
+| 01  | [us-01-introduce-open-pillarid](us-01-introduce-open-pillarid.md) | Add `PillarId = string` to `@pops/pillar-sdk`; document the two-tier rule; keep `KnownPillarId` + `isKnownPillarId`. Reconcile with PRD-160 (typed projection unchanged).                    | Yes — foundational | Done   |
+| 02  | [us-02-open-routing-surfaces](us-02-open-routing-surfaces.md)     | Route the nginx generator's registry/render surfaces onto `PillarId`; unknown ids append to render order; `PILLAR_UPSTREAMS` + `MODULE_PARENT_PILLAR` stay `KnownPillarId` behind the guard. | Blocked by us-01   | Done   |
+| 03  | [us-03-open-nav-appname](us-03-open-nav-appname.md)               | `packages/navigation/src/types.ts` `AppName` / app-context accept `PillarId`; keep a closed set only where a `switch` genuinely earns it. Composes with PRD-243's registry walk.             | Blocked by us-01   | Done   |
 
 ## Out of Scope
 
