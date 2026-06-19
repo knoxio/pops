@@ -49,11 +49,16 @@ The monolith read `installedManifests().flatMap(m => m.features)` from a build-t
 `scripts/known-modules.ts` and regenerated; adding a pillar there is exactly the static-list edit this
 project forbids. Source features from the **runtime core registry** instead:
 
-- Each pillar declares its features in its `ModuleManifest.features` slot, which it **already
-  self-reports** to the core registry on register/heartbeat (`RegisterInputSchema.manifest` carries the
-  full manifest today).
-- Core's features service aggregates from the **live registry snapshot** (the manifests registered
-  pillars sent), not any build-time list.
+- Each pillar declares its features in its **registration manifest**, and core's features service
+  aggregates them from the **live registry snapshot** — not any build-time list.
+- **Prerequisite (slice S0) — the wire does not exist yet** (confirmed by the S1 investigation, against
+  the live code, not my first draft): registration sends `manifest: ManifestPayload` validated by the
+  **`.strict()` `ManifestPayloadSchema` in `@pops/pillar-sdk`** (the `RegisterInputSchema` in
+  `registry/types.ts:39` is dead code), which has **no `features` slot** (and `.strict` rejects unknown
+  keys); **heartbeat carries only `{ pillarId }`**; and **no pillar declares features**. So S0 must FIRST
+  add a _serializable_ `features` slot to `ManifestPayloadSchema` and populate the `buildXManifest`
+  builders. Capability _status_ (runtime up/down) rides an **extended heartbeat** (S3), since the static
+  manifest carries only declarative data — not the `capabilityCheck()` function.
 
 **Self-registration invariant: a pillar joins the network → registers with its manifest → its features
 appear automatically. No pillar list, no `known-modules.ts` edit, no regen.** This epic adds zero static
@@ -87,8 +92,14 @@ carries per-pillar liveness.
 | **S4** | declare feature manifests in pillar `ModuleManifest`s      | ∥ with S3 | Move the capability/feature declarations into the owning pillars' `ModuleManifest`s (`core.redis`→core, `cerebrum.vectorSearch`→cerebrum, app features→their pillars) — each pillar **self-reports** them to the runtime registry on register; no static `module-registry` regen for features.                        |
 | **S5** | shell conversion + bug fix + hook retirement               | after S2  | Convert the shell's 6 `usePillar*` files (features + `settings.getBulk`→**`getMany`** + `setBulk`→**`setMany`** + `shell.manifest`) to the `core-api` Hey client; keep the generic `callDynamic` loaders (rename `useTrpcOptionsLoaders.ts`); delete the now-unused pillar-sdk `usePillarQuery/Mutation/Utils` hooks. |
 
-S1→S2→S5 is the critical path; S3 ∥ S4 fill in the registry. A **v1 cut** (core-local capabilities,
-defer S3 cross-pillar) can land S5 early and unblock the shell, with cross-pillar capabilities as a follow-up.
+**S0 — manifest `features` wire — is the new foundation, BEFORE S1** (the S1 investigation proved the
+registry snapshot carries no feature data today): add a _serializable_ `features` slot to the `.strict()`
+`ManifestPayloadSchema` (`@pops/pillar-sdk`) + populate the `buildXManifest` builders (core→`core.redis`,
+cerebrum→`cerebrum.vectorSearch`, declarative only — no `capabilityCheck` fn) + ensure `buildRegistrySnapshot`
+exposes it. Then **S0→S1→S2→S5** is the critical path; S3 ∥ S4 fill in the registry (S3 extends the
+heartbeat to report capability _status_, since the manifest carries only declarative data). A core-local
+v1 was considered and **rejected** — it sources features from core alone, breaking the self-registration
+invariant.
 
 ## Verification (Done when)
 
