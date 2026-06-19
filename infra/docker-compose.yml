@@ -27,8 +27,13 @@ services:
   # Today the container only exposes /health + /pillars; subsequent
   # pillar splits move settings, AI Ops, and URI dispatch behind it.
   core-api:
-    image: ghcr.io/knoxio/pops-core-api:${POPS_IMAGE_TAG:-main}
-    container_name: pops-core-api
+    build:
+      context: ..
+      dockerfile: pillars/core/Dockerfile
+      args:
+        BUILD_VERSION: ${BUILD_VERSION:-dev}
+    image: ghcr.io/knoxio/pops-core:${POPS_IMAGE_TAG:-main}
+    container_name: pops-core
     restart: unless-stopped
     labels:
       com.centurylinklabs.watchtower.enable: 'true'
@@ -66,8 +71,13 @@ services:
   # item_uploaded_files, and item_fixture_connections. Subsequent PRs
   # move the tRPC routers + URI dispatcher behind it.
   inventory-api:
-    image: ghcr.io/knoxio/pops-inventory-api:${POPS_IMAGE_TAG:-main}
-    container_name: pops-inventory-api
+    build:
+      context: ..
+      dockerfile: pillars/inventory/Dockerfile
+      args:
+        BUILD_VERSION: ${BUILD_VERSION:-dev}
+    image: ghcr.io/knoxio/pops-inventory:${POPS_IMAGE_TAG:-main}
+    container_name: pops-inventory
     restart: unless-stopped
     labels:
       com.centurylinklabs.watchtower.enable: 'true'
@@ -104,8 +114,13 @@ services:
   # subsequent slices (budgets, transactions, imports, tag rules, tag
   # vocabulary, URI dispatcher) move their tRPC routers behind it.
   finance-api:
-    image: ghcr.io/knoxio/pops-finance-api:${POPS_IMAGE_TAG:-main}
-    container_name: pops-finance-api
+    build:
+      context: ..
+      dockerfile: pillars/finance/Dockerfile
+      args:
+        BUILD_VERSION: ${BUILD_VERSION:-dev}
+    image: ghcr.io/knoxio/pops-finance:${POPS_IMAGE_TAG:-main}
+    container_name: pops-finance
     restart: unless-stopped
     labels:
       com.centurylinklabs.watchtower.enable: 'true'
@@ -185,8 +200,13 @@ services:
   # subsequent slices (recipes, ingredients, ingest, meal planning,
   # review queue, URI dispatcher) move their tRPC routers behind it.
   food-api:
-    image: ghcr.io/knoxio/pops-food-api:${POPS_IMAGE_TAG:-main}
-    container_name: pops-food-api
+    build:
+      context: ..
+      dockerfile: pillars/food/Dockerfile
+      args:
+        BUILD_VERSION: ${BUILD_VERSION:-dev}
+    image: ghcr.io/knoxio/pops-food:${POPS_IMAGE_TAG:-main}
+    container_name: pops-food
     restart: unless-stopped
     labels:
       com.centurylinklabs.watchtower.enable: 'true'
@@ -223,8 +243,13 @@ services:
   # subsequent slices (list CRUD, item CRUD, bulk-add, reorder,
   # URI dispatcher) move their tRPC routers behind it.
   lists-api:
-    image: ghcr.io/knoxio/pops-lists-api:${POPS_IMAGE_TAG:-main}
-    container_name: pops-lists-api
+    build:
+      context: ..
+      dockerfile: pillars/lists/Dockerfile
+      args:
+        BUILD_VERSION: ${BUILD_VERSION:-dev}
+    image: ghcr.io/knoxio/pops-lists:${POPS_IMAGE_TAG:-main}
+    container_name: pops-lists
     restart: unless-stopped
     labels:
       com.centurylinklabs.watchtower.enable: 'true'
@@ -263,9 +288,15 @@ services:
   # gated `food.ingest.workerComplete` mutation. Stateless with respect
   # to SQLite — all DB writes happen server-side.
   pops-worker-food:
-    image: ghcr.io/knoxio/pops-worker-food:${POPS_IMAGE_TAG:-main}
+    build:
+      context: ..
+      dockerfile: pillars/food/Dockerfile
+      args:
+        BUILD_VERSION: ${BUILD_VERSION:-dev}
+    image: ghcr.io/knoxio/pops-food:${POPS_IMAGE_TAG:-main}
     container_name: pops-worker-food
     restart: unless-stopped
+    command: ['node', 'dist/worker/worker.js']
     labels:
       com.centurylinklabs.watchtower.enable: 'true'
     networks:

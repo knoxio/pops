@@ -23,9 +23,9 @@
 # Usage from monorepo root:
 #   docker build \
 #     -f infra/docker/pillar.Dockerfile \
-#     --build-arg PILLAR_PACKAGE=@pops/food-api \
+#     --build-arg PILLAR_PACKAGE=@pops/food \
 #     --build-arg PILLAR_PORT=3010 \
-#     -t ghcr.io/knoxio/pops-food-api:dev .
+#     -t ghcr.io/knoxio/pops-food:dev .
 #
 # The build uses `turbo prune --docker` to isolate the pillar's dep
 # subgraph, then `pnpm deploy` to flatten it into a standalone runtime.

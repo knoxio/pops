@@ -12,9 +12,18 @@ permissions:
   contents: read
 
 jobs:
-  publish:
-    name: Build and push Docker images
+  apps:
+    name: Build and push ${{ matrix.app.image }}
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Frontend + tooling images that build from an apps/ Dockerfile
+        # rather than a pillar. Pillars are published by the `pillars` job
+        # below from their colocated `pillars/<x>/Dockerfile`.
+        app:
+          - { image: pops-shell, file: apps/pops-shell/Dockerfile }
+          - { image: pops-mcp, file: apps/pops-mcp/Dockerfile }
     steps:
       - uses: actions/checkout@v6
 
@@ -25,11 +34,11 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Generate metadata for pops-shell
-        id: meta-shell
+      - name: Generate metadata for ${{ matrix.app.image }}
+        id: meta
         uses: docker/metadata-action@v6
         with:
-          images: ghcr.io/knoxio/pops-shell
+          images: ghcr.io/knoxio/${{ matrix.app.image }}
           tags: |
             type=raw,value=main,enable={{is_default_branch}}
             type=sha,prefix=sha-,format=short
@@ -40,22 +49,77 @@ jobs:
             type=semver,pattern={{major}}
             type=semver,pattern=v{{major}}
 
-      - name: Build and push pops-shell
+      - name: Build and push ${{ matrix.app.image }}
         uses: docker/build-push-action@v7
         with:
           context: .
-          file: apps/pops-shell/Dockerfile
+          file: ${{ matrix.app.file }}
           push: true
-          tags: ${{ steps.meta-shell.outputs.tags }}
-          labels: ${{ steps.meta-shell.outputs.labels }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             BUILD_VERSION=${{ github.sha }}
 
-      - name: Generate metadata for pops-mcp
-        id: meta-mcp
+  discover:
+    name: Discover publishable pillars
+    runs-on: ubuntu-latest
+    outputs:
+      pillars: ${{ steps.list.outputs.pillars }}
+      count: ${{ steps.list.outputs.count }}
+    steps:
+      - uses: actions/checkout@v6
+      - id: list
+        name: Enumerate pillars published from the prod compose
+        # A pillar is publishable iff infra/docker-compose.yml pins it to a
+        # `ghcr.io/knoxio/pops-<x>` image AND a hand-written
+        # `pillars/<x>/Dockerfile` exists to build it from. This keeps the
+        # publish set in lockstep with compose's `image:` refs — adding a
+        # pillar image to compose makes it publish here with no workflow
+        # edit, and pillars that build-from-source in compose (cerebrum,
+        # orchestrator: no `image:` ref) are excluded by construction.
+        run: |
+          set -euo pipefail
+          mapfile -t pillars < <(
+            grep -oE 'image: ghcr\.io/knoxio/pops-[a-z]+:' infra/docker-compose.yml \
+              | sed -E 's#image: ghcr\.io/knoxio/pops-([a-z]+):#\1#' \
+              | sort -u \
+              | while read -r p; do [ -f "pillars/$p/Dockerfile" ] && echo "$p"; done
+          )
+          json=$(printf '%s\n' "${pillars[@]}" | jq -R -s -c 'split("\n") | map(select(length > 0))')
+          count=$(echo "$json" | jq 'length')
+          echo "pillars=$json" >> "$GITHUB_OUTPUT"
+          echo "count=$count" >> "$GITHUB_OUTPUT"
+          echo "Discovered $count publishable pillar(s): $json"
+
+  pillars:
+    name: Build and push pops-${{ matrix.pillar }}
+    needs: [discover]
+    if: needs.discover.outputs.count != '0'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Every served pillar publishes a single `pops-<x>` image built from
+        # its hand-written `pillars/<x>/Dockerfile`. The food worker reuses
+        # the `pops-food` image with a runtime command override (see the
+        # food Dockerfile + the worker service), so it needs no separate
+        # publish.
+        pillar: ${{ fromJson(needs.discover.outputs.pillars) }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate metadata for pops-${{ matrix.pillar }}
+        id: meta
         uses: docker/metadata-action@v6
         with:
-          images: ghcr.io/knoxio/pops-mcp
+          images: ghcr.io/knoxio/pops-${{ matrix.pillar }}
           tags: |
             type=raw,value=main,enable={{is_default_branch}}
             type=sha,prefix=sha-,format=short
@@ -66,117 +130,13 @@ jobs:
             type=semver,pattern={{major}}
             type=semver,pattern=v{{major}}
 
-      - name: Build and push pops-mcp
+      - name: Build and push pops-${{ matrix.pillar }}
         uses: docker/build-push-action@v7
         with:
           context: .
-          file: apps/pops-mcp/Dockerfile
+          file: pillars/${{ matrix.pillar }}/Dockerfile
           push: true
-          tags: ${{ steps.meta-mcp.outputs.tags }}
-          labels: ${{ steps.meta-mcp.outputs.labels }}
-          build-args: |
-            BUILD_VERSION=${{ github.sha }}
-
-      - name: Generate metadata for pops-inventory-api
-        id: meta-inventory-api
-        uses: docker/metadata-action@v6
-        with:
-          images: ghcr.io/knoxio/pops-inventory-api
-          tags: |
-            type=raw,value=main,enable={{is_default_branch}}
-            type=sha,prefix=sha-,format=short
-            type=semver,pattern={{version}}
-            type=semver,pattern=v{{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern=v{{major}}.{{minor}}
-            type=semver,pattern={{major}}
-            type=semver,pattern=v{{major}}
-
-      - name: Build and push pops-inventory-api
-        uses: docker/build-push-action@v7
-        with:
-          context: .
-          file: apps/pops-inventory-api/Dockerfile
-          push: true
-          tags: ${{ steps.meta-inventory-api.outputs.tags }}
-          labels: ${{ steps.meta-inventory-api.outputs.labels }}
-          build-args: |
-            BUILD_VERSION=${{ github.sha }}
-
-      - name: Generate metadata for pops-finance-api
-        id: meta-finance-api
-        uses: docker/metadata-action@v6
-        with:
-          images: ghcr.io/knoxio/pops-finance-api
-          tags: |
-            type=raw,value=main,enable={{is_default_branch}}
-            type=sha,prefix=sha-,format=short
-            type=semver,pattern={{version}}
-            type=semver,pattern=v{{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern=v{{major}}.{{minor}}
-            type=semver,pattern={{major}}
-            type=semver,pattern=v{{major}}
-
-      - name: Build and push pops-finance-api
-        uses: docker/build-push-action@v7
-        with:
-          context: .
-          file: apps/pops-finance-api/Dockerfile
-          push: true
-          tags: ${{ steps.meta-finance-api.outputs.tags }}
-          labels: ${{ steps.meta-finance-api.outputs.labels }}
-          build-args: |
-            BUILD_VERSION=${{ github.sha }}
-
-      - name: Generate metadata for pops-food-api
-        id: meta-food-api
-        uses: docker/metadata-action@v6
-        with:
-          images: ghcr.io/knoxio/pops-food-api
-          tags: |
-            type=raw,value=main,enable={{is_default_branch}}
-            type=sha,prefix=sha-,format=short
-            type=semver,pattern={{version}}
-            type=semver,pattern=v{{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern=v{{major}}.{{minor}}
-            type=semver,pattern={{major}}
-            type=semver,pattern=v{{major}}
-
-      - name: Build and push pops-food-api
-        uses: docker/build-push-action@v7
-        with:
-          context: .
-          file: apps/pops-food-api/Dockerfile
-          push: true
-          tags: ${{ steps.meta-food-api.outputs.tags }}
-          labels: ${{ steps.meta-food-api.outputs.labels }}
-          build-args: |
-            BUILD_VERSION=${{ github.sha }}
-
-      - name: Generate metadata for pops-lists-api
-        id: meta-lists-api
-        uses: docker/metadata-action@v6
-        with:
-          images: ghcr.io/knoxio/pops-lists-api
-          tags: |
-            type=raw,value=main,enable={{is_default_branch}}
-            type=sha,prefix=sha-,format=short
-            type=semver,pattern={{version}}
-            type=semver,pattern=v{{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern=v{{major}}.{{minor}}
-            type=semver,pattern={{major}}
-            type=semver,pattern=v{{major}}
-
-      - name: Build and push pops-lists-api
-        uses: docker/build-push-action@v7
-        with:
-          context: .
-          file: pillars/lists/api/Dockerfile
-          push: true
-          tags: ${{ steps.meta-lists-api.outputs.tags }}
-          labels: ${{ steps.meta-lists-api.outputs.labels }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             BUILD_VERSION=${{ github.sha }}

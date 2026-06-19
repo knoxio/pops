@@ -24,9 +24,9 @@ on:
       - ".github/workflows/docker-build.yml"
 
 # Workflow-level filter keeps `Validate Docker builds` off docs/code-only
-# PRs entirely. Per-pillar code is validated by `pillar-images.yml` and
-# the `*-api-quality.yml` workflows — this job only re-validates the
-# Dockerfile + compose surfaces. (Theme 13 PRD-220.)
+# PRs entirely. Per-pillar full images are also validated by the
+# `*-quality.yml` workflows — this job re-validates every Dockerfile +
+# compose surface in one place, gated on changes. (Theme 13 PRD-220.)
 
 jobs:
   changes:
@@ -67,66 +67,21 @@ jobs:
       - uses: actions/checkout@v6
         if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
 
-      - name: Build pops-shell (builder stage)
+      - name: Build app Dockerfiles + every pillar Dockerfile (builder stage)
         if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
-        run: docker build --target builder -f apps/pops-shell/Dockerfile .
-
-      - name: Build pops-mcp (builder stage)
-        if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
-        run: docker build --target builder -f apps/pops-mcp/Dockerfile .
-
-      - uses: pnpm/action-setup@v5
-        if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
-
-      - uses: actions/setup-node@v6
-        if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
-        with:
-          node-version: "22"
-          cache: pnpm
-
-      # PRD-252 / audit H-D1: per-pillar Dockerfiles are generated, not
-      # hand-edited. The drift-check regenerates and fails on any diff.
-      # When a pillar gains/loses a transitive @pops/* dep, the regenerated
-      # Dockerfile must be committed alongside the change.
-      - name: Verify pops-food-api Dockerfile is up to date (PRD-252)
-        if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
+        # Pillars are discovered from disk (`pillars/<x>/Dockerfile`) rather
+        # than a static list, so adding or removing a pillar needs no edit
+        # here. The builder stage is enough to surface a broken Dockerfile;
+        # the `*-quality.yml` workflows + publish-images own the full image.
         run: |
-          node scripts/generate-pillar-dockerfile.mjs food
-          git diff --exit-code apps/pops-food-api/Dockerfile
-
-      - name: Verify pops-lists-api Dockerfile is up to date (PRD-252)
-        if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
-        run: |
-          node scripts/generate-pillar-dockerfile.mjs lists
-          git diff --exit-code pillars/lists/api/Dockerfile
-
-      - name: Verify pops-inventory-api Dockerfile is up to date (PRD-252)
-        if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
-        run: |
-          node scripts/generate-pillar-dockerfile.mjs inventory
-          git diff --exit-code apps/pops-inventory-api/Dockerfile
-
-      - name: Verify pops-finance-api Dockerfile is up to date (PRD-252)
-        if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
-        run: |
-          node scripts/generate-pillar-dockerfile.mjs finance
-          git diff --exit-code apps/pops-finance-api/Dockerfile
-
-      - name: Build pops-inventory-api (builder stage)
-        if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
-        run: docker build --target builder -f apps/pops-inventory-api/Dockerfile .
-
-      - name: Build pops-finance-api (builder stage)
-        if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
-        run: docker build --target builder -f apps/pops-finance-api/Dockerfile .
-
-      - name: Build pops-food-api (builder stage)
-        if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
-        run: docker build --target builder -f apps/pops-food-api/Dockerfile .
-
-      - name: Build pops-lists-api (builder stage)
-        if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
-        run: docker build --target builder -f pillars/lists/api/Dockerfile .
+          set -euo pipefail
+          docker build --target builder -f apps/pops-shell/Dockerfile .
+          docker build --target builder -f apps/pops-mcp/Dockerfile .
+          for dockerfile in pillars/*/Dockerfile; do
+            echo "::group::build ${dockerfile}"
+            docker build --target builder -f "${dockerfile}" .
+            echo "::endgroup::"
+          done
 
   compose-validate:
     name: Validate docker-compose

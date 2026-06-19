@@ -32,7 +32,7 @@ services:
       dockerfile: pillars/core/Dockerfile
       args:
         BUILD_VERSION: ${BUILD_VERSION:-dev}
-    container_name: pops-core-api
+    container_name: pops-core
     restart: unless-stopped
     networks:
       - frontend
@@ -74,7 +74,7 @@ services:
       dockerfile: pillars/inventory/Dockerfile
       args:
         BUILD_VERSION: ${BUILD_VERSION:-dev}
-    container_name: pops-inventory-api
+    container_name: pops-inventory
     restart: unless-stopped
     networks:
       - frontend
@@ -116,7 +116,7 @@ services:
       dockerfile: pillars/finance/Dockerfile
       args:
         BUILD_VERSION: ${BUILD_VERSION:-dev}
-    container_name: pops-finance-api
+    container_name: pops-finance
     restart: unless-stopped
     networks:
       - frontend
@@ -201,7 +201,7 @@ services:
       dockerfile: pillars/food/Dockerfile
       args:
         BUILD_VERSION: ${BUILD_VERSION:-dev}
-    container_name: pops-food-api
+    container_name: pops-food
     restart: unless-stopped
     networks:
       - frontend
@@ -243,7 +243,7 @@ services:
       dockerfile: pillars/lists/Dockerfile
       args:
         BUILD_VERSION: ${BUILD_VERSION:-dev}
-    container_name: pops-lists-api
+    container_name: pops-lists
     restart: unless-stopped
     networks:
       - frontend
