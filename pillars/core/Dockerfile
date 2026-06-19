@@ -2,9 +2,7 @@
 # The pillar Dockerfile generator does not yet understand the collapsed shape —
 # until it does, this file is maintained manually. Keep it narrow: only
 # @pops/core and its transitive @pops/* deps (queried via
-# `pnpm m ls --filter "@pops/core..." --json --depth -1`):
-# and wire-conformance (a test-only workspace devDep pulled in by the
-# `@pops/core...` install filter).
+# `pnpm m ls --filter "@pops/core..." --json --depth -1`).
 #
 # NOTE: not build-verified in the authoring environment (no Docker available);
 # mirrors pillars/finance/Dockerfile with the core dep set + port 3001.
@@ -20,7 +18,6 @@ COPY pillars/core/package.json ./pillars/core/
 COPY packages/pillar-sdk/package.json ./packages/pillar-sdk/
 COPY packages/shared-schema/package.json ./packages/shared-schema/
 COPY packages/types/package.json ./packages/types/
-COPY packages/wire-conformance/package.json ./packages/wire-conformance/
 
 RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
     corepack enable && pnpm install --frozen-lockfile --filter "@pops/core..."
@@ -36,10 +33,6 @@ COPY packages/shared-schema/tsconfig.json ./packages/shared-schema/tsconfig.json
 COPY packages/types/src ./packages/types/src
 COPY packages/types/tsconfig.json ./packages/types/tsconfig.json
 COPY packages/types/tsconfig.build.json ./packages/types/tsconfig.build.json
-
-COPY packages/wire-conformance/src ./packages/wire-conformance/src
-COPY packages/wire-conformance/tsconfig.json ./packages/wire-conformance/tsconfig.json
-COPY packages/wire-conformance/tsconfig.build.json ./packages/wire-conformance/tsconfig.build.json
 
 COPY pillars/core/src ./pillars/core/src
 COPY pillars/core/scripts ./pillars/core/scripts

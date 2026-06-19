@@ -1,8 +1,14 @@
 # Wire-format publication target — decision note
 
-> PRD: [231 — Cross-language SDK wire-format spec](../prds/231-cross-language-wire-format-spec/README.md)
-> US: [us-02-publication-target](../prds/231-cross-language-wire-format-spec/us-02-publication-target.md)
-> Spec: [`pillar-wire-format-v1.md`](../specs/pillar-wire-format-v1.md)
+> **DEPRECATED — superseded.** The `pillar-wire-format-v1` spec, the
+> `packages/wire-conformance/` suite, and the Rust reference pillar this note
+> planned for have all been dropped: the lake is REST-only and no live pillar
+> speaks the `/trpc` wire format. Retained for history only; nothing below is
+> current.
+
+> PRD: 231 — Cross-language SDK wire-format spec (superseded)
+> US: us-02-publication-target (superseded)
+> Spec: `pillar-wire-format-v1.md` (deleted)
 > Snapshot date: 2026-06-13
 
 ## Decision
