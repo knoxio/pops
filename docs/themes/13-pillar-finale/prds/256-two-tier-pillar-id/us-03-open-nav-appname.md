@@ -10,11 +10,11 @@ the type system forbidding it.
 
 ## Acceptance Criteria
 
-- [ ] `packages/navigation/src/types.ts` no longer forces the active-app/nav-surface id through the closed `AppName` union (`:9`). The app-context id accepts `PillarId`.
-- [ ] Any remaining closed `AppName` use is justified — kept **only** where a `switch` over a finite known set genuinely earns it (e.g. a built-in default-route table), not as a blanket gate on which pillars may surface.
-- [ ] `IconName` and other unrelated unions in the file are untouched.
-- [ ] `pnpm typecheck` green repo-wide; the shell builds.
-- [ ] No `as any` / suppression introduced at the nav boundary.
+- [x] `packages/navigation/src/types.ts` no longer forces the active-app/nav-surface id through the closed `AppName` union (`:9`). The app-context id accepts `PillarId`.
+- [x] Any remaining closed `AppName` use is justified — kept **only** where a `switch` over a finite known set genuinely earns it (e.g. a built-in default-route table), not as a blanket gate on which pillars may surface.
+- [x] `IconName` and other unrelated unions in the file are untouched.
+- [x] `pnpm typecheck` green repo-wide; the shell builds.
+- [x] No `as any` / suppression introduced at the nav boundary.
 
 ## Notes
 

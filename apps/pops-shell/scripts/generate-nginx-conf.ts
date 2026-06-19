@@ -43,7 +43,7 @@
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { PILLARS, type KnownPillarId } from '@pops/pillar-sdk';
+import { PILLARS, isKnownPillarId, type KnownPillarId, type PillarId } from '@pops/pillar-sdk';
 import {
   HttpDiscoveryTransport,
   type DiscoveredPillar,
@@ -91,7 +91,7 @@ export const PILLAR_RENDER_ORDER: readonly KnownPillarId[] = [
 export const DEFAULT_REGISTRY_URL = 'http://core-api:3001';
 
 export interface PillarUpstream {
-  readonly pillarId: string;
+  readonly pillarId: PillarId;
   readonly host: string;
   readonly port: number;
 }
@@ -115,11 +115,7 @@ export function assertRenderOrderCoversAllPillars(): void {
   }
 }
 
-function isKnownPillarId(id: string): id is KnownPillarId {
-  return (PILLARS as readonly string[]).includes(id);
-}
-
-function nginxVarName(pillarId: string): string {
+function nginxVarName(pillarId: PillarId): string {
   return pillarId.replace(/-/g, '_');
 }
 
@@ -219,7 +215,7 @@ export function resolveUpstreamForEntry(
  * in ascending alphabetical order by pillarId.
  */
 export function orderUpstreams(upstreams: readonly PillarUpstream[]): readonly PillarUpstream[] {
-  const indexOf = new Map<string, number>();
+  const indexOf = new Map<PillarId, number>();
   PILLAR_RENDER_ORDER.forEach((id, i) => indexOf.set(id, i));
   return upstreams.toSorted((a, b) => {
     const ia = indexOf.get(a.pillarId);
