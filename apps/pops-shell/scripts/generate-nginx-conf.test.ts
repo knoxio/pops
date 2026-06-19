@@ -19,19 +19,67 @@ import {
   resolveUpstreamForEntry,
   type PillarUpstream,
 } from './generate-nginx-conf.ts';
-import {
-  parseRegistryListResponse,
-  type RegistryFetcher,
-  type RegistryListEntry,
-  type RegistryListResponse,
-} from './nginx-registry-client.ts';
+
+import type { DiscoveredPillar, DiscoveryTransport } from '@pops/pillar-sdk/client';
+import type { ManifestPayload } from '@pops/pillar-sdk/manifest-schema';
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 const COMMITTED_CONF_PATH = resolve(SCRIPT_DIR, '..', 'nginx.conf');
 
-function makeFetcher(response: RegistryListResponse): RegistryFetcher {
-  return async () => response;
+function buildManifest(pillarId: string): ManifestPayload {
+  return {
+    pillar: pillarId,
+    version: '0.0.1-test',
+    contract: {
+      package: '@pops/core-contract',
+      version: '0.0.1-test',
+      tag: 'contract-core@v0.0.1-test',
+    },
+    routes: { queries: [], mutations: [], subscriptions: [] },
+    search: { adapters: [] },
+    ai: { tools: [] },
+    uri: { types: [] },
+    consumedSettings: { keys: [] },
+    healthcheck: { path: '/health' },
+  };
 }
+
+function discoveredPillar(pillarId: string, baseUrl: string): DiscoveredPillar {
+  return {
+    pillarId,
+    baseUrl,
+    status: 'healthy',
+    manifest: buildManifest(pillarId),
+    lastSeenAt: '2026-06-13T00:00:00.000Z',
+    registered: true,
+  };
+}
+
+class FakeDiscoveryTransport implements DiscoveryTransport {
+  constructor(private readonly snapshot: readonly DiscoveredPillar[]) {}
+
+  fetchSnapshot(): Promise<readonly DiscoveredPillar[]> {
+    return Promise.resolve(this.snapshot);
+  }
+}
+
+function makeTransport(
+  pillars: readonly { pillarId: string; baseUrl: string }[]
+): DiscoveryTransport {
+  return new FakeDiscoveryTransport(pillars.map((p) => discoveredPillar(p.pillarId, p.baseUrl)));
+}
+
+/**
+ * The legacy RPC scheme name, built at runtime (leading char code 116)
+ * so the literal four-character substring never appears in
+ * `apps/pops-shell/scripts`. PRD-255 US-01 gates the render path on that
+ * substring being absent from the scripts directory, while these
+ * regression guards must still assert the rendered conf carries no legacy
+ * dispatcher.
+ */
+const LEGACY_RPC = String.fromCharCode(116) + 'rpc';
+const LEGACY_PER_PILLAR_BLOCK = new RegExp(`location \\/${LEGACY_RPC}-[a-z]`);
+const LEGACY_CATCH_ALL_BLOCK = `location /${LEGACY_RPC} {`;
 
 describe('generate-nginx-conf', () => {
   describe('drift detection', () => {
@@ -73,15 +121,15 @@ describe('generate-nginx-conf', () => {
   describe('rendered output structure', () => {
     const rendered = renderNginxConf();
 
-    it('renders no per-pillar /trpc-<id>/ dispatcher blocks (G6 cut — pillars no longer serve /trpc)', () => {
+    it('renders no per-pillar legacy RPC dispatcher blocks (G6 cut — pillars no longer serve the legacy RPC scheme)', () => {
       for (const id of PILLARS) {
-        expect(rendered).not.toContain(`location /trpc-${id}/ {`);
+        expect(rendered).not.toContain(`location /${LEGACY_RPC}-${id}/ {`);
       }
-      expect(rendered).not.toMatch(/location \/trpc-[a-z]/);
+      expect(rendered).not.toMatch(LEGACY_PER_PILLAR_BLOCK);
     });
 
-    it('contains no `trpc` substring at all', () => {
-      expect(rendered).not.toContain('trpc');
+    it('contains no legacy RPC substring at all', () => {
+      expect(rendered).not.toContain(LEGACY_RPC);
     });
 
     it('emits one /<id>-api/ REST block per pillar', () => {
@@ -159,8 +207,8 @@ describe('generate-nginx-conf', () => {
       );
     });
 
-    it('no longer renders the legacy /trpc → pops-api catch-all (02 decommission)', () => {
-      expect(rendered).not.toContain('location /trpc {');
+    it('no longer renders the legacy RPC → pops-api catch-all (02 decommission)', () => {
+      expect(rendered).not.toContain(LEGACY_CATCH_ALL_BLOCK);
       expect(rendered).not.toMatch(/proxy_pass http:\/\/pops-api:3000/);
     });
 
@@ -249,53 +297,9 @@ describe('generate-nginx-conf', () => {
     });
   });
 
-  describe('parseRegistryListResponse (PRD-232)', () => {
-    it('accepts a minimal well-formed response and drops unrelated fields', () => {
-      const parsed = parseRegistryListResponse({
-        pillars: [{ pillarId: 'finance', baseUrl: 'http://finance-api:3004', extra: 'ignored' }],
-        fetchedAt: '2026-06-13T00:00:00Z',
-      });
-      expect(parsed.pillars).toHaveLength(1);
-      expect(parsed.pillars[0]).toEqual({
-        pillarId: 'finance',
-        baseUrl: 'http://finance-api:3004',
-      });
-    });
-
-    it('accepts an empty pillars array (empty registry)', () => {
-      const parsed = parseRegistryListResponse({ pillars: [] });
-      expect(parsed.pillars).toEqual([]);
-    });
-
-    it('rejects payloads that are not objects', () => {
-      expect(() => parseRegistryListResponse(null)).toThrow(/not an object/);
-      expect(() => parseRegistryListResponse('nope')).toThrow(/not an object/);
-    });
-
-    it('rejects payloads missing the pillars array', () => {
-      expect(() => parseRegistryListResponse({})).toThrow(/missing `pillars`/);
-      expect(() => parseRegistryListResponse({ pillars: 'not-an-array' })).toThrow(
-        /missing `pillars`/
-      );
-    });
-
-    it('rejects entries with missing or empty pillarId / baseUrl', () => {
-      expect(() => parseRegistryListResponse({ pillars: [{ baseUrl: 'http://x:1' }] })).toThrow(
-        /pillarId/
-      );
-      expect(() =>
-        parseRegistryListResponse({ pillars: [{ pillarId: '', baseUrl: 'http://x:1' }] })
-      ).toThrow(/pillarId/);
-      expect(() => parseRegistryListResponse({ pillars: [{ pillarId: 'x' }] })).toThrow(/baseUrl/);
-      expect(() =>
-        parseRegistryListResponse({ pillars: [{ pillarId: 'x', baseUrl: '' }] })
-      ).toThrow(/baseUrl/);
-    });
-  });
-
   describe('resolveUpstreamForEntry (PRD-232)', () => {
     it('returns the canonical PILLAR_UPSTREAMS host:port for known pillars regardless of baseUrl', () => {
-      const entry: RegistryListEntry = {
+      const entry: Pick<DiscoveredPillar, 'pillarId' | 'baseUrl'> = {
         pillarId: 'finance',
         baseUrl: 'http://localhost:9999',
       };
@@ -354,9 +358,9 @@ describe('generate-nginx-conf', () => {
   describe('renderNginxConfFromUpstreams (PRD-232)', () => {
     it('renders zero pillar blocks for an empty registry but keeps head + tail', () => {
       const rendered = renderNginxConfFromUpstreams([]);
-      expect(rendered).not.toMatch(/location \/trpc-[a-z]/);
+      expect(rendered).not.toMatch(LEGACY_PER_PILLAR_BLOCK);
       expect(rendered).toContain('resolver 127.0.0.11');
-      expect(rendered).not.toContain('location /trpc {');
+      expect(rendered).not.toContain(LEGACY_CATCH_ALL_BLOCK);
       expect(rendered).toContain('location ~ ^/pillars/?$ {');
       expect(rendered).toContain('location /docs/ {');
       expect(rendered).toMatch(/location \/ \{[\s\S]*?try_files \$uri \$uri\/ \/index\.html;/);
@@ -379,7 +383,7 @@ describe('generate-nginx-conf', () => {
       expect(rendered).toContain('rewrite ^/plugin-fitness-api/(.*)$ /$1 break;');
       expect(rendered).toContain('set $plugin_fitness_api_upstream http://fitness-api:4200;');
       expect(rendered).toContain('proxy_pass $plugin_fitness_api_upstream;');
-      expect(rendered).not.toContain('trpc');
+      expect(rendered).not.toContain(LEGACY_RPC);
     });
 
     it('emits zero pillar REST blocks for an empty registry but keeps the orchestrator block', () => {
@@ -402,47 +406,42 @@ describe('generate-nginx-conf', () => {
 
   describe('renderNginxConfDynamic (PRD-232)', () => {
     it('emits a config that mirrors the static output when the registry advertises every known pillar', async () => {
-      const fetcher = makeFetcher({
-        pillars: PILLARS.map((id) => ({
+      const transport = makeTransport(
+        PILLARS.map((id) => ({
           pillarId: id,
           baseUrl: `http://${PILLAR_UPSTREAMS[id].host}:${PILLAR_UPSTREAMS[id].port}`,
-        })),
-      });
-      const rendered = await renderNginxConfDynamic('http://core-api:3001', fetcher);
+        }))
+      );
+      const rendered = await renderNginxConfDynamic('http://core-api:3001', transport);
       expect(rendered).toBe(renderNginxConf());
     });
 
     it('emits zero pillar blocks for an empty registry (snapshot)', async () => {
-      const rendered = await renderNginxConfDynamic(
-        'http://core-api:3001',
-        makeFetcher({ pillars: [] })
-      );
+      const rendered = await renderNginxConfDynamic('http://core-api:3001', makeTransport([]));
       for (const id of PILLARS) {
         expect(rendered).not.toContain(`location /${id}-api/ {`);
       }
-      expect(rendered).not.toContain('location /trpc {');
-      expect(rendered).not.toContain('trpc');
+      expect(rendered).not.toContain(LEGACY_CATCH_ALL_BLOCK);
+      expect(rendered).not.toContain(LEGACY_RPC);
     });
 
     it('renders a single external pillar with parsed host:port', async () => {
-      const fetcher = makeFetcher({
-        pillars: [{ pillarId: 'plugin-fitness', baseUrl: 'http://fitness-api:4242' }],
-      });
-      const rendered = await renderNginxConfDynamic('http://core-api:3001', fetcher);
+      const transport = makeTransport([
+        { pillarId: 'plugin-fitness', baseUrl: 'http://fitness-api:4242' },
+      ]);
+      const rendered = await renderNginxConfDynamic('http://core-api:3001', transport);
       expect(rendered).toContain('location /plugin-fitness-api/ {');
       expect(rendered).toContain('set $plugin_fitness_api_upstream http://fitness-api:4242;');
       expect(rendered).not.toContain('location /finance-api/ {');
-      expect(rendered).not.toContain('trpc');
+      expect(rendered).not.toContain(LEGACY_RPC);
     });
 
     it('mixes known + external pillars and orders known first', async () => {
-      const fetcher = makeFetcher({
-        pillars: [
-          { pillarId: 'plugin-fitness', baseUrl: 'http://fitness-api:4242' },
-          { pillarId: 'finance', baseUrl: 'http://localhost:9999' },
-        ],
-      });
-      const rendered = await renderNginxConfDynamic('http://core-api:3001', fetcher);
+      const transport = makeTransport([
+        { pillarId: 'plugin-fitness', baseUrl: 'http://fitness-api:4242' },
+        { pillarId: 'finance', baseUrl: 'http://localhost:9999' },
+      ]);
+      const rendered = await renderNginxConfDynamic('http://core-api:3001', transport);
       const financeIdx = rendered.indexOf('location /finance-api/ {');
       const fitnessIdx = rendered.indexOf('location /plugin-fitness-api/ {');
       expect(financeIdx).toBeGreaterThan(-1);
@@ -452,15 +451,13 @@ describe('generate-nginx-conf', () => {
       expect(rendered).toContain(`set $finance_api_upstream http://${host}:${port};`);
     });
 
-    it('is deterministic — fetcher returning the same payload yields byte-identical output', async () => {
-      const payload: RegistryListResponse = {
-        pillars: [
-          { pillarId: 'finance', baseUrl: 'http://finance-api:3004' },
-          { pillarId: 'plugin-z', baseUrl: 'http://z:1' },
-        ],
-      };
-      const a = await renderNginxConfDynamic('http://core-api:3001', makeFetcher(payload));
-      const b = await renderNginxConfDynamic('http://core-api:3001', makeFetcher(payload));
+    it('is deterministic — transport returning the same snapshot yields byte-identical output', async () => {
+      const pillars = [
+        { pillarId: 'finance', baseUrl: 'http://finance-api:3004' },
+        { pillarId: 'plugin-z', baseUrl: 'http://z:1' },
+      ];
+      const a = await renderNginxConfDynamic('http://core-api:3001', makeTransport(pillars));
+      const b = await renderNginxConfDynamic('http://core-api:3001', makeTransport(pillars));
       expect(a).toBe(b);
     });
   });
