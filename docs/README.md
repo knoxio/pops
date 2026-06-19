@@ -2,7 +2,7 @@
 
 ## What is POPS?
 
-POPS (Personal Operations System) is a self-hosted platform that manages finances, home inventory, media tracking, and more — from a single shell, one database, one API. It runs on a home server behind Cloudflare Tunnel with zero port forwarding.
+POPS (Personal Operations System) is a self-hosted platform that manages finances, home inventory, media tracking, and more — from a single shell over a set of independent REST pillars, each owning its own database. It runs on a home server behind Cloudflare Tunnel with zero port forwarding.
 
 See [vision.md](vision.md) for the full design philosophy.
 
