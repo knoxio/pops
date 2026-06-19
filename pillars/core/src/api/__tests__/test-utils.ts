@@ -11,6 +11,8 @@ import supertest from 'supertest';
 
 import type { Express } from 'express';
 
+import type { FeatureManifest, FeatureStatus } from '@pops/types';
+
 import type { RunEvaluationResult } from '../modules/ai-alerts/evaluator.js';
 import type { AlertRule, FiredAlert } from '../modules/ai-alerts/types.js';
 import type { Budget, BudgetStatus } from '../modules/ai-budgets/service.js';
@@ -120,6 +122,22 @@ export function makeClient(app: Express, headers?: ClientHeaders) {
     },
     users: {
       get: (uri: string) => send<{ data: { uri: string } }>(r.get('/users').query({ uri })),
+    },
+    features: {
+      getManifests: () => send<{ manifests: FeatureManifest[] }>(r.get('/features/manifests')),
+      list: () => send<{ features: FeatureStatus[] }>(r.get('/features')),
+      isEnabled: (key: string) =>
+        send<{ enabled: boolean }>(r.get(`/features/${encodeURIComponent(key)}/enabled`)),
+      setEnabled: (key: string, enabled: boolean) =>
+        send<{ enabled: boolean }>(
+          r.put(`/features/${encodeURIComponent(key)}/enabled`).send({ enabled })
+        ),
+      setUserPreference: (key: string, enabled: boolean) =>
+        send<{ enabled: boolean }>(
+          r.put(`/features/${encodeURIComponent(key)}/preference`).send({ enabled })
+        ),
+      clearUserPreference: (key: string) =>
+        send<{ cleared: boolean }>(r.delete(`/features/${encodeURIComponent(key)}/preference`)),
     },
     shell: {
       manifest: () => send<{ apps: string[]; overlays: string[] }>(r.get('/shell/manifest')),

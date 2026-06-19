@@ -67,6 +67,19 @@ describe('@pops/core REST openapi projection', () => {
     expect(op?.operationId).toBe(operationId);
   });
 
+  it.each([
+    ['GET', '/features/manifests', 'features.getManifests'],
+    ['GET', '/features', 'features.list'],
+    ['GET', '/features/{key}/enabled', 'features.isEnabled'],
+    ['PUT', '/features/{key}/enabled', 'features.setEnabled'],
+    ['PUT', '/features/{key}/preference', 'features.setUserPreference'],
+    ['DELETE', '/features/{key}/preference', 'features.clearUserPreference'],
+  ])('describes the %s %s endpoint with operationId %s', (method, path, operationId) => {
+    const op = openapi.paths[path]?.[method.toLowerCase()];
+    expect(op, `${method} ${path} should be documented`).toBeDefined();
+    expect(op?.operationId).toBe(operationId);
+  });
+
   it('documents only the migrated REST domains, not the tRPC surface', () => {
     // The set of tRPC slices converted to ts-rest so far. Grows one domain at
     // a time as the core REST migration proceeds; every documented path must
@@ -83,6 +96,7 @@ describe('@pops/core REST openapi projection', () => {
       '/settings',
       '/service-accounts',
       '/search',
+      '/features',
     ];
     const paths = Object.keys(openapi.paths);
     for (const p of paths) {
