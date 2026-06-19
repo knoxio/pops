@@ -2,22 +2,37 @@
 /**
  * Pillar schema coverage guard.
  *
- * For a given per-pillar package (e.g. `@pops/finance-db`):
+ * Post lake-migration the per-pillar `*-db` packages were collapsed into
+ * the pillars themselves: a pillar at `pillars/<x>` owns its schema under
+ * `pillars/<x>/src/db/schema/**`, its services under
+ * `pillars/<x>/src/db/services/**`, its migrations journal under
+ * `pillars/<x>/migrations/`, and exposes an `open<Pillar>Db()` opener from
+ * its built `dist/db/index.js`. Cross-pillar tables (e.g. `entities`,
+ * `aiInferenceLog`) live in `@pops/shared-schema`
+ * (`packages/shared-schema/src/**`) and are re-exported through each
+ * pillar's `src/db/schema.ts` barrel.
+ *
+ * For each discovered pillar:
  *   1. Open a fresh SQLite DB (temp file — `:memory:` is incompatible
- *      with the package's `journal_mode=WAL` pragma).
- *   2. Apply the package's migrations journal via the package's
- *      `open<Pillar>Db()` export.
- *   3. Walk `src/services/*.ts`, collect every table symbol imported from
- *      `'../schema.js'` (local re-export) and `'@pops/db-types'`.
+ *      with the pillar opener's `journal_mode=WAL` pragma).
+ *   2. Apply the pillar's migrations journal via its `open<Pillar>Db()`
+ *      export (discovered dynamically from `dist/db/index.js`).
+ *   3. Walk `src/db/services/**`, collect every table symbol imported from
+ *      the pillar's schema barrel (`.../schema.js`) or a specific schema
+ *      module (`.../schema/<name>.js`).
  *   4. Map each symbol to its physical table name + expected index list
- *      (parsed once from `packages/db-types/src/schema/**\/*.ts`).
+ *      (parsed from the pillar's own `src/db/schema/**` plus the shared
+ *      `packages/shared-schema/src/**`).
  *   5. Assert every expected table exists in `sqlite_master`. Assert every
  *      expected index exists.
  *   6. Exit non-zero with a precise diff if anything is missing.
  *
  * This catches the systemic gap that let Track N4 (#2908) merge with a
- * latent "no such table" because the package baseline was never
+ * latent "no such table" because the migration baseline was never
  * extended.
+ *
+ * The pillar set is derived from disk (every `pillars/<x>` that exposes a
+ * `src/db/schema.ts` barrel) — there is no hard-coded pillar list.
  *
  * Usage:
  *   node scripts/check-pillar-schema-coverage.mjs --pillar finance
@@ -37,25 +52,35 @@ import { fileURLToPath } from 'node:url';
 const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(here, '..');
 
-const PILLARS = /** @type {const} */ ([
-  { name: 'finance', pkg: 'finance-db', opener: 'openFinanceDb', pkgDir: 'packages/finance-db' },
-  { name: 'core', pkg: 'core-db', opener: 'openCoreDb', pkgDir: 'packages/core-db' },
-  { name: 'media', pkg: 'media-db', opener: 'openMediaDb', pkgDir: 'packages/media-db' },
-  {
-    name: 'inventory',
-    pkg: 'inventory-db',
-    opener: 'openInventoryDb',
-    pkgDir: 'packages/inventory-db',
-  },
-  {
-    name: 'cerebrum',
-    pkg: 'cerebrum-db',
-    opener: 'openCerebrumDb',
-    pkgDir: 'packages/cerebrum-db',
-  },
-  { name: 'food', pkg: 'food-db', opener: 'openFoodDb', pkgDir: 'packages/food-db' },
-  { name: 'lists', pkg: 'lists-db', opener: 'openListsDb', pkgDir: 'pillars/lists/db' },
-]);
+const SHARED_SCHEMA_DIR = join(repoRoot, 'packages', 'shared-schema', 'src');
+
+/**
+ * @typedef {object} Pillar
+ * @property {string} name    Pillar dir name, e.g. `finance`.
+ * @property {string} pkgDir  Repo-relative pillar root, e.g. `pillars/finance`.
+ */
+
+/**
+ * Discover the pillar set from disk. A pillar is any `pillars/<x>` that
+ * exposes a `src/db/schema.ts` barrel — the canonical signal that it owns
+ * a migrated schema surface this guard can check. No static list.
+ *
+ * @returns {Pillar[]}
+ */
+function discoverPillars() {
+  const pillarsRoot = join(repoRoot, 'pillars');
+  if (!existsSync(pillarsRoot)) return [];
+  /** @type {Pillar[]} */
+  const out = [];
+  for (const entry of readdirSync(pillarsRoot, { withFileTypes: true })) {
+    if (!entry.isDirectory()) continue;
+    if (!existsSync(join(pillarsRoot, entry.name, 'src', 'db', 'schema.ts'))) continue;
+    out.push({ name: entry.name, pkgDir: join('pillars', entry.name) });
+  }
+  return out.toSorted((a, b) => a.name.localeCompare(b.name));
+}
+
+const PILLARS = discoverPillars();
 
 /**
  * Pre-existing drift between the drizzle schema in `@pops/db-types` and
@@ -77,9 +102,25 @@ const ALLOWLISTED_MISSING_INDEXES = {};
  * and should be rare. Each entry MUST be paired with an open PR/issue
  * link in the inline comment.
  *
+ * Both entries below are schema scaffolding that the lake-migration
+ * relocated into the pillar (drizzle table def + row schemas + barrel
+ * re-export) but whose `CREATE TABLE` was never added to the pillar's
+ * migrations journal. Neither table is referenced by any service or API
+ * handler yet — they are declared surface awaiting wire-up. Close out an
+ * entry by adding the `CREATE TABLE` to the listed pillar's migrations and
+ * removing it here.
+ *
+ *   - finance:tier_overrides — relocated by #3344 (REST slice 1); the
+ *     finance migrations journal does not create `tier_overrides`.
+ *   - core:environments — relocated by the core scaffold (Phase 0); the
+ *     core migrations journal does not create `environments`.
+ *
  * @type {Record<string, Set<string>>}
  */
-const ALLOWLISTED_MISSING_TABLES = {};
+const ALLOWLISTED_MISSING_TABLES = {
+  finance: new Set(['tier_overrides']),
+  core: new Set(['environments']),
+};
 
 /**
  * Walk every file under `dir` recursively and return absolute paths
@@ -209,8 +250,15 @@ function parseTableEntriesInFile(src, file) {
 }
 
 /**
- * Parse `packages/db-types/src/schema/**\/*.ts` and return a map from
- * exported symbol → `{ tableName, indexNames }`.
+ * Build a symbol→table map for one pillar by parsing every drizzle table
+ * definition the pillar can legitimately reference: its own
+ * `src/db/schema/**\/*.ts` plus the shared cross-pillar definitions in
+ * `packages/shared-schema/src/**\/*.ts` (e.g. `entities`, `aiInferenceLog`),
+ * which pillars consume via the `@pops/shared-schema` re-export.
+ *
+ * The map is built per pillar (not globally) so same-named symbols owned
+ * by different pillars — e.g. `tierOverrides` in both finance and media,
+ * each backed by a distinct physical table — never collide.
  *
  * The parser is regex-based (matches `export const FOO = sqliteTable(
  * 'table_name'`, then collects every `index('...')` / `uniqueIndex('...')`
@@ -218,26 +266,27 @@ function parseTableEntriesInFile(src, file) {
  * the regex is reliable; anything new the parser doesn't understand fails
  * the script loudly — we don't silently miss tables.
  *
+ * @param {Pillar} pillar
  * @returns {Map<string, { tableName: string; indexNames: string[]; sourceFile: string }>}
  */
-function buildSymbolToTableMap() {
-  const schemaDir = join(repoRoot, 'packages', 'db-types', 'src', 'schema');
+function buildSymbolToTableMap(pillar) {
   /** @type {Map<string, { tableName: string; indexNames: string[]; sourceFile: string }>} */
   const map = new Map();
 
-  if (!existsSync(schemaDir)) {
-    return map;
-  }
+  const schemaDirs = [join(repoRoot, pillar.pkgDir, 'src', 'db', 'schema'), SHARED_SCHEMA_DIR];
 
-  for (const file of walkTsFiles(schemaDir)) {
-    if (file.endsWith('-row-schemas.ts')) continue;
-    const src = readFileSync(file, 'utf8');
-    for (const entry of parseTableEntriesInFile(src, file)) {
-      map.set(entry.symbol, {
-        tableName: entry.tableName,
-        indexNames: entry.indexNames,
-        sourceFile: file,
-      });
+  for (const schemaDir of schemaDirs) {
+    if (!existsSync(schemaDir)) continue;
+    for (const file of walkTsFiles(schemaDir)) {
+      if (file.endsWith('-row-schemas.ts')) continue;
+      const src = readFileSync(file, 'utf8');
+      for (const entry of parseTableEntriesInFile(src, file)) {
+        map.set(entry.symbol, {
+          tableName: entry.tableName,
+          indexNames: entry.indexNames,
+          sourceFile: file,
+        });
+      }
     }
   }
 
@@ -297,10 +346,12 @@ function parseImports(src) {
 }
 
 /**
- * Inspect a `<pillar>/src/schema.ts` and return the set of symbol names
- * it re-exports from `@pops/db-types`. These are the tables the package
- * legitimately considers part of its surface — used as the fallback for
- * `import * as schema` style imports.
+ * Inspect a `<pillar>/src/db/schema.ts` barrel and return the set of
+ * symbol names it re-exports — both the pillar-local table modules
+ * (`export { x } from './schema/x.js'`) and the shared cross-pillar
+ * definitions (`export { entities } from '@pops/shared-schema'`). These
+ * are the tables the pillar legitimately surfaces — used as the fallback
+ * for `import * as schema` style imports.
  *
  * @param {string} schemaFile
  * @returns {Set<string>}
@@ -309,7 +360,7 @@ function parsePillarSchemaReExports(schemaFile) {
   const src = readFileSync(schemaFile, 'utf8');
   /** @type {Set<string>} */
   const out = new Set();
-  const reExportRe = /export\s*\{([\s\S]*?)\}\s*from\s*['"]@pops\/db-types['"]/g;
+  const reExportRe = /export\s*\{([\s\S]*?)\}\s*from\s*['"][^'"]+['"]/g;
   for (const m of src.matchAll(reExportRe)) {
     for (const raw of m[1].split(',')) {
       const piece = raw.trim();
@@ -323,20 +374,36 @@ function parsePillarSchemaReExports(schemaFile) {
 }
 
 /**
- * Compute the set of table-symbol references a pillar package makes.
+ * True if a relative import specifier targets the pillar's schema barrel
+ * (`.../schema` or `.../schema.js`) or a specific schema module
+ * (`.../schema/<name>` / `.../schema/<name>.js`). Depth-agnostic: matches
+ * `../schema.js`, `../../schema.js`, `../schema/foo.js`, etc. — services
+ * live at varying nesting depths under `src/db/services/**`.
  *
- * Walks every `src/services/*.ts` (recursive) plus the package's
- * `src/schema.ts` re-exports, and returns symbol names that the
+ * @param {string} from
+ * @returns {boolean}
+ */
+function isPillarSchemaImport(from) {
+  if (!from.startsWith('.')) return false;
+  const noExt = from.replace(/\.(?:js|ts)$/u, '');
+  return noExt.endsWith('/schema') || /\/schema\/[^/]+$/u.test(noExt);
+}
+
+/**
+ * Compute the set of table-symbol references a pillar makes.
+ *
+ * Walks every `src/db/services/**\/*.ts` (recursive) plus the pillar's
+ * `src/db/schema.ts` re-exports, and returns symbol names that the
  * symbol→table map knows about. Symbols not in the map are dropped — they
  * are not tables (e.g. constants, types, helpers).
  *
- * @param {string} pkgRoot Absolute path to e.g. `packages/finance-db`.
+ * @param {string} pkgRoot Absolute path to e.g. `pillars/finance`.
  * @param {Map<string, { tableName: string }>} symbolToTable
  * @returns {Set<string>}
  */
 function collectUsedTableSymbols(pkgRoot, symbolToTable) {
-  const servicesDir = join(pkgRoot, 'src', 'services');
-  const schemaFile = join(pkgRoot, 'src', 'schema.ts');
+  const servicesDir = join(pkgRoot, 'src', 'db', 'services');
+  const schemaFile = join(pkgRoot, 'src', 'db', 'schema.ts');
 
   const pillarReExports = existsSync(schemaFile)
     ? parsePillarSchemaReExports(schemaFile)
@@ -353,9 +420,7 @@ function collectUsedTableSymbols(pkgRoot, symbolToTable) {
   for (const file of walkTsFiles(servicesDir)) {
     const src = readFileSync(file, 'utf8');
     for (const imp of parseImports(src)) {
-      const isSchemaImport = imp.from === '../schema.js' || imp.from === '../schema';
-      const isDbTypesImport = imp.from === '@pops/db-types';
-      if (!isSchemaImport && !isDbTypesImport) continue;
+      if (!isPillarSchemaImport(imp.from)) continue;
 
       if (imp.isNamespace) {
         for (const sym of pillarReExports) {
@@ -372,34 +437,46 @@ function collectUsedTableSymbols(pkgRoot, symbolToTable) {
 }
 
 /**
- * Run the migrations for a pillar package against a fresh temp-file DB
- * by invoking the package's exported open function.
+ * Run the migrations for a pillar against a fresh temp-file DB by invoking
+ * the pillar's exported open function.
+ *
+ * The opener lives in the built `dist/db/index.js` and is named
+ * `open<Pillar>Db`. Rather than hard-code the PascalCase name, it's
+ * discovered: the sole export matching `/^open[A-Z]\w*Db$/`. This keeps
+ * the script free of any per-pillar name table.
  *
  * Returns the better-sqlite3 raw handle so the caller can query
  * `sqlite_master`. The caller is responsible for `close()` which also
  * unlinks the temp file (including the WAL/SHM sidecars).
  *
- * @param {{ pkg: string; opener: string; pkgDir: string }} pillar
+ * @param {Pillar} pillar
  * @returns {Promise<{ raw: import('better-sqlite3').Database; close: () => void }>}
  */
 async function openPillarInMemory(pillar) {
-  const distEntry = join(repoRoot, pillar.pkgDir, 'dist', 'index.js');
+  const distEntry = join(repoRoot, pillar.pkgDir, 'dist', 'db', 'index.js');
   if (!existsSync(distEntry)) {
     throw new Error(
-      `[${pillar.pkg}] dist/index.js not found at ${distEntry}. ` +
-        `Run \`pnpm --filter @pops/${pillar.pkg} build\` first.`
+      `[${pillar.name}] dist/db/index.js not found at ${distEntry}. ` +
+        `Run \`pnpm --filter @pops/${pillar.name} build\` first.`
     );
   }
   const mod = await import(distEntry);
+  const openerNames = Object.keys(mod).filter((k) => /^open[A-Z]\w*Db$/u.test(k));
+  if (openerNames.length !== 1) {
+    throw new Error(
+      `[${pillar.name}] expected exactly one open<Pillar>Db export in ${distEntry}, ` +
+        `found: ${openerNames.length === 0 ? '(none)' : openerNames.join(', ')}`
+    );
+  }
   /** @type {(path: string) => { raw: import('better-sqlite3').Database }} */
-  const opener = mod[pillar.opener];
+  const opener = mod[openerNames[0]];
   if (typeof opener !== 'function') {
-    throw new Error(`[${pillar.pkg}] expected export ${pillar.opener} to be a function`);
+    throw new Error(`[${pillar.name}] expected export ${openerNames[0]} to be a function`);
   }
 
   const tmpDbPath = join(
     tmpdir(),
-    `pillar-schema-coverage-${pillar.pkg}-${process.pid}-${Date.now()}.db`
+    `pillar-schema-coverage-${pillar.name}-${process.pid}-${Date.now()}.db`
   );
   const opened = opener(tmpDbPath);
   return {
@@ -462,19 +539,24 @@ function diff(raw, usedSymbols, symbolToTable) {
  * Run the coverage check for one pillar. Returns true on full coverage,
  * false otherwise. Logs a human-readable report either way.
  *
- * @param {typeof PILLARS[number]} pillar
- * @param {Map<string, { tableName: string; indexNames: string[] }>} symbolToTable
+ * The symbol→table map is built per pillar (its own `src/db/schema/**`
+ * plus the shared `@pops/shared-schema` defs) so same-named symbols owned
+ * by distinct pillars never collide.
+ *
+ * @param {Pillar} pillar
  * @param {{ ignoreAllowlist?: boolean; injectFakeTables?: string[] }} [options]
  * @returns {Promise<boolean>}
  */
-async function checkPillar(pillar, symbolToTable, options = {}) {
+async function checkPillar(pillar, options = {}) {
   const ignoreAllowlist = options.ignoreAllowlist === true;
   const injectFakeTables = options.injectFakeTables ?? [];
   const pkgRoot = join(repoRoot, pillar.pkgDir);
   if (!existsSync(pkgRoot)) {
-    console.error(`[${pillar.name}] package not found at ${pkgRoot}`);
+    console.error(`[${pillar.name}] pillar not found at ${pkgRoot}`);
     return false;
   }
+  const symbolToTable = buildSymbolToTableMap(pillar);
+  console.log(`[${pillar.name}] loaded ${symbolToTable.size} table symbol(s).`);
   const used = collectUsedTableSymbols(pkgRoot, symbolToTable);
 
   for (const fakeTable of injectFakeTables) {
@@ -637,13 +719,17 @@ async function main() {
     usage();
     process.exit(2);
   }
-  const symbolToTable = buildSymbolToTableMap();
-  console.log(`Loaded ${symbolToTable.size} table symbol(s) from @pops/db-types.`);
+  if (pillars.length === 0) {
+    console.error(
+      'No pillars discovered under pillars/* with a src/db/schema.ts barrel. ' + 'Nothing to check.'
+    );
+    process.exit(1);
+  }
   if (ignoreAllowlist) console.log('--ignore-allowlist set: every miss is treated as a failure.');
 
   let allOk = true;
   for (const pillar of pillars) {
-    const ok = await checkPillar(pillar, symbolToTable, {
+    const ok = await checkPillar(pillar, {
       ignoreAllowlist,
       injectFakeTables: injections.get(pillar.name) ?? [],
     });

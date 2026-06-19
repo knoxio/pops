@@ -8,13 +8,8 @@ on:
     branches: [main]
     paths:
       - "pillars/food/**"
-      - "packages/core-db/**"
-      - "packages/media-db/**"
       - "packages/pillar-sdk/**"
       - "packages/types/**"
-      - "packages/core-contract/**"
-      - "packages/finance-contract/**"
-      - "packages/media-contract/**"
       - "pnpm-lock.yaml"
       - "pnpm-workspace.yaml"
       - "tsconfig.base.json"
@@ -23,13 +18,8 @@ on:
   pull_request:
     paths:
       - "pillars/food/**"
-      - "packages/core-db/**"
-      - "packages/media-db/**"
       - "packages/pillar-sdk/**"
       - "packages/types/**"
-      - "packages/core-contract/**"
-      - "packages/finance-contract/**"
-      - "packages/media-contract/**"
       - "pnpm-lock.yaml"
       - "pnpm-workspace.yaml"
       - "tsconfig.base.json"

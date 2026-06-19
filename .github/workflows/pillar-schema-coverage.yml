@@ -4,16 +4,16 @@ on:
   push:
     branches: [main]
     paths:
-      - "packages/*-db/**"
-      - "pillars/*/db/**"
-      - "packages/db-types/**"
+      - "pillars/*/src/db/**"
+      - "pillars/*/migrations/**"
+      - "packages/shared-schema/**"
       - "scripts/check-pillar-schema-coverage.mjs"
       - ".github/workflows/pillar-schema-coverage.yml"
   pull_request:
     paths:
-      - "packages/*-db/**"
-      - "pillars/*/db/**"
-      - "packages/db-types/**"
+      - "pillars/*/src/db/**"
+      - "pillars/*/migrations/**"
+      - "packages/shared-schema/**"
       - "scripts/check-pillar-schema-coverage.mjs"
       - ".github/workflows/pillar-schema-coverage.yml"
 
@@ -22,13 +22,43 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  discover:
+    name: Discover pillars
+    runs-on: ubuntu-latest
+    outputs:
+      pillars: ${{ steps.list.outputs.pillars }}
+      count: ${{ steps.list.outputs.count }}
+    steps:
+      - uses: actions/checkout@v6
+      - id: list
+        name: Enumerate pillars with a migrated schema surface
+        # A pillar this guard can check is any `pillars/<x>` exposing a
+        # `src/db/schema.ts` barrel. Derived from disk so adding or
+        # removing a pillar needs no workflow edit (mirrors the script's
+        # own discovery in scripts/check-pillar-schema-coverage.mjs).
+        run: |
+          set -euo pipefail
+          json=$(find pillars -mindepth 1 -maxdepth 1 -type d 2>/dev/null \
+            | sort \
+            | while read -r dir; do
+                if [ -f "$dir/src/db/schema.ts" ]; then basename "$dir"; fi
+              done \
+            | jq -R -s -c 'split("\n") | map(select(length > 0))')
+          count=$(echo "$json" | jq 'length')
+          echo "pillars=$json" >> "$GITHUB_OUTPUT"
+          echo "count=$count" >> "$GITHUB_OUTPUT"
+          echo "Discovered $count pillar(s):"
+          echo "$json" | jq .
+
   coverage:
     name: ${{ matrix.pillar }} schema coverage
+    needs: [discover]
+    if: needs.discover.outputs.count != '0'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        pillar: [finance, core, media, inventory, cerebrum, food, lists]
+        pillar: ${{ fromJson(needs.discover.outputs.pillars) }}
     steps:
       - uses: actions/checkout@v6
       - uses: pnpm/action-setup@v5
@@ -37,13 +67,19 @@ jobs:
           node-version: "22"
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - name: Build pillar packages
-        run: pnpm --filter "@pops/db-types^..." --filter "@pops/db-types" build
+      - name: Build ${{ matrix.pillar }} pillar (with deps)
+        # The script imports the pillar's built dist/db/index.js opener to
+        # apply its migrations journal against a fresh SQLite DB. `...`
+        # pulls in the pillar's workspace dependencies (@pops/shared-schema,
+        # @pops/types, @pops/pillar-sdk, …) which the opener needs at import.
+        run: pnpm --filter "@pops/${{ matrix.pillar }}..." build
       - name: Run schema-coverage check for ${{ matrix.pillar }}
         run: node scripts/check-pillar-schema-coverage.mjs --pillar ${{ matrix.pillar }}
 
   selftest:
     name: Self-test (script catches injected missing table)
+    needs: [discover]
+    if: needs.discover.outputs.count != '0'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -53,13 +89,23 @@ jobs:
           node-version: "22"
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - name: Build finance-db
-        run: pnpm --filter "@pops/finance-db^..." --filter "@pops/finance-db" build
+      - name: Pick a self-test pillar
+        id: pick
+        # Use the first discovered pillar so the self-test never hard-codes
+        # a pillar name that a future relocation might delete.
+        run: |
+          set -euo pipefail
+          pillar=$(echo '${{ needs.discover.outputs.pillars }}' | jq -r '.[0]')
+          echo "pillar=$pillar" >> "$GITHUB_OUTPUT"
+          echo "Self-test pillar: $pillar"
+      - name: Build ${{ steps.pick.outputs.pillar }} pillar (with deps)
+        run: pnpm --filter "@pops/${{ steps.pick.outputs.pillar }}..." build
       - name: Self-test (script catches injected missing table)
         run: |
           set +e
+          pillar='${{ steps.pick.outputs.pillar }}'
           node scripts/check-pillar-schema-coverage.mjs \
-            --pillar finance --inject-fake-table finance:fake_self_test_table 2>&1 | tee out.log
+            --pillar "$pillar" --inject-fake-table "$pillar:fake_self_test_table" 2>&1 | tee out.log
           actual_exit=${PIPESTATUS[0]}
           if [ "$actual_exit" -eq 0 ]; then
             echo "::error::Self-test failed: script exited 0 with an injected fake table"
@@ -68,3 +114,20 @@ jobs:
           grep -q "fake_self_test_table" out.log || { echo "::error::Self-test failed: script did not flag injected fake table"; exit 1; }
           grep -q "Missing tables" out.log || { echo "::error::Self-test failed: script did not produce 'Missing tables' message"; exit 1; }
           echo "Self-test passed: script correctly catches injected missing tables"
+
+  done:
+    name: Pillar schema coverage
+    needs: [discover, coverage, selftest]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Summarise
+        run: |
+          set -euo pipefail
+          echo "Discovered ${{ needs.discover.outputs.count }} pillar(s)."
+          if [ "${{ needs.coverage.result }}" = "failure" ] || [ "${{ needs.coverage.result }}" = "cancelled" ] \
+             || [ "${{ needs.selftest.result }}" = "failure" ] || [ "${{ needs.selftest.result }}" = "cancelled" ]; then
+            echo "::error::A schema-coverage job failed (coverage=${{ needs.coverage.result }}, selftest=${{ needs.selftest.result }})."
+            exit 1
+          fi
+          echo "Schema coverage OK (coverage=${{ needs.coverage.result }}, selftest=${{ needs.selftest.result }})."

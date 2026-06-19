@@ -7,10 +7,10 @@ name: Lists Pillar Quality
 # repo-wide tsconfig/lockfile surface.
 #
 # Bubble-of-happiness rule: this workflow is the one that MUST stay
-# green for the lists pillar. Other workflows (api-quality, fe-quality,
-# pillar-images, etc.) may be red while the rest of the codebase still
-# imports the dead @pops/lists-* package names — that's deliberate
-# and will be resolved as each consumer migrates to `@pops/lists`.
+# green for the lists pillar. Other workflows may be red while the rest
+# of the codebase still imports the dead @pops/lists-* package names —
+# that's deliberate and will be resolved as each consumer migrates to
+# `@pops/lists`.
 
 on:
   push:
@@ -19,10 +19,6 @@ on:
       - "pillars/lists/**"
       - "packages/pillar-sdk/**"
       - "packages/types/**"
-      - "packages/core-contract/**"
-      - "packages/finance-contract/**"
-      - "packages/inventory-contract/**"
-      - "packages/media-contract/**"
       - "pnpm-lock.yaml"
       - "pnpm-workspace.yaml"
       - "tsconfig.base.json"
@@ -33,10 +29,6 @@ on:
       - "pillars/lists/**"
       - "packages/pillar-sdk/**"
       - "packages/types/**"
-      - "packages/core-contract/**"
-      - "packages/finance-contract/**"
-      - "packages/inventory-contract/**"
-      - "packages/media-contract/**"
       - "pnpm-lock.yaml"
       - "pnpm-workspace.yaml"
       - "tsconfig.base.json"

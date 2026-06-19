@@ -8,14 +8,15 @@ const HERE = path.dirname(fileURLToPath(import.meta.url));
 /**
  * Playwright configuration for POPS Shell E2E tests.
  *
- * Two modes:
- *   Mocked tests (transactions.spec.ts, import-wizard.spec.ts):
- *     All API calls are intercepted via page.route() — fast, no real backend needed.
- *     The API webServer is still started but irrelevant for these tests.
- *
- *   Integration tests (*-integration.spec.ts):
- *     Real API calls route through Vite proxy → backend API → 'e2e' named environment.
- *     globalSetup creates the seeded env before tests; globalTeardown deletes it after.
+ * NOTE (lake-migration): this suite was written against the now-deleted
+ * `apps/pops-api` tRPC monolith — specs mock/route `/trpc/**` and the
+ * `globalSetup` seeded an `e2e` named environment via `POST :3000/env/...`.
+ * The lake is now seven independent REST pillars + a static-built shell;
+ * none of that surface exists, so the suite cannot pass without a full
+ * rewrite against the REST stack (out of scope). The `fe-test-e2e.yml`
+ * workflow is therefore gated to `workflow_dispatch` only. The dead
+ * pops-api `webServer` (cwd `../pops-api`) has been removed below so the
+ * harness no longer references a deleted directory.
  *
  * Install-set switching (PRD-101 US-11 follow-up, issue #2595):
  *
@@ -31,9 +32,6 @@ const HERE = path.dirname(fileURLToPath(import.meta.url));
  *       The snapshot lives under `.e2e/registry/finance-only.js`; the
  *       Vite config picks it up via `POPS_REGISTRY_SNAPSHOT` and aliases
  *       `@pops/module-registry` to it for that server only.
- *
- *   Both servers share the same pops-api (port 3000) — the API does not
- *   participate in this switching matrix.
  */
 const FINANCE_ONLY_SNAPSHOT = path.resolve(HERE, '.e2e/registry/finance-only.js');
 const ALL_MODULES_PORT = 5567;
@@ -111,21 +109,6 @@ export default defineConfig({
         POPS_APPS: 'finance,core',
         POPS_REGISTRY_SNAPSHOT: FINANCE_ONLY_SNAPSHOT,
       },
-    },
-    // Finance API — required for integration tests; mocked tests don't use it but starting
-    // it is harmless and ensures the proxy target is always available.
-    //
-    // INVENTORY_IMAGES_DIR is required by inventory.photos.upload (no default, unlike
-    // MEDIA_IMAGES_DIR). Setting it here keeps the inventory photo e2e tests (#2125)
-    // self-contained — uploads are written under a per-process tmp dir that the test
-    // teardown cleans up alongside the e2e SQLite environment.
-    {
-      command: 'pnpm dev',
-      url: 'http://localhost:3000/health',
-      cwd: '../pops-api',
-      reuseExistingServer: !process.env.CI,
-      timeout: 60000,
-      env: { INVENTORY_IMAGES_DIR: './data/e2e/inventory-images' },
     },
   ],
 });
