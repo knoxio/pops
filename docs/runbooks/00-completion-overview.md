@@ -68,7 +68,7 @@ The migration is done when **all** of these pass from a clean checkout of `main`
 | [`03-frontend-rest-cutover.md`](./03-frontend-rest-cutover.md)           | Browser client → REST, `app-finance` conversion, remove tRPC shims, drop `TRPC_PILLARS`                                                                           | **Track A/B/C ✅ · B3 ✅ (`cf70f329`)** — browser tRPC client deleted, `TRPC_PILLARS` gone, app-finance entities → Hey client (`992e65d4`). **Residual:** `pops-shell` REST-backed `usePillar*` (decision pending) + 6 stale `/trpc` e2e mocks                        |
 | [`02-monolith-decommission.md`](./02-monolith-decommission.md)           | Relocate stray monolith routes, delete `apps/pops-api` + `apps/pops-core-api` + shared `pops.db`                                                                  | **✅ DONE** — R1 up-bank→finance (#3453) · R2 inventory files→inventory (#3454) · app-finance + pops-mcp off `@pops/api` (#3455/#3456) · barrier delete (#3457). **Repo-wide `pnpm typecheck` GREEN** — red-by-design exception lifted                                |
 | [`04-ci-docker-infra.md`](./04-ci-docker-infra.md) **Phase Cut**         | nginx cut to REST, compose → `pillars/` Dockerfiles, GHCR rename, core dead-pkg ban, clear baseline                                                               | **✅ DONE (`440618f2`)** — nginx `/trpc` blocks removed (drift-checked, `rg trpc nginx.conf`→0); `no-dead-core-pkgs` added (7/7 bans, empty baseline); dev compose builds all pillars from `pillars/<x>/Dockerfile`. **Prod GHCR rename is the deploy step (yours).** |
-| [`05-features-registry.md`](./05-features-registry.md) **Features epic** | Port the deferred `features.*` to core REST (cross-pillar manifest + capability registry); fix the live settings bug; convert the shell + retire pillar-sdk hooks | **Design doc written — awaiting approval to build.** The last blocker for G1's literal end-state                                                                                                                                                                      |
+| [`05-features-registry.md`](./05-features-registry.md) **Features epic** | Port the deferred `features.*` to core REST (cross-pillar manifest + capability registry); fix the live settings bug; convert the shell + retire pillar-sdk hooks | **Approved — building (registry-driven).** S1 in flight. The last blocker for G1's literal end-state. See also `06-static-pillar-lists.md` (self-reg debt)                                                                                                            |
 
 ### Dependency DAG (what runs in parallel)
 
@@ -93,6 +93,8 @@ DONE:  ✅ 04 Phase 0 (#3444) · Track B (#3446) · Track C (#3447) · 01 core p
   ✅ e2e: 6 stale /trpc specs rewired to REST (f0129109).
   ☐ separate debt: Playwright harness still points at deleted apps/pops-api (no e2e runs) +
      more /trpc specs remain · stale comments (cosmetic)
+  ☐ self-registration debt → 06-static-pillar-lists.md: prod nginx + KnownPillarId + module-registry
+     are still hand-listed (runtime registry IS dynamic; build-time projections aren't). Not a blocker.
   ☐ DEPLOY (yours): prod GHCR rename pops-<x>-api → pops-<x> + publish/cutover
         │
         ▼
