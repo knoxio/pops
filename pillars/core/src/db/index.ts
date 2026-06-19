@@ -22,6 +22,7 @@ export * as serviceAccountsService from './services/service-accounts.js';
 export * as serviceAccountKeys from './services/service-account-keys.js';
 export * as pillarRegistryService from './services/pillar-registry.js';
 export * as settingsService from './services/settings.js';
+export * as userSettingsService from './services/user-settings.js';
 export * as aiUsageService from './services/ai-usage.js';
 export * as syncResultsService from './services/sync-results.js';
 export * as aiModelPricingService from './services/ai-model-pricing.js';
