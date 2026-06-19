@@ -17,13 +17,14 @@ The registry is the source of truth for _what's running and what it can do_. Con
 
 ## PRDs
 
-| #   | PRD                                | Summary                                                                         | Status      |
-| --- | ---------------------------------- | ------------------------------------------------------------------------------- | ----------- |
-| 161 | Registry schema + endpoints        | `pillar_registry` table, register/heartbeat/snapshot/subscribe routes           | Not started |
-| 162 | Heartbeat lifecycle                | TTL semantics, missed-heartbeat → unavailable transition, recovery on reconnect | Not started |
-| 163 | Subscription model                 | SSE channel for change notifications; consumers invalidate caches on receive    | Not started |
-| 164 | Reconciliation on core-api restart | Initial `unknown` state, grace window, eventually-consistent recovery           | Not started |
-| 228 | Dynamic pillar registration        | External-pillar drop-in: shared-key register/heartbeat/deregister + nginx regen | Not started |
+| #   | PRD                                | Summary                                                                                  | Status      |
+| --- | ---------------------------------- | ---------------------------------------------------------------------------------------- | ----------- |
+| 161 | Registry schema + endpoints        | `pillar_registry` table, register/heartbeat/snapshot/subscribe routes                    | Not started |
+| 162 | Heartbeat lifecycle                | TTL semantics, missed-heartbeat → unavailable transition, recovery on reconnect          | Not started |
+| 163 | Subscription model                 | SSE channel for change notifications; consumers invalidate caches on receive             | Not started |
+| 164 | Reconciliation on core-api restart | Initial `unknown` state, grace window, eventually-consistent recovery                    | Not started |
+| 228 | Dynamic pillar registration        | External-pillar drop-in: shared-key register/heartbeat/deregister + nginx regen          | Not started |
+| 255 | Production registry-driven nginx   | Deploy boot-render + watcher into the prod shell image; fix the dead tRPC registry fetch | Not started |
 
 ## Dependencies
 

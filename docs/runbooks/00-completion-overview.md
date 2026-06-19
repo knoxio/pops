@@ -93,8 +93,9 @@ DONE:  ✅ 04 Phase 0 (#3444) · Track B (#3446) · Track C (#3447) · 01 core p
   ✅ e2e: 6 stale /trpc specs rewired to REST (f0129109).
   ☐ separate debt: Playwright harness still points at deleted apps/pops-api (no e2e runs) +
      more /trpc specs remain · stale comments (cosmetic)
-  ☐ self-registration debt → 06-static-pillar-lists.md: prod nginx + KnownPillarId + module-registry
-     are still hand-listed (runtime registry IS dynamic; build-time projections aren't). Not a blocker.
+  ☐ self-registration groundwork → 06-static-pillar-lists.md: runtime registry + SSE + SDK discovery
+     seam already exist; remaining = wire dynamic nginx (fix dead tRPC URL, boot-render+watcher) +
+     two-tier KnownPillarId. module-registry already FS-discovered (PRD-241). Not a blocker.
   ☐ DEPLOY (yours): prod GHCR rename pops-<x>-api → pops-<x> + publish/cutover
         │
         ▼
