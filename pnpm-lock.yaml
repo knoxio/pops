@@ -128,9 +128,6 @@ importers:
       express:
         specifier: ^5.1.0
         version: 5.2.1
-      pino:
-        specifier: ^10.3.1
-        version: 10.3.1
       zod:
         specifier: ^4.4.3
         version: 4.4.3
@@ -1169,9 +1166,6 @@ importers:
 
   packages/overlay-ego:
     dependencies:
-      '@hey-api/client-fetch':
-        specifier: ^0.13.1
-        version: 0.13.1(@hey-api/openapi-ts@0.98.2(magicast@0.5.3)(typescript@6.0.3))
       '@pops/types':
         specifier: workspace:*
         version: link:../types
@@ -1199,10 +1193,10 @@ importers:
       react-router:
         specifier: ^7.17.0
         version: 7.17.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      sonner:
-        specifier: ^2.0.7
-        version: 2.0.7(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
     devDependencies:
+      '@hey-api/client-fetch':
+        specifier: ^0.13.1
+        version: 0.13.1(@hey-api/openapi-ts@0.98.2(magicast@0.5.3)(typescript@6.0.3))
       '@hey-api/openapi-ts':
         specifier: ^0.98.2
         version: 0.98.2(magicast@0.5.3)(typescript@6.0.3)
@@ -1285,9 +1279,6 @@ importers:
       drizzle-zod:
         specifier: ^0.8.3
         version: 0.8.3(drizzle-orm@0.45.2(@types/better-sqlite3@7.6.13)(better-sqlite3@12.10.0))(zod@4.4.3)
-      zod:
-        specifier: ^4.4.3
-        version: 4.4.3
     devDependencies:
       '@types/node':
         specifier: ^25.9.3

@@ -3,8 +3,6 @@
  *
  * Rules:
  * - packages/app-<x>/** must not import from packages/app-<y>/** (x ≠ y)
- * - apps/pops-api/src/modules/<x>/** must not import from
- *   apps/pops-api/src/modules/<y>/** (y ≠ x and y ≠ core)
  * - Non-owning code must not import @pops/<pillar>-db directly; consumers
  *   go through @pops/<pillar>-contract. Rules generated from
  *   scripts/contract/pillar-list.ts.
@@ -29,17 +27,6 @@ module.exports = {
       to: {
         path: '^packages/app-([^/]+)/',
         pathNot: '^packages/app-$1/',
-      },
-    },
-    {
-      name: 'no-cross-api-module-import',
-      severity: 'error',
-      comment:
-        'apps/pops-api/src/modules/<x> may not import from another modules/<y> (except core). Cross-module access goes through core or via the shared db-types layer.',
-      from: { path: '^apps/pops-api/src/modules/([^/]+)/' },
-      to: {
-        path: '^apps/pops-api/src/modules/([^/]+)/',
-        pathNot: '^apps/pops-api/src/modules/($1|core)/',
       },
     },
     {

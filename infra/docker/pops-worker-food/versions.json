@@ -1,9 +1,0 @@
-{
-  "$comment": "Pinned tool versions baked into ghcr.io/knoxio/pops-worker-food. Updates are PRs that re-bake the image; the Dockerfile reads these via build args (BUILD_VERSION + the values below) so a single source of truth survives the image cache.",
-  "ytDlp": "2025.10.22",
-  "fasterWhisper": "1.2.0",
-  "whisperModel": "distil-large-v3",
-  "ffmpegPackage": "ffmpeg",
-  "nodeBase": "node:22-bookworm-slim",
-  "pythonBase": "python:3.12-slim"
-}

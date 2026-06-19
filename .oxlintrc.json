@@ -213,29 +213,6 @@
   },
   "overrides": [
     {
-      "files": ["apps/pops-api/src/**/*.{ts,tsx}"],
-      "rules": {
-        "typescript/explicit-function-return-type": [
-          "error",
-          {
-            "allowExpressions": true,
-            "allowTypedFunctionExpressions": true,
-            "allowHigherOrderFunctions": true
-          }
-        ]
-      }
-    },
-    {
-      "files": [
-        "apps/pops-api/src/**/router.ts",
-        "apps/pops-api/src/**/router.tsx",
-        "apps/pops-api/src/trpc.ts"
-      ],
-      "rules": {
-        "typescript/explicit-module-boundary-types": "off"
-      }
-    },
-    {
       "files": [
         "apps/pops-shell/src/**/*.{ts,tsx}",
         "packages/ui/src/**/*.{ts,tsx}",
@@ -265,17 +242,6 @@
         "jsx-a11y/alt-text": "warn",
         "jsx-a11y/aria-role": "warn",
         "jsx-a11y/click-events-have-key-events": "warn"
-      }
-    },
-    {
-      "files": ["apps/pops-api/src/db/schema.ts", "apps/pops-api/src/db/seeder.ts"],
-      "rules": {
-        "max-lines": "off",
-        "max-lines-per-function": "off",
-        "complexity": "off",
-        "max-statements": "off",
-        "max-params": "off",
-        "max-depth": "off"
       }
     },
     {
@@ -319,7 +285,6 @@
     },
     {
       "files": [
-        "apps/pops-api/scripts/**/*.ts",
         "apps/pops-shell/e2e/**/*.ts",
         "packages/app-*/scripts/**/*.ts",
         "services/*/src/scripts/**/*.ts",
