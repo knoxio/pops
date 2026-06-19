@@ -3,44 +3,22 @@
  * substitutions schema against an in-memory SQLite seeded with PRD-106 +
  * PRD-107 + PRD-109 migrations. No Redis, no API process.
  */
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
 
-import Database from 'better-sqlite3';
 import { and, eq } from 'drizzle-orm';
-import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { CannotSubstituteSelf } from '../errors.js';
+import { openFoodDb } from '../open-food-db.js';
 import { substitutions } from '../schema.js';
 import { createIngredient, type FoodDb } from '../services/ingredients.js';
 import { createRecipe, deleteRecipe } from '../services/recipes.js';
 import { createSubstitution, deleteRecipeScopedSubstitutions } from '../services/substitutions.js';
 import { createVariant } from '../services/variants.js';
 
-const MIGRATIONS = [
-  '0058_high_sentinel.sql',
-  '0059_useful_hiroim.sql',
-  '0060_familiar_leo.sql',
-  '0061_shocking_skreet.sql',
-].map((name) =>
-  readFileSync(
-    join(__dirname, '../../../../../apps/pops-api/src/db/drizzle-migrations', name),
-    'utf8'
-  )
-);
+import type Database from 'better-sqlite3';
 
 function freshDb(): { db: FoodDb; raw: Database.Database } {
-  const raw = new Database(':memory:');
-  raw.pragma('foreign_keys = ON');
-  for (const migration of MIGRATIONS) {
-    const stmts = migration.split('--> statement-breakpoint');
-    for (const stmt of stmts) {
-      const trimmed = stmt.trim();
-      if (trimmed.length > 0) raw.exec(trimmed);
-    }
-  }
-  return { db: drizzle(raw), raw };
+  return openFoodDb(':memory:');
 }
 
 interface Seed {

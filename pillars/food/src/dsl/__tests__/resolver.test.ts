@@ -6,14 +6,11 @@
  * path, mixed-error path, self-reference, recipe-as-ingredient, variant
  * scoping, and the `_` skip segment.
  */
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
 
-import Database from 'better-sqlite3';
 import { eq } from 'drizzle-orm';
-import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { beforeEach, describe, expect, it } from 'vitest';
 
+import { openFoodDb } from '../../db/open-food-db.js';
 import { recipeVersions } from '../../db/schema.js';
 import * as ingredientsService from '../../db/services/ingredients.js';
 import { type FoodDb } from '../../db/services/internal.js';
@@ -36,28 +33,8 @@ import type {
   ResolvedStepBlock,
 } from '../resolver-types.js';
 
-const MIGRATIONS = [
-  '0058_high_sentinel.sql',
-  '0059_useful_hiroim.sql',
-  '0060_familiar_leo.sql',
-].map((name) =>
-  readFileSync(
-    join(__dirname, '../../../../../apps/pops-api/src/db/drizzle-migrations', name),
-    'utf8'
-  )
-);
-
 function freshDb(): FoodDb {
-  const raw = new Database(':memory:');
-  raw.pragma('foreign_keys = ON');
-  for (const migration of MIGRATIONS) {
-    const stmts = migration.split('--> statement-breakpoint');
-    for (const stmt of stmts) {
-      const trimmed = stmt.trim();
-      if (trimmed.length > 0) raw.exec(trimmed);
-    }
-  }
-  return drizzle(raw);
+  return openFoodDb(':memory:').db;
 }
 
 function parse(input: string) {

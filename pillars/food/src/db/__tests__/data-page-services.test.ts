@@ -13,13 +13,10 @@
  *   - prep-states:            listPrepStates
  *   - slug-search:            searchSlugs across kinds with name resolution
  */
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
 
-import Database from 'better-sqlite3';
-import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { beforeEach, describe, expect, it } from 'vitest';
 
+import { openFoodDb } from '../open-food-db.js';
 import { ingredientAliases } from '../schema.js';
 import {
   bulkApproveAliases,
@@ -44,28 +41,10 @@ import { listSubstitutions, updateSubstitution } from '../services/substitutions
 import { createSubstitution } from '../services/substitutions.js';
 import { createVariant } from '../services/variants.js';
 
-const MIGRATIONS = [
-  '0058_high_sentinel.sql',
-  '0059_useful_hiroim.sql',
-  '0060_familiar_leo.sql',
-  '0061_shocking_skreet.sql',
-].map((name) =>
-  readFileSync(
-    join(__dirname, '../../../../../apps/pops-api/src/db/drizzle-migrations', name),
-    'utf8'
-  )
-);
+import type Database from 'better-sqlite3';
 
 function freshDb(): { db: FoodDb; raw: Database.Database } {
-  const raw = new Database(':memory:');
-  raw.pragma('foreign_keys = ON');
-  for (const migration of MIGRATIONS) {
-    for (const stmt of migration.split('--> statement-breakpoint')) {
-      const trimmed = stmt.trim();
-      if (trimmed.length > 0) raw.exec(trimmed);
-    }
-  }
-  return { db: drizzle(raw), raw };
+  return openFoodDb(':memory:');
 }
 
 interface Seed {

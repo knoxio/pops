@@ -7,14 +7,11 @@
  * reads. When PRD-116's full schema arrives, the same queries continue to
  * work against the superset.
  */
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
 
-import Database from 'better-sqlite3';
 import { eq } from 'drizzle-orm';
-import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { beforeEach, describe, expect, it } from 'vitest';
 
+import { openFoodDb } from '../../db/open-food-db.js';
 import { recipeVersions } from '../../db/schema.js';
 import * as ingredientsService from '../../db/services/ingredients.js';
 import { type FoodDb } from '../../db/services/internal.js';
@@ -22,40 +19,16 @@ import * as recipeVersionsService from '../../db/services/recipe-versions.js';
 import * as recipesService from '../../db/services/recipes.js';
 import { detectRecipeCycle } from '../cycle.js';
 
+import type Database from 'better-sqlite3';
+
 import type { ResolvedIngredientBlock, ResolvedRecipeAst } from '../resolver-types.js';
 
 const { createIngredient } = ingredientsService;
 const { promoteVersion } = recipeVersionsService;
 const { createRecipe } = recipesService;
 
-const MIGRATIONS = [
-  '0058_high_sentinel.sql',
-  '0059_useful_hiroim.sql',
-  '0060_familiar_leo.sql',
-  // PRD-116 lands `recipe_lines` proper — no more stub.
-  '0065_prd_116_recipe_compile.sql',
-  // PRD-123 — required because compile-lines now consults the conversion
-  // tables; the cycle suite drives compile-time recipe-ref persistence so
-  // the materialiser needs both schemas live.
-  '0066_prd_123_conversions.sql',
-].map((name) =>
-  readFileSync(
-    join(__dirname, '../../../../../apps/pops-api/src/db/drizzle-migrations', name),
-    'utf8'
-  )
-);
-
 function freshDb(): { db: FoodDb; raw: Database.Database } {
-  const raw = new Database(':memory:');
-  raw.pragma('foreign_keys = ON');
-  for (const migration of MIGRATIONS) {
-    const stmts = migration.split('--> statement-breakpoint');
-    for (const stmt of stmts) {
-      const trimmed = stmt.trim();
-      if (trimmed.length > 0) raw.exec(trimmed);
-    }
-  }
-  return { db: drizzle(raw), raw };
+  return openFoodDb(':memory:');
 }
 
 function makePromotedRecipe(

@@ -3,13 +3,10 @@
  * registrations that fall inside the configurable window ending at
  * `recipe_versions.compiled_at`.
  */
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
 
-import Database from 'better-sqlite3';
-import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { beforeEach, describe, expect, it } from 'vitest';
 
+import { openFoodDb } from '../open-food-db.js';
 import { recipes, recipeVersions } from '../schema.js';
 import {
   countCreationsForVersion,
@@ -19,35 +16,10 @@ import {
 } from '../services/creations.js';
 import { type FoodDb } from '../services/internal.js';
 
-const MIGRATIONS = [
-  '0058_high_sentinel.sql',
-  '0059_useful_hiroim.sql',
-  '0060_familiar_leo.sql',
-  '0061_shocking_skreet.sql',
-  '0062_chemical_donald_blake.sql',
-  '0063_bumpy_wolverine.sql',
-  '0064_peaceful_magma.sql',
-  '0065_prd_116_recipe_compile.sql',
-  '0066_prd_123_conversions.sql',
-  '0067_prd_125_ingest_error_columns.sql',
-].map((name) =>
-  readFileSync(
-    join(__dirname, '../../../../../apps/pops-api/src/db/drizzle-migrations', name),
-    'utf8'
-  )
-);
+import type Database from 'better-sqlite3';
 
 function freshDb(): { db: FoodDb; raw: Database.Database } {
-  const raw = new Database(':memory:');
-  raw.pragma('foreign_keys = ON');
-  for (const migration of MIGRATIONS) {
-    const stmts = migration.split('--> statement-breakpoint');
-    for (const stmt of stmts) {
-      const trimmed = stmt.trim();
-      if (trimmed.length > 0) raw.exec(trimmed);
-    }
-  }
-  return { db: drizzle(raw), raw };
+  return openFoodDb(':memory:');
 }
 
 interface SeedVersionArgs {

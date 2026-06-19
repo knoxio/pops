@@ -2,12 +2,8 @@
  * PRD-107 invariant tests — exercises the recipe + version schema against
  * an in-memory SQLite seeded with PRD-106 + PRD-107 migrations.
  */
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
 
-import Database from 'better-sqlite3';
 import { and, eq } from 'drizzle-orm';
-import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import {
@@ -15,6 +11,7 @@ import {
   CannotPromoteUncompiledVersion,
   SlugAlreadyRegisteredError,
 } from '../errors.js';
+import { openFoodDb } from '../open-food-db.js';
 import { recipes, recipeTags, recipeVersions, slugRegistry } from '../schema.js';
 import { createIngredient } from '../services/ingredients.js';
 import { type FoodDb } from '../services/ingredients.js';
@@ -30,31 +27,10 @@ import {
   renameRecipeSlug,
 } from '../services/recipes.js';
 
-const MIGRATIONS = [
-  '0058_high_sentinel.sql',
-  '0059_useful_hiroim.sql',
-  '0060_familiar_leo.sql',
-  // PRD-109's substitutions table is referenced from deleteRecipe, which
-  // cascades any recipe-scoped subs before dropping the recipe row.
-  '0061_shocking_skreet.sql',
-].map((name) =>
-  readFileSync(
-    join(__dirname, '../../../../../apps/pops-api/src/db/drizzle-migrations', name),
-    'utf8'
-  )
-);
+import type Database from 'better-sqlite3';
 
 function freshDb(): { db: FoodDb; raw: Database.Database } {
-  const raw = new Database(':memory:');
-  raw.pragma('foreign_keys = ON');
-  for (const migration of MIGRATIONS) {
-    const stmts = migration.split('--> statement-breakpoint');
-    for (const stmt of stmts) {
-      const trimmed = stmt.trim();
-      if (trimmed.length > 0) raw.exec(trimmed);
-    }
-  }
-  return { db: drizzle(raw), raw };
+  return openFoodDb(':memory:');
 }
 
 function makeCompiledRecipe(

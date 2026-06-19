@@ -12,15 +12,12 @@
  *   - `gatherQualityInputsForVersions` runs once per `listDrafts` call (no N+1)
  *   - `countPendingDrafts` matches the pre-filter count
  */
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
 
-import Database from 'better-sqlite3';
 import { sql } from 'drizzle-orm';
-import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import * as gather from '../../inbox/gather-quality-inputs.js';
+import { openFoodDb } from '../open-food-db.js';
 import { ingestSources, recipes, recipeVersions } from '../schema.js';
 import {
   countPendingDrafts,
@@ -28,37 +25,12 @@ import {
   listDrafts,
 } from '../services/inbox-queries-drafts.js';
 
+import type Database from 'better-sqlite3';
+
 import type { FoodDb } from '../services/internal.js';
 
-const MIGRATIONS = [
-  '0058_high_sentinel.sql',
-  '0059_useful_hiroim.sql',
-  '0060_familiar_leo.sql',
-  '0061_shocking_skreet.sql',
-  '0062_chemical_donald_blake.sql',
-  '0063_bumpy_wolverine.sql',
-  '0064_peaceful_magma.sql',
-  '0065_prd_116_recipe_compile.sql',
-  '0066_prd_123_conversions.sql',
-  '0067_prd_125_ingest_error_columns.sql',
-  '0068_prd_136_inbox_review.sql',
-].map((name) =>
-  readFileSync(
-    join(__dirname, '../../../../../apps/pops-api/src/db/drizzle-migrations', name),
-    'utf8'
-  )
-);
-
 function freshDb(): { db: FoodDb; raw: Database.Database } {
-  const raw = new Database(':memory:');
-  raw.pragma('foreign_keys = ON');
-  for (const migration of MIGRATIONS) {
-    for (const stmt of migration.split('--> statement-breakpoint')) {
-      const trimmed = stmt.trim();
-      if (trimmed.length > 0) raw.exec(trimmed);
-    }
-  }
-  return { db: drizzle(raw), raw };
+  return openFoodDb(':memory:');
 }
 
 interface SeedOpts {

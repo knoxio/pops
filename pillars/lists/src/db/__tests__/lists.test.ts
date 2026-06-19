@@ -36,10 +36,7 @@ import {
 } from '../services/lists.js';
 
 const MIGRATION_SQL = readFileSync(
-  join(
-    __dirname,
-    '../../../../../apps/pops-api/src/db/drizzle-migrations/0062_chemical_donald_blake.sql'
-  ),
+  join(__dirname, '../../../migrations/0062_chemical_donald_blake.sql'),
   'utf8'
 );
 
