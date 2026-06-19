@@ -1,47 +1,38 @@
 /**
  * E2E — Media watchlist: trigger a Plex sync from the UI (#2132)
  *
- * Tier 3 flow covering the new "Sync with Plex" button on /media/watchlist:
- *   1. Navigate to /media/watchlist with the seeded e2e watchlist (4 items).
- *   2. Click "Sync with Plex" — kicks off `media.plex.startSyncJob`.
+ * Tier 3 flow covering the "Sync with Plex" button on /media/watchlist:
+ *   1. Navigate to /media/watchlist with a mocked watchlist (4 items).
+ *   2. Click "Sync with Plex" — kicks off the `plexSyncWatchlist` job.
  *   3. The button flips to "Syncing…" + disabled + spinner while the mocked
  *      job is in the `running` state.
  *   4. The mocked status poll transitions to `completed`; a success toast
  *      ("Watchlist sync complete") surfaces and the button returns to its
  *      idle "Sync with Plex" copy.
- *   5. The seeded watchlist items remain visible after the sync completes.
+ *   5. The mocked watchlist items remain visible after the sync completes.
  *
- * Real vs mock decision — MOCKED for the three Plex sync procedures, the
- * watchlist list is passed through to the real e2e API.
+ * The page reads its data via the generated media Hey API client
+ * (`@pops/app-media`, baseUrl `/media-api`; the shell strips the prefix).
+ * Every route the page touches is mocked here — the pillar backends are not
+ * started for e2e, so an unmocked `/media-api/*` request would hit a dead
+ * proxy target.
  *
- *   `media.plex.startSyncJob`       — mocked: enqueueing a real sync job
- *                                     would attempt to contact Plex and
- *                                     write to the live BullMQ queue, which
- *                                     is not configured in CI.
- *   `media.plex.getSyncJobStatus`   — mocked to advance from `running` to
- *                                     `completed` on the second poll, so
- *                                     the UI exercises both states without
- *                                     a real worker process.
- *   `media.plex.getActiveSyncJobs`  — mocked empty so the hook does not
- *                                     restore a phantom running job at
- *                                     mount.
+ * Routes mocked:
+ *   GET  /media-api/watchlist            — { data: WatchlistEntry[], pagination }
+ *   GET  /media-api/movies               — { data: [], pagination } (titles come
+ *   GET  /media-api/tv-shows             —   from each entry's own `title` field)
+ *   GET  /media-api/plex/sync/active     — { data: [] } (no phantom running job)
+ *   POST /media-api/plex/sync            — { data: { jobId } } (start mutation)
+ *   GET  /media-api/plex/sync/:jobId     — { data: SyncJob } (running → completed)
  *
- * Everything else (session, dev auth, `media.watchlist.list`,
- * `media.movies.list`, `media.tvShows.list`, etc.) routes to the real e2e
- * API via `useRealApi()` so the seeded list renders verbatim. Registration
- * order matters: `useRealApi` FIRST, the mock LAST, so the mock handler's
- * `route.fallback()` can defer to the real API for any procedure it does
- * not recognise.
- *
- * Idempotency — no real DB writes occur (the mocked `startSyncJob` returns
- * a synthetic job id), so repeated runs leave the seeded env untouched.
+ * The poll interval is 1500ms (useStatusPolling); the first status poll returns
+ * `running`, all subsequent polls return `completed`, so the UI exercises both
+ * states without a real worker process.
  *
  * Crash detection is wired into beforeEach/afterEach (pageerror + console
  * errors) so every test in this suite verifies no uncaught JS error occurs.
  */
 import { expect, test, type Page } from '@playwright/test';
-
-import { useRealApi } from './helpers/use-real-api';
 
 // ---------------------------------------------------------------------------
 // Fixtures
@@ -66,6 +57,19 @@ interface SyncJob {
   progress: SyncJobProgress;
   result: unknown;
   error: string | null;
+}
+
+interface WatchlistEntry {
+  id: number;
+  mediaType: 'movie' | 'tv';
+  mediaId: number;
+  priority: number | null;
+  notes: string | null;
+  source: string | null;
+  plexRatingKey: string | null;
+  addedAt: string;
+  title: string | null;
+  posterUrl: string | null;
 }
 
 function buildRunningJob(): SyncJob {
@@ -96,153 +100,138 @@ function buildCompletedJob(): SyncJob {
   };
 }
 
+// The watchlist items render their <h3> title from each entry's own `title`
+// field (useWatchlistMediaMaps falls back to `entry.title` when the movie/tv
+// map has no matching id), so the movies/tv-shows lists can be empty.
+const WATCHLIST_ENTRIES: WatchlistEntry[] = [
+  {
+    id: 1,
+    mediaType: 'movie',
+    mediaId: 603,
+    priority: 0,
+    notes: null,
+    source: 'pops',
+    plexRatingKey: null,
+    addedAt: STARTED_AT,
+    title: 'The Matrix',
+    posterUrl: null,
+  },
+  {
+    id: 2,
+    mediaType: 'movie',
+    mediaId: 157336,
+    priority: 1,
+    notes: null,
+    source: 'pops',
+    plexRatingKey: null,
+    addedAt: STARTED_AT,
+    title: 'Interstellar',
+    posterUrl: null,
+  },
+  {
+    id: 3,
+    mediaType: 'movie',
+    mediaId: 550,
+    priority: 2,
+    notes: null,
+    source: 'pops',
+    plexRatingKey: null,
+    addedAt: STARTED_AT,
+    title: 'Fight Club',
+    posterUrl: null,
+  },
+  {
+    id: 4,
+    mediaType: 'tv',
+    mediaId: 124364,
+    priority: 3,
+    notes: null,
+    source: 'pops',
+    plexRatingKey: null,
+    addedAt: STARTED_AT,
+    title: 'Shogun',
+    posterUrl: null,
+  },
+];
+
+const EMPTY_PAGINATION = { total: 0, limit: 500, offset: 0, hasMore: false };
+
 // ---------------------------------------------------------------------------
-// tRPC route helpers — httpBatchLink combines procedures with "," in the path
-// (e.g. /trpc/media.plex.getActiveSyncJobs,media.watchlist.list?batch=1...).
-// Mixed batches (known + unknown procedures) are split: known procedures are
-// answered from the mock state, unknown ones are forwarded to the real e2e
-// API in a separate request, and the two sets of responses are merged in
-// the original procedure order before fulfilling the route.
+// REST mocks
 //
-// This is a direct port of the pattern in
-// apps/pops-shell/e2e/media-library-search-add-movie.spec.ts.
+// State is mutated across status polls (running → completed), so the route
+// closures share a single mutable object.
 // ---------------------------------------------------------------------------
-
-const E2E_ENV = 'e2e';
-
-function parseProcedures(url: string): string[] {
-  const match = /\/trpc\/([^?]+)/.exec(url);
-  if (!match) return [];
-  return decodeURIComponent(match[1] ?? '').split(',');
-}
 
 type MockState = {
-  /** Increments each time getSyncJobStatus is called. The first poll returns
+  /** Increments each time the status route is polled. The first poll returns
    *  `running`, all subsequent polls return `completed`. */
   statusPolls: number;
-  /** Flips true once the start mutation has fired. Defensive — used to
-   *  surface a clearer error if status is polled before start. */
+  /** Flips true once the start mutation has fired. Defensive — surfaces a
+   *  clearer error if status is polled before start. */
   jobStarted: boolean;
 };
 
-function resolveProcedureData(name: string, state: MockState): unknown {
-  if (name === 'media.plex.getActiveSyncJobs') {
-    return { data: [] };
-  }
-  if (name === 'media.plex.startSyncJob') {
-    state.jobStarted = true;
-    return { data: { jobId: MOCK_JOB_ID } };
-  }
-  if (name === 'media.plex.getSyncJobStatus') {
-    state.statusPolls += 1;
-    const job = state.statusPolls <= 1 ? buildRunningJob() : buildCompletedJob();
-    return { data: job };
-  }
-  // Defensive — caller only invokes this for known procedures.
-  return null;
-}
-
-type TrpcEnvelope = Record<string, unknown>;
-
-function buildSubsetUrl(originalUrl: URL, procedures: string[], indexes: number[]): URL {
-  const subsetProcedures = indexes.map((i) => procedures[i] ?? '').filter((n) => n.length > 0);
-  const subsetUrl = new URL(originalUrl.toString());
-  subsetUrl.pathname = `/trpc/${subsetProcedures.join(',')}`;
-
-  const rawInput = originalUrl.searchParams.get('input');
-  if (rawInput !== null) {
-    const parsed: unknown = JSON.parse(rawInput);
-    if (typeof parsed === 'object' && parsed !== null) {
-      const record = parsed as Record<string, unknown>;
-      const reindexed: Record<string, unknown> = {};
-      indexes.forEach((origIndex, newIndex) => {
-        const value = record[String(origIndex)];
-        if (value !== undefined) reindexed[String(newIndex)] = value;
-      });
-      subsetUrl.searchParams.set('input', JSON.stringify(reindexed));
-    }
-  }
-  subsetUrl.searchParams.set('env', E2E_ENV);
-  return subsetUrl;
-}
-
 async function installMediaMocks(page: Page): Promise<MockState> {
   const state: MockState = { statusPolls: 0, jobStarted: false };
-  const knownProcedures = new Set([
-    'media.plex.getActiveSyncJobs',
-    'media.plex.startSyncJob',
-    'media.plex.getSyncJobStatus',
-  ]);
 
-  await page.route('/trpc/**', async (route) => {
-    const request = route.request();
-    const url = new URL(request.url());
-    const procedures = parseProcedures(request.url());
-
-    // No procedure names → defer to the next handler (real API).
-    if (procedures.length === 0) {
-      await route.fallback();
-      return;
-    }
-
-    const knownIndexes: number[] = [];
-    const unknownIndexes: number[] = [];
-    procedures.forEach((name, i) => {
-      if (knownProcedures.has(name)) knownIndexes.push(i);
-      else unknownIndexes.push(i);
-    });
-
-    // Fully unknown batch → defer to useRealApi.
-    if (knownIndexes.length === 0) {
-      await route.fallback();
-      return;
-    }
-
-    const isBatch = url.searchParams.has('batch');
-    const merged: (TrpcEnvelope | undefined)[] = Array.from<TrpcEnvelope | undefined>({
-      length: procedures.length,
-    });
-
-    for (const i of knownIndexes) {
-      const name = procedures[i] ?? '';
-      merged[i] = { result: { data: resolveProcedureData(name, state) } };
-    }
-
-    if (unknownIndexes.length > 0) {
-      if (request.method() !== 'GET') {
-        throw new Error(
-          `Mixed known/unknown procedures in a non-GET batch is not supported: ${procedures.join(',')}`
-        );
-      }
-      const subsetUrl = buildSubsetUrl(url, procedures, unknownIndexes);
-      const realResponse = await route.fetch({ url: subsetUrl.toString() });
-      const body: unknown = await realResponse.json();
-      if (!Array.isArray(body)) {
-        throw new Error(`Expected tRPC batch array response, got: ${typeof body}`);
-      }
-      const envelopes: TrpcEnvelope[] = body.map((entry): TrpcEnvelope => {
-        if (typeof entry !== 'object' || entry === null) {
-          throw new Error(`Expected tRPC envelope object, got: ${typeof entry}`);
-        }
-        return entry as TrpcEnvelope;
-      });
-      envelopes.forEach((env, j) => {
-        const origIndex = unknownIndexes[j];
-        if (origIndex !== undefined) merged[origIndex] = env;
-      });
-    }
-
-    const finalEnvelopes: TrpcEnvelope[] = merged.map((env, i) => {
-      if (env === undefined) {
-        throw new Error(`Missing tRPC envelope for procedure ${procedures[i] ?? '?'}`);
-      }
-      return env;
-    });
-
+  await page.route('**/media-api/watchlist?**', async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify(isBatch ? finalEnvelopes : finalEnvelopes[0]),
+      body: JSON.stringify({
+        data: WATCHLIST_ENTRIES,
+        pagination: { total: WATCHLIST_ENTRIES.length, limit: 500, offset: 0, hasMore: false },
+      }),
+    });
+  });
+
+  await page.route('**/media-api/movies?**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ data: [], pagination: EMPTY_PAGINATION }),
+    });
+  });
+
+  await page.route('**/media-api/tv-shows?**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ data: [], pagination: EMPTY_PAGINATION }),
+    });
+  });
+
+  await page.route('**/media-api/plex/sync/active', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ data: [] }),
+    });
+  });
+
+  // POST /plex/sync starts the job; GET /plex/sync/:jobId polls its status.
+  // Both share the `/plex/sync/...` prefix, so branch on method + path.
+  await page.route('**/media-api/plex/sync', async (route) => {
+    if (route.request().method() !== 'POST') {
+      await route.fallback();
+      return;
+    }
+    state.jobStarted = true;
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ data: { jobId: MOCK_JOB_ID } }),
+    });
+  });
+
+  await page.route(`**/media-api/plex/sync/${MOCK_JOB_ID}`, async (route) => {
+    state.statusPolls += 1;
+    const job = state.statusPolls <= 1 ? buildRunningJob() : buildCompletedJob();
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ data: job }),
     });
   });
 
@@ -270,10 +259,6 @@ test.describe('Media — watchlist: Plex sync push (mocked)', () => {
       if (msg.type() === 'error') consoleErrors.push(msg.text());
     });
 
-    // Order matters: useRealApi registers FIRST so the mock (registered
-    // last, matched first in LIFO order) can call route.fallback() to hand
-    // off non-mocked procedures to the real e2e API handler.
-    await useRealApi(page);
     await installMediaMocks(page);
   });
 
@@ -292,7 +277,7 @@ test.describe('Media — watchlist: Plex sync push (mocked)', () => {
   });
 
   test('triggers a Plex sync from the watchlist page and surfaces completion', async ({ page }) => {
-    // 1. Navigate to /media/watchlist — the seeded list contains 4 items
+    // 1. Navigate to /media/watchlist — the mocked list contains 4 items
     //    (Matrix, Interstellar, Fight Club, Shogun).
     await page.goto('/media/watchlist');
     await expect(page.getByRole('heading', { level: 1, name: 'Watchlist' })).toBeVisible({
@@ -305,8 +290,8 @@ test.describe('Media — watchlist: Plex sync push (mocked)', () => {
     await expect(button).toHaveText(/Sync with Plex/);
     await expect(button).toBeEnabled();
 
-    // Confirm a seeded watchlist item is visible BEFORE the sync — the
-    // WatchlistCard / WatchlistItem render the title in an <h3>.
+    // Confirm a watchlist item is visible BEFORE the sync — the WatchlistItem
+    // renders the title in an <h3>.
     await expect(page.getByRole('heading', { level: 3, name: 'The Matrix' }).first()).toBeVisible({
       timeout: 10_000,
     });
@@ -326,8 +311,8 @@ test.describe('Media — watchlist: Plex sync push (mocked)', () => {
     await expect(button).toBeEnabled({ timeout: 10_000 });
     await expect(button).toHaveText(/Sync with Plex/, { timeout: 10_000 });
 
-    // 4. The seeded watchlist remains visible after the sync — the real
-    //    API answered media.watchlist.list and is unaffected by the mock.
+    // 4. The watchlist remains visible after the sync — the list query is
+    //    invalidated on completion and re-fetches the same mocked rows.
     await expect(page.getByRole('heading', { level: 3, name: 'The Matrix' }).first()).toBeVisible();
   });
 });

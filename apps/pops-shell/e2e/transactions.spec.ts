@@ -86,11 +86,20 @@ const TRANSACTIONS: MockTransaction[] = [
 ];
 
 // ---------------------------------------------------------------------------
-// API mock helpers
+// REST mock helpers
+//
+// The page reads its data via the generated finance/core Hey API clients
+// (`@pops/app-finance`), which target the shell's `/finance-api` and
+// `/core-api` proxy paths (the prefix is stripped before forwarding). Each
+// route returns the plain REST body the Hey client unwraps — NOT a tRPC
+// `{ result: { data } }` envelope, and there is no httpBatchLink batching.
+//
+//   GET   /finance-api/transactions               → { data, pagination }
+//   GET   /finance-api/transactions/available-tags → { tags }
+//   GET   /finance-api/transactions/suggest-tags   → { tags }
+//   PATCH /finance-api/transactions/:id            → { data, message }
+//   GET   /core-api/entities                       → { data, pagination }
 // ---------------------------------------------------------------------------
-
-const trpcOk = (data: unknown) => ({ result: { data } });
-const trpcBatchOk = (data: unknown) => [trpcOk(data)];
 
 const mockListResponse = {
   data: TRANSACTIONS,
@@ -98,7 +107,7 @@ const mockListResponse = {
 };
 
 /**
- * Tags returned by the availableTags mock.
+ * Tags returned by the available-tags mock.
  * Must include "Dining" so tests that click the Dining suggestion pill can find it.
  * "Groceries" is also included so it's present in autocomplete (but filtered out when
  * the WOOLWORTHS row already has it as a current tag).
@@ -114,64 +123,53 @@ const MOCK_AVAILABLE_TAGS = [
 ];
 
 const setupMockAPIs = async (page: Page) => {
-  // tRPC's httpBatchLink batches concurrent queries into a single request:
-  //   GET /trpc/transactions.list,transactions.availableTags?batch=1&input=...
-  // A single Playwright route must handle any combination of these two procedures
-  // and return a correctly-indexed multi-element batch response.
-  await page.route(/\/trpc\/transactions\.(list|availableTags)/, async (route) => {
-    const url = new URL(route.request().url());
-    const path = url.pathname;
-    const hasList = path.includes('transactions.list');
-    const hasAvailableTags = path.includes('transactions.availableTags');
-    const isBatch = url.searchParams.has('batch');
-
-    if (hasList && hasAvailableTags) {
-      // Combined batch: procedures appear in URL order (list=0, availableTags=1)
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify([
-          { result: { data: mockListResponse } },
-          { result: { data: MOCK_AVAILABLE_TAGS } },
-        ]),
-      });
-    } else if (hasList) {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(isBatch ? trpcBatchOk(mockListResponse) : trpcOk(mockListResponse)),
-      });
-    } else {
-      // availableTags only
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(
-          isBatch ? trpcBatchOk(MOCK_AVAILABLE_TAGS) : trpcOk(MOCK_AVAILABLE_TAGS)
-        ),
-      });
+  // Playwright matches the most-recently-added route first, so register the
+  // broad PATCH /transactions/:id catch FIRST and the more specific GET
+  // sub-paths LAST so they take precedence for those URLs.
+  await page.route('**/finance-api/transactions/*', async (route) => {
+    if (route.request().method() !== 'PATCH') {
+      await route.fallback();
+      return;
     }
-  });
-
-  await page.route(/\/trpc\/transactions\.update/, async (route) => {
-    const isBatch = new URL(route.request().url()).searchParams.has('batch');
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify(isBatch ? trpcBatchOk({ success: true }) : trpcOk({ success: true })),
+      body: JSON.stringify({ data: { id: 'txn-001' }, message: 'Transaction updated' }),
     });
   });
 
-  await page.route(/\/trpc\/transactions\.suggestTags/, async (route) => {
-    const isBatch = new URL(route.request().url()).searchParams.has('batch');
+  await page.route('**/finance-api/transactions/available-tags', async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify(
-        isBatch
-          ? trpcBatchOk({ tags: ['Groceries', 'Online'] })
-          : trpcOk({ tags: ['Groceries', 'Online'] })
-      ),
+      body: JSON.stringify({ tags: MOCK_AVAILABLE_TAGS }),
+    });
+  });
+
+  await page.route('**/finance-api/transactions/suggest-tags?**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ tags: ['Groceries', 'Online'] }),
+    });
+  });
+
+  await page.route('**/finance-api/transactions?**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(mockListResponse),
+    });
+  });
+
+  await page.route('**/core-api/entities?**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        data: [],
+        pagination: { total: 0, limit: 500, offset: 0, hasMore: false },
+      }),
     });
   });
 };
@@ -344,22 +342,23 @@ test.describe.skip('Transactions Page — TagEditor popover', () => {
     ).not.toBeVisible();
   });
 
-  test('Save calls transactions.update and closes popover', async ({ page }) => {
+  test('Save calls the transaction update endpoint and closes popover', async ({ page }) => {
     let capturedTags: string[] | undefined;
 
-    await page.route(/\/trpc\/transactions\.update/, async (route) => {
-      const raw = JSON.parse(route.request().postData() ?? '{}') as Record<string, unknown>;
-      // tRPC batch body: {"0": {"json": {...}}} or {"0": {...}}
-      const batchItem = raw['0'] as Record<string, unknown> | undefined;
-      const parsed = (batchItem?.['json'] as Record<string, unknown>) ?? batchItem ?? raw;
-      const data = parsed?.['data'] as Record<string, unknown> | undefined;
-      capturedTags = data?.['tags'] as string[] | undefined;
+    // PATCH /finance-api/transactions/:id carries the partial update body
+    // directly: `{ tags: [...] }`. No tRPC envelope, no batch wrapping.
+    await page.route('**/finance-api/transactions/*', async (route) => {
+      if (route.request().method() !== 'PATCH') {
+        await route.fallback();
+        return;
+      }
+      const body = JSON.parse(route.request().postData() ?? '{}') as { tags?: string[] };
+      capturedTags = body.tags;
 
-      const isBatch = new URL(route.request().url()).searchParams.has('batch');
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify(isBatch ? trpcBatchOk({ success: true }) : trpcOk({ success: true })),
+        body: JSON.stringify({ data: { id: 'txn-001' }, message: 'Transaction updated' }),
       });
     });
 
@@ -392,15 +391,12 @@ test.describe.skip('Transactions Page — TagEditor popover', () => {
   });
 
   test('Suggest button shows loading state while fetching', async ({ page }) => {
-    await page.route(/\/trpc\/transactions\.suggestTags/, async (route) => {
+    await page.route('**/finance-api/transactions/suggest-tags?**', async (route) => {
       await new Promise((r) => setTimeout(r, 800));
-      const isBatch = new URL(route.request().url()).searchParams.has('batch');
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify(
-          isBatch ? trpcBatchOk({ tags: ['Dining'] }) : trpcOk({ tags: ['Dining'] })
-        ),
+        body: JSON.stringify({ tags: ['Dining'] }),
       });
     });
 

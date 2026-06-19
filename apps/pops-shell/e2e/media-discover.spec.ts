@@ -6,19 +6,20 @@
  * throw console / page errors.
  *
  * The discover session assembly runs a full pipeline of shelves, several of
- * which depend on TMDB (external). We mock the three queries the page makes
- * via `trpc.media.discovery.*` so the test is hermetic and deterministic:
+ * which depend on TMDB (external). We mock the three REST routes the page
+ * calls via the generated media Hey API client (`@pops/app-media`, baseUrl
+ * `/media-api`) so the test is hermetic and deterministic:
  *
- *   - `media.discovery.assembleSession` — returns a single shelf with
- *     three items (title + posterUrl + tmdbId).
- *   - `media.discovery.profile`         — totalComparisons above the unlock
- *     threshold so the CTA is not shown.
- *   - `media.discovery.getDismissed`    — empty list.
+ *   - POST /media-api/discovery/session    — assembleSession; returns a single
+ *     shelf with three items (title + posterUrl + tmdbId). Bare `{ shelves }`.
+ *   - GET  /media-api/discovery/profile    — totalComparisons above the unlock
+ *     threshold so the CTA is not shown. Wrapped `{ data: PreferenceProfile }`.
+ *   - GET  /media-api/discovery/dismissed  — empty list. Wrapped `{ data: [] }`.
  *
  * Crash detection is wired into beforeEach/afterEach (pageerror + console
  * errors) so no separate crash test is needed.
  */
-import { expect, test, type Page, type Route } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 
 // ---------------------------------------------------------------------------
 // Fixture data
@@ -39,9 +40,11 @@ interface MockShelfItem {
 interface MockShelf {
   shelfId: string;
   title: string;
-  subtitle?: string;
-  emoji?: string;
+  subtitle: string | null;
+  emoji: string | null;
+  pinned: boolean;
   items: MockShelfItem[];
+  totalCount: number;
   hasMore: boolean;
 }
 
@@ -61,6 +64,8 @@ const MOCK_SHELF: MockShelf = {
   shelfId: 'trending-tmdb',
   title: 'Trending Now',
   subtitle: 'What everyone is watching',
+  emoji: null,
+  pinned: false,
   items: [
     {
       tmdbId: 101,
@@ -91,6 +96,7 @@ const MOCK_SHELF: MockShelf = {
       inLibrary: false,
     },
   ],
+  totalCount: 3,
   hasMore: false,
 };
 
@@ -107,60 +113,39 @@ const MOCK_PROFILE: MockProfile = {
 const MOCK_DISMISSED: number[] = [];
 
 // ---------------------------------------------------------------------------
-// Mock helpers — tRPC httpBatchLink combines procedures with "," in the path
-// (e.g. /trpc/media.discovery.assembleSession,media.discovery.profile).
-// A single route must return a batch array indexed in the same order the
-// procedures appear in the URL path.
+// REST mock helpers — the discover page targets the `/media-api` proxy path,
+// which the shell strips before forwarding to the media pillar. Each route
+// returns the plain REST body the Hey client expects (the page reads
+// `session.data.shelves`, `profile.data.data`, and `dismissed.data.data`).
 // ---------------------------------------------------------------------------
 
-/** Result shape tRPC expects for a successful query. */
-function trpcOk<T>(data: T): { result: { data: T } } {
-  return { result: { data } };
-}
-
-/** Ordered procedure list used to index a batched response. */
-function extractProcedures(url: URL): string[] {
-  // URL path looks like `/trpc/a.b,c.d,e.f`. strip the prefix and split.
-  const prefix = '/trpc/';
-  const tail = url.pathname.startsWith(prefix) ? url.pathname.slice(prefix.length) : url.pathname;
-  return tail.split(',');
-}
-
-/** Build a result for a single procedure name. */
-function buildResult(procedure: string): unknown {
-  if (procedure === 'media.discovery.assembleSession') {
-    return trpcOk(MOCK_SESSION);
-  }
-  if (procedure === 'media.discovery.profile') {
-    return trpcOk({ data: MOCK_PROFILE });
-  }
-  if (procedure === 'media.discovery.getDismissed') {
-    return trpcOk({ data: MOCK_DISMISSED });
-  }
-  // Fallthrough — should not happen given the route regex below, but keep
-  // the response well-formed rather than crash the client.
-  return trpcOk(null);
-}
-
-async function handleDiscoveryRoute(route: Route): Promise<void> {
-  const url = new URL(route.request().url());
-  const isBatch = url.searchParams.has('batch');
-  const procedures = extractProcedures(url);
-  const body = isBatch ? procedures.map(buildResult) : buildResult(procedures[0] ?? '');
-  await route.fulfill({
-    status: 200,
-    contentType: 'application/json',
-    body: JSON.stringify(body),
-  });
-}
-
 async function mockDiscoveryEndpoints(page: Page): Promise<void> {
-  // Batched URL contains all three procedure names joined by "," so this
-  // regex catches the combined request as well as any individual call.
-  await page.route(
-    /\/trpc\/[^?]*media\.discovery\.(assembleSession|profile|getDismissed)/,
-    handleDiscoveryRoute
-  );
+  // assembleSession is a POST returning a bare `{ shelves }` payload.
+  await page.route('**/media-api/discovery/session', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(MOCK_SESSION),
+    });
+  });
+
+  // profile is a GET returning `{ data: PreferenceProfile }`.
+  await page.route('**/media-api/discovery/profile', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ data: MOCK_PROFILE }),
+    });
+  });
+
+  // getDismissed is a GET returning `{ data: number[] }`.
+  await page.route('**/media-api/discovery/dismissed', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ data: MOCK_DISMISSED }),
+    });
+  });
 }
 
 // ---------------------------------------------------------------------------
