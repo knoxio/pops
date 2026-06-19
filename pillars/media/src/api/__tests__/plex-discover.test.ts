@@ -22,7 +22,12 @@ import { join } from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { openMediaDb, plexSettingsService, type OpenedMediaDb } from '../../db/index.js';
+import {
+  moviesService,
+  openMediaDb,
+  plexSettingsService,
+  type OpenedMediaDb,
+} from '../../db/index.js';
 import { createMediaApiApp } from '../app.js';
 import { TmdbClient } from '../clients/tmdb/client.js';
 import { makeClient } from './test-utils.js';
@@ -356,6 +361,14 @@ describe('discovery — session assembly with the trending-plex shelf', () => {
 
   it('yields an empty trending-plex page (no throw) and assembles a session when Plex is off', async () => {
     await seedRichLibrary();
+    // Non-pinned shelf selection is randomised and every TMDB shelf is stubbed
+    // empty here, so the only deterministic guarantee that a session is non-empty
+    // is a pinned shelf. A movie marked `leaving` always surfaces the pinned
+    // leaving-soon shelf (it bypasses the min-items threshold).
+    const leaving = (
+      await client().movies.create({ tmdbId: nextId(), title: 'Expiring', genres: ['Action'] })
+    ).data;
+    moviesService.setRotationStatus(mediaDb.db, leaving.id, 'leaving');
     stubTmdbShelves();
     // No token seeded → getTrendingFromPlex returns null → shelf yields [].
 
@@ -365,6 +378,7 @@ describe('discovery — session assembly with the trending-plex shelf', () => {
     // Session assembly still works and never surfaces an empty external shelf.
     const { shelves } = await client().discovery.assembleSession();
     expect(shelves.length).toBeGreaterThan(0);
+    expect(shelves.some((s) => s.shelfId === 'leaving-soon')).toBe(true);
     expect(shelves.find((s) => s.shelfId === 'trending-plex')).toBeUndefined();
     // The Plex Discover endpoint was never called (no token short-circuits it).
     expect(calls.some((c) => c.url.includes('discover.provider.plex.tv'))).toBe(false);

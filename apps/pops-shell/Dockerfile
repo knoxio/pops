@@ -1,116 +1,28 @@
 FROM node:22-alpine AS builder
 WORKDIR /app
 
-# Copy workspace root files
+# The shell composes every pillar app (`@pops/app-*`), and those apps import
+# contract/dsl types from their pillar packages (`@pops/finance`,
+# `@pops/food/dsl`, …). The full workspace closure of `@pops/shell` therefore
+# spans most of `packages/*` plus every `pillars/*` contract. Rather than
+# hand-list ~20 COPY blocks (which drift every time the migration reshapes a
+# package), copy the whole workspace and let pnpm's `--filter "@pops/shell..."`
+# scope install + build to the real subgraph. `.dockerignore` keeps
+# node_modules/dist/.git out of the context, and this builder stage is
+# discarded — only `apps/pops-shell/dist` reaches the nginx image — so the
+# wider copy adds no weight to the published artifact.
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json .oxfmtrc.json ./
-
-# Copy all workspace package.json files needed by pops-shell
-COPY apps/pops-shell/package.json ./apps/pops-shell/
-COPY packages/db-types/package.json ./packages/db-types/
-COPY packages/ui/package.json ./packages/ui/
-COPY packages/app-finance/package.json ./packages/app-finance/
-COPY packages/app-food/package.json ./packages/app-food/
-COPY packages/app-food-db/package.json ./packages/app-food-db/
-COPY packages/food-contracts/package.json ./packages/food-contracts/
-COPY packages/app-lists/package.json ./packages/app-lists/
-COPY packages/app-lists-db/package.json ./packages/app-lists-db/
-COPY packages/finance-db/package.json ./packages/finance-db/
-COPY packages/inventory-db/package.json ./packages/inventory-db/
-COPY packages/food-db/package.json ./packages/food-db/
-COPY packages/lists-db/package.json ./packages/lists-db/
-COPY packages/app-media/package.json ./packages/app-media/
-COPY packages/app-inventory/package.json ./packages/app-inventory/
-COPY packages/app-ai/package.json ./packages/app-ai/
-COPY packages/app-cerebrum/package.json ./packages/app-cerebrum/
-COPY packages/overlay-ego/package.json ./packages/overlay-ego/
-COPY packages/navigation/package.json ./packages/navigation/
-COPY packages/types/package.json ./packages/types/
-COPY packages/module-registry/package.json ./packages/module-registry/
-COPY packages/finance-contract/package.json ./packages/finance-contract/
-COPY packages/inventory-contract/package.json ./packages/inventory-contract/
-COPY packages/food-contract/package.json ./packages/food-contract/
-COPY packages/lists-contract/package.json ./packages/lists-contract/
-COPY packages/pillar-sdk/package.json ./packages/pillar-sdk/
-
-# Install pnpm and dependencies (cached across builds)
-RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
-    corepack enable && pnpm install --frozen-lockfile
-
-# Build shared packages first (same pattern as pops-api Dockerfile)
-COPY packages/db-types/src ./packages/db-types/src
-COPY packages/db-types/tsconfig.json ./packages/db-types/
-COPY packages/types/src ./packages/types/src
-COPY packages/types/tsconfig.json packages/types/tsconfig.build.json ./packages/types/
-COPY packages/module-registry/src ./packages/module-registry/src
-COPY packages/module-registry/tsconfig.json packages/module-registry/tsconfig.build.json ./packages/module-registry/
-COPY packages/app-lists/ ./packages/app-lists/
-COPY packages/app-lists-db/ ./packages/app-lists-db/
-COPY packages/app-food-db/ ./packages/app-food-db/
-COPY packages/finance-db/ ./packages/finance-db/
-COPY packages/inventory-db/ ./packages/inventory-db/
-COPY packages/food-db/ ./packages/food-db/
-COPY packages/lists-db/ ./packages/lists-db/
-COPY packages/food-contracts/ ./packages/food-contracts/
-COPY packages/finance-contract/ ./packages/finance-contract/
-COPY packages/inventory-contract/ ./packages/inventory-contract/
-COPY packages/food-contract/ ./packages/food-contract/
-COPY packages/lists-contract/ ./packages/lists-contract/
-COPY packages/pillar-sdk/ ./packages/pillar-sdk/
-# Build shared packages.
-
-# After PRD-245 US-08 db-types is a leaf constants package — its build
-# order vs the pillars no longer matters; kept here for stable layer cache.
-
-WORKDIR /app/packages/inventory-db
-RUN pnpm build
-WORKDIR /app/packages/app-lists-db
-RUN pnpm build
-WORKDIR /app/packages/food-db
-RUN pnpm build
-WORKDIR /app/packages/finance-db
-RUN pnpm build
-WORKDIR /app/packages/db-types
-RUN pnpm build
-WORKDIR /app/packages/types
-RUN pnpm build
-WORKDIR /app/packages/module-registry
-RUN pnpm build
-WORKDIR /app/packages/food-contracts
-RUN pnpm build
-WORKDIR /app/packages/lists-db
-RUN pnpm build
-WORKDIR /app/packages/app-food-db
-RUN pnpm build
-WORKDIR /app/packages/finance-contract
-RUN pnpm build
-RUN pnpm build
-WORKDIR /app/packages/inventory-contract
-RUN pnpm build
-WORKDIR /app/packages/food-contract
-RUN pnpm build
-WORKDIR /app/packages/lists-contract
-RUN pnpm build
-WORKDIR /app/packages/pillar-sdk
-RUN pnpm build
-
-# Copy remaining source files
-WORKDIR /app
-COPY packages/ui/ ./packages/ui/
-COPY packages/app-finance/ ./packages/app-finance/
-COPY packages/app-food/ ./packages/app-food/
-COPY packages/app-lists/ ./packages/app-lists/
-COPY packages/app-lists-db/ ./packages/app-lists-db/
-COPY packages/app-media/ ./packages/app-media/
-COPY packages/app-inventory/ ./packages/app-inventory/
-COPY packages/app-ai/ ./packages/app-ai/
-COPY packages/app-cerebrum/ ./packages/app-cerebrum/
-COPY packages/overlay-ego/ ./packages/overlay-ego/
-COPY packages/navigation/ ./packages/navigation/
-COPY packages/types/ ./packages/types/
-COPY packages/module-registry/ ./packages/module-registry/
+COPY packages/ ./packages/
+COPY pillars/ ./pillars/
 COPY apps/pops-shell/ ./apps/pops-shell/
 
-# Build pops-shell (tsc typecheck + vite build)
+RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
+    corepack enable && pnpm install --frozen-lockfile --filter "@pops/shell..."
+
+# Build the shell's workspace dependencies (pillars + shared packages) in
+# pnpm topological order, then the shell itself (tsc typecheck + vite build).
+RUN pnpm --filter "@pops/shell^..." build
+
 WORKDIR /app/apps/pops-shell
 ARG BUILD_VERSION=dev
 ENV BUILD_VERSION=$BUILD_VERSION
