@@ -5,13 +5,10 @@
  * conversion-table migrations on top of PRD-106's ingredients schema.
  * Each test asserts BOTH the returned shape and the resolution path.
  */
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
 
-import Database from 'better-sqlite3';
-import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { beforeEach, describe, expect, it } from 'vitest';
 
+import { openFoodDb } from '../../db/open-food-db.js';
 import * as conversionsService from '../../db/services/conversions.js';
 import * as ingredientsService from '../../db/services/ingredients.js';
 import { type FoodDb } from '../../db/services/internal.js';
@@ -22,32 +19,8 @@ const { createIngredientWeight, createUnitConversion } = conversionsService;
 const { createIngredient } = ingredientsService;
 const { createVariant } = variantsService;
 
-const MIGRATIONS = [
-  '0058_high_sentinel.sql',
-  // 0059 (PRD-107 recipes) is a prerequisite for 0060's batches → recipe_runs FK.
-  '0059_useful_hiroim.sql',
-  // 0060 (PRD-108) ALTERs `ingredient_variants` with the shelf_life columns —
-  // without it, createVariant fails on insert.
-  '0060_familiar_leo.sql',
-  '0066_prd_123_conversions.sql',
-].map((name) =>
-  readFileSync(
-    join(__dirname, '../../../../../apps/pops-api/src/db/drizzle-migrations', name),
-    'utf8'
-  )
-);
-
 function freshDb(): FoodDb {
-  const raw = new Database(':memory:');
-  raw.pragma('foreign_keys = ON');
-  for (const migration of MIGRATIONS) {
-    const stmts = migration.split('--> statement-breakpoint');
-    for (const stmt of stmts) {
-      const trimmed = stmt.trim();
-      if (trimmed.length > 0) raw.exec(trimmed);
-    }
-  }
-  return drizzle(raw);
+  return openFoodDb(':memory:').db;
 }
 
 describe('PRD-123 — normaliseLineQty', () => {

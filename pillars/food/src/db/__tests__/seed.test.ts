@@ -18,15 +18,12 @@
  *
  * No Redis, no API process — pure schema + service exercise.
  */
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
 
-import Database from 'better-sqlite3';
 import { eq, isNotNull, isNull, sql } from 'drizzle-orm';
-import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { seedFood, type SeedFoodSummary } from '../../seed/index.js';
+import { openFoodDb } from '../open-food-db.js';
 import {
   batches,
   ingestSources,
@@ -37,40 +34,12 @@ import {
   substitutions,
 } from '../schema.js';
 
+import type Database from 'better-sqlite3';
+
 import type { FoodDb } from '../services/internal.js';
 
-const MIGRATIONS = [
-  '0058_high_sentinel.sql', // PRD-106 ingredients + slug_registry + prep_states + aliases
-  '0059_useful_hiroim.sql', // PRD-107 recipes + recipe_versions + recipe_tags
-  '0060_familiar_leo.sql', // PRD-108 batches + recipe_runs + batch_consumptions
-  '0061_shocking_skreet.sql', // PRD-109 substitutions
-  '0062_chemical_donald_blake.sql', // PRD-112 lists + list_items
-  '0063_bumpy_wolverine.sql', // PRD-111 plan_slots + plan_entries
-  '0064_peaceful_magma.sql', // PRD-110 ingest_sources
-  '0065_prd_116_recipe_compile.sql', // PRD-116 recipe_lines + recipe_steps + proposed_slugs
-  '0066_prd_123_conversions.sql', // PRD-123 unit_conversions + ingredient_weights
-  '0067_prd_125_ingest_error_columns.sql', // PRD-125 error_code/message/attempts on ingest_sources
-  '0068_prd_136_inbox_review.sql', // PRD-136 recipe_version_rejections + ingest_sources.reviewed_at
-  '0069_prd_145_batches_deleted_at.sql', // PRD-145 batches.deleted_at soft-delete column
-  '0070_prd_151_ingredient_tags.sql', // PRD-151 ingredient_tags + namespace expression index
-].map((name) =>
-  readFileSync(
-    join(__dirname, '../../../../../apps/pops-api/src/db/drizzle-migrations', name),
-    'utf8'
-  )
-);
-
 function freshDb(): { db: FoodDb; raw: Database.Database } {
-  const raw = new Database(':memory:');
-  raw.pragma('foreign_keys = ON');
-  for (const migration of MIGRATIONS) {
-    const stmts = migration.split('--> statement-breakpoint');
-    for (const stmt of stmts) {
-      const trimmed = stmt.trim();
-      if (trimmed.length > 0) raw.exec(trimmed);
-    }
-  }
-  return { db: drizzle(raw), raw };
+  return openFoodDb(':memory:');
 }
 
 describe('PRD-113 phase-1 seed', () => {

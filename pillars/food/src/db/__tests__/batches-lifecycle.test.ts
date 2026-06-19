@@ -5,14 +5,11 @@
  * service-enforced `deleted_at IS NOT NULL → qty_remaining = 0`
  * invariant (final `afterAll` scan).
  */
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
 
-import Database from 'better-sqlite3';
 import { eq } from 'drizzle-orm';
-import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 
+import { openFoodDb } from '../open-food-db.js';
 import { batches, ingredientVariants, recipeVersions } from '../schema.js';
 import {
   adjustBatchQty,
@@ -30,33 +27,10 @@ import { createRun } from '../services/recipe-runs.js';
 import { createRecipe } from '../services/recipes.js';
 import { createVariant } from '../services/variants.js';
 
-const MIGRATIONS = [
-  '0058_high_sentinel.sql',
-  '0059_useful_hiroim.sql',
-  '0060_familiar_leo.sql',
-  '0069_prd_145_batches_deleted_at.sql',
-].map((name) =>
-  readFileSync(
-    join(__dirname, '../../../../../apps/pops-api/src/db/drizzle-migrations', name),
-    'utf8'
-  )
-);
-
 let lastDb: FoodDb | null = null;
 
 function freshDb(): FoodDb {
-  const raw = new Database(':memory:');
-  raw.pragma('foreign_keys = ON');
-  for (const migration of MIGRATIONS) {
-    const stmts = migration.split('--> statement-breakpoint');
-    for (const stmt of stmts) {
-      const trimmed = stmt.trim();
-      if (trimmed.length > 0) raw.exec(trimmed);
-    }
-  }
-  const db = drizzle(raw);
-  lastDb = db;
-  return db;
+  return openFoodDb(':memory:').db;
 }
 
 interface SeedResult {

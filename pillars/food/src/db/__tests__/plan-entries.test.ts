@@ -6,12 +6,8 @@
  * PRD-113 owns the seeded `plan_slots` rows; this suite seeds its own
  * minimal slot vocabulary so the FK can be exercised in isolation.
  */
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
 
-import Database from 'better-sqlite3';
 import { asc, eq } from 'drizzle-orm';
-import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import {
@@ -22,6 +18,7 @@ import {
   PlanSlotNotFound,
   PlanSlotSlugAlreadyExists,
 } from '../errors.js';
+import { openFoodDb } from '../open-food-db.js';
 import { planEntries, planSlots } from '../schema.js';
 import {
   addCustomSlot,
@@ -36,19 +33,9 @@ import {
 import { createRun } from '../services/recipe-runs.js';
 import { createRecipe } from '../services/recipes.js';
 
-import type { FoodDb } from '../services/internal.js';
+import type Database from 'better-sqlite3';
 
-const MIGRATIONS = [
-  '0058_high_sentinel.sql',
-  '0059_useful_hiroim.sql',
-  '0060_familiar_leo.sql',
-  '0063_bumpy_wolverine.sql',
-].map((name) =>
-  readFileSync(
-    join(__dirname, '../../../../../apps/pops-api/src/db/drizzle-migrations', name),
-    'utf8'
-  )
-);
+import type { FoodDb } from '../services/internal.js';
 
 const DEFAULT_SLOTS = [
   { slug: 'breakfast', name: 'Breakfast', displayOrder: 10 },
@@ -59,19 +46,11 @@ const DEFAULT_SLOTS = [
 ] as const;
 
 function freshDb(): { db: FoodDb; raw: Database.Database } {
-  const raw = new Database(':memory:');
-  raw.pragma('foreign_keys = ON');
-  for (const migration of MIGRATIONS) {
-    const stmts = migration.split('--> statement-breakpoint');
-    for (const stmt of stmts) {
-      const trimmed = stmt.trim();
-      if (trimmed.length > 0) raw.exec(trimmed);
-    }
-  }
-  const db = drizzle(raw);
+  const opened = openFoodDb(':memory:');
   // PRD-113 will seed these; mirror it here so PRD-111 tests run standalone.
   for (const slot of DEFAULT_SLOTS) {
-    db.insert(planSlots)
+    opened.db
+      .insert(planSlots)
       .values({
         slug: slot.slug,
         name: slot.name,
@@ -80,7 +59,7 @@ function freshDb(): { db: FoodDb; raw: Database.Database } {
       })
       .run();
   }
-  return { db, raw };
+  return opened;
 }
 
 function makeRecipe(db: FoodDb, slug = 'smash-burger'): number {

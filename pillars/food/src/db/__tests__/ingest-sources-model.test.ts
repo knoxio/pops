@@ -3,51 +3,21 @@
  * service layer against an in-memory SQLite seeded with PRDs 106 + 107 +
  * 110 migrations.
  */
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
 
-import Database from 'better-sqlite3';
 import { eq } from 'drizzle-orm';
-import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { IngestSourceNotFound, IngestSourceUrlRequired } from '../errors.js';
+import { openFoodDb } from '../open-food-db.js';
 import { ingestSources, recipes } from '../schema.js';
 import { createIngestSource, linkDraftRecipe, markArchived } from '../services/ingest-sources.js';
 import { type FoodDb } from '../services/internal.js';
 import { createRecipe } from '../services/recipes.js';
 
-const MIGRATIONS = [
-  '0058_high_sentinel.sql',
-  '0059_useful_hiroim.sql',
-  '0060_familiar_leo.sql',
-  '0061_shocking_skreet.sql',
-  '0063_bumpy_wolverine.sql',
-  '0064_peaceful_magma.sql',
-  // PRD-125 amendment to PRD-110 — error_code/error_message/attempts columns.
-  '0067_prd_125_ingest_error_columns.sql',
-  // PRD-136 amendment — reviewed_at column on ingest_sources.
-  '0068_prd_136_inbox_review.sql',
-  // PRD-145 — batches.deleted_at soft-delete column.
-  '0069_prd_145_batches_deleted_at.sql',
-].map((name) =>
-  readFileSync(
-    join(__dirname, '../../../../../apps/pops-api/src/db/drizzle-migrations', name),
-    'utf8'
-  )
-);
+import type Database from 'better-sqlite3';
 
 function freshDb(): { db: FoodDb; raw: Database.Database } {
-  const raw = new Database(':memory:');
-  raw.pragma('foreign_keys = ON');
-  for (const migration of MIGRATIONS) {
-    const stmts = migration.split('--> statement-breakpoint');
-    for (const stmt of stmts) {
-      const trimmed = stmt.trim();
-      if (trimmed.length > 0) raw.exec(trimmed);
-    }
-  }
-  return { db: drizzle(raw), raw };
+  return openFoodDb(':memory:');
 }
 
 describe('PRD-110 — ingest_sources schema', () => {

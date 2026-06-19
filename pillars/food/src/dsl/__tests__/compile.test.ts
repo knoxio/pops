@@ -6,14 +6,11 @@
  * state (recipe_lines, recipe_steps, recipe_version_proposed_slugs, and
  * the recipe_versions columns the compile mutates).
  */
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
 
-import Database from 'better-sqlite3';
 import { eq } from 'drizzle-orm';
-import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { beforeEach, describe, expect, it } from 'vitest';
 
+import { openFoodDb } from '../../db/open-food-db.js';
 import {
   recipeLines,
   recipeSteps,
@@ -34,34 +31,8 @@ const { createPrepState } = prepStatesService;
 const { createRecipe } = recipesService;
 const { createVariant } = variantsService;
 
-const MIGRATIONS = [
-  '0058_high_sentinel.sql',
-  '0059_useful_hiroim.sql',
-  '0060_familiar_leo.sql',
-  '0065_prd_116_recipe_compile.sql',
-  // PRD-123 — compile now consults `unit_conversions` + `ingredient_weights`
-  // via `normaliseLineQty`. Tests still cover the unresolved path (no rows
-  // seeded → falls back to ingredient default_unit); see dedicated
-  // "conversion v1" test for the seeded-row happy path.
-  '0066_prd_123_conversions.sql',
-].map((name) =>
-  readFileSync(
-    join(__dirname, '../../../../../apps/pops-api/src/db/drizzle-migrations', name),
-    'utf8'
-  )
-);
-
 function freshDb(): FoodDb {
-  const raw = new Database(':memory:');
-  raw.pragma('foreign_keys = ON');
-  for (const migration of MIGRATIONS) {
-    const stmts = migration.split('--> statement-breakpoint');
-    for (const stmt of stmts) {
-      const trimmed = stmt.trim();
-      if (trimmed.length > 0) raw.exec(trimmed);
-    }
-  }
-  return drizzle(raw);
+  return openFoodDb(':memory:').db;
 }
 
 function seedKnownIngredients(db: FoodDb): void {

@@ -12,14 +12,11 @@
  *   - `countIngredientsInNamespace` distinct-count helper
  *   - Expression index is honoured (EXPLAIN QUERY PLAN sanity check)
  */
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
 
-import Database from 'better-sqlite3';
 import { eq } from 'drizzle-orm';
-import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { beforeEach, describe, expect, it } from 'vitest';
 
+import { openFoodDb } from '../open-food-db.js';
 import { ingredients, ingredientTags } from '../schema.js';
 import {
   addTagToIngredient,
@@ -32,31 +29,12 @@ import {
   setTagsForIngredient,
 } from '../services/ingredient-tags.js';
 
+import type Database from 'better-sqlite3';
+
 import type { FoodDb } from '../services/internal.js';
 
-const MIGRATIONS = [
-  '0058_high_sentinel.sql',
-  '0059_useful_hiroim.sql',
-  '0060_familiar_leo.sql',
-  '0061_shocking_skreet.sql',
-  '0070_prd_151_ingredient_tags.sql',
-].map((name) =>
-  readFileSync(
-    join(__dirname, '../../../../../apps/pops-api/src/db/drizzle-migrations', name),
-    'utf8'
-  )
-);
-
 function freshDb(): { db: FoodDb; raw: Database.Database } {
-  const raw = new Database(':memory:');
-  raw.pragma('foreign_keys = ON');
-  for (const migration of MIGRATIONS) {
-    for (const stmt of migration.split('--> statement-breakpoint')) {
-      const trimmed = stmt.trim();
-      if (trimmed.length > 0) raw.exec(trimmed);
-    }
-  }
-  return { db: drizzle(raw), raw };
+  return openFoodDb(':memory:');
 }
 
 function seedIngredient(db: FoodDb, slug: string, name: string): number {

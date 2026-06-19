@@ -3,12 +3,8 @@
  * an in-memory SQLite seeded with the food schema. No Redis, no API process,
  * no external services.
  */
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
 
-import Database from 'better-sqlite3';
 import { eq } from 'drizzle-orm';
-import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import {
@@ -17,6 +13,7 @@ import {
   InvalidSlugError,
   SlugAlreadyRegisteredError,
 } from '../errors.js';
+import { openFoodDb } from '../open-food-db.js';
 import { ingredients, prepStates, slugRegistry } from '../schema.js';
 import {
   changeIngredientParent,
@@ -28,32 +25,15 @@ import {
 import { createPrepState } from '../services/prep-states.js';
 import { createVariant } from '../services/variants.js';
 
+import type Database from 'better-sqlite3';
+
 // All food-domain migrations are applied: drizzle's TypeScript types reflect
 // the full schema (e.g. PRD-108's shelf-life columns on ingredient_variants),
 // so inserts via drizzle would fail against a partial DB even if this PRD
 // doesn't exercise the new columns.
-const MIGRATIONS = [
-  '0058_high_sentinel.sql',
-  '0059_useful_hiroim.sql',
-  '0060_familiar_leo.sql',
-].map((name) =>
-  readFileSync(
-    join(__dirname, '../../../../../apps/pops-api/src/db/drizzle-migrations', name),
-    'utf8'
-  )
-);
 
 function freshDb(): { db: FoodDb; raw: Database.Database } {
-  const raw = new Database(':memory:');
-  raw.pragma('foreign_keys = ON');
-  for (const migration of MIGRATIONS) {
-    const stmts = migration.split('--> statement-breakpoint');
-    for (const stmt of stmts) {
-      const trimmed = stmt.trim();
-      if (trimmed.length > 0) raw.exec(trimmed);
-    }
-  }
-  return { db: drizzle(raw), raw };
+  return openFoodDb(':memory:');
 }
 
 describe('PRD-106 — ingredient model invariants', () => {
