@@ -10,8 +10,9 @@
  *     test guards this output.
  *
  *   - **Dynamic** (`--dynamic`) — PRD-232, Wave 6 BE-lego. Reads the
- *     live `pillar_registry` via `core.registry.list` (HTTP tRPC GET)
- *     and emits one `/<pillar>-api/` REST block per registered pillar.
+ *     live `pillar_registry` via the SDK's `HttpDiscoveryTransport`
+ *     (`GET /core.registry.list`) and emits one `/<pillar>-api/` REST
+ *     block per registered pillar.
  *     Used at boot-time inside the cluster: an init container (or a future
  *     subscription-bus watcher, PRD-163) runs the script with
  *     `--dynamic` so newly-registered external pillars (PRD-228) pick
@@ -43,16 +44,16 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { PILLARS, type KnownPillarId } from '@pops/pillar-sdk';
+import {
+  HttpDiscoveryTransport,
+  type DiscoveredPillar,
+  type DiscoveryTransport,
+} from '@pops/pillar-sdk/client';
 
 import { parseCliArgs, type CliOptions } from './nginx-cli-args.ts';
 import { assertDynamicNotCheck, runDynamic, runStatic } from './nginx-cli-main.ts';
 import { NGINX_CONF_ORCHESTRATOR } from './nginx-conf-orchestrator.ts';
 import { NGINX_CONF_HEAD, NGINX_CONF_REST_INTRO, NGINX_CONF_TAIL } from './nginx-conf-template.ts';
-import {
-  fetchRegistryViaTrpc,
-  type RegistryFetcher,
-  type RegistryListEntry,
-} from './nginx-registry-client.ts';
 
 /**
  * Internal port assignment for each pillar's API container. Matches every
@@ -181,7 +182,9 @@ export function renderNginxConfFromUpstreams(upstreams: readonly PillarUpstream[
  * development must not break docker-network routing. Unknown pillars
  * fall back to parsing the registry's `baseUrl`.
  */
-export function resolveUpstreamForEntry(entry: RegistryListEntry): PillarUpstream {
+export function resolveUpstreamForEntry(
+  entry: Pick<DiscoveredPillar, 'pillarId' | 'baseUrl'>
+): PillarUpstream {
   if (isKnownPillarId(entry.pillarId)) {
     const known = PILLAR_UPSTREAMS[entry.pillarId];
     return { pillarId: entry.pillarId, host: known.host, port: known.port };
@@ -230,10 +233,10 @@ export function orderUpstreams(upstreams: readonly PillarUpstream[]): readonly P
 
 export async function renderNginxConfDynamic(
   registryUrl: string,
-  fetcher: RegistryFetcher = fetchRegistryViaTrpc
+  transport: DiscoveryTransport = new HttpDiscoveryTransport({ registryUrl })
 ): Promise<string> {
-  const response = await fetcher(registryUrl);
-  const upstreams = response.pillars.map(resolveUpstreamForEntry);
+  const pillars = await transport.fetchSnapshot();
+  const upstreams = pillars.map(resolveUpstreamForEntry);
   const ordered = orderUpstreams(upstreams);
   return renderNginxConfFromUpstreams(ordered);
 }
