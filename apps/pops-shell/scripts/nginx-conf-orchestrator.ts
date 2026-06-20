@@ -23,8 +23,8 @@ export const NGINX_CONF_ORCHESTRATOR = `    # ── Federated-search orchestrat
     # variable-form upstream (boots even when the orchestrator is absent).
 
     location /orchestrator-api/ {
-        rewrite ^/orchestrator-api/(.*)$ /$1 break;
         set $orchestrator_api_upstream http://pops-orchestrator:3009;
+        rewrite ^/orchestrator-api/(.*)$ /$1 break;
         proxy_pass $orchestrator_api_upstream;
         include /etc/nginx/snippets/_pillar-proxy.conf;
     }
