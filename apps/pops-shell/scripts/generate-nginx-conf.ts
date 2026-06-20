@@ -134,8 +134,8 @@ function renderPillarRestBlockFromUpstream(upstream: PillarUpstream): string {
   const varName = nginxVarName(upstream.pillarId);
   return [
     `    location /${upstream.pillarId}-api/ {`,
-    `        rewrite ^/${upstream.pillarId}-api/(.*)$ /$1 break;`,
     `        set $${varName}_api_upstream http://${upstream.host}:${upstream.port};`,
+    `        rewrite ^/${upstream.pillarId}-api/(.*)$ /$1 break;`,
     `        proxy_pass $${varName}_api_upstream;`,
     `        include /etc/nginx/snippets/_pillar-proxy.conf;`,
     `    }`,
