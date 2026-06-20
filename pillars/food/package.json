@@ -51,7 +51,7 @@
     "generate:api-types": "tsx scripts/generate-api-types.ts"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.104.1",
+    "@anthropic-ai/sdk": "^0.105.0",
     "@mozilla/readability": "^0.6.0",
     "@pops/pillar-sdk": "workspace:*",
     "@pops/shared-schema": "workspace:*",
@@ -59,15 +59,15 @@
     "@ts-rest/core": "3.53.0-rc.1",
     "@ts-rest/express": "3.53.0-rc.1",
     "@ts-rest/open-api": "3.53.0-rc.1",
-    "better-sqlite3": "^12.10.0",
-    "bullmq": "^5.78.0",
+    "better-sqlite3": "^12.11.1",
+    "bullmq": "^5.79.0",
     "drizzle-orm": "^0.45.2",
     "drizzle-zod": "^0.8.3",
     "express": "^5.1.0",
     "ioredis": "^5.11.1",
     "jsdom": "^25.0.1",
     "pino": "^10.3.1",
-    "sharp": "^0.34.5",
+    "sharp": "^0.35.2",
     "zod": "^4.4.3"
   },
   "devDependencies": {
@@ -76,11 +76,11 @@
     "@types/jsdom": "^21.1.7",
     "@types/node": "^25.9.3",
     "@types/supertest": "^6.0.3",
-    "@vitest/coverage-v8": "^4.1.8",
+    "@vitest/coverage-v8": "^4.1.9",
     "openapi-typescript": "^7.13.0",
     "supertest": "^7.1.4",
     "tsx": "^4.22.4",
     "typescript": "^6.0.3",
-    "vitest": "^4.1.8"
+    "vitest": "^4.1.9"
   }
 }
