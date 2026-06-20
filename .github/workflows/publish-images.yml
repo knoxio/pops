@@ -24,6 +24,8 @@ jobs:
         app:
           - { image: pops-shell, file: apps/pops-shell/Dockerfile }
           - { image: pops-mcp, file: apps/pops-mcp/Dockerfile }
+          - { image: pops-orchestrator, file: apps/pops-orchestrator/Dockerfile }
+          - { image: pops-docs, file: apps/pops-docs/Dockerfile }
     steps:
       - uses: actions/checkout@v6
 
@@ -75,8 +77,10 @@ jobs:
         # `pillars/<x>/Dockerfile` exists to build it from. This keeps the
         # publish set in lockstep with compose's `image:` refs — adding a
         # pillar image to compose makes it publish here with no workflow
-        # edit, and pillars that build-from-source in compose (cerebrum,
-        # orchestrator: no `image:` ref) are excluded by construction.
+        # edit. Services whose Dockerfile lives under `apps/` rather than
+        # `pillars/<x>/` (orchestrator, docs) are published by the `apps`
+        # job above instead, so they're excluded here by the Dockerfile
+        # existence check even though they pin an `image:` ref.
         run: |
           set -euo pipefail
           mapfile -t pillars < <(

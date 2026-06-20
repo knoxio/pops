@@ -358,6 +358,7 @@ services:
       dockerfile: pillars/cerebrum/Dockerfile
       args:
         BUILD_VERSION: ${BUILD_VERSION:-dev}
+    image: ghcr.io/knoxio/pops-cerebrum:${POPS_IMAGE_TAG:-main}
     container_name: pops-cerebrum-api
     restart: unless-stopped
     networks:
@@ -410,6 +411,7 @@ services:
       dockerfile: pillars/cerebrum/Dockerfile
       args:
         BUILD_VERSION: ${BUILD_VERSION:-dev}
+    image: ghcr.io/knoxio/pops-cerebrum:${POPS_IMAGE_TAG:-main}
     container_name: pops-cerebrum-worker
     restart: unless-stopped
     command: ['node', 'dist/worker/index.js']
@@ -446,6 +448,7 @@ services:
       dockerfile: apps/pops-orchestrator/Dockerfile
       args:
         BUILD_VERSION: ${BUILD_VERSION:-dev}
+    image: ghcr.io/knoxio/pops-orchestrator:${POPS_IMAGE_TAG:-main}
     container_name: pops-orchestrator
     restart: unless-stopped
     networks:
