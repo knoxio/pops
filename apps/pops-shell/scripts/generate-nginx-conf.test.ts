@@ -196,6 +196,16 @@ describe('generate-nginx-conf', () => {
       }
     });
 
+    it('emits `set` before `rewrite ... break` in the orchestrator block too', () => {
+      const block = rendered.match(/location \/orchestrator-api\/ \{([\s\S]*?)\n    \}/)?.[1];
+      expect(block, 'missing /orchestrator-api/ block').toBeDefined();
+      const setIdx = block!.indexOf('set $');
+      const rewriteIdx = block!.indexOf('rewrite ');
+      expect(setIdx).toBeGreaterThanOrEqual(0);
+      expect(rewriteIdx).toBeGreaterThanOrEqual(0);
+      expect(setIdx, 'set must precede rewrite in /orchestrator-api/').toBeLessThan(rewriteIdx);
+    });
+
     it('routes the core /registry/subscribe SSE stream to the core pillar with buffering off', () => {
       expect(rendered).toContain('location ~ ^/registry/subscribe/?$ {');
       expect(rendered).toContain('set $registry_subscribe_upstream http://core-api:3001;');
