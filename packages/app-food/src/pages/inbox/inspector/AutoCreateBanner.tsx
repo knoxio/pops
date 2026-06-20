@@ -10,7 +10,7 @@ import { type ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
 
-import type { InspectorResolverCreationRow } from '@pops/app-food-db';
+import type { InspectorResolverCreationRow } from './inspector-wire-types.js';
 
 interface Props {
   creations: readonly InspectorResolverCreationRow[];

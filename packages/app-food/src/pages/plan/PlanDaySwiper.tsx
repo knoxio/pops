@@ -20,7 +20,7 @@ import { groupEntriesByCell } from './plan-grid-dnd.js';
 import { PlanCell } from './PlanCell.js';
 import { usePlanDndHandlers, usePlanDndSensors } from './usePlanDnd.js';
 
-import type { WirePlanEntryRow, WirePlanSlotRow } from '@pops/app-food-db';
+import type { WirePlanEntryRow, WirePlanSlotRow } from './plan-wire-types.js';
 
 const SWIPE_THRESHOLD_PX = 40;
 

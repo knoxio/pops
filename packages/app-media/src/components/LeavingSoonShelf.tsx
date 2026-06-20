@@ -1,7 +1,7 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { X } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { usePillarMutation, usePillarQuery } from '@pops/pillar-sdk/react';
 /**
  * LeavingSoonShelf — horizontal shelf showing movies scheduled for removal.
  * Used on the Library page above the main grid.
@@ -10,6 +10,11 @@ import { usePillarMutation, usePillarQuery } from '@pops/pillar-sdk/react';
  */
 import { Button, Skeleton } from '@pops/ui';
 
+import { unwrap } from '../media-api-helpers.js';
+import {
+  rotationSchedulerCancelLeaving,
+  rotationSchedulerLeavingMovies,
+} from '../media-api/index.js';
 import { HorizontalScrollRow } from './HorizontalScrollRow';
 import { LeavingBadge } from './LeavingBadge';
 import { MediaCard } from './MediaCard';
@@ -82,25 +87,28 @@ function LeavingMovieCard({
 }
 
 export function LeavingSoonShelf() {
+  const queryClient = useQueryClient();
   const {
     data: movies,
     isLoading,
     refetch,
-  } = usePillarQuery<LeavingMovie[]>('media', ['rotation', 'getLeavingMovies'], undefined);
-  const cancelMutation = usePillarMutation<{ movieId: number }, unknown>(
-    'media',
-    ['rotation', 'cancelLeaving'],
-    {
-      onSuccess: (_data, variables) => {
-        const movie = movies?.find((m) => m.id === variables.movieId);
-        toast.success(`Kept "${movie?.title ?? 'movie'}" in library`);
-        void refetch();
-      },
-      onError: () => {
-        toast.error('Failed to cancel leaving status');
-      },
-    }
-  );
+  } = useQuery<LeavingMovie[]>({
+    queryKey: ['media', 'rotation', 'getLeavingMovies'],
+    queryFn: async () => (await unwrap(await rotationSchedulerLeavingMovies())).data,
+  });
+  const cancelMutation = useMutation({
+    mutationFn: async (variables: { movieId: number }) =>
+      unwrap(await rotationSchedulerCancelLeaving({ path: { movieId: variables.movieId } })),
+    onSuccess: (_data, variables) => {
+      const movie = movies?.find((m) => m.id === variables.movieId);
+      toast.success(`Kept "${movie?.title ?? 'movie'}" in library`);
+      void queryClient.invalidateQueries({ queryKey: ['media', 'rotation'] });
+      void refetch();
+    },
+    onError: () => {
+      toast.error('Failed to cancel leaving status');
+    },
+  });
 
   if (isLoading) return <LeavingSkeleton />;
   if (!movies || movies.length === 0) return null;

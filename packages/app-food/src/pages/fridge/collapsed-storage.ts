@@ -2,7 +2,7 @@
  * localStorage persistence for the per-location collapse state. The
  * key is versioned (`.v1`) so a future schema change can migrate.
  */
-import type { BatchLocation } from '@pops/app-food-db';
+import type { BatchLocation } from '../../food-api-shared-types.js';
 
 const STORAGE_KEY = 'fridge.collapsed-locations.v1';
 

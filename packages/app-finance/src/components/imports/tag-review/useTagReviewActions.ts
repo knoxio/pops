@@ -1,8 +1,7 @@
 import { useCallback } from 'react';
 import { toast } from 'sonner';
 
-import type { TagRuleImpactItem } from '@pops/api/modules/core/tag-rules/types';
-import type { ConfirmedTransaction, SuggestedTag } from '@pops/api/modules/finance/imports';
+import type { ConfirmedTransaction, SuggestedTag, TagRuleImpactItem } from '@pops/finance';
 
 import type { ConfirmedGroup } from './tagReviewUtils';
 

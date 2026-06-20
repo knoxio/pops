@@ -1,47 +1,29 @@
-import { renderHook, act } from '@testing-library/react';
+import { CoreApiError } from '@/core-api-helpers';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { act, renderHook, waitFor } from '@testing-library/react';
+import { createElement, type ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import type { FeatureStatus } from '@pops/types';
+
 const mocks = vi.hoisted(() => ({
-  mutation: vi.fn(),
+  setEnabled: vi.fn(),
+  setUserPreference: vi.fn(),
+  clearUserPreference: vi.fn(),
 }));
 
-vi.mock('@pops/pillar-sdk/react', () => ({
-  usePillarMutation: (pillarId: string, path: readonly string[]) =>
-    mocks.mutation({ pillarId, path: [...path] }),
+vi.mock('@/core-api', () => ({
+  featuresSetEnabled: (...args: unknown[]) => mocks.setEnabled(...args),
+  featuresSetUserPreference: (...args: unknown[]) => mocks.setUserPreference(...args),
+  featuresClearUserPreference: (...args: unknown[]) => mocks.clearUserPreference(...args),
 }));
 
 import { useFeatureMutations } from './use-feature-mutations';
 
-import type { FeatureStatus } from '@pops/types';
-
-type MutationCall = { pillarId: string; path: string[] };
-
-type MutationResult = {
-  mutate: ReturnType<typeof vi.fn>;
-  isPending: boolean;
-  error?: { message: string };
-};
-
-function mutationResult(overrides: Partial<MutationResult> = {}): MutationResult {
-  return {
-    mutate: vi.fn(),
-    isPending: false,
-    ...overrides,
-  };
-}
-
-function wireMutations(opts: {
-  setEnabled: MutationResult;
-  setUserPreference: MutationResult;
-  clearUserPreference: MutationResult;
-}): void {
-  mocks.mutation.mockImplementation(({ path }: MutationCall) => {
-    const key = path.join('.');
-    if (key === 'features.setEnabled') return opts.setEnabled;
-    if (key === 'features.setUserPreference') return opts.setUserPreference;
-    if (key === 'features.clearUserPreference') return opts.clearUserPreference;
-    throw new Error(`Unexpected mutation path: ${key}`);
-  });
+function wrapper() {
+  const client = new QueryClient({ defaultOptions: { mutations: { retry: false } } });
+  return ({ children }: { children: ReactNode }) =>
+    createElement(QueryClientProvider, { client }, children);
 }
 
 function systemFeature(overrides: Partial<FeatureStatus> = {}): FeatureStatus {
@@ -62,110 +44,85 @@ function userFeature(overrides: Partial<FeatureStatus> = {}): FeatureStatus {
   return systemFeature({ scope: 'user', ...overrides });
 }
 
+/** Resolves the Hey API `{ data }` envelope so `unwrap` returns a value. */
+function ok(enabled: boolean) {
+  return Promise.resolve({ data: { enabled } });
+}
+
 describe('useFeatureMutations', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.setEnabled.mockReturnValue(ok(true));
+    mocks.setUserPreference.mockReturnValue(ok(true));
+    mocks.clearUserPreference.mockReturnValue(Promise.resolve({ data: { cleared: true } }));
   });
 
-  it('registers all three core.features mutations against the core pillar', () => {
-    wireMutations({
-      setEnabled: mutationResult(),
-      setUserPreference: mutationResult(),
-      clearUserPreference: mutationResult(),
+  it('routes system-scoped toggles through setEnabled with the {path, body} contract', async () => {
+    const { result } = renderHook(() => useFeatureMutations(systemFeature({ key: 'media.scan' })), {
+      wrapper: wrapper(),
     });
-
-    renderHook(() => useFeatureMutations(systemFeature()));
-
-    expect(mocks.mutation).toHaveBeenCalledWith({
-      pillarId: 'core',
-      path: ['features', 'setEnabled'],
-    });
-    expect(mocks.mutation).toHaveBeenCalledWith({
-      pillarId: 'core',
-      path: ['features', 'setUserPreference'],
-    });
-    expect(mocks.mutation).toHaveBeenCalledWith({
-      pillarId: 'core',
-      path: ['features', 'clearUserPreference'],
-    });
-  });
-
-  it('routes system-scoped toggles through setEnabled', () => {
-    const setEnabled = mutationResult();
-    const setUserPreference = mutationResult();
-    wireMutations({
-      setEnabled,
-      setUserPreference,
-      clearUserPreference: mutationResult(),
-    });
-
-    const { result } = renderHook(() => useFeatureMutations(systemFeature({ key: 'media.scan' })));
     act(() => result.current.toggle(true));
 
-    expect(setEnabled.mutate).toHaveBeenCalledWith({ key: 'media.scan', enabled: true });
-    expect(setUserPreference.mutate).not.toHaveBeenCalled();
+    await waitFor(() => expect(mocks.setEnabled).toHaveBeenCalled());
+    expect(mocks.setEnabled).toHaveBeenCalledWith({
+      path: { key: 'media.scan' },
+      body: { enabled: true },
+    });
+    expect(mocks.setUserPreference).not.toHaveBeenCalled();
   });
 
-  it('routes user-scoped toggles through setUserPreference', () => {
-    const setEnabled = mutationResult();
-    const setUserPreference = mutationResult();
-    wireMutations({
-      setEnabled,
-      setUserPreference,
-      clearUserPreference: mutationResult(),
+  it('routes user-scoped toggles through setUserPreference', async () => {
+    const { result } = renderHook(() => useFeatureMutations(userFeature({ key: 'beta.flag' })), {
+      wrapper: wrapper(),
     });
-
-    const { result } = renderHook(() => useFeatureMutations(userFeature({ key: 'beta.flag' })));
     act(() => result.current.toggle(false));
 
-    expect(setUserPreference.mutate).toHaveBeenCalledWith({ key: 'beta.flag', enabled: false });
-    expect(setEnabled.mutate).not.toHaveBeenCalled();
+    await waitFor(() => expect(mocks.setUserPreference).toHaveBeenCalled());
+    expect(mocks.setUserPreference).toHaveBeenCalledWith({
+      path: { key: 'beta.flag' },
+      body: { enabled: false },
+    });
+    expect(mocks.setEnabled).not.toHaveBeenCalled();
   });
 
-  it('routes the reset action through clearUserPreference', () => {
-    const clearUserPreference = mutationResult();
-    wireMutations({
-      setEnabled: mutationResult(),
-      setUserPreference: mutationResult(),
-      clearUserPreference,
+  it('routes the reset action through clearUserPreference with an empty body', async () => {
+    const { result } = renderHook(() => useFeatureMutations(userFeature({ key: 'beta.flag' })), {
+      wrapper: wrapper(),
     });
-
-    const { result } = renderHook(() => useFeatureMutations(userFeature({ key: 'beta.flag' })));
     act(() => result.current.resetUserOverride());
 
-    expect(clearUserPreference.mutate).toHaveBeenCalledWith({ key: 'beta.flag' });
+    await waitFor(() => expect(mocks.clearUserPreference).toHaveBeenCalled());
+    expect(mocks.clearUserPreference).toHaveBeenCalledWith({
+      path: { key: 'beta.flag' },
+      body: {},
+    });
   });
 
-  it('surfaces the first error message from setEnabled, falling back to setUserPreference', () => {
-    wireMutations({
-      setEnabled: mutationResult({ error: { message: 'system denied' } }),
-      setUserPreference: mutationResult({ error: { message: 'user denied' } }),
-      clearUserPreference: mutationResult(),
+  it('surfaces the setEnabled error message', async () => {
+    mocks.setEnabled.mockRejectedValue(new CoreApiError('system denied', 400));
+    const { result } = renderHook(() => useFeatureMutations(systemFeature()), {
+      wrapper: wrapper(),
     });
+    act(() => result.current.toggle(true));
 
-    const { result } = renderHook(() => useFeatureMutations(systemFeature()));
-    expect(result.current.errorMessage).toBe('system denied');
+    await waitFor(() => expect(result.current.errorMessage).toBe('system denied'));
   });
 
-  it('falls back to the setUserPreference error when setEnabled has none', () => {
-    wireMutations({
-      setEnabled: mutationResult(),
-      setUserPreference: mutationResult({ error: { message: 'user denied' } }),
-      clearUserPreference: mutationResult(),
-    });
+  it('falls back to the setUserPreference error when setEnabled has none', async () => {
+    mocks.setUserPreference.mockRejectedValue(new CoreApiError('user denied', 400));
+    const { result } = renderHook(() => useFeatureMutations(userFeature()), { wrapper: wrapper() });
+    act(() => result.current.toggle(true));
 
-    const { result } = renderHook(() => useFeatureMutations(systemFeature()));
-    expect(result.current.errorMessage).toBe('user denied');
+    await waitFor(() => expect(result.current.errorMessage).toBe('user denied'));
   });
 
-  it('marks pending when any of the three mutations is in flight', () => {
-    wireMutations({
-      setEnabled: mutationResult(),
-      setUserPreference: mutationResult(),
-      clearUserPreference: mutationResult({ isPending: true }),
+  it('marks pending while a mutation is in flight', async () => {
+    mocks.setEnabled.mockReturnValue(new Promise(() => undefined));
+    const { result } = renderHook(() => useFeatureMutations(systemFeature()), {
+      wrapper: wrapper(),
     });
+    act(() => result.current.toggle(true));
 
-    const { result } = renderHook(() => useFeatureMutations(systemFeature()));
-    expect(result.current.pending).toBe(true);
+    await waitFor(() => expect(result.current.pending).toBe(true));
   });
 });

@@ -1,0 +1,111 @@
+name: Lists Pillar Quality
+
+# Comprehensive standalone quality gate for the collapsed lists pillar.
+# Runs typecheck, test, lint, format, build, OpenAPI generation, and
+# Docker build for the lists pillar in isolation. Triggered ONLY by
+# changes that touch the pillar or its transitive @pops/* deps + the
+# repo-wide tsconfig/lockfile surface.
+#
+# Bubble-of-happiness rule: this workflow is the one that MUST stay
+# green for the lists pillar. Other workflows may be red while the rest
+# of the codebase still imports the dead @pops/lists-* package names —
+# that's deliberate and will be resolved as each consumer migrates to
+# `@pops/lists`.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "pillars/lists/**"
+      - "packages/pillar-sdk/**"
+      - "packages/types/**"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "tsconfig.base.json"
+      - ".oxfmtrc.json"
+      - ".github/workflows/lists-quality.yml"
+  pull_request:
+    paths:
+      - "pillars/lists/**"
+      - "packages/pillar-sdk/**"
+      - "packages/types/**"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "tsconfig.base.json"
+      - ".oxfmtrc.json"
+      - ".github/workflows/lists-quality.yml"
+
+concurrency:
+  group: lists-quality-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Lists pillar — typecheck + test + lint + format + build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: pnpm/action-setup@v5
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: pnpm
+
+      - name: Install (subgraph only)
+        run: pnpm install --frozen-lockfile --filter "@pops/lists..."
+
+      - name: Format check
+        run: pnpm exec oxfmt --check pillars/lists/
+
+      - name: Lint
+        run: pnpm exec oxlint pillars/lists/src
+
+      - name: Build transitive deps
+        run: pnpm --filter "@pops/lists^..." build
+
+      - name: Typecheck
+        run: pnpm --filter @pops/lists typecheck
+
+      - name: Build pillar
+        run: pnpm --filter @pops/lists build
+
+      - name: Verify OpenAPI snapshot is up to date
+        run: |
+          pnpm --filter @pops/lists generate:openapi
+          git diff --exit-code pillars/lists/openapi/lists.openapi.json
+
+      - name: Verify manifest.generated.ts is up to date
+        run: |
+          pnpm --filter @pops/lists generate:manifest
+          git diff --exit-code pillars/lists/src/contract/manifest.generated.ts
+
+      - name: Test
+        run: pnpm --filter @pops/lists test
+
+  docker:
+    name: Lists pillar — Docker image builds
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build pillar image (builder stage only — fast feedback)
+        if: github.event_name == 'pull_request'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: pillars/lists/Dockerfile
+          target: builder
+          push: false
+
+      - name: Build pillar image (full)
+        if: github.event_name == 'push'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: pillars/lists/Dockerfile
+          push: false
+          tags: pops-lists:${{ github.sha }}

@@ -1,9 +1,11 @@
+import { useQuery } from '@tanstack/react-query';
 import { Search } from 'lucide-react';
 import { useState } from 'react';
 
-import { usePillarQuery } from '@pops/pillar-sdk/react';
 import { Skeleton } from '@pops/ui';
 
+import { unwrap } from '../../media-api-helpers.js';
+import { rotationListCandidates } from '../../media-api/index.js';
 import { CandidateCard } from './CandidateCard';
 import { Pagination } from './Pagination';
 
@@ -42,42 +44,39 @@ function CandidateLoading() {
   );
 }
 
-interface ListCandidatesResult {
-  items: Candidate[];
-  total: number;
-}
-
 export function CandidateList({ status, actions }: CandidateListProps) {
   const [page, setPage] = useState(0);
   const [search, setSearch] = useState('');
 
-  const query = usePillarQuery<ListCandidatesResult>('media', ['rotation', 'listCandidates'], {
+  const queryInput = {
     status,
     search: search || undefined,
     limit: PAGE_SIZE,
     offset: page * PAGE_SIZE,
+  };
+  const query = useQuery({
+    queryKey: ['media', 'rotation', 'listCandidates', queryInput],
+    queryFn: async () => unwrap(await rotationListCandidates({ query: queryInput })),
   });
 
-  const totalPages = Math.max(1, Math.ceil((query.data?.total ?? 0) / PAGE_SIZE));
+  const result = query.data?.data;
+  const items: Candidate[] = result?.items ?? [];
+  const total = result?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   function renderBody() {
     if (query.isLoading) return <CandidateLoading />;
-    if (!query.data?.items.length) {
+    if (!items.length) {
       return <p className="text-sm text-muted-foreground py-8 text-center">No candidates found</p>;
     }
     return (
       <>
         <div className="space-y-2">
-          {query.data.items.map((c) => (
+          {items.map((c) => (
             <CandidateCard key={c.id} candidate={c} actions={actions} />
           ))}
         </div>
-        <Pagination
-          page={page}
-          totalPages={totalPages}
-          total={query.data.total}
-          onPageChange={setPage}
-        />
+        <Pagination page={page} totalPages={totalPages} total={total} onPageChange={setPage} />
       </>
     );
   }

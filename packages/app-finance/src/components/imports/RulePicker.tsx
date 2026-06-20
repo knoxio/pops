@@ -1,7 +1,7 @@
+import { useQuery } from '@tanstack/react-query';
 import { Check, ChevronsUpDown } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
-import { usePillarQuery } from '@pops/pillar-sdk/react';
 import {
   Badge,
   Button,
@@ -16,7 +16,10 @@ import {
   PopoverTrigger,
 } from '@pops/ui';
 
-import type { Correction } from '@pops/api/modules/core/corrections/types';
+import { unwrap } from '../../finance-api-helpers.js';
+import { correctionsList } from '../../finance-api/index.js';
+
+import type { Correction } from '@pops/finance';
 
 export type CorrectionRule = Correction;
 
@@ -48,12 +51,13 @@ export interface RulePickerProps {
 function useRulePickerState(props: RulePickerProps) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
-  const listQuery = usePillarQuery<CorrectionsListResult>(
-    'core',
-    ['corrections', 'list'],
-    { limit: 200, offset: 0 },
-    { enabled: open, staleTime: 30_000 }
-  );
+  const listQuery = useQuery({
+    queryKey: ['finance', 'corrections', 'list', { limit: 200, offset: 0 }],
+    queryFn: async (): Promise<CorrectionsListResult> =>
+      unwrap(await correctionsList({ query: { limit: 200, offset: 0 } })),
+    enabled: open,
+    staleTime: 30_000,
+  });
   const rules = listQuery.data?.data ?? [];
   const selectedRule = useMemo(
     () => rules.find((r) => r.id === props.value) ?? null,

@@ -5,7 +5,7 @@ import { Button, SummaryCard } from '@pops/ui';
 
 import { useImportStore } from '../../store/importStore';
 
-import type { CommitResult } from '@pops/api/modules/finance/imports';
+import type { CommitResult } from '@pops/finance';
 
 function totalRulesApplied(commitResult: CommitResult): number {
   return (

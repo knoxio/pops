@@ -46,7 +46,10 @@ const SETTINGS_KEY = z
 
 const CONTRACT_PACKAGE = z
   .string()
-  .regex(/^@pops\/[a-z-]+-contract$/, 'must be @pops/<pillar>-contract');
+  .regex(
+    /^@pops\/(?:[a-z-]+-contract|[a-z-]+)$/,
+    'must be @pops/<pillar>-contract (legacy split) or @pops/<pillar> (collapsed pillar package)'
+  );
 
 const CONTRACT_TAG = z
   .string()
@@ -165,6 +168,49 @@ const HEALTHCHECK = z
   })
   .strict();
 
+const FEATURE_SCOPE = z.enum(['system', 'user', 'capability']);
+
+/**
+ * Declarative replacement for `FeatureDefinition.capabilityCheck` — the live
+ * `() => boolean` probe is not serializable, so the manifest names which pillar
+ * owns the probe (`pillar`) and the capability key it reports (`key`). The
+ * actual up/down status is resolved later from that pillar's heartbeat snapshot
+ * (a separate slice), never carried in the static manifest.
+ */
+const FEATURE_CAPABILITY = z
+  .object({
+    pillar: PILLAR_ID,
+    key: CAMEL_IDENTIFIER,
+  })
+  .strict();
+
+/**
+ * Serializable projection of `FeatureDefinition` (`@pops/types`). Carries only
+ * the declarative fields a pillar can put on the wire: the runtime
+ * `capabilityCheck()` function is dropped in favour of the declarative
+ * `capability` descriptor above. The TypeScript `FeatureDefinition` remains the
+ * source of truth for the in-process feature service; this Zod object is the
+ * wire validator for the `features` manifest slot (epic 05 / S0).
+ */
+const FEATURE_DESCRIPTOR = z
+  .object({
+    key: SETTINGS_KEY,
+    label: z.string().min(1),
+    description: z.string().optional(),
+    default: z.boolean(),
+    scope: FEATURE_SCOPE,
+    requires: z.array(SETTINGS_KEY).optional(),
+    requiresEnv: z.array(z.string().min(1)).optional(),
+    settingKey: SETTINGS_KEY.optional(),
+    configureLink: z.string().regex(/^\//, 'must start with /').optional(),
+    capability: FEATURE_CAPABILITY.optional(),
+    preview: z.boolean().optional(),
+    deprecated: z.boolean().optional(),
+  })
+  .strict();
+
+const FEATURES = z.array(FEATURE_DESCRIPTOR);
+
 export const ManifestPayloadSchema = z
   .object({
     pillar: PILLAR_ID,
@@ -181,11 +227,14 @@ export const ManifestPayloadSchema = z
     pages: z.array(PageDescriptorSchema).optional(),
     assetsBaseUrl: AssetsBaseUrlSchema.optional(),
     captureOverlay: CaptureOverlayDescriptorSchema.optional(),
+    features: FEATURES.optional(),
     healthcheck: HEALTHCHECK,
   })
   .strict();
 
 export type SinkDescriptor = z.infer<typeof SINK_DESCRIPTOR>;
+
+export type FeatureManifestDescriptor = z.infer<typeof FEATURE_DESCRIPTOR>;
 
 export type { SettingsManifestDescriptor };
 

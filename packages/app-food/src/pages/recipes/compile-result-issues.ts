@@ -1,6 +1,9 @@
-import type { CompileResult, SourceSpan } from '@pops/app-food-db';
+import type { SourceSpan } from '@pops/food/dsl';
 
 import type { CompileEditorIssue } from '../../components/dsl-editor/issues-types.js';
+import type { RecipesSaveDraftResponses } from '../../food-api/types.gen.js';
+
+type CompileResult = RecipesSaveDraftResponses[200]['compile'];
 
 interface ProposedSlugRow {
   slug: string;

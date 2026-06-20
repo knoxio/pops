@@ -1,8 +1,8 @@
 /**
  * PRD-135 — RTL coverage for the per-draft inspector page.
  *
- * Mocks `@pops/pillar-sdk` so the page renders against a synthetic
- * `food.inbox.getForReview` payload and asserts:
+ * Mocks the generated food SDK so the page renders against a synthetic
+ * `inbox.getForReview` payload and asserts:
  *   - 404 renders for `{ ok: false, reason: 'SourceNotFound' }`
  *   - pending source (draft = null) shows the no-draft body
  *   - clean compiled draft surfaces the band card + Approve enabled +
@@ -13,6 +13,7 @@
  *   - Re-run pipeline button shows for partial sources and is disabled for auth-dead
  *   - Clicking a proposed-slug entry sets `pendingCursor` on the DslEditor
  */
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createInstance } from 'i18next';
@@ -24,7 +25,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import enAUFood from '../../../../../../../apps/pops-shell/src/i18n/locales/en-AU/food.json';
 
-import type { InspectorResult } from '@pops/app-food-db';
+import type { InspectorResult } from '../inspector-wire-types.js';
 
 // Capture the latest props passed into DslEditor so the cursor-move test can
 // assert. Returning a dummy element keeps the rest of the page rendering.
@@ -40,82 +41,22 @@ vi.mock('../../../../components/RecipeRenderer.js', () => ({
   RecipeRenderer: () => <div data-testid="recipe-renderer-mock" />,
 }));
 
-const approveMutation = vi.fn();
-const rejectMutation = vi.fn();
-const unrejectMutation = vi.fn();
-const saveDraftMutation = vi.fn();
-const retryMutation = vi.fn();
+const inboxGetForReviewMock = vi.hoisted(() => vi.fn());
+const inboxApproveMock = vi.hoisted(() => vi.fn());
+const inboxRejectMock = vi.hoisted(() => vi.fn());
+const inboxUnrejectMock = vi.hoisted(() => vi.fn());
+const recipesSaveDraftMock = vi.hoisted(() => vi.fn());
+const recipesGetForRenderingMock = vi.hoisted(() => vi.fn());
+const ingestRetryMock = vi.hoisted(() => vi.fn());
 
-let mockData: InspectorResult | undefined;
-let mockIsLoading = false;
-let mockIsError = false;
-
-vi.mock('@pops/pillar-sdk/react', () => ({
-  usePillarQuery: (_pillarId: string, path: readonly string[]) => {
-    const key = path.join('.');
-    if (key === 'inbox.getForReview') {
-      return {
-        data: mockData,
-        isLoading: mockIsLoading,
-        isError: mockIsError,
-        error: null,
-      };
-    }
-    if (key === 'recipes.getForRendering') {
-      return { data: undefined, isLoading: true, isError: false, error: null };
-    }
-    throw new Error(`Unexpected pillar query: ${key}`);
-  },
-  usePillarMutation: (
-    _pillarId: string,
-    path: readonly string[],
-    opts: { onSuccess?: (res: unknown) => void }
-  ) => {
-    const key = path.join('.');
-    if (key === 'inbox.approve') {
-      return {
-        mutate: (input: unknown) => {
-          approveMutation(input);
-          opts.onSuccess?.({ ok: true, recipeSlug: 'web-recipe', promotedVersionNo: 1 });
-        },
-        isPending: false,
-      };
-    }
-    if (key === 'inbox.reject') {
-      return {
-        mutate: (input: unknown) => {
-          rejectMutation(input);
-          opts.onSuccess?.({ ok: true });
-        },
-        isPending: false,
-      };
-    }
-    if (key === 'inbox.unreject') {
-      return {
-        mutate: (input: unknown) => {
-          unrejectMutation(input);
-          opts.onSuccess?.({ ok: true, restoredAs: 'draft' });
-        },
-        isPending: false,
-      };
-    }
-    if (key === 'recipes.saveDraft') {
-      return {
-        mutate: (input: unknown) => {
-          saveDraftMutation(input);
-          opts.onSuccess?.({
-            compile: { ok: true, lineCount: 1, stepCount: 1, creationCount: 0 },
-          });
-        },
-        isPending: false,
-      };
-    }
-    if (key === 'ingest.retry') {
-      return { mutate: retryMutation, isPending: false };
-    }
-    throw new Error(`Unexpected pillar mutation: ${key}`);
-  },
-  usePillarUtils: () => ({ invalidate: vi.fn() }),
+vi.mock('../../../../food-api/index.js', () => ({
+  inboxGetForReview: inboxGetForReviewMock,
+  inboxApprove: inboxApproveMock,
+  inboxReject: inboxRejectMock,
+  inboxUnreject: inboxUnrejectMock,
+  recipesSaveDraft: recipesSaveDraftMock,
+  recipesGetForRendering: recipesGetForRenderingMock,
+  ingestRetry: ingestRetryMock,
 }));
 
 import { InspectorPage } from '../InspectorPage.js';
@@ -185,42 +126,63 @@ function Wrapper(): ReactElement {
     });
     return instance;
   }, []);
-  return (
-    <I18nextProvider i18n={i18n}>
-      <MemoryRouter initialEntries={['/food/inbox/42']}>
-        <Routes>
-          <Route path="/food/inbox/:sourceId" element={<InspectorPage />} />
-        </Routes>
-        <LocationProbe />
-        <Toaster />
-      </MemoryRouter>
-    </I18nextProvider>
+  const client = useMemo(
+    () =>
+      new QueryClient({
+        defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+      }),
+    []
   );
+  return (
+    <QueryClientProvider client={client}>
+      <I18nextProvider i18n={i18n}>
+        <MemoryRouter initialEntries={['/food/inbox/42']}>
+          <Routes>
+            <Route path="/food/inbox/:sourceId" element={<InspectorPage />} />
+          </Routes>
+          <LocationProbe />
+          <Toaster />
+        </MemoryRouter>
+      </I18nextProvider>
+    </QueryClientProvider>
+  );
+}
+
+/** Resolve `inbox.getForReview` with the given `InspectorResult` envelope. */
+function mockReview(result: InspectorResult): void {
+  inboxGetForReviewMock.mockResolvedValue({ data: result });
 }
 
 beforeEach(() => {
   vi.clearAllMocks();
   dslEditorProps.length = 0;
-  mockData = undefined;
-  mockIsLoading = false;
-  mockIsError = false;
+  recipesGetForRenderingMock.mockReturnValue(new Promise(() => {}));
+  inboxApproveMock.mockResolvedValue({
+    data: { ok: true, recipeSlug: 'web-recipe', promotedVersionNo: 1 },
+  });
+  inboxRejectMock.mockResolvedValue({ data: { ok: true } });
+  inboxUnrejectMock.mockResolvedValue({ data: { ok: true, restoredAs: 'draft' } });
+  recipesSaveDraftMock.mockResolvedValue({
+    data: { compile: { ok: true, lineCount: 1, stepCount: 1, creationCount: 0 } },
+  });
+  ingestRetryMock.mockResolvedValue({ data: { jobId: 'j1', queuedAt: '2026-06-10T16:00:00Z' } });
 });
 
 describe('InspectorPage — PRD-135', () => {
-  it('renders the not-found view for SourceNotFound', () => {
-    mockData = { ok: false, reason: 'SourceNotFound' };
+  it('renders the not-found view for SourceNotFound', async () => {
+    mockReview({ ok: false, reason: 'SourceNotFound' });
     render(<Wrapper />);
-    expect(screen.getByTestId('inspector-not-found')).toBeInTheDocument();
+    expect(await screen.findByTestId('inspector-not-found')).toBeInTheDocument();
   });
 
   it('renders the loading state while the query is in-flight', () => {
-    mockIsLoading = true;
+    inboxGetForReviewMock.mockReturnValue(new Promise(() => {}));
     render(<Wrapper />);
     expect(screen.getByText(/Loading inspector/i)).toBeInTheDocument();
   });
 
-  it('renders the no-draft body when the source has no draft yet', () => {
-    mockData = buildReview({
+  it('renders the no-draft body when the source has no draft yet', async () => {
+    mockReview({
       ok: true,
       review: {
         ...buildReview().review!,
@@ -233,19 +195,19 @@ describe('InspectorPage — PRD-135', () => {
       },
     } as InspectorResult);
     render(<Wrapper />);
-    expect(screen.getByTestId('inspector-no-draft')).toBeInTheDocument();
+    expect(await screen.findByTestId('inspector-no-draft')).toBeInTheDocument();
   });
 
   it('approves a clean compiled draft via the confirmation dialog', async () => {
-    mockData = buildReview();
+    mockReview(buildReview());
     render(<Wrapper />);
     const user = userEvent.setup();
-    const approveButton = screen.getByTestId('inspector-approve-button');
+    const approveButton = await screen.findByTestId('inspector-approve-button');
     expect(approveButton).not.toBeDisabled();
     await user.click(approveButton);
     expect(await screen.findByTestId('inspector-approve-dialog')).toBeInTheDocument();
     await user.click(screen.getByTestId('inspector-approve-confirm'));
-    expect(approveMutation).toHaveBeenCalledWith({ versionId: 7 });
+    expect(inboxApproveMock).toHaveBeenCalledWith({ body: { versionId: 7 } });
     await waitFor(() => {
       expect(screen.getByTestId('location-probe').textContent).toMatch(
         /\/food\/recipes\/web-recipe/
@@ -253,8 +215,8 @@ describe('InspectorPage — PRD-135', () => {
     });
   });
 
-  it('disables Approve when the quality band is blocked', () => {
-    mockData = buildReview({
+  it('disables Approve when the quality band is blocked', async () => {
+    mockReview({
       ok: true,
       review: {
         ...buildReview().review!,
@@ -265,11 +227,11 @@ describe('InspectorPage — PRD-135', () => {
       },
     } as InspectorResult);
     render(<Wrapper />);
-    expect(screen.getByTestId('inspector-approve-button')).toBeDisabled();
+    expect(await screen.findByTestId('inspector-approve-button')).toBeDisabled();
   });
 
-  it('disables Approve when the compile status is not compiled', () => {
-    mockData = buildReview({
+  it('disables Approve when the compile status is not compiled', async () => {
+    mockReview({
       ok: true,
       review: {
         ...buildReview().review!,
@@ -277,14 +239,14 @@ describe('InspectorPage — PRD-135', () => {
       },
     } as InspectorResult);
     render(<Wrapper />);
-    expect(screen.getByTestId('inspector-approve-button')).toBeDisabled();
+    expect(await screen.findByTestId('inspector-approve-button')).toBeDisabled();
   });
 
   it('requires a note when the reject reason is `other` before enabling submit', async () => {
-    mockData = buildReview();
+    mockReview(buildReview());
     render(<Wrapper />);
     const user = userEvent.setup();
-    await user.click(screen.getByTestId('inspector-reject-button'));
+    await user.click(await screen.findByTestId('inspector-reject-button'));
     const reasonSelect = await screen.findByTestId('inspector-reject-reason');
     await user.selectOptions(reasonSelect, 'other');
     const confirm = screen.getByTestId('inspector-reject-confirm');
@@ -292,15 +254,13 @@ describe('InspectorPage — PRD-135', () => {
     await user.type(screen.getByTestId('inspector-reject-note'), 'because reasons');
     expect(confirm).not.toBeDisabled();
     await user.click(confirm);
-    expect(rejectMutation).toHaveBeenCalledWith({
-      versionId: 7,
-      reason: 'other',
-      note: 'because reasons',
+    expect(inboxRejectMock).toHaveBeenCalledWith({
+      body: { versionId: 7, reason: 'other', note: 'because reasons' },
     });
   });
 
   it('renders the archived-version Undo flow + read-only editor', async () => {
-    mockData = buildReview({
+    mockReview({
       ok: true,
       review: {
         ...buildReview().review!,
@@ -316,16 +276,16 @@ describe('InspectorPage — PRD-135', () => {
       },
     } as InspectorResult);
     render(<Wrapper />);
-    expect(screen.getByTestId('inspector-rejection-details')).toBeInTheDocument();
+    expect(await screen.findByTestId('inspector-rejection-details')).toBeInTheDocument();
     expect(screen.getByTestId('dsl-editor-mock')).toHaveAttribute('data-readonly', 'true');
     expect(screen.queryByTestId('inspector-approve-button')).not.toBeInTheDocument();
     const user = userEvent.setup();
     await user.click(screen.getByTestId('inspector-undo-button'));
-    expect(unrejectMutation).toHaveBeenCalledWith({ versionId: 7 });
+    expect(inboxUnrejectMock).toHaveBeenCalledWith({ body: { versionId: 7 } });
   });
 
-  it('shows Re-run pipeline for partial sources, disabled for auth-dead', () => {
-    mockData = buildReview({
+  it('shows Re-run pipeline for partial sources, disabled for auth-dead', async () => {
+    mockReview({
       ok: true,
       review: {
         ...buildReview().review!,
@@ -337,12 +297,12 @@ describe('InspectorPage — PRD-135', () => {
       },
     } as InspectorResult);
     render(<Wrapper />);
-    const rerun = screen.getByTestId('inspector-rerun-button');
+    const rerun = await screen.findByTestId('inspector-rerun-button');
     expect(rerun).toBeDisabled();
   });
 
   it('clicking a proposed-slug entry forwards line/col via pendingCursor', async () => {
-    mockData = buildReview({
+    mockReview({
       ok: true,
       review: {
         ...buildReview().review!,
@@ -361,7 +321,7 @@ describe('InspectorPage — PRD-135', () => {
     } as InspectorResult);
     render(<Wrapper />);
     const user = userEvent.setup();
-    await user.click(screen.getByTestId('inspector-proposed-slug-mystery-ingredient'));
+    await user.click(await screen.findByTestId('inspector-proposed-slug-mystery-ingredient'));
     const lastProps = dslEditorProps[dslEditorProps.length - 1];
     expect(lastProps).toBeDefined();
     if (lastProps === undefined) return;

@@ -1,30 +1,30 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 
-import { usePillarMutation, usePillarQuery } from '@pops/pillar-sdk/react';
-
+import { unwrap } from '../../../finance-api-helpers.js';
+import {
+  importsGetImportProgress,
+  importsProcessImport,
+  type ImportsGetImportProgressResponses,
+  type ImportsProcessImportData,
+} from '../../../finance-api/index.js';
 import { useImportStore } from '../../../store/importStore';
 
-import type {
-  ImportWarning,
-  ParsedTransaction,
-  ProcessImportOutput,
-} from '@pops/api/modules/finance/imports';
+import type { ImportWarning, ProcessImportOutput } from '@pops/finance';
 
-interface ProcessImportInput {
-  transactions: ParsedTransaction[];
-  account: string;
-}
-interface ProcessImportResponse {
-  sessionId: string;
-}
-interface GetProgressInput {
-  sessionId: string;
-}
+type ProcessImportBody = NonNullable<ImportsProcessImportData['body']>;
+type ProgressResponse = NonNullable<ImportsGetImportProgressResponses[200]>;
 interface ImportProgressShape {
   sessionId: string;
-  status: 'processing' | 'completed' | 'failed';
+  status: ProgressResponse['status'];
   result?: ProcessImportOutput;
-  errors?: Array<{ description: string; error: string }>;
+  errors?: ProgressResponse['errors'];
+}
+
+function toProgressShape(res: ImportsGetImportProgressResponses[200]): ImportProgressShape | null {
+  if (!res) return null;
+  const result = res.result && 'matched' in res.result ? res.result : undefined;
+  return { sessionId: res.sessionId, status: res.status, result, errors: res.errors };
 }
 
 export function useHasAlreadyProcessed(): boolean {
@@ -46,27 +46,28 @@ export function useHasAlreadyProcessed(): boolean {
 export function useProcessingMutations() {
   const { setProcessSessionId, processSessionId } = useImportStore();
   const [pollingEnabled, setPollingEnabled] = useState(false);
-  const processImportMutation = usePillarMutation<ProcessImportInput, ProcessImportResponse>(
-    'finance',
-    ['imports', 'processImport'],
-    {
-      onSuccess: (data) => {
-        setProcessSessionId(data.sessionId);
-        setPollingEnabled(true);
-      },
-      onError: (error) => console.error('Processing error:', error),
-    }
-  );
-  const progressQuery = usePillarQuery<ImportProgressShape | null>(
-    'finance',
-    ['imports', 'getImportProgress'],
-    { sessionId: processSessionId ?? '' } satisfies GetProgressInput,
-    {
-      enabled: pollingEnabled && !!processSessionId,
-      refetchInterval: 1000,
-      refetchIntervalInBackground: true,
-    }
-  );
+  const queryClient = useQueryClient();
+  const processImportMutation = useMutation({
+    mutationFn: async (vars: ProcessImportBody) =>
+      unwrap(await importsProcessImport({ body: vars })),
+    onSuccess: (data) => {
+      setProcessSessionId(data.sessionId);
+      setPollingEnabled(true);
+    },
+    onError: (error: Error) => console.error('Processing error:', error),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ['finance', 'imports'] }),
+  });
+  const sessionId = processSessionId ?? '';
+  const progressQuery = useQuery({
+    queryKey: ['finance', 'imports', 'getImportProgress', sessionId],
+    queryFn: async (): Promise<ImportProgressShape | null> => {
+      const res = await importsGetImportProgress({ query: { sessionId } });
+      return toProgressShape(unwrap(res));
+    },
+    enabled: pollingEnabled && !!processSessionId,
+    refetchInterval: 1000,
+    refetchIntervalInBackground: true,
+  });
   return { pollingEnabled, setPollingEnabled, processImportMutation, progressQuery };
 }
 

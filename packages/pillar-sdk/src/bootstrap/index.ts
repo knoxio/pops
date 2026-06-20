@@ -1,6 +1,7 @@
 export {
   bootstrapPillar,
   type BootstrapPillarOptions,
+  type CapabilityReporter,
   type PillarBootstrapHandle,
 } from './bootstrap.js';
 export {
@@ -14,6 +15,7 @@ export {
   createHttpRegistryTransport,
   RegistryNetworkError,
   RegistryTransportError,
+  type CapabilityStatuses,
   type HeartbeatResult,
   type HttpRegistryTransportOptions,
   type RegisterRequest,

@@ -9,7 +9,11 @@ import { type AddBatchFormState, type useAddBatchForm } from './useAddBatchForm.
  */
 import type { ReactElement } from 'react';
 
-import type { BatchLocation, BatchUnit, ManualBatchSourceType } from '@pops/app-food-db';
+import type {
+  BatchLocation,
+  BatchUnit,
+  ManualBatchSourceType,
+} from '../../food-api-shared-types.js';
 
 const SOURCE_OPTIONS = [
   { value: 'purchase', label: 'Purchase' },

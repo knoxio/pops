@@ -1,0 +1,76 @@
+name: Orchestrator Quality
+
+# Standalone scoped quality gate for the cross-pillar orchestrator service.
+# Runs format, lint, build (deps + app), typecheck, and test in isolation.
+# Triggered ONLY by changes that touch the app or its transitive @pops/*
+# deps + the repo-wide tsconfig/lockfile/format surface.
+#
+# Bubble-of-happiness rule: this workflow is the one that MUST stay green
+# for the orchestrator. No Docker job yet — the Dockerfile is a deliberate
+# follow-up (see apps/pops-orchestrator/README.md). Search adapters (epic
+# 06), the AI-tool registry (epic 07), and the cross-pillar embeddings
+# pipeline land in follow-up increments.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "apps/pops-orchestrator/**"
+      - "packages/pillar-sdk/**"
+      - "packages/types/**"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "tsconfig.base.json"
+      - ".oxfmtrc.json"
+      - ".oxlintrc.json"
+      - ".github/workflows/orchestrator-quality.yml"
+  pull_request:
+    paths:
+      - "apps/pops-orchestrator/**"
+      - "packages/pillar-sdk/**"
+      - "packages/types/**"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "tsconfig.base.json"
+      - ".oxfmtrc.json"
+      - ".oxlintrc.json"
+      - ".github/workflows/orchestrator-quality.yml"
+
+concurrency:
+  group: orchestrator-quality-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Orchestrator — format + lint + build + typecheck + test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: pnpm/action-setup@v5
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: pnpm
+
+      - name: Install (subgraph only)
+        run: pnpm install --frozen-lockfile --filter "@pops/orchestrator..."
+
+      - name: Format check
+        run: pnpm exec oxfmt --check apps/pops-orchestrator/
+
+      - name: Lint
+        run: pnpm exec oxlint apps/pops-orchestrator/src
+
+      - name: Build transitive deps
+        run: pnpm --filter "@pops/orchestrator^..." build
+
+      - name: Typecheck
+        run: pnpm --filter @pops/orchestrator typecheck
+
+      - name: Build app
+        run: pnpm --filter @pops/orchestrator build
+
+      - name: Test
+        run: pnpm --filter @pops/orchestrator test

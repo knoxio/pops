@@ -1,65 +1,41 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { createElement, type ReactNode } from 'react';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-// ── Hoisted mocks ──────────────────────────────────────────────────────────
-
 const {
-  mockMovieSearch,
-  mockTvSearch,
-  mockLibraryMovies,
-  mockLibraryTv,
-  mockAddMovieMutation,
-  mockAddTvMutation,
-  mockWatchlistAddMutation,
-  mockWatchHistoryLogMutation,
-  mockMovieRefetch,
-  mockTvRefetch,
+  mockSearchMovies,
+  mockSearchTvShows,
+  mockMoviesList,
+  mockTvShowsList,
+  mockLibraryAddMovie,
+  mockLibraryAddTvShow,
+  mockWatchlistAdd,
+  mockWatchHistoryLog,
 } = vi.hoisted(() => ({
-  mockMovieSearch: vi.fn(),
-  mockTvSearch: vi.fn(),
-  mockLibraryMovies: vi.fn(),
-  mockLibraryTv: vi.fn(),
-  mockAddMovieMutation: vi.fn(),
-  mockAddTvMutation: vi.fn(),
-  mockWatchlistAddMutation: vi.fn(),
-  mockWatchHistoryLogMutation: vi.fn(),
-  mockMovieRefetch: vi.fn(),
-  mockTvRefetch: vi.fn(),
+  mockSearchMovies: vi.fn(),
+  mockSearchTvShows: vi.fn(),
+  mockMoviesList: vi.fn(),
+  mockTvShowsList: vi.fn(),
+  mockLibraryAddMovie: vi.fn(),
+  mockLibraryAddTvShow: vi.fn(),
+  mockWatchlistAdd: vi.fn(),
+  mockWatchHistoryLog: vi.fn(),
 }));
 
-vi.mock('@pops/pillar-sdk/react', () => ({
-  usePillarQuery: (
-    _pillarId: string,
-    path: readonly string[],
-    input: unknown,
-    options: unknown
-  ) => {
-    const key = path.join('.');
-    if (key === 'search.movies') return mockMovieSearch(input, options);
-    if (key === 'search.tvShows') return mockTvSearch(input, options);
-    if (key === 'movies.list') return mockLibraryMovies(input, options);
-    if (key === 'tvShows.list') return mockLibraryTv(input, options);
-    return { data: undefined, isLoading: false, error: null };
-  },
-  usePillarMutation: (_pillarId: string, path: readonly string[]) => {
-    const key = path.join('.');
-    if (key === 'library.addMovie') return { mutate: mockAddMovieMutation, isPending: false };
-    if (key === 'library.addTvShow') return { mutate: mockAddTvMutation, isPending: false };
-    if (key === 'watchlist.add') return { mutate: mockWatchlistAddMutation, isPending: false };
-    if (key === 'watchHistory.log')
-      return { mutate: mockWatchHistoryLogMutation, isPending: false };
-    return { mutate: vi.fn(), isPending: false };
-  },
-  usePillarUtils: () => ({
-    setData: vi.fn(),
-    invalidate: vi.fn(),
-    fetchQuery: vi.fn(),
-  }),
+vi.mock('../media-api/index.js', () => ({
+  searchMovies: (opts: unknown) => mockSearchMovies(opts),
+  searchTvShows: (opts: unknown) => mockSearchTvShows(opts),
+  moviesList: (opts: unknown) => mockMoviesList(opts),
+  tvShowsList: (opts: unknown) => mockTvShowsList(opts),
+  libraryAddMovie: (opts: unknown) => mockLibraryAddMovie(opts),
+  libraryAddTvShow: (opts: unknown) => mockLibraryAddTvShow(opts),
+  watchlistAdd: (opts: unknown) => mockWatchlistAdd(opts),
+  watchHistoryLog: (opts: unknown) => mockWatchHistoryLog(opts),
 }));
 
-// Capture props passed to SearchResultCard for assertion
 let lastMovieCardProps: Record<string, unknown>[] = [];
 let lastTvCardProps: Record<string, unknown>[] = [];
 
@@ -93,8 +69,6 @@ vi.mock('../components/MovieActionButtons', () => ({
 vi.mock('sonner', () => ({
   toast: { success: vi.fn(), error: vi.fn() },
 }));
-
-// ── Test data ──────────────────────────────────────────────────────────────
 
 const MOVIE_RESULTS = [
   {
@@ -145,54 +119,75 @@ const LIBRARY_MOVIES = [
     rotationStatus: 'leaving' as const,
     rotationExpiresAt: '2026-05-01T00:00:00Z',
   },
-]; // Inception is in library with leaving rotation
-const LIBRARY_TV = [{ id: 2, tvdbId: 201 }]; // Breaking Bad is in library
+];
+const LIBRARY_TV = [{ id: 2, tvdbId: 201 }];
 
-// ── Helpers ────────────────────────────────────────────────────────────────
-
-function setupMovieResults(overrides = {}) {
-  mockMovieSearch.mockReturnValue({
-    data: { results: MOVIE_RESULTS },
-    isLoading: false,
-    error: null,
-    refetch: mockMovieRefetch,
-    ...overrides,
-  });
+interface SearchOverride {
+  data?: { results: unknown[] } | null;
+  isLoading?: boolean;
+  error?: { message: string };
 }
 
-function setupTvResults(overrides = {}) {
-  mockTvSearch.mockReturnValue({
-    data: { results: TV_RESULTS },
-    isLoading: false,
-    error: null,
-    refetch: mockTvRefetch,
-    ...overrides,
-  });
+function sdkResult(defaultResults: unknown[], override: SearchOverride) {
+  if (override.isLoading) {
+    return () => new Promise(() => {});
+  }
+  if (override.error) {
+    return async () => ({ error: override.error });
+  }
+  const results = override.data?.results ?? defaultResults;
+  return async () => ({ data: { results } });
+}
+
+function setupMovieResults(overrides: SearchOverride = {}) {
+  mockSearchMovies.mockImplementation(sdkResult(MOVIE_RESULTS, overrides));
+}
+
+function setupTvResults(overrides: SearchOverride = {}) {
+  mockSearchTvShows.mockImplementation(sdkResult(TV_RESULTS, overrides));
 }
 
 function setupLibrary() {
-  mockLibraryMovies.mockReturnValue({ data: { data: LIBRARY_MOVIES } });
-  mockLibraryTv.mockReturnValue({ data: { data: LIBRARY_TV } });
+  mockMoviesList.mockResolvedValue({ data: { data: LIBRARY_MOVIES } });
+  mockTvShowsList.mockResolvedValue({ data: { data: LIBRARY_TV } });
 }
 
 function setupEmptyLibrary() {
-  mockLibraryMovies.mockReturnValue({ data: { data: [] } });
-  mockLibraryTv.mockReturnValue({ data: { data: [] } });
+  mockMoviesList.mockResolvedValue({ data: { data: [] } });
+  mockTvShowsList.mockResolvedValue({ data: { data: [] } });
 }
 
 function renderPage(path = '/media/search?q=inception') {
-  return render(
-    <MemoryRouter initialEntries={[path]}>
-      <Routes>
-        <Route path="/media/search" element={<SearchPage />} />
-      </Routes>
-    </MemoryRouter>
-  );
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  });
+  const wrapper = ({ children }: { children: ReactNode }) =>
+    createElement(
+      QueryClientProvider,
+      { client },
+      createElement(
+        MemoryRouter,
+        { initialEntries: [path] },
+        createElement(
+          Routes,
+          null,
+          createElement(Route, { path: '/media/search', element: children })
+        )
+      )
+    );
+  return render(<SearchPage />, { wrapper });
 }
 
 import { SearchPage } from './SearchPage';
 
-// ── Tests ──────────────────────────────────────────────────────────────────
+async function findInLibraryMovieCard(title: string) {
+  await screen.findByTestId(`card-movie-${title}`);
+  return waitFor(() => {
+    const card = lastMovieCardProps.findLast((p) => p.title === title);
+    expect(card?.inLibrary).toBe(true);
+    return card;
+  });
+}
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -204,10 +199,10 @@ beforeEach(() => {
 });
 
 describe('SearchPage — both sections render independently', () => {
-  it("shows movie results and TV results simultaneously in 'Both' mode", () => {
+  it("shows movie results and TV results simultaneously in 'Both' mode", async () => {
     renderPage();
 
-    expect(screen.getByTestId('card-movie-Inception')).toBeInTheDocument();
+    expect(await screen.findByTestId('card-movie-Inception')).toBeInTheDocument();
     expect(screen.getByTestId('card-tv-Breaking Bad')).toBeInTheDocument();
   });
 
@@ -229,84 +224,82 @@ describe('SearchPage — both sections render independently', () => {
     expect(screen.getByTestId('card-tv-Breaking Bad')).toBeInTheDocument();
   });
 
-  it('movie section shows skeleton while loading, TV section shows results', () => {
+  it('movie section shows skeleton while loading, TV section shows results', async () => {
     setupMovieResults({ data: null, isLoading: true });
     setupTvResults();
     renderPage();
 
-    // TV results visible
-    expect(screen.getByTestId('card-tv-Breaking Bad')).toBeInTheDocument();
-    // Movie skeleton visible (skeleton divs in movie section)
+    expect(await screen.findByTestId('card-tv-Breaking Bad')).toBeInTheDocument();
     expect(screen.getByText('Breaking Bad')).toBeInTheDocument();
-    // No movie cards
     expect(screen.queryByTestId('card-movie-Inception')).not.toBeInTheDocument();
   });
 
-  it('TV section shows skeleton while loading, movie section shows results', () => {
+  it('TV section shows skeleton while loading, movie section shows results', async () => {
     setupTvResults({ data: null, isLoading: true });
     setupMovieResults();
     renderPage();
 
-    expect(screen.getByTestId('card-movie-Inception')).toBeInTheDocument();
+    expect(await screen.findByTestId('card-movie-Inception')).toBeInTheDocument();
     expect(screen.queryByTestId('card-tv-Breaking Bad')).not.toBeInTheDocument();
   });
 });
 
 describe('SearchPage — per-section error states', () => {
-  it('shows movie error with Retry button when movie search fails', () => {
+  it('shows movie error with Retry button when movie search fails', async () => {
     setupMovieResults({ data: null, isLoading: false, error: { message: 'TMDB error' } });
     renderPage();
 
-    expect(screen.getByText('Movie search failed')).toBeInTheDocument();
+    expect(await screen.findByText('Movie search failed')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Retry' })).toBeInTheDocument();
   });
 
-  it('calls movieSearch.refetch when movie Retry is clicked', () => {
+  it('calls movieSearch.refetch when movie Retry is clicked', async () => {
     setupMovieResults({ data: null, isLoading: false, error: { message: 'Error' } });
     renderPage();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
-    expect(mockMovieRefetch).toHaveBeenCalled();
+    fireEvent.click(await screen.findByRole('button', { name: 'Retry' }));
+    await waitFor(() => expect(mockSearchMovies.mock.calls.length).toBeGreaterThan(1));
   });
 
-  it('shows TV error with Retry button when TV search fails', () => {
+  it('shows TV error with Retry button when TV search fails', async () => {
     setupTvResults({ data: null, isLoading: false, error: { message: 'TVDB error' } });
     renderPage();
 
-    expect(screen.getByText('TV search failed')).toBeInTheDocument();
+    expect(await screen.findByText('TV search failed')).toBeInTheDocument();
   });
 
-  it('calls tvSearch.refetch when TV Retry is clicked', () => {
+  it('calls tvSearch.refetch when TV Retry is clicked', async () => {
     setupTvResults({ data: null, isLoading: false, error: { message: 'Error' } });
     renderPage();
 
-    const retryButtons = screen.getAllByRole('button', { name: 'Retry' });
+    const retryButtons = await screen.findAllByRole('button', { name: 'Retry' });
     fireEvent.click(retryButtons[0]!);
-    expect(mockTvRefetch).toHaveBeenCalled();
+    await waitFor(() => expect(mockSearchTvShows.mock.calls.length).toBeGreaterThan(1));
   });
 
-  it('TV section shows results independently when movie section has error', () => {
+  it('TV section shows results independently when movie section has error', async () => {
     setupMovieResults({ data: null, isLoading: false, error: { message: 'Error' } });
     setupTvResults();
     renderPage();
 
-    expect(screen.getByText('Movie search failed')).toBeInTheDocument();
-    expect(screen.getByTestId('card-tv-Breaking Bad')).toBeInTheDocument();
+    expect(await screen.findByText('Movie search failed')).toBeInTheDocument();
+    expect(await screen.findByTestId('card-tv-Breaking Bad')).toBeInTheDocument();
   });
 });
 
 describe('SearchPage — no results message', () => {
-  it('shows no results message when both sections return empty', () => {
+  it('shows no results message when both sections return empty', async () => {
     setupMovieResults({ data: { results: [] } });
     setupTvResults({ data: { results: [] } });
     renderPage();
 
-    expect(screen.getByText(/No results found for/)).toBeInTheDocument();
+    expect(await screen.findByText(/No results found for/)).toBeInTheDocument();
     expect(screen.getByText(/inception/i)).toBeInTheDocument();
   });
 
-  it('does not show no-results message when results are present', () => {
+  it('does not show no-results message when results are present', async () => {
     renderPage();
+    await screen.findByTestId('card-movie-Inception');
     expect(screen.queryByText(/No results found for/)).not.toBeInTheDocument();
   });
 
@@ -317,286 +310,295 @@ describe('SearchPage — no results message', () => {
 });
 
 describe('SearchPage — In Library badge', () => {
-  it('passes inLibrary=true for movies already in library (by tmdbId)', () => {
+  it('passes inLibrary=true for movies already in library (by tmdbId)', async () => {
     renderPage();
-
-    const inceptionCard = lastMovieCardProps.find((p) => p.title === 'Inception');
+    const inceptionCard = await findInLibraryMovieCard('Inception');
     expect(inceptionCard?.inLibrary).toBe(true);
   });
 
-  it('passes inLibrary=false for movies not in library', () => {
+  it('passes inLibrary=false for movies not in library', async () => {
     renderPage();
-
-    const interstellarCard = lastMovieCardProps.find((p) => p.title === 'Interstellar');
+    await findInLibraryMovieCard('Inception');
+    const interstellarCard = lastMovieCardProps.findLast((p) => p.title === 'Interstellar');
     expect(interstellarCard?.inLibrary).toBe(false);
   });
 
-  it('passes inLibrary=true for TV shows already in library (by tvdbId)', () => {
+  it('passes inLibrary=true for TV shows already in library (by tvdbId)', async () => {
     renderPage();
-
-    const bbCard = lastTvCardProps.find((p) => p.title === 'Breaking Bad');
-    expect(bbCard?.inLibrary).toBe(true);
+    await waitFor(() => {
+      const bbCard = lastTvCardProps.findLast((p) => p.title === 'Breaking Bad');
+      expect(bbCard?.inLibrary).toBe(true);
+    });
   });
 
-  it('passes inLibrary=false for TV shows not in library', () => {
+  it('passes inLibrary=false for TV shows not in library', async () => {
     renderPage();
-
-    const severanceCard = lastTvCardProps.find((p) => p.title === 'Severance');
+    await waitFor(() => {
+      const bbCard = lastTvCardProps.findLast((p) => p.title === 'Breaking Bad');
+      expect(bbCard?.inLibrary).toBe(true);
+    });
+    const severanceCard = lastTvCardProps.findLast((p) => p.title === 'Severance');
     expect(severanceCard?.inLibrary).toBe(false);
   });
 
-  it('all items show inLibrary=false when library is empty', () => {
+  it('all items show inLibrary=false when library is empty', async () => {
     setupEmptyLibrary();
     renderPage();
-
+    await screen.findByTestId('card-movie-Inception');
+    await waitFor(() => {
+      expect(mockMoviesList).toHaveBeenCalled();
+      expect(mockTvShowsList).toHaveBeenCalled();
+    });
     expect(lastMovieCardProps.every((p) => p.inLibrary === false)).toBe(true);
     expect(lastTvCardProps.every((p) => p.inLibrary === false)).toBe(true);
   });
 });
 
 describe('SearchPage — poster fallback (via card props)', () => {
-  it('passes null posterUrl when posterPath is null (movie)', () => {
+  it('passes null posterUrl when posterPath is null (movie)', async () => {
     renderPage();
-
-    const interstellarCard = lastMovieCardProps.find((p) => p.title === 'Interstellar');
+    await screen.findByTestId('card-movie-Inception');
+    const interstellarCard = lastMovieCardProps.findLast((p) => p.title === 'Interstellar');
     expect(interstellarCard?.posterUrl).toBeNull();
   });
 
-  it('passes constructed posterUrl for TMDB relative paths', () => {
+  it('passes constructed posterUrl for TMDB relative paths', async () => {
     renderPage();
-
-    const inceptionCard = lastMovieCardProps.find((p) => p.title === 'Inception');
+    await screen.findByTestId('card-movie-Inception');
+    const inceptionCard = lastMovieCardProps.findLast((p) => p.title === 'Inception');
     expect(inceptionCard?.posterUrl).toBe('https://image.tmdb.org/t/p/w342/inception.jpg');
   });
 
-  it('passes null posterUrl when TV show has no poster', () => {
+  it('passes null posterUrl when TV show has no poster', async () => {
     renderPage();
-
-    const severanceCard = lastTvCardProps.find((p) => p.title === 'Severance');
+    await screen.findByTestId('card-tv-Severance');
+    const severanceCard = lastTvCardProps.findLast((p) => p.title === 'Severance');
     expect(severanceCard?.posterUrl).toBeNull();
   });
 
-  it('passes full TVDB URL when TV show has poster', () => {
+  it('passes full TVDB URL when TV show has poster', async () => {
     renderPage();
-
-    const bbCard = lastTvCardProps.find((p) => p.title === 'Breaking Bad');
+    await screen.findByTestId('card-tv-Breaking Bad');
+    const bbCard = lastTvCardProps.findLast((p) => p.title === 'Breaking Bad');
     expect(bbCard?.posterUrl).toBe('https://cdn.tvdb.com/bb.jpg');
   });
 });
 
 describe('SearchPage — rotation fields passed to in-library movie cards', () => {
-  it('passes rotationStatus and rotationExpiresAt for in-library movies', () => {
+  it('passes rotationStatus and rotationExpiresAt for in-library movies', async () => {
     renderPage();
-
-    const inceptionCard = lastMovieCardProps.find((p) => p.title === 'Inception');
+    const inceptionCard = await findInLibraryMovieCard('Inception');
     expect(inceptionCard?.rotationStatus).toBe('leaving');
     expect(inceptionCard?.rotationExpiresAt).toBe('2026-05-01T00:00:00Z');
   });
 
-  it('passes undefined rotationStatus and rotationExpiresAt for movies not in library', () => {
+  it('passes undefined rotationStatus and rotationExpiresAt for movies not in library', async () => {
     renderPage();
-
-    const interstellarCard = lastMovieCardProps.find((p) => p.title === 'Interstellar');
+    await findInLibraryMovieCard('Inception');
+    const interstellarCard = lastMovieCardProps.findLast((p) => p.title === 'Interstellar');
     expect(interstellarCard?.rotationStatus).toBeUndefined();
     expect(interstellarCard?.rotationExpiresAt).toBeUndefined();
   });
 
-  it('passes no rotation fields when library is empty', () => {
+  it('passes no rotation fields when library is empty', async () => {
     setupEmptyLibrary();
     renderPage();
-
+    await screen.findByTestId('card-movie-Inception');
+    await waitFor(() => expect(mockMoviesList).toHaveBeenCalled());
     expect(lastMovieCardProps.every((p) => p.rotationStatus === undefined)).toBe(true);
     expect(lastMovieCardProps.every((p) => p.rotationExpiresAt === undefined)).toBe(true);
   });
 });
 
 describe('SearchPage — overview passed to cards', () => {
-  it('passes overview text to movie card', () => {
+  it('passes overview text to movie card', async () => {
     renderPage();
-
-    const inceptionCard = lastMovieCardProps.find((p) => p.title === 'Inception');
+    await screen.findByTestId('card-movie-Inception');
+    const inceptionCard = lastMovieCardProps.findLast((p) => p.title === 'Inception');
     expect(inceptionCard?.overview).toContain('dream-sharing');
   });
 
-  it('passes null overview for TV shows with no overview', () => {
+  it('passes null overview for TV shows with no overview', async () => {
     renderPage();
-
-    const severanceCard = lastTvCardProps.find((p) => p.title === 'Severance');
+    await screen.findByTestId('card-tv-Severance');
+    const severanceCard = lastTvCardProps.findLast((p) => p.title === 'Severance');
     expect(severanceCard?.overview).toBeNull();
   });
 });
 
 describe('SearchPage — clickable links for in-library items (#1913)', () => {
-  it('passes href to in-library movie card pointing to detail page', () => {
+  it('passes href to in-library movie card pointing to detail page', async () => {
     renderPage();
-
-    // Inception (tmdbId=101) maps to localId=1 from LIBRARY_MOVIES
-    const inceptionCard = lastMovieCardProps.find((p) => p.title === 'Inception');
+    const inceptionCard = await findInLibraryMovieCard('Inception');
     expect(inceptionCard?.href).toBe('/media/movies/1');
   });
 
-  it('does not pass href to not-in-library movie card', () => {
+  it('does not pass href to not-in-library movie card', async () => {
     renderPage();
-
-    const interstellarCard = lastMovieCardProps.find((p) => p.title === 'Interstellar');
+    await findInLibraryMovieCard('Inception');
+    const interstellarCard = lastMovieCardProps.findLast((p) => p.title === 'Interstellar');
     expect(interstellarCard?.href).toBeUndefined();
   });
 
-  it('passes href to in-library TV card pointing to detail page', () => {
+  it('passes href to in-library TV card pointing to detail page', async () => {
     renderPage();
-
-    // Breaking Bad (tvdbId=201) maps to localId=2 from LIBRARY_TV
-    const bbCard = lastTvCardProps.find((p) => p.title === 'Breaking Bad');
-    expect(bbCard?.href).toBe('/media/tv/2');
+    await waitFor(() => {
+      const bbCard = lastTvCardProps.findLast((p) => p.title === 'Breaking Bad');
+      expect(bbCard?.href).toBe('/media/tv/2');
+    });
   });
 
-  it('does not pass href to not-in-library TV card', () => {
+  it('does not pass href to not-in-library TV card', async () => {
     renderPage();
-
-    const severanceCard = lastTvCardProps.find((p) => p.title === 'Severance');
+    await waitFor(() => {
+      const bbCard = lastTvCardProps.findLast((p) => p.title === 'Breaking Bad');
+      expect(bbCard?.inLibrary).toBe(true);
+    });
+    const severanceCard = lastTvCardProps.findLast((p) => p.title === 'Severance');
     expect(severanceCard?.href).toBeUndefined();
   });
 
-  it('passes mediaId to in-library movie card', () => {
+  it('passes mediaId to in-library movie card', async () => {
     renderPage();
-
-    const inceptionCard = lastMovieCardProps.find((p) => p.title === 'Inception');
+    const inceptionCard = await findInLibraryMovieCard('Inception');
     expect(inceptionCard?.mediaId).toBe(1);
   });
 
-  it('passes mediaId to in-library TV card', () => {
+  it('passes mediaId to in-library TV card', async () => {
     renderPage();
-
-    const bbCard = lastTvCardProps.find((p) => p.title === 'Breaking Bad');
-    expect(bbCard?.mediaId).toBe(2);
+    await waitFor(() => {
+      const bbCard = lastTvCardProps.findLast((p) => p.title === 'Breaking Bad');
+      expect(bbCard?.mediaId).toBe(2);
+    });
   });
 
-  it('does not pass mediaId to not-in-library movie card', () => {
+  it('does not pass mediaId to not-in-library movie card', async () => {
     setupEmptyLibrary();
     renderPage();
-
-    const inceptionCard = lastMovieCardProps.find((p) => p.title === 'Inception');
+    await screen.findByTestId('card-movie-Inception');
+    await waitFor(() => expect(mockMoviesList).toHaveBeenCalled());
+    const inceptionCard = lastMovieCardProps.findLast((p) => p.title === 'Inception');
     expect(inceptionCard?.mediaId).toBeUndefined();
   });
 });
 
 describe('SearchPage — compound actions (#1912)', () => {
-  it('passes onAddToWatchlistAndLibrary to not-in-library movie cards', () => {
+  it('passes onAddToWatchlistAndLibrary to not-in-library movie cards', async () => {
     setupEmptyLibrary();
     renderPage();
-
-    const inceptionCard = lastMovieCardProps.find((p) => p.title === 'Inception');
+    await screen.findByTestId('card-movie-Inception');
+    await waitFor(() => expect(mockMoviesList).toHaveBeenCalled());
+    const inceptionCard = lastMovieCardProps.findLast((p) => p.title === 'Inception');
     expect(typeof inceptionCard?.onAddToWatchlistAndLibrary).toBe('function');
   });
 
-  it('does not pass onAddToWatchlistAndLibrary to in-library movie cards', () => {
+  it('does not pass onAddToWatchlistAndLibrary to in-library movie cards', async () => {
     renderPage();
-
-    const inceptionCard = lastMovieCardProps.find((p) => p.title === 'Inception');
+    const inceptionCard = await findInLibraryMovieCard('Inception');
     expect(inceptionCard?.onAddToWatchlistAndLibrary).toBeUndefined();
   });
 
-  it('passes onMarkWatchedAndLibrary to not-in-library movie cards', () => {
+  it('passes onMarkWatchedAndLibrary to not-in-library movie cards', async () => {
     setupEmptyLibrary();
     renderPage();
-
-    const inceptionCard = lastMovieCardProps.find((p) => p.title === 'Inception');
+    await screen.findByTestId('card-movie-Inception');
+    await waitFor(() => expect(mockMoviesList).toHaveBeenCalled());
+    const inceptionCard = lastMovieCardProps.findLast((p) => p.title === 'Inception');
     expect(typeof inceptionCard?.onMarkWatchedAndLibrary).toBe('function');
   });
 
-  it('does not pass onMarkWatchedAndLibrary to in-library movie cards', () => {
+  it('does not pass onMarkWatchedAndLibrary to in-library movie cards', async () => {
     renderPage();
-
-    const inceptionCard = lastMovieCardProps.find((p) => p.title === 'Inception');
+    const inceptionCard = await findInLibraryMovieCard('Inception');
     expect(inceptionCard?.onMarkWatchedAndLibrary).toBeUndefined();
   });
 
-  it('passes onMarkWatched to in-library movie cards', () => {
+  it('passes onMarkWatched to in-library movie cards', async () => {
     renderPage();
-
-    const inceptionCard = lastMovieCardProps.find((p) => p.title === 'Inception');
+    const inceptionCard = await findInLibraryMovieCard('Inception');
     expect(typeof inceptionCard?.onMarkWatched).toBe('function');
   });
 
-  it('does not pass onMarkWatched to not-in-library movie cards (no localId)', () => {
+  it('does not pass onMarkWatched to not-in-library movie cards (no localId)', async () => {
     setupEmptyLibrary();
     renderPage();
-
-    const inceptionCard = lastMovieCardProps.find((p) => p.title === 'Inception');
+    await screen.findByTestId('card-movie-Inception');
+    await waitFor(() => expect(mockMoviesList).toHaveBeenCalled());
+    const inceptionCard = lastMovieCardProps.findLast((p) => p.title === 'Inception');
     expect(inceptionCard?.onMarkWatched).toBeUndefined();
   });
 
-  it('calling onAddToWatchlistAndLibrary triggers addMovie then watchlist.add', () => {
+  it('calling onAddToWatchlistAndLibrary triggers addMovie then watchlist.add', async () => {
     setupEmptyLibrary();
+    mockLibraryAddMovie.mockResolvedValue({
+      data: { created: true, data: { id: 99, title: 'Inception' } },
+    });
+    mockWatchlistAdd.mockResolvedValue({ data: {} });
     renderPage();
+    await screen.findByTestId('card-movie-Inception');
+    await waitFor(() => expect(mockMoviesList).toHaveBeenCalled());
 
-    const inceptionCard = lastMovieCardProps.find((p) => p.title === 'Inception');
+    const inceptionCard = lastMovieCardProps.findLast((p) => p.title === 'Inception');
     const handler = inceptionCard?.onAddToWatchlistAndLibrary as (() => void) | undefined;
     expect(handler).toBeDefined();
 
     handler?.();
 
-    expect(mockAddMovieMutation).toHaveBeenCalledWith(
-      { tmdbId: 101 },
-      expect.objectContaining({ onSuccess: expect.any(Function) })
+    await waitFor(() =>
+      expect(mockLibraryAddMovie).toHaveBeenCalledWith({ body: { tmdbId: 101 } })
     );
-
-    // Simulate addMovie success with local id
-    const onSuccess = mockAddMovieMutation.mock.calls[0]?.[1]?.onSuccess;
-    onSuccess?.({ data: { id: 99 }, created: true, message: 'Movie added to library' });
-
-    expect(mockWatchlistAddMutation).toHaveBeenCalledWith(
-      { mediaType: 'movie', mediaId: 99 },
-      expect.objectContaining({ onSuccess: expect.any(Function) })
+    await waitFor(() =>
+      expect(mockWatchlistAdd).toHaveBeenCalledWith({ body: { mediaType: 'movie', mediaId: 99 } })
     );
   });
 
-  it('calling onMarkWatchedAndLibrary triggers addMovie then watchHistory.log', () => {
+  it('calling onMarkWatchedAndLibrary triggers addMovie then watchHistory.log', async () => {
     setupEmptyLibrary();
+    mockLibraryAddMovie.mockResolvedValue({
+      data: { created: true, data: { id: 99, title: 'Inception' } },
+    });
+    mockWatchHistoryLog.mockResolvedValue({ data: {} });
     renderPage();
+    await screen.findByTestId('card-movie-Inception');
+    await waitFor(() => expect(mockMoviesList).toHaveBeenCalled());
 
-    const inceptionCard = lastMovieCardProps.find((p) => p.title === 'Inception');
+    const inceptionCard = lastMovieCardProps.findLast((p) => p.title === 'Inception');
     const handler = inceptionCard?.onMarkWatchedAndLibrary as (() => void) | undefined;
     expect(handler).toBeDefined();
 
     handler?.();
 
-    expect(mockAddMovieMutation).toHaveBeenCalledWith(
-      { tmdbId: 101 },
-      expect.objectContaining({ onSuccess: expect.any(Function) })
+    await waitFor(() =>
+      expect(mockLibraryAddMovie).toHaveBeenCalledWith({ body: { tmdbId: 101 } })
     );
-
-    const onSuccess = mockAddMovieMutation.mock.calls[0]?.[1]?.onSuccess;
-    onSuccess?.({ data: { id: 99 }, created: true, message: 'Movie added to library' });
-
-    expect(mockWatchHistoryLogMutation).toHaveBeenCalledWith(
-      { mediaType: 'movie', mediaId: 99 },
-      expect.objectContaining({ onSuccess: expect.any(Function) })
+    await waitFor(() =>
+      expect(mockWatchHistoryLog).toHaveBeenCalledWith({
+        body: { mediaType: 'movie', mediaId: 99, completed: 1, source: 'manual' },
+      })
     );
   });
 
-  it('calling onMarkWatched for in-library movie triggers watchHistory.log directly', () => {
+  it('calling onMarkWatched for in-library movie triggers watchHistory.log directly', async () => {
+    mockWatchHistoryLog.mockResolvedValue({ data: {} });
     renderPage();
-
-    const inceptionCard = lastMovieCardProps.find((p) => p.title === 'Inception');
+    const inceptionCard = await findInLibraryMovieCard('Inception');
     const handler = inceptionCard?.onMarkWatched as (() => void) | undefined;
     expect(handler).toBeDefined();
 
     handler?.();
 
-    expect(mockWatchHistoryLogMutation).toHaveBeenCalledWith(
-      { mediaType: 'movie', mediaId: 1 },
-      expect.objectContaining({ onSuccess: expect.any(Function) })
+    await waitFor(() =>
+      expect(mockWatchHistoryLog).toHaveBeenCalledWith({
+        body: { mediaType: 'movie', mediaId: 1, completed: 1, source: 'manual' },
+      })
     );
-    // addMovie should NOT be called for an in-library item
-    expect(mockAddMovieMutation).not.toHaveBeenCalled();
+    expect(mockLibraryAddMovie).not.toHaveBeenCalled();
   });
 
-  it('does not pass onAddToWatchlistAndLibrary to TV cards', () => {
+  it('does not pass onAddToWatchlistAndLibrary to TV cards', async () => {
     renderPage();
-
-    // TV compound watchlist action not supported (no episode-level tracking)
-    const bbCard = lastTvCardProps.find((p) => p.title === 'Breaking Bad');
+    await screen.findByTestId('card-tv-Breaking Bad');
+    const bbCard = lastTvCardProps.findLast((p) => p.title === 'Breaking Bad');
     expect(bbCard?.onAddToWatchlistAndLibrary).toBeUndefined();
   });
 });

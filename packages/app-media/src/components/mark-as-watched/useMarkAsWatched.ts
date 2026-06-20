@@ -1,8 +1,14 @@
-import { useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
-import { usePillarMutation, usePillarQuery } from '@pops/pillar-sdk/react';
+import { unwrap } from '../../media-api-helpers.js';
+import {
+  watchHistoryDelete,
+  watchHistoryList,
+  watchHistoryLog,
+  watchlistAdd,
+} from '../../media-api/index.js';
 
 interface WatchHistoryEntry {
   id: number;
@@ -39,24 +45,26 @@ function useCrossRouterInvalidation() {
 }
 
 function useUndoMutation(mediaId: number) {
+  const queryClient = useQueryClient();
   const invalidateCross = useCrossRouterInvalidation();
-  const addToWatchlistMutation = usePillarMutation<AddToWatchlistInput, unknown>('media', [
-    'watchlist',
-    'add',
-  ]);
-  const deleteMutation = usePillarMutation<{ id: number }, unknown>(
-    'media',
-    ['watchHistory', 'delete'],
-    {
-      onSuccess: () => {
-        toast.success('Watch entry undone');
-        invalidateCross();
-      },
-      onError: (err) => {
-        toast.error(`Failed to undo: ${err.message}`);
-      },
-    }
-  );
+  const addToWatchlistMutation = useMutation({
+    mutationFn: async (input: AddToWatchlistInput) => unwrap(await watchlistAdd({ body: input })),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['media', 'watchlist'] });
+    },
+  });
+  const deleteMutation = useMutation({
+    mutationFn: async (input: { id: number }) =>
+      unwrap(await watchHistoryDelete({ path: { id: input.id } })),
+    onSuccess: () => {
+      toast.success('Watch entry undone');
+      void queryClient.invalidateQueries({ queryKey: ['media', 'watchHistory'] });
+      invalidateCross();
+    },
+    onError: (err: Error) => {
+      toast.error(`Failed to undo: ${err.message}`);
+    },
+  });
 
   const handleUndo = (entryId: number, watchlistRemoved: boolean) => {
     deleteMutation.mutate(
@@ -83,8 +91,21 @@ function useLogMutation({
   setShowDatePicker: (v: boolean) => void;
   setCustomDate: (v: string) => void;
 }) {
+  const queryClient = useQueryClient();
   const invalidateCross = useCrossRouterInvalidation();
-  return usePillarMutation<LogInput, LogResult>('media', ['watchHistory', 'log'], {
+  return useMutation({
+    mutationFn: async (input: LogInput) =>
+      unwrap<LogResult>(
+        await watchHistoryLog({
+          body: {
+            mediaType: input.mediaType,
+            mediaId: input.mediaId,
+            completed: input.completed ?? 1,
+            source: 'manual',
+            watchedAt: input.watchedAt,
+          },
+        })
+      ),
     onSuccess: (result) => {
       toast.success('Marked as watched', {
         duration: 5000,
@@ -95,11 +116,12 @@ function useLogMutation({
           },
         },
       });
+      void queryClient.invalidateQueries({ queryKey: ['media', 'watchHistory'] });
       invalidateCross();
       setShowDatePicker(false);
       setCustomDate('');
     },
-    onError: (err) => {
+    onError: (err: Error) => {
       toast.error(`Failed to log watch: ${err.message}`);
     },
   });
@@ -109,12 +131,12 @@ export function useMarkAsWatched(mediaId: number) {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [customDate, setCustomDate] = useState('');
 
-  const { data: historyData } = usePillarQuery<WatchHistoryListResult>(
-    'media',
-    ['watchHistory', 'list'],
-    { mediaType: 'movie', mediaId, limit: 100 },
-    { staleTime: 30_000 }
-  );
+  const { data: historyData } = useQuery<WatchHistoryListResult>({
+    queryKey: ['media', 'watchHistory', 'list', { mediaType: 'movie', mediaId, limit: 100 }],
+    queryFn: async () =>
+      unwrap(await watchHistoryList({ query: { mediaType: 'movie', mediaId, limit: 100 } })),
+    staleTime: 30_000,
+  });
 
   const watchCount = historyData?.data?.length ?? 0;
   const lastWatched = historyData?.data?.[0]?.watchedAt;

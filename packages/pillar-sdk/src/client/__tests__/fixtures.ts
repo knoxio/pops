@@ -75,3 +75,59 @@ export function jsonResponse(
     headers: { 'content-type': 'application/json', ...init.headers },
   });
 }
+
+/**
+ * OpenAPI document the REST-transport factory/call-dynamic tests resolve their
+ * calls against, served at `GET ${baseUrl}/openapi` by {@link restFetch}.
+ *
+ * operationIds are the `[domain, proc].join('.')` paths the typed proxy /
+ * `callDynamic` produce. Every operation is a body-carrying POST so the call
+ * `input` passes through verbatim as the JSON body, addressed by the idiomatic
+ * REST URL the route map resolves from the operationId.
+ */
+export const FINANCE_OPENAPI = {
+  openapi: '3.0.2',
+  paths: {
+    '/wishlist/list': { post: { operationId: 'wishlist.list', requestBody: {} } },
+    '/wishlist/get': { post: { operationId: 'wishlist.get', requestBody: {} } },
+    '/wishlist/create': { post: { operationId: 'wishlist.create', requestBody: {} } },
+    '/wishlist/toggle': { post: { operationId: 'wishlist.toggle', requestBody: {} } },
+    '/watchlist/list': { post: { operationId: 'watchlist.list', requestBody: {} } },
+    '/ingredients/get': { post: { operationId: 'ingredients.get', requestBody: {} } },
+    '/units/get': { post: { operationId: 'units.get', requestBody: {} } },
+    '/transactions/imports/create': {
+      post: { operationId: 'transactions.imports.create', requestBody: {} },
+    },
+    '/budgets/list': { post: { operationId: 'budgets.list', requestBody: {} } },
+  },
+} as const;
+
+const OPENAPI_SUFFIX = '/openapi';
+
+/**
+ * The REST-transport equivalent of `recordingFetch`. Serves the pillar's
+ * OpenAPI document on `GET ${baseUrl}/openapi` (so the factory's `getRouteMap`
+ * step succeeds) and dispatches every other request — the actual domain call —
+ * to `responder`, recording the URL + parsed JSON body. The OpenAPI document
+ * defaults to {@link FINANCE_OPENAPI}.
+ */
+export function restFetch(
+  responder: (url: string, body: unknown) => Response | Promise<Response>,
+  openapi: unknown = FINANCE_OPENAPI
+): { fetchImpl: typeof fetch; calls: { url: string; body: unknown }[] } {
+  const calls: { url: string; body: unknown }[] = [];
+  const handler: FakeFetchHandler = async (url, init) => {
+    if (url.endsWith(OPENAPI_SUFFIX)) return jsonResponse(openapi);
+    let parsed: unknown = null;
+    if (typeof init?.body === 'string' && init.body.length > 0) {
+      try {
+        parsed = JSON.parse(init.body);
+      } catch {
+        parsed = init.body;
+      }
+    }
+    calls.push({ url, body: parsed });
+    return responder(url, parsed);
+  };
+  return { fetchImpl: fakeFetch(handler), calls };
+}

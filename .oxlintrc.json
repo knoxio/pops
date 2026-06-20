@@ -213,29 +213,6 @@
   },
   "overrides": [
     {
-      "files": ["apps/pops-api/src/**/*.{ts,tsx}"],
-      "rules": {
-        "typescript/explicit-function-return-type": [
-          "error",
-          {
-            "allowExpressions": true,
-            "allowTypedFunctionExpressions": true,
-            "allowHigherOrderFunctions": true
-          }
-        ]
-      }
-    },
-    {
-      "files": [
-        "apps/pops-api/src/**/router.ts",
-        "apps/pops-api/src/**/router.tsx",
-        "apps/pops-api/src/trpc.ts"
-      ],
-      "rules": {
-        "typescript/explicit-module-boundary-types": "off"
-      }
-    },
-    {
       "files": [
         "apps/pops-shell/src/**/*.{ts,tsx}",
         "packages/ui/src/**/*.{ts,tsx}",
@@ -265,17 +242,6 @@
         "jsx-a11y/alt-text": "warn",
         "jsx-a11y/aria-role": "warn",
         "jsx-a11y/click-events-have-key-events": "warn"
-      }
-    },
-    {
-      "files": ["apps/pops-api/src/db/schema.ts", "apps/pops-api/src/db/seeder.ts"],
-      "rules": {
-        "max-lines": "off",
-        "max-lines-per-function": "off",
-        "complexity": "off",
-        "max-statements": "off",
-        "max-params": "off",
-        "max-depth": "off"
       }
     },
     {
@@ -319,7 +285,6 @@
     },
     {
       "files": [
-        "apps/pops-api/scripts/**/*.ts",
         "apps/pops-shell/e2e/**/*.ts",
         "packages/app-*/scripts/**/*.ts",
         "services/*/src/scripts/**/*.ts",
@@ -337,6 +302,51 @@
     },
     {
       "files": ["packages/module-registry/src/generated.ts"],
+      "rules": {
+        "max-lines": "off"
+      }
+    },
+    {
+      "files": ["pillars/*/src/contract/*.generated.ts"],
+      "rules": {
+        "max-lines": "off"
+      }
+    },
+    {
+      "files": ["pillars/*/src/api/rest/*-handlers.ts"],
+      "rules": {
+        "max-lines-per-function": "off",
+        "typescript/explicit-module-boundary-types": "off",
+        "typescript/explicit-function-return-type": "off"
+      }
+    },
+    {
+      "files": [
+        "packages/app-*/src/**/*.gen.ts",
+        "packages/app-*/src/*-api/**/*.{ts,tsx}",
+        "packages/overlay-*/src/**/*.gen.ts",
+        "packages/overlay-*/src/*-api/**/*.{ts,tsx}",
+        "apps/pops-shell/src/**/*.gen.ts",
+        "apps/pops-shell/src/*-api/**/*.{ts,tsx}"
+      ],
+      "rules": {
+        "max-lines": "off",
+        "max-lines-per-function": "off",
+        "max-statements": "off",
+        "complexity": "off",
+        "max-depth": "off",
+        "no-underscore-dangle": "off",
+        "typescript/no-explicit-any": "off",
+        "typescript/no-non-null-assertion": "off",
+        "typescript/no-misused-spread": "off",
+        "typescript/no-floating-promises": "off",
+        "typescript/explicit-module-boundary-types": "off",
+        "typescript/explicit-function-return-type": "off",
+        "unicorn/no-array-sort": "off"
+      }
+    },
+    {
+      "files": ["packages/module-registry/scripts/known-modules.ts"],
       "rules": {
         "max-lines": "off"
       }

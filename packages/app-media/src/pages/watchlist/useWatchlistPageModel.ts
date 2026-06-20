@@ -1,40 +1,13 @@
+import { useQuery } from '@tanstack/react-query';
 import { useCallback, useState } from 'react';
 import { useSearchParams } from 'react-router';
 
-import { usePillarQuery } from '@pops/pillar-sdk/react';
-
+import { unwrap } from '../../media-api-helpers.js';
+import { moviesList, tvShowsList, watchlistList } from '../../media-api/index.js';
 import { parseTypeParam, type WatchlistEntry, type WatchlistFilter } from './types';
 import { useWatchlistDnd } from './useWatchlistDnd';
 import { useWatchlistMediaMaps } from './useWatchlistMediaMaps';
 import { useWatchlistMutations } from './useWatchlistMutations';
-
-interface WatchlistListResponse {
-  data: WatchlistEntry[];
-}
-
-interface MovieRow {
-  id: number;
-  title: string;
-  releaseDate: string | null;
-  posterUrl: string | null;
-  rotationStatus?: 'leaving' | 'protected' | null;
-  rotationExpiresAt?: string | null;
-}
-
-interface TvRow {
-  id: number;
-  name: string;
-  firstAirDate: string | null;
-  posterUrl: string | null;
-}
-
-interface MoviesListResponse {
-  data: MovieRow[];
-}
-
-interface TvShowsListResponse {
-  data: TvRow[];
-}
 
 function useFilterState() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -49,24 +22,26 @@ function useFilterState() {
 }
 
 function useWatchlistData(filter: WatchlistFilter) {
+  const watchlistQueryInput = {
+    ...(filter !== 'all' ? { mediaType: filter } : {}),
+    limit: 500,
+  };
   const {
     data: watchlistData,
     isLoading,
     error: watchlistError,
-  } = usePillarQuery<WatchlistListResponse>('media', ['watchlist', 'list'], {
-    ...(filter !== 'all' ? { mediaType: filter } : {}),
-    limit: 500,
+  } = useQuery({
+    queryKey: ['media', 'watchlist', 'list', watchlistQueryInput],
+    queryFn: async () => unwrap(await watchlistList({ query: watchlistQueryInput })),
   });
-  const { data: moviesData, isLoading: moviesLoading } = usePillarQuery<MoviesListResponse>(
-    'media',
-    ['movies', 'list'],
-    { limit: 500 }
-  );
-  const { data: tvShowsData, isLoading: tvShowsLoading } = usePillarQuery<TvShowsListResponse>(
-    'media',
-    ['tvShows', 'list'],
-    { limit: 500 }
-  );
+  const { data: moviesData, isLoading: moviesLoading } = useQuery({
+    queryKey: ['media', 'movies', 'list', { limit: 500 }],
+    queryFn: async () => unwrap(await moviesList({ query: { limit: 500 } })),
+  });
+  const { data: tvShowsData, isLoading: tvShowsLoading } = useQuery({
+    queryKey: ['media', 'tvShows', 'list', { limit: 500 }],
+    queryFn: async () => unwrap(await tvShowsList({ query: { limit: 500 } })),
+  });
   return {
     watchlistData,
     isLoading,
@@ -134,7 +109,7 @@ export function useWatchlistPageModel() {
   const { getMetaForEntry } = useWatchlistMediaMaps(data.moviesData, data.tvShowsData);
   const mutations = useWatchlistMutations({ setIsReordering, setOptimisticOrder });
 
-  const entries = data.watchlistData?.data ?? [];
+  const entries: WatchlistEntry[] = data.watchlistData?.data ?? [];
   const sortedEntries = optimisticOrder ?? entries;
   const loading = data.isLoading || data.moviesLoading || data.tvShowsLoading;
 

@@ -1,3 +1,4 @@
+import { useQuery } from '@tanstack/react-query';
 /**
  * "Cook now" picker — PRD-147.
  *
@@ -9,17 +10,16 @@
 import { type ReactElement } from 'react';
 import { Link, useNavigate } from 'react-router';
 
-import { usePillarQuery } from '@pops/pillar-sdk/react';
 import { Button, Dialog, DialogContent, DialogHeader, DialogTitle } from '@pops/ui';
 
+import { unwrap } from '../../food-api-helpers.js';
+import { fridgeRecipesUsingBatch } from '../../food-api/index.js';
 import { formatQty } from './format.js';
 
-import type { inferRouterOutputs } from '@trpc/server';
+import type { BatchUnit } from '../../food-api-shared-types.js';
+import type { FridgeRecipesUsingBatchResponses } from '../../food-api/types.gen.js';
 
-import type { AppRouter } from '@pops/api';
-import type { BatchUnit, RecipeForCookRow } from '@pops/app-food-db';
-
-type RecipesUsingBatchOutput = inferRouterOutputs<AppRouter>['food']['fridge']['recipesUsingBatch'];
+type RecipeForCookRow = FridgeRecipesUsingBatchResponses[200]['items'][number];
 
 export interface CookNowPickerProps {
   batchId: number | null;
@@ -35,12 +35,12 @@ export function CookNowPicker({
   onClose,
 }: CookNowPickerProps): ReactElement {
   const navigate = useNavigate();
-  const result = usePillarQuery<RecipesUsingBatchOutput>(
-    'food',
-    ['fridge', 'recipesUsingBatch'],
-    { batchId: batchId ?? 0 },
-    { enabled: isOpen && batchId !== null }
-  );
+  const result = useQuery({
+    queryKey: ['food', 'fridge', 'recipesUsingBatch', { batchId: batchId ?? 0 }],
+    queryFn: async () =>
+      unwrap(await fridgeRecipesUsingBatch({ query: { batchId: batchId ?? 0 } })),
+    enabled: isOpen && batchId !== null,
+  });
 
   const items = result.data?.items ?? [];
 

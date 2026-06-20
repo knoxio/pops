@@ -1,1 +1,0 @@
-ALTER TABLE `batches` ADD `deleted_at` text;

@@ -1,3 +1,4 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createInstance } from 'i18next';
@@ -11,19 +12,10 @@ import enAUFood from '../../../../../../apps/pops-shell/src/i18n/locales/en-AU/f
 
 import type { RecipeListItemView } from '../useRecipeListQuery.js';
 
-const mockListInfinite = vi.fn();
+const recipesListMock = vi.hoisted(() => vi.fn());
 
-vi.mock('@pops/pillar-sdk/react', () => ({
-  usePillarInfiniteQuery: (
-    _pillarId: string,
-    path: readonly string[],
-    input: unknown,
-    opts: unknown
-  ) => {
-    const key = path.join('.');
-    if (key === 'recipes.list') return mockListInfinite(input, opts);
-    throw new Error(`Unexpected pillar infinite query: ${key}`);
-  },
+vi.mock('../../../food-api/index.js', () => ({
+  recipesList: recipesListMock,
 }));
 
 import { RecipeListPage } from '../RecipeListPage.js';
@@ -45,22 +37,8 @@ function buildItem(overrides: Partial<RecipeListItemView> = {}): RecipeListItemV
   };
 }
 
-function makeQueryResult(opts: {
-  items?: RecipeListItemView[];
-  isLoading?: boolean;
-  hasNextPage?: boolean;
-  error?: Error | null;
-}) {
-  const items = opts.items ?? [];
-  return {
-    data: items.length === 0 ? undefined : { pages: [{ items, nextCursor: undefined }] },
-    isLoading: opts.isLoading ?? false,
-    isFetchingNextPage: false,
-    hasNextPage: opts.hasNextPage ?? false,
-    fetchNextPage: vi.fn(),
-    refetch: vi.fn(),
-    error: opts.error ?? null,
-  };
+function resolvePage(items: RecipeListItemView[], nextCursor: string | null = null): void {
+  recipesListMock.mockResolvedValue({ data: { items, nextCursor } });
 }
 
 function Wrapper({ children }: { children: ReactElement }): ReactElement {
@@ -76,72 +54,73 @@ function Wrapper({ children }: { children: ReactElement }): ReactElement {
     });
     return instance;
   }, []);
+  const client = useMemo(
+    () => new QueryClient({ defaultOptions: { queries: { retry: false } } }),
+    []
+  );
   return (
-    <I18nextProvider i18n={i18n}>
-      <MemoryRouter>{children}</MemoryRouter>
-    </I18nextProvider>
+    <QueryClientProvider client={client}>
+      <I18nextProvider i18n={i18n}>
+        <MemoryRouter>{children}</MemoryRouter>
+      </I18nextProvider>
+    </QueryClientProvider>
   );
 }
 
 beforeEach(() => {
-  mockListInfinite.mockReset();
+  recipesListMock.mockReset();
+  resolvePage([]);
 });
 
 describe('PRD-119-A — RecipeListPage', () => {
-  it('renders the empty state CTA when there are zero rows', () => {
-    mockListInfinite.mockReturnValue(makeQueryResult({ items: [] }));
+  it('renders the empty state CTA when there are zero rows', async () => {
+    resolvePage([]);
     render(
       <Wrapper>
         <RecipeListPage />
       </Wrapper>
     );
-    expect(screen.getByText(/no recipes yet/i)).toBeInTheDocument();
+    expect(await screen.findByText(/no recipes yet/i)).toBeInTheDocument();
     expect(
       screen.getAllByRole('link', { name: /create your first recipe/i }).length
     ).toBeGreaterThan(0);
   });
 
-  it('renders a card per row and includes the new-recipe CTA', () => {
-    mockListInfinite.mockReturnValue(
-      makeQueryResult({ items: [buildItem(), buildItem({ slug: 'crepes', title: 'Crêpes' })] })
-    );
+  it('renders a card per row and includes the new-recipe CTA', async () => {
+    resolvePage([buildItem(), buildItem({ slug: 'crepes', title: 'Crêpes' })]);
     render(
       <Wrapper>
         <RecipeListPage />
       </Wrapper>
     );
+    expect(await screen.findByRole('link', { name: /banana pancakes/i })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /^Recipes$/, level: 1 })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /banana pancakes/i })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /crêpes/i })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /\+ new recipe/i })).toBeInTheDocument();
   });
 
-  it('shows the draft-only badge when the recipe has no current version', () => {
-    mockListInfinite.mockReturnValue(
-      makeQueryResult({ items: [buildItem({ hasCurrentVersion: false })] })
-    );
+  it('shows the draft-only badge when the recipe has no current version', async () => {
+    resolvePage([buildItem({ hasCurrentVersion: false })]);
     render(
       <Wrapper>
         <RecipeListPage />
       </Wrapper>
     );
-    expect(screen.getByText(/draft only/i)).toBeInTheDocument();
+    expect(await screen.findByText(/draft only/i)).toBeInTheDocument();
   });
 
-  it('shows the archived badge when archivedAt is set', () => {
-    mockListInfinite.mockReturnValue(
-      makeQueryResult({ items: [buildItem({ archivedAt: '2026-01-01' })] })
-    );
+  it('shows the archived badge when archivedAt is set', async () => {
+    resolvePage([buildItem({ archivedAt: '2026-01-01' })]);
     render(
       <Wrapper>
         <RecipeListPage />
       </Wrapper>
     );
-    expect(screen.getByText(/^archived$/i)).toBeInTheDocument();
+    expect(await screen.findByText(/^archived$/i)).toBeInTheDocument();
   });
 
   it('shows a loading state while the first page resolves', () => {
-    mockListInfinite.mockReturnValue(makeQueryResult({ isLoading: true }));
+    recipesListMock.mockReturnValue(new Promise(() => {}));
     render(
       <Wrapper>
         <RecipeListPage />
@@ -151,27 +130,20 @@ describe('PRD-119-A — RecipeListPage', () => {
   });
 
   it('renders the error state with a retry button', async () => {
-    const refetch = vi.fn();
-    mockListInfinite.mockReturnValue({
-      ...makeQueryResult({ error: new Error('boom') }),
-      refetch,
-    });
+    recipesListMock.mockResolvedValue({ error: { message: 'boom' }, response: { status: 500 } });
     render(
       <Wrapper>
         <RecipeListPage />
       </Wrapper>
     );
-    expect(screen.getByRole('alert')).toHaveTextContent(/could not load recipes/i);
+    expect(await screen.findByRole('alert')).toHaveTextContent(/could not load recipes/i);
+    recipesListMock.mockResolvedValue({ data: { items: [buildItem()], nextCursor: null } });
     await userEvent.click(screen.getByRole('button', { name: /retry/i }));
-    expect(refetch).toHaveBeenCalledTimes(1);
+    expect(await screen.findByRole('link', { name: /banana pancakes/i })).toBeInTheDocument();
   });
 
   it('renders the "Load more" CTA when hasNextPage is true', async () => {
-    const fetchNextPage = vi.fn();
-    mockListInfinite.mockReturnValue({
-      ...makeQueryResult({ items: [buildItem()], hasNextPage: true }),
-      fetchNextPage,
-    });
+    resolvePage([buildItem()], 'cursor-2');
     render(
       <Wrapper>
         <RecipeListPage />
@@ -179,11 +151,15 @@ describe('PRD-119-A — RecipeListPage', () => {
     );
     const button = await screen.findByRole('button', { name: /load more/i });
     await userEvent.click(button);
-    expect(fetchNextPage).toHaveBeenCalledTimes(1);
+    await waitFor(() =>
+      expect(recipesListMock).toHaveBeenCalledWith(
+        expect.objectContaining({ body: expect.objectContaining({ cursor: 'cursor-2' }) })
+      )
+    );
   });
 
   it('debounces the search input before calling the query', async () => {
-    mockListInfinite.mockReturnValue(makeQueryResult({ items: [buildItem()] }));
+    resolvePage([buildItem()]);
     render(
       <Wrapper>
         <RecipeListPage />
@@ -191,11 +167,9 @@ describe('PRD-119-A — RecipeListPage', () => {
     );
     const input = screen.getByRole('searchbox', { name: /search recipes/i });
     await userEvent.type(input, 'pan');
-    // The hook only receives the new search after the debounce window.
     await waitFor(() =>
-      expect(mockListInfinite).toHaveBeenCalledWith(
-        expect.objectContaining({ search: 'pan' }),
-        expect.anything()
+      expect(recipesListMock).toHaveBeenCalledWith(
+        expect.objectContaining({ body: expect.objectContaining({ search: 'pan' }) })
       )
     );
   });

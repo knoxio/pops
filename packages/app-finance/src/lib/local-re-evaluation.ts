@@ -1,7 +1,4 @@
-import {
-  HIGH_CONFIDENCE_THRESHOLD,
-  normalizeDescription,
-} from '@pops/api/modules/core/corrections/types';
+import { HIGH_CONFIDENCE_THRESHOLD, normalizeDescription } from '@pops/finance';
 
 /**
  * Local re-evaluation engine (PRD-030 US-07).
@@ -10,8 +7,7 @@ import {
  * the same matching logic as the server-side findMatchingCorrectionFromRules.
  * Runs entirely client-side with no server round-trip.
  */
-import type { Correction } from '@pops/api/modules/core/corrections/types';
-import type { MatchedRule } from '@pops/api/modules/finance/imports';
+import type { Correction, MatchedRule } from '@pops/finance';
 
 import type { ProcessedTransaction } from '../store/importStore';
 

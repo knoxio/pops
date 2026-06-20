@@ -1,6 +1,5 @@
+import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-
-import { usePillarUtils } from '@pops/pillar-sdk/react';
 
 import { useArenaRecord } from './useArenaRecord';
 import { useFetchScoreDelta, useScoreDeltaTimer } from './useScoreDelta';
@@ -26,15 +25,15 @@ export function useArenaActions({
   resolveTitle,
   onAfterAction,
 }: UseArenaActionsArgs) {
-  const utils = usePillarUtils('media');
+  const queryClient = useQueryClient();
   const [sessionCount, setSessionCount] = useState(0);
   const { scoreDelta, setScoreDelta, scheduleClear } = useScoreDeltaTimer();
-  const fetchScoreDelta = useFetchScoreDelta(dimensionId, utils, setScoreDelta);
+  const fetchScoreDelta = useFetchScoreDelta(dimensionId, queryClient, setScoreDelta);
 
   const { recordMutation, skipMutation, handlePick, handleSkip, handleDraw } = useArenaRecord({
     pair,
     dimensionId,
-    utils,
+    queryClient,
     fetchScoreDelta,
     onAfterAction,
     setSessionCount,
@@ -44,7 +43,7 @@ export function useArenaActions({
   const { markStaleMutation, handleMarkStale, excludeMutation, handleNA } =
     useStaleAndExcludeMutations({
       dimensionId,
-      utils,
+      queryClient,
       resolveTitle,
       onAfterAction,
     });

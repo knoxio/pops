@@ -1,13 +1,15 @@
+import { useQuery } from '@tanstack/react-query';
 import { Trophy } from 'lucide-react';
 import { useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router';
 
-import { usePillarQuery } from '@pops/pillar-sdk/react';
 /**
  * RankingsPage — leaderboard of media items ranked by Elo score.
  */
 import { cn, Tabs, TabsContent } from '@pops/ui';
 
+import { unwrap } from '../media-api-helpers.js';
+import { comparisonsListDimensions } from '../media-api/index.js';
 import { RankingsList } from './rankings/RankingsList';
 import { RankingsSkeleton } from './rankings/RankingsSkeleton';
 
@@ -80,11 +82,10 @@ export function RankingsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const dimensionParam = searchParams.get('dimension') ?? 'overall';
 
-  const { data: dimensionsData, isLoading: dimsLoading } = usePillarQuery<{ data: Dimension[] }>(
-    'media',
-    ['comparisons', 'listDimensions'],
-    undefined
-  );
+  const { data: dimensionsData, isLoading: dimsLoading } = useQuery<{ data: Dimension[] }>({
+    queryKey: ['media', 'comparisons', 'listDimensions'],
+    queryFn: async () => unwrap(await comparisonsListDimensions()),
+  });
 
   const activeDimensions = useMemo<Dimension[]>(
     () => (dimensionsData?.data ?? []).filter((d) => d.active),

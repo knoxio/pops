@@ -1,17 +1,11 @@
-import { trpc, trpcClient } from '@/lib/trpc';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-
-import { __resetSharedPillarClient } from '@pops/pillar-sdk/client';
-import { PillarSdkProvider } from '@pops/pillar-sdk/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { NudgeIndicator, nudgeRefetchInterval } from './NudgeIndicator';
 
 import type { ReactNode } from 'react';
-
-import type { DiscoveredPillar, DiscoveryTransport } from '@pops/pillar-sdk/client';
 
 const q = (fetchFailureCount: number) => ({ state: { fetchFailureCount } });
 
@@ -38,52 +32,6 @@ describe('nudgeRefetchInterval', () => {
   });
 });
 
-function cerebrumDiscoveredPillar(): DiscoveredPillar {
-  return {
-    pillarId: 'cerebrum',
-    baseUrl: 'http://cerebrum-api:3007',
-    status: 'healthy',
-    lastSeenAt: '2026-06-13T00:00:00.000Z',
-    registered: true,
-    manifest: {
-      pillar: 'cerebrum',
-      version: '1.0.0',
-      contract: {
-        package: '@pops/cerebrum-contract',
-        version: '1.0.0',
-        tag: 'contract-cerebrum@v1.0.0',
-      },
-      routes: {
-        queries: ['cerebrum.nudges.list'],
-        mutations: [],
-        subscriptions: [],
-      },
-      search: { adapters: [] },
-      ai: { tools: [] },
-      uri: { types: [] },
-      consumedSettings: { keys: [] },
-      healthcheck: { path: '/healthz' },
-    },
-  };
-}
-
-class StubTransport implements DiscoveryTransport {
-  constructor(private readonly pillars: readonly DiscoveredPillar[]) {}
-  async fetchSnapshot(): Promise<readonly DiscoveredPillar[]> {
-    return this.pillars;
-  }
-}
-
-type FetchResponder = (url: string, init: RequestInit | undefined) => Response;
-
-function stubFetch(responder: FetchResponder): typeof fetch {
-  const wrapped: typeof fetch = async (input, init) => {
-    const url = typeof input === 'string' ? input : input.toString();
-    return responder(url, init);
-  };
-  return wrapped;
-}
-
 function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
     status,
@@ -91,69 +39,47 @@ function jsonResponse(body: unknown, status = 200): Response {
   });
 }
 
-function renderWithSdk(opts: { transport: DiscoveryTransport; fetchImpl: typeof fetch }): void {
+function renderIndicator(): void {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
   const wrapper = ({ children }: { children: ReactNode }) => (
     <MemoryRouter>
-      <trpc.Provider client={trpcClient} queryClient={queryClient}>
-        <QueryClientProvider client={queryClient}>
-          <PillarSdkProvider options={{ transport: opts.transport, fetchImpl: opts.fetchImpl }}>
-            {children}
-          </PillarSdkProvider>
-        </QueryClientProvider>
-      </trpc.Provider>
-    </MemoryRouter>
-  );
-  render(<NudgeIndicator />, { wrapper });
-}
-
-function renderWithoutSdk(): void {
-  const queryClient = new QueryClient({
-    defaultOptions: { queries: { retry: false } },
-  });
-  const wrapper = ({ children }: { children: ReactNode }) => (
-    <MemoryRouter>
-      <trpc.Provider client={trpcClient} queryClient={queryClient}>
-        <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-      </trpc.Provider>
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
     </MemoryRouter>
   );
   render(<NudgeIndicator />, { wrapper });
 }
 
 describe('NudgeIndicator', () => {
-  beforeEach(() => {
-    __resetSharedPillarClient();
-  });
-
   afterEach(() => {
-    __resetSharedPillarClient();
+    vi.unstubAllGlobals();
   });
 
-  it('renders the bell with a badge when the SDK returns pending nudges', async () => {
-    const transport = new StubTransport([cerebrumDiscoveredPillar()]);
-    const fetchImpl = stubFetch((url) => {
-      expect(url).toBe('http://cerebrum-api:3007/trpc/cerebrum.nudges.list');
-      return jsonResponse({ result: { data: { nudges: [], total: 3 } } });
+  it('posts the pending filter to /cerebrum-api/nudges/search and badges the total', async () => {
+    const fetchSpy = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+      expect(typeof input === 'string' ? input : input.toString()).toBe(
+        '/cerebrum-api/nudges/search'
+      );
+      expect(init?.method).toBe('POST');
+      expect(JSON.parse(String(init?.body))).toEqual({ status: 'pending', limit: 1 });
+      return Promise.resolve(jsonResponse({ nudges: [], total: 3 }));
     });
+    vi.stubGlobal('fetch', fetchSpy);
 
-    renderWithSdk({ transport, fetchImpl });
+    renderIndicator();
 
     const button = await screen.findByRole('button', { name: 'Nudges: 3 pending' });
     await waitFor(() => {
       expect(button.textContent).toContain('3');
     });
+    expect(fetchSpy).toHaveBeenCalled();
   });
 
-  it('caps the badge at 99+ when the SDK returns more than 99 pending', async () => {
-    const transport = new StubTransport([cerebrumDiscoveredPillar()]);
-    const fetchImpl = stubFetch(() =>
-      jsonResponse({ result: { data: { nudges: [], total: 250 } } })
-    );
+  it('caps the badge at 99+ when more than 99 are pending', async () => {
+    vi.stubGlobal('fetch', () => Promise.resolve(jsonResponse({ nudges: [], total: 250 })));
 
-    renderWithSdk({ transport, fetchImpl });
+    renderIndicator();
 
     await screen.findByRole('button', { name: 'Nudges: 250 pending' });
     await waitFor(() => {
@@ -162,43 +88,31 @@ describe('NudgeIndicator', () => {
   });
 
   it('renders the bell without a badge when there are zero pending nudges', async () => {
-    const transport = new StubTransport([cerebrumDiscoveredPillar()]);
-    const fetchImpl = stubFetch(() => jsonResponse({ result: { data: { nudges: [], total: 0 } } }));
+    vi.stubGlobal('fetch', () => Promise.resolve(jsonResponse({ nudges: [], total: 0 })));
 
-    renderWithSdk({ transport, fetchImpl });
+    renderIndicator();
 
     await screen.findByRole('button', { name: 'Nudges: 0 pending' });
     expect(screen.queryByText('0')).not.toBeInTheDocument();
   });
 
-  it('hides the indicator when the cerebrum pillar is unavailable', async () => {
-    const transport = new StubTransport([]);
-    const fetchImpl = stubFetch(() => {
-      throw new Error('SDK should short-circuit before performing an HTTP call');
-    });
+  it('hides the indicator when the pillar returns not-found (HTTP 404)', async () => {
+    vi.stubGlobal('fetch', () => Promise.resolve(jsonResponse({ message: 'not found' }, 404)));
 
-    renderWithSdk({ transport, fetchImpl });
+    renderIndicator();
 
     await waitFor(() => {
       expect(screen.queryByRole('button')).not.toBeInTheDocument();
     });
   });
 
-  it('hides the indicator when the SDK reports not-found (HTTP 404)', async () => {
-    const transport = new StubTransport([cerebrumDiscoveredPillar()]);
-    const fetchImpl = stubFetch(() => jsonResponse({ message: 'not found' }, 404));
+  it('hides the indicator when cerebrum is unreachable (network error)', async () => {
+    vi.stubGlobal('fetch', () => Promise.reject(new Error('network down')));
 
-    renderWithSdk({ transport, fetchImpl });
+    renderIndicator();
 
     await waitFor(() => {
       expect(screen.queryByRole('button')).not.toBeInTheDocument();
     });
-  });
-
-  it('falls back to the tRPC query when no PillarSdkProvider is mounted', async () => {
-    renderWithoutSdk();
-
-    const button = await screen.findByRole('button', { name: /Nudges: \d+ pending/ });
-    expect(button).toBeInTheDocument();
   });
 });

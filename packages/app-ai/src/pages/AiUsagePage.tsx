@@ -1,51 +1,31 @@
+import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { usePillarQuery } from '@pops/pillar-sdk/react';
 import { ErrorAlert, PageHeader } from '@pops/ui';
 
+import { unwrap } from '../core-api-helpers.js';
+import {
+  aiObservabilityGetHistory,
+  aiObservabilityGetQualityMetrics,
+  aiObservabilityGetStats,
+} from '../core-api/index.js';
 import { AiUsageMainContent } from './ai-usage/ai-usage-main-content';
 import { AiUsagePageSkeleton } from './ai-usage/ai-usage-page-skeleton';
 
-import type { HistoryPayload } from './ai-usage/types';
+import type {
+  AiObservabilityGetHistoryData,
+  AiObservabilityGetQualityMetricsResponse,
+  AiObservabilityGetStatsResponse,
+} from '../core-api/types.gen.js';
 
-interface BreakdownRow {
-  key: string;
-  calls: number;
-  inputTokens: number;
-  outputTokens: number;
-  costUsd: number;
-}
-
-interface StatsOutput {
-  totalCalls: number;
-  totalInputTokens: number;
-  totalOutputTokens: number;
-  totalCostUsd: number;
-  cacheHitRate: number;
-  errorRate: number;
-  byProvider: BreakdownRow[];
-  byModel: BreakdownRow[];
-  byDomain: BreakdownRow[];
-  byOperation: BreakdownRow[];
-}
-
-interface QualityMetrics {
-  byModel: Array<{
-    provider: string;
-    model: string;
-    cacheHitRate: number;
-    errorRate: number;
-    timeoutRate: number;
-    averageLatencyMs: number;
-  }>;
-}
+type ObservabilityFilters = NonNullable<AiObservabilityGetHistoryData['query']>;
 
 export function AiUsagePage() {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
 
-  const filters = {
+  const filters: ObservabilityFilters = {
     ...(startDate ? { startDate } : {}),
     ...(endDate ? { endDate } : {}),
   };
@@ -54,19 +34,24 @@ export function AiUsagePage() {
     data: stats,
     isLoading: statsLoading,
     error: statsError,
-  } = usePillarQuery<StatsOutput>('core', ['aiObservability', 'getStats'], filters);
+  } = useQuery<AiObservabilityGetStatsResponse>({
+    queryKey: ['core', 'aiObservability', 'getStats', filters],
+    queryFn: async () => unwrap(await aiObservabilityGetStats({ query: filters })),
+  });
 
   const {
     data: history,
     isLoading: historyLoading,
     error: historyError,
-  } = usePillarQuery<HistoryPayload>('core', ['aiObservability', 'getHistory'], filters);
+  } = useQuery({
+    queryKey: ['core', 'aiObservability', 'getHistory', filters],
+    queryFn: async () => unwrap(await aiObservabilityGetHistory({ query: filters })),
+  });
 
-  const { data: quality } = usePillarQuery<QualityMetrics>(
-    'core',
-    ['aiObservability', 'getQualityMetrics'],
-    filters
-  );
+  const { data: quality } = useQuery<AiObservabilityGetQualityMetricsResponse>({
+    queryKey: ['core', 'aiObservability', 'getQualityMetrics', filters],
+    queryFn: async () => unwrap(await aiObservabilityGetQualityMetrics({ query: filters })),
+  });
 
   const { t } = useTranslation('ai');
   const isLoading = statsLoading || historyLoading;

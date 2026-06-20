@@ -1,38 +1,29 @@
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-/* ------------------------------------------------------------------ */
-/*  Mock setup                                                        */
-/* ------------------------------------------------------------------ */
-const mockTreeQuery = vi.fn();
-const mockCreateMutate = vi.fn();
-const mockUpdateMutate = vi.fn();
-const mockDeleteMutate = vi.fn();
+import type {
+  LocationsCreateResponses,
+  LocationsDeleteResponses,
+  LocationsTreeResponses,
+  LocationsUpdateResponses,
+} from '../inventory-api/types.gen';
+import type { LocationTreeNode } from './location-tree-page/utils';
 
-vi.mock('@pops/pillar-sdk/react', () => ({
-  usePillarQuery: (_pillarId: string, path: readonly string[], input: unknown) => {
-    const key = path.join('.');
-    if (key === 'locations.tree') return mockTreeQuery(input);
-    return { data: undefined, isLoading: false };
-  },
-  usePillarMutation: (
-    _pillarId: string,
-    path: readonly string[],
-    opts?: Record<string, unknown>
-  ) => {
-    const key = path.join('.');
-    if (key === 'locations.create') {
-      return { mutate: mockCreateMutate, isPending: false, ...opts };
-    }
-    if (key === 'locations.update') {
-      return { mutate: mockUpdateMutate, isPending: false, ...opts };
-    }
-    if (key === 'locations.delete') {
-      return { mutate: mockDeleteMutate, isPending: false, ...opts };
-    }
-    return { mutate: vi.fn(), isPending: false };
-  },
+const { mockLocationsTree, mockLocationsCreate, mockLocationsUpdate, mockLocationsDelete } =
+  vi.hoisted(() => ({
+    mockLocationsTree: vi.fn(),
+    mockLocationsCreate: vi.fn(),
+    mockLocationsUpdate: vi.fn(),
+    mockLocationsDelete: vi.fn(),
+  }));
+
+vi.mock('../inventory-api/index.js', () => ({
+  locationsTree: (...args: unknown[]) => mockLocationsTree(...args),
+  locationsCreate: (...args: unknown[]) => mockLocationsCreate(...args),
+  locationsUpdate: (...args: unknown[]) => mockLocationsUpdate(...args),
+  locationsDelete: (...args: unknown[]) => mockLocationsDelete(...args),
 }));
 
 vi.mock('sonner', () => ({
@@ -45,9 +36,6 @@ vi.mock('../components/LocationContentsPanel', () => ({
   ),
 }));
 
-/* ------------------------------------------------------------------ */
-/*  Mock @dnd-kit to test drag-and-drop logic                        */
-/* ------------------------------------------------------------------ */
 let capturedDragHandlers: {
   onDragStart?: (event: { active: { id: string } }) => void;
   onDragOver?: (event: { active: { id: string }; over: { id: string } | null }) => void;
@@ -113,30 +101,15 @@ vi.mock('@dnd-kit/utilities', () => ({
 
 import { LocationTreePage } from './LocationTreePage';
 
-/* ------------------------------------------------------------------ */
-/*  Fixtures                                                          */
-/* ------------------------------------------------------------------ */
-const treeData = [
+const treeData: LocationTreeNode[] = [
   {
     id: 'home',
     name: 'Home',
     parentId: null,
     sortOrder: 0,
     children: [
-      {
-        id: 'bedroom',
-        name: 'Bedroom',
-        parentId: 'home',
-        sortOrder: 0,
-        children: [],
-      },
-      {
-        id: 'kitchen',
-        name: 'Kitchen',
-        parentId: 'home',
-        sortOrder: 1,
-        children: [],
-      },
+      { id: 'bedroom', name: 'Bedroom', parentId: 'home', sortOrder: 0, children: [] },
+      { id: 'kitchen', name: 'Kitchen', parentId: 'home', sortOrder: 1, children: [] },
     ],
   },
   {
@@ -144,94 +117,132 @@ const treeData = [
     name: 'Office',
     parentId: null,
     sortOrder: 1,
-    children: [
-      {
-        id: 'desk',
-        name: 'Desk',
-        parentId: 'office',
-        sortOrder: 0,
-        children: [],
-      },
-    ],
+    children: [{ id: 'desk', name: 'Desk', parentId: 'office', sortOrder: 0, children: [] }],
   },
 ];
 
-function renderPage() {
+type TreePayload = NonNullable<LocationsTreeResponses[200]>;
+type CreatePayload = NonNullable<LocationsCreateResponses[201]>;
+type UpdatePayload = NonNullable<LocationsUpdateResponses[200]>;
+type DeletePayload = NonNullable<LocationsDeleteResponses[200]>;
+
+function mockTreeSuccess(nodes: LocationTreeNode[]): void {
+  mockLocationsTree.mockImplementation(async () => ({
+    data: { data: nodes } satisfies TreePayload,
+    error: undefined,
+  }));
+}
+
+function mockTreeUnavailable(message: string): void {
+  mockLocationsTree.mockImplementation(async () => ({
+    data: undefined,
+    error: { message },
+    response: { status: 500 },
+  }));
+}
+
+function mockTreeNeverResolves(): void {
+  mockLocationsTree.mockImplementation(() => new Promise(() => undefined));
+}
+
+function mockUpdateSuccess(): void {
+  mockLocationsUpdate.mockImplementation(async () => ({
+    data: {
+      data: { id: 'home', name: 'Home', parentId: null, sortOrder: 0 },
+      message: 'updated',
+    } satisfies UpdatePayload,
+    error: undefined,
+  }));
+}
+
+function renderPage(): ReturnType<typeof render> {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  });
   return render(
-    <MemoryRouter>
-      <LocationTreePage />
-    </MemoryRouter>
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter>
+        <LocationTreePage />
+      </MemoryRouter>
+    </QueryClientProvider>
   );
 }
 
-/* ------------------------------------------------------------------ */
-/*  Tests                                                             */
-/* ------------------------------------------------------------------ */
-describe('LocationTreePage', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    capturedDragHandlers = {};
-    mockTreeQuery.mockReturnValue({
-      data: { data: treeData },
-      isLoading: false,
-      error: null,
-    });
-  });
+beforeEach(() => {
+  vi.clearAllMocks();
+  capturedDragHandlers = {};
+  mockTreeSuccess(treeData);
+  mockUpdateSuccess();
+  mockLocationsCreate.mockImplementation(async () => ({
+    data: {
+      data: { id: 'new', name: 'New', parentId: null, sortOrder: 0 },
+      message: 'created',
+    } satisfies CreatePayload,
+    error: undefined,
+  }));
+  mockLocationsDelete.mockImplementation(async () => ({
+    data: { message: 'deleted' } satisfies DeletePayload,
+    error: undefined,
+  }));
+});
 
+describe('LocationTreePage', () => {
   /* --- Basic rendering --- */
 
-  it('renders location tree with all nodes', () => {
+  it('renders location tree with all nodes', async () => {
     renderPage();
-    expect(screen.getByText('Home')).toBeInTheDocument();
+    expect(await screen.findByText('Home')).toBeInTheDocument();
     expect(screen.getByText('Office')).toBeInTheDocument();
   });
 
   it('renders loading skeleton', () => {
-    mockTreeQuery.mockReturnValue({ data: undefined, isLoading: true, error: null });
+    mockTreeNeverResolves();
     renderPage();
     expect(document.querySelector('.animate-pulse')).toBeInTheDocument();
   });
 
-  it('renders error state', () => {
-    mockTreeQuery.mockReturnValue({ data: undefined, isLoading: false, error: new Error('fail') });
+  it('renders error state', async () => {
+    mockTreeUnavailable('fail');
     renderPage();
-    expect(screen.getByText('Failed to load locations.')).toBeInTheDocument();
+    expect(await screen.findByText('Failed to load locations.')).toBeInTheDocument();
   });
 
-  it('renders empty state when no locations', () => {
-    mockTreeQuery.mockReturnValue({ data: { data: [] }, isLoading: false, error: null });
+  it('renders empty state when no locations', async () => {
+    mockTreeSuccess([]);
     renderPage();
-    expect(screen.getByText(/No locations yet/)).toBeInTheDocument();
+    expect(await screen.findByText(/No locations yet/)).toBeInTheDocument();
   });
 
   /* --- Drag-and-drop infrastructure --- */
 
-  it('wraps tree in DndContext', () => {
+  it('wraps tree in DndContext', async () => {
     renderPage();
-    expect(screen.getByTestId('dnd-context')).toBeInTheDocument();
+    expect(await screen.findByTestId('dnd-context')).toBeInTheDocument();
   });
 
-  it('wraps tree in SortableContext', () => {
+  it('wraps tree in SortableContext', async () => {
     renderPage();
+    await screen.findByTestId('dnd-context');
     const contexts = screen.getAllByTestId('sortable-context');
     expect(contexts.length).toBeGreaterThanOrEqual(1);
   });
 
-  it('renders drag handles with correct aria-labels', () => {
+  it('renders drag handles with correct aria-labels', async () => {
     renderPage();
-    expect(screen.getByLabelText('Drag Home')).toBeInTheDocument();
+    expect(await screen.findByLabelText('Drag Home')).toBeInTheDocument();
     expect(screen.getByLabelText('Drag Office')).toBeInTheDocument();
   });
 
-  it('renders DragOverlay container', () => {
+  it('renders DragOverlay container', async () => {
     renderPage();
-    expect(screen.getByTestId('drag-overlay')).toBeInTheDocument();
+    expect(await screen.findByTestId('drag-overlay')).toBeInTheDocument();
   });
 
   /* --- Arrow buttons for coarse pointers (touch devices) --- */
 
-  it('arrow buttons use pointer:coarse media query', () => {
+  it('arrow buttons use pointer:coarse media query', async () => {
     renderPage();
+    await screen.findByText('Home');
     const moveUpButtons = screen.getAllByTitle('Move up');
     moveUpButtons.forEach((btn) => {
       expect(btn.className).toContain('[@media(pointer:coarse)]:inline-flex');
@@ -244,103 +255,124 @@ describe('LocationTreePage', () => {
 
   /* --- Drag handle styling --- */
 
-  it('drag handle has cursor-grab and touch-none classes', () => {
+  it('drag handle has cursor-grab and touch-none classes', async () => {
     renderPage();
-    const handle = screen.getByLabelText('Drag Home');
+    const handle = await screen.findByLabelText('Drag Home');
     expect(handle.className).toContain('cursor-grab');
     expect(handle.className).toContain('touch-none');
   });
 
-  it('drag handle uses pointer:fine media query', () => {
+  it('drag handle uses pointer:fine media query', async () => {
     renderPage();
-    const handle = screen.getByLabelText('Drag Home');
+    const handle = await screen.findByLabelText('Drag Home');
     expect(handle.className).toContain('hidden');
     expect(handle.className).toContain('[@media(pointer:fine)]:flex');
   });
 
   /* --- Drag-and-drop: reorder within siblings --- */
 
-  it('reorders siblings when dropped on same-parent node', () => {
+  it('reorders siblings when dropped on same-parent node', async () => {
     renderPage();
+    await screen.findByText('Home');
     expect(capturedDragHandlers.onDragEnd).toBeDefined();
 
-    // Simulate dragging "Office" (sortOrder=1) onto "Home" (sortOrder=0)
-    // Both are root-level (parentId=null), so this is a reorder
-    capturedDragHandlers.onDragEnd!({
-      active: { id: 'office' },
-      over: { id: 'home' },
+    // Dragging "Office" (sortOrder=1) onto "Home" (sortOrder=0). Both root-level
+    // (parentId=null) → reorder. arrayMove([home, office], 1, 0) → [office, home]:
+    // office sortOrder 1→0 and home sortOrder 0→1 both mutate.
+    act(() => {
+      capturedDragHandlers.onDragEnd!({
+        active: { id: 'office' },
+        over: { id: 'home' },
+      });
     });
 
-    // Should call updateMutation to reassign sort orders
-    // arrayMove([home, office], 1, 0) → [office, home]
-    // office: sortOrder was 1, now should be 0 → mutate
-    // home: sortOrder was 0, now should be 1 → mutate
-    expect(mockUpdateMutate).toHaveBeenCalledWith(
-      expect.objectContaining({ id: 'office', data: { sortOrder: 0 } })
+    await waitFor(() =>
+      expect(mockLocationsUpdate).toHaveBeenCalledWith({
+        path: { id: 'office' },
+        body: { sortOrder: 0 },
+      })
     );
-    expect(mockUpdateMutate).toHaveBeenCalledWith(
-      expect.objectContaining({ id: 'home', data: { sortOrder: 1 } })
+    await waitFor(() =>
+      expect(mockLocationsUpdate).toHaveBeenCalledWith({
+        path: { id: 'home' },
+        body: { sortOrder: 1 },
+      })
     );
   });
 
   /* --- Drag-and-drop: reparent --- */
 
-  it('reparents when dropped on node with different parent', () => {
+  it('reparents when dropped on node with different parent', async () => {
     renderPage();
+    await screen.findByText('Home');
     expect(capturedDragHandlers.onDragEnd).toBeDefined();
 
-    // Simulate dragging "desk" (parentId=office) onto "home" (parentId=null)
-    // Different parents → reparent: make desk a child of home
-    capturedDragHandlers.onDragEnd!({
-      active: { id: 'desk' },
-      over: { id: 'home' },
+    // Dragging "desk" (parentId=office) onto "home" (parentId=null): different
+    // parents → reparent desk under home.
+    act(() => {
+      capturedDragHandlers.onDragEnd!({
+        active: { id: 'desk' },
+        over: { id: 'home' },
+      });
     });
 
-    expect(mockUpdateMutate).toHaveBeenCalledWith(
-      expect.objectContaining({ id: 'desk', data: { parentId: 'home' } })
+    await waitFor(() =>
+      expect(mockLocationsUpdate).toHaveBeenCalledWith({
+        path: { id: 'desk' },
+        body: { parentId: 'home' },
+      })
     );
   });
 
   /* --- Drag-and-drop: prevent descendant drop --- */
 
-  it('prevents dropping on own descendant', () => {
+  it('prevents dropping on own descendant', async () => {
     renderPage();
+    await screen.findByText('Home');
     expect(capturedDragHandlers.onDragEnd).toBeDefined();
 
-    // Simulate dragging "home" onto "bedroom" (bedroom is a child of home)
-    capturedDragHandlers.onDragEnd!({
-      active: { id: 'home' },
-      over: { id: 'bedroom' },
+    // Dragging "home" onto "bedroom" (a child of home): guard returns synchronously.
+    act(() => {
+      capturedDragHandlers.onDragEnd!({
+        active: { id: 'home' },
+        over: { id: 'bedroom' },
+      });
     });
 
-    // Should NOT call updateMutation
-    expect(mockUpdateMutate).not.toHaveBeenCalled();
+    expect(mockLocationsUpdate).not.toHaveBeenCalled();
   });
 
   /* --- Drag-and-drop: no-op cases --- */
 
-  it('does nothing when dropped on self', () => {
+  it('does nothing when dropped on self', async () => {
     renderPage();
-    capturedDragHandlers.onDragEnd!({
-      active: { id: 'home' },
-      over: { id: 'home' },
+    await screen.findByText('Home');
+    act(() => {
+      capturedDragHandlers.onDragEnd!({
+        active: { id: 'home' },
+        over: { id: 'home' },
+      });
     });
-    expect(mockUpdateMutate).not.toHaveBeenCalled();
+    expect(mockLocationsUpdate).not.toHaveBeenCalled();
   });
 
-  it('does nothing when dropped on null (cancelled)', () => {
+  it('does nothing when dropped on null (cancelled)', async () => {
     renderPage();
-    capturedDragHandlers.onDragEnd!({
-      active: { id: 'home' },
-      over: null,
+    await screen.findByText('Home');
+    act(() => {
+      capturedDragHandlers.onDragEnd!({
+        active: { id: 'home' },
+        over: null,
+      });
     });
-    expect(mockUpdateMutate).not.toHaveBeenCalled();
+    expect(mockLocationsUpdate).not.toHaveBeenCalled();
   });
 
   /* --- Drop indicator line --- */
 
-  it('shows drop indicator when dragging over a sibling', () => {
+  it('shows drop indicator when dragging over a sibling', async () => {
     renderPage();
+    await screen.findByText('Home');
     act(() => {
       capturedDragHandlers.onDragStart!({ active: { id: 'office' } });
     });
@@ -350,11 +382,12 @@ describe('LocationTreePage', () => {
         over: { id: 'home' },
       });
     });
-    expect(screen.getByTestId('drop-indicator')).toBeInTheDocument();
+    expect(await screen.findByTestId('drop-indicator')).toBeInTheDocument();
   });
 
-  it('removes drop indicator on drag end', () => {
+  it('removes drop indicator on drag end', async () => {
     renderPage();
+    await screen.findByText('Home');
     act(() => {
       capturedDragHandlers.onDragStart!({ active: { id: 'office' } });
     });
@@ -364,7 +397,7 @@ describe('LocationTreePage', () => {
         over: { id: 'home' },
       });
     });
-    expect(screen.getByTestId('drop-indicator')).toBeInTheDocument();
+    expect(await screen.findByTestId('drop-indicator')).toBeInTheDocument();
     act(() => {
       capturedDragHandlers.onDragEnd!({
         active: { id: 'office' },
@@ -376,14 +409,15 @@ describe('LocationTreePage', () => {
 
   /* --- Selection --- */
 
-  it('selects a location on click', () => {
+  it('selects a location on click', async () => {
     renderPage();
-    fireEvent.click(screen.getByText('Home'));
+    fireEvent.click(await screen.findByText('Home'));
     expect(screen.getByTestId('contents-panel')).toHaveTextContent('Home');
   });
 
-  it('deselects on second click', () => {
+  it('deselects on second click', async () => {
     renderPage();
+    await screen.findByText('Home');
     const treeItems = screen.getAllByRole('treeitem');
     const homeItem = treeItems.find((el) => el.textContent?.includes('Home'))!;
     fireEvent.click(homeItem);

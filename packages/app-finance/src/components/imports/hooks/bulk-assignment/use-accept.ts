@@ -1,30 +1,25 @@
+import { useQuery } from '@tanstack/react-query';
 import { useCallback } from 'react';
 import { useMemo } from 'react';
 import { toast } from 'sonner';
 
-import { usePillarQuery } from '@pops/pillar-sdk/react';
-
+import { unwrap } from '../../../../core-api-helpers.js';
+import { entitiesList } from '../../../../core-api/index.js';
 import { computeMergedEntities } from '../../../../lib/merged-state';
 import { useImportStore } from '../../../../store/importStore';
 import { type LocalTxState, moveToMatched, pluralize, type UseBulkAssignmentArgs } from './types';
 
 import type { Dispatch, SetStateAction } from 'react';
 
-import type { Entity } from '@pops/api/modules/core/entities/types';
-
 import type { ProcessedTransaction } from '../../../../store/importStore';
 
-interface EntitiesListResult {
-  data: Entity[];
-  pagination: { total: number };
-}
+const ENTITIES_LIST_INPUT = {} as const;
 
 export function useEntities() {
-  const { data: dbEntitiesData } = usePillarQuery<EntitiesListResult>(
-    'core',
-    ['entities', 'list'],
-    {}
-  );
+  const { data: dbEntitiesData } = useQuery({
+    queryKey: ['core', 'entities', 'list', ENTITIES_LIST_INPUT],
+    queryFn: async () => unwrap(await entitiesList({ query: ENTITIES_LIST_INPUT })),
+  });
   const pendingEntities = useImportStore((s) => s.pendingEntities);
   const addPendingEntity = useImportStore((s) => s.addPendingEntity);
   const entities = useMemo(

@@ -1,1 +1,0 @@
-ALTER TABLE `media_scores` ADD `excluded` integer DEFAULT 0 NOT NULL;

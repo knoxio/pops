@@ -1,8 +1,14 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { BreakdownChart, type BreakdownEntry } from './ValueBreakdown';
+
+import type {
+  ReportsValueByLocationResponses,
+  ReportsValueByTypeResponses,
+} from '../inventory-api/types.gen';
 
 // Mock recharts to avoid canvas rendering issues in jsdom
 vi.mock('recharts', async () => {
@@ -55,44 +61,82 @@ vi.mock('react-router', async () => {
   };
 });
 
-const mockValueByTypeQuery = vi.fn();
-const mockValueByLocationQuery = vi.fn();
+const reportsValueByTypeMock = vi.hoisted(() => vi.fn());
+const reportsValueByLocationMock = vi.hoisted(() => vi.fn());
 
-vi.mock('@pops/pillar-sdk/react', () => ({
-  usePillarQuery: (pillarId: string, path: readonly string[]) => {
-    const leaf = path[path.length - 1];
-    if (leaf === 'valueByType') return mockValueByTypeQuery();
-    if (leaf === 'valueByLocation') return mockValueByLocationQuery();
-    throw new Error(`Unexpected pillar query: ${pillarId}.${path.join('.')}`);
-  },
+vi.mock('../inventory-api/index.js', () => ({
+  reportsValueByType: (...args: unknown[]) => reportsValueByTypeMock(...args),
+  reportsValueByLocation: (...args: unknown[]) => reportsValueByLocationMock(...args),
 }));
 
 // Import after mocks
 import { ValueByLocationCard, ValueByTypeCard } from './ValueBreakdown';
 
+type TypePayload = NonNullable<ReportsValueByTypeResponses[200]>;
+type LocationPayload = NonNullable<ReportsValueByLocationResponses[200]>;
+
+function mockTypeSuccess(data: TypePayload['data']): void {
+  reportsValueByTypeMock.mockImplementation(async () => ({
+    data: { data } satisfies TypePayload,
+    error: undefined,
+  }));
+}
+
+function mockLocationSuccess(data: LocationPayload['data']): void {
+  reportsValueByLocationMock.mockImplementation(async () => ({
+    data: { data } satisfies LocationPayload,
+    error: undefined,
+  }));
+}
+
+/**
+ * A 404 surfaces the card's error UI (Alert + retry). 5xx / no-status are
+ * "unavailable" and make the card render `null`, so they cannot be used here.
+ */
+function mockTypeError(message: string): void {
+  reportsValueByTypeMock.mockImplementation(async () => ({
+    data: undefined,
+    error: { message },
+    response: { status: 404 },
+  }));
+}
+
+function mockLocationError(message: string): void {
+  reportsValueByLocationMock.mockImplementation(async () => ({
+    data: undefined,
+    error: { message },
+    response: { status: 404 },
+  }));
+}
+
+function mockTypeNeverResolves(): void {
+  reportsValueByTypeMock.mockImplementation(() => new Promise(() => undefined));
+}
+
+function mockLocationNeverResolves(): void {
+  reportsValueByLocationMock.mockImplementation(() => new Promise(() => undefined));
+}
+
 beforeEach(() => {
   vi.clearAllMocks();
-  mockValueByTypeQuery.mockReturnValue({
-    data: { data: [] },
-    isLoading: false,
-    isError: false,
-    refetch: vi.fn(),
-  });
-  mockValueByLocationQuery.mockReturnValue({
-    data: { data: [] },
-    isLoading: false,
-    isError: false,
-    refetch: vi.fn(),
-  });
+  mockTypeSuccess([]);
+  mockLocationSuccess([]);
 });
 
-function renderWithRouter(ui: React.ReactNode) {
-  return render(<MemoryRouter>{ui}</MemoryRouter>);
+function renderWithProviders(ui: React.ReactNode) {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter>{ui}</MemoryRouter>
+    </QueryClientProvider>
+  );
 }
 
 describe('BreakdownChart', () => {
   it('shows empty message when no data', () => {
-    renderWithRouter(<BreakdownChart data={[]} />);
+    renderWithProviders(<BreakdownChart data={[]} />);
     expect(screen.getByText('No items with replacement values')).toBeInTheDocument();
   });
 
@@ -101,7 +145,7 @@ describe('BreakdownChart', () => {
       { name: 'Electronics', totalValue: 0, itemCount: 3 },
       { name: 'Furniture', totalValue: 0, itemCount: 2 },
     ];
-    renderWithRouter(<BreakdownChart data={data} />);
+    renderWithProviders(<BreakdownChart data={data} />);
     expect(screen.getByText('No items with replacement values')).toBeInTheDocument();
   });
 
@@ -110,7 +154,7 @@ describe('BreakdownChart', () => {
       { name: 'Electronics', totalValue: 5000, itemCount: 10 },
       { name: 'Furniture', totalValue: 0, itemCount: 5 },
     ];
-    renderWithRouter(<BreakdownChart data={data} />);
+    renderWithProviders(<BreakdownChart data={data} />);
     expect(screen.getByTestId('bar-Electronics')).toBeInTheDocument();
     expect(screen.getByTestId('bar-Furniture')).toBeInTheDocument();
   });
@@ -120,7 +164,7 @@ describe('BreakdownChart', () => {
       { name: 'Electronics', totalValue: 5000, itemCount: 10 },
       { name: 'Furniture', totalValue: 3000, itemCount: 5 },
     ];
-    renderWithRouter(<BreakdownChart data={data} />);
+    renderWithProviders(<BreakdownChart data={data} />);
     expect(screen.getByTestId('bar-Electronics')).toBeInTheDocument();
     expect(screen.getByTestId('bar-Furniture')).toBeInTheDocument();
   });
@@ -128,7 +172,7 @@ describe('BreakdownChart', () => {
   it('calls onBarClick when bar is clicked', () => {
     const data: BreakdownEntry[] = [{ name: 'Electronics', totalValue: 5000, itemCount: 10 }];
     const onClick = vi.fn();
-    renderWithRouter(<BreakdownChart data={data} onBarClick={onClick} />);
+    renderWithProviders(<BreakdownChart data={data} onBarClick={onClick} />);
     fireEvent.click(screen.getByTestId('bar'));
     expect(onClick).toHaveBeenCalled();
   });
@@ -136,169 +180,111 @@ describe('BreakdownChart', () => {
 
 describe('ValueByTypeCard', () => {
   it('renders loading skeleton', () => {
-    mockValueByTypeQuery.mockReturnValue({
-      data: null,
-      isLoading: true,
-      isError: false,
-      refetch: vi.fn(),
-    });
-    renderWithRouter(<ValueByTypeCard />);
+    mockTypeNeverResolves();
+    renderWithProviders(<ValueByTypeCard />);
     // Skeleton renders generic elements; check the card exists
     expect(document.querySelector('.animate-pulse')).toBeInTheDocument();
   });
 
-  it("renders 'Value by Type' heading", () => {
-    renderWithRouter(<ValueByTypeCard />);
-    expect(screen.getByText('Value by Type')).toBeInTheDocument();
+  it("renders 'Value by Type' heading", async () => {
+    renderWithProviders(<ValueByTypeCard />);
+    expect(await screen.findByText('Value by Type')).toBeInTheDocument();
   });
 
-  it('shows empty message when no types have values', () => {
-    renderWithRouter(<ValueByTypeCard />);
-    expect(screen.getByText('No items with replacement values')).toBeInTheDocument();
+  it('shows empty message when no types have values', async () => {
+    renderWithProviders(<ValueByTypeCard />);
+    expect(await screen.findByText('No items with replacement values')).toBeInTheDocument();
   });
 
-  it('shows empty message when all types have zero value', () => {
-    mockValueByTypeQuery.mockReturnValue({
-      data: {
-        data: [
-          { name: 'Electronics', totalValue: 0, itemCount: 3 },
-          { name: 'Furniture', totalValue: 0, itemCount: 2 },
-        ],
-      },
-      isLoading: false,
-      isError: false,
-      refetch: vi.fn(),
-    });
-    renderWithRouter(<ValueByTypeCard />);
-    expect(screen.getByText('No items with replacement values')).toBeInTheDocument();
+  it('shows empty message when all types have zero value', async () => {
+    mockTypeSuccess([
+      { name: 'Electronics', totalValue: 0, itemCount: 3 },
+      { name: 'Furniture', totalValue: 0, itemCount: 2 },
+    ]);
+    renderWithProviders(<ValueByTypeCard />);
+    expect(await screen.findByText('No items with replacement values')).toBeInTheDocument();
   });
 
-  it('renders error state with retry button', () => {
-    const refetch = vi.fn();
-    mockValueByTypeQuery.mockReturnValue({
-      data: null,
-      isLoading: false,
-      isError: true,
-      refetch,
-    });
-    renderWithRouter(<ValueByTypeCard />);
-    expect(screen.getByText('Failed to load type breakdown')).toBeInTheDocument();
+  it('renders error state with retry button', async () => {
+    mockTypeError('boom');
+    renderWithProviders(<ValueByTypeCard />);
+    expect(await screen.findByText('Failed to load type breakdown')).toBeInTheDocument();
+    const callsBefore = reportsValueByTypeMock.mock.calls.length;
     fireEvent.click(screen.getByRole('button', { name: /retry/i }));
-    expect(refetch).toHaveBeenCalled();
+    await waitFor(() =>
+      expect(reportsValueByTypeMock.mock.calls.length).toBeGreaterThan(callsBefore)
+    );
   });
 
-  it('renders type entries', () => {
-    mockValueByTypeQuery.mockReturnValue({
-      data: {
-        data: [
-          { name: 'Electronics', totalValue: 5000, itemCount: 10 },
-          { name: 'Furniture', totalValue: 3000, itemCount: 5 },
-        ],
-      },
-      isLoading: false,
-      isError: false,
-      refetch: vi.fn(),
-    });
-    renderWithRouter(<ValueByTypeCard />);
-    expect(screen.getByTestId('bar-Electronics')).toBeInTheDocument();
+  it('renders type entries', async () => {
+    mockTypeSuccess([
+      { name: 'Electronics', totalValue: 5000, itemCount: 10 },
+      { name: 'Furniture', totalValue: 3000, itemCount: 5 },
+    ]);
+    renderWithProviders(<ValueByTypeCard />);
+    expect(await screen.findByTestId('bar-Electronics')).toBeInTheDocument();
     expect(screen.getByTestId('bar-Furniture')).toBeInTheDocument();
   });
 
-  it('navigates to filtered inventory on bar click', () => {
-    mockValueByTypeQuery.mockReturnValue({
-      data: {
-        data: [{ name: 'Electronics', totalValue: 5000, itemCount: 10 }],
-      },
-      isLoading: false,
-      isError: false,
-      refetch: vi.fn(),
-    });
-    renderWithRouter(<ValueByTypeCard />);
-    fireEvent.click(screen.getByTestId('bar'));
-    expect(mockNavigate).toHaveBeenCalledWith('/inventory?type=Electronics');
+  it('navigates to filtered inventory on bar click', async () => {
+    mockTypeSuccess([{ name: 'Electronics', totalValue: 5000, itemCount: 10 }]);
+    renderWithProviders(<ValueByTypeCard />);
+    fireEvent.click(await screen.findByTestId('bar'));
+    await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/inventory?type=Electronics'));
   });
 });
 
 describe('ValueByLocationCard', () => {
   it('renders loading skeleton', () => {
-    mockValueByLocationQuery.mockReturnValue({
-      data: null,
-      isLoading: true,
-      isError: false,
-      refetch: vi.fn(),
-    });
-    renderWithRouter(<ValueByLocationCard />);
+    mockLocationNeverResolves();
+    renderWithProviders(<ValueByLocationCard />);
     expect(document.querySelector('.animate-pulse')).toBeInTheDocument();
   });
 
-  it("renders 'Value by Location' heading", () => {
-    renderWithRouter(<ValueByLocationCard />);
-    expect(screen.getByText('Value by Location')).toBeInTheDocument();
+  it("renders 'Value by Location' heading", async () => {
+    renderWithProviders(<ValueByLocationCard />);
+    expect(await screen.findByText('Value by Location')).toBeInTheDocument();
   });
 
-  it('shows empty message when no locations have values', () => {
-    renderWithRouter(<ValueByLocationCard />);
-    expect(screen.getByText('No items with replacement values')).toBeInTheDocument();
+  it('shows empty message when no locations have values', async () => {
+    renderWithProviders(<ValueByLocationCard />);
+    expect(await screen.findByText('No items with replacement values')).toBeInTheDocument();
   });
 
-  it('shows empty message when all locations have zero value', () => {
-    mockValueByLocationQuery.mockReturnValue({
-      data: {
-        data: [
-          { name: 'Living Room', totalValue: 0, itemCount: 3, key: 'loc-1' },
-          { name: 'Bedroom', totalValue: 0, itemCount: 2, key: 'loc-2' },
-        ],
-      },
-      isLoading: false,
-      isError: false,
-      refetch: vi.fn(),
-    });
-    renderWithRouter(<ValueByLocationCard />);
-    expect(screen.getByText('No items with replacement values')).toBeInTheDocument();
+  it('shows empty message when all locations have zero value', async () => {
+    mockLocationSuccess([
+      { name: 'Living Room', totalValue: 0, itemCount: 3, key: 'loc-1' },
+      { name: 'Bedroom', totalValue: 0, itemCount: 2, key: 'loc-2' },
+    ]);
+    renderWithProviders(<ValueByLocationCard />);
+    expect(await screen.findByText('No items with replacement values')).toBeInTheDocument();
   });
 
-  it('renders error state with retry button', () => {
-    const refetch = vi.fn();
-    mockValueByLocationQuery.mockReturnValue({
-      data: null,
-      isLoading: false,
-      isError: true,
-      refetch,
-    });
-    renderWithRouter(<ValueByLocationCard />);
-    expect(screen.getByText('Failed to load location breakdown')).toBeInTheDocument();
+  it('renders error state with retry button', async () => {
+    mockLocationError('boom');
+    renderWithProviders(<ValueByLocationCard />);
+    expect(await screen.findByText('Failed to load location breakdown')).toBeInTheDocument();
+    const callsBefore = reportsValueByLocationMock.mock.calls.length;
     fireEvent.click(screen.getByRole('button', { name: /retry/i }));
-    expect(refetch).toHaveBeenCalled();
+    await waitFor(() =>
+      expect(reportsValueByLocationMock.mock.calls.length).toBeGreaterThan(callsBefore)
+    );
   });
 
-  it('renders location entries', () => {
-    mockValueByLocationQuery.mockReturnValue({
-      data: {
-        data: [
-          { name: 'Living Room', totalValue: 5000, itemCount: 10, key: 'loc-1' },
-          { name: 'Bedroom', totalValue: 3000, itemCount: 5, key: 'loc-2' },
-        ],
-      },
-      isLoading: false,
-      isError: false,
-      refetch: vi.fn(),
-    });
-    renderWithRouter(<ValueByLocationCard />);
-    expect(screen.getByTestId('bar-Living Room')).toBeInTheDocument();
+  it('renders location entries', async () => {
+    mockLocationSuccess([
+      { name: 'Living Room', totalValue: 5000, itemCount: 10, key: 'loc-1' },
+      { name: 'Bedroom', totalValue: 3000, itemCount: 5, key: 'loc-2' },
+    ]);
+    renderWithProviders(<ValueByLocationCard />);
+    expect(await screen.findByTestId('bar-Living Room')).toBeInTheDocument();
     expect(screen.getByTestId('bar-Bedroom')).toBeInTheDocument();
   });
 
-  it('navigates to filtered inventory by locationId on bar click', () => {
-    mockValueByLocationQuery.mockReturnValue({
-      data: {
-        data: [{ name: 'Living Room', totalValue: 5000, itemCount: 10, key: 'loc-1' }],
-      },
-      isLoading: false,
-      isError: false,
-      refetch: vi.fn(),
-    });
-    renderWithRouter(<ValueByLocationCard />);
-    fireEvent.click(screen.getByTestId('bar'));
-    expect(mockNavigate).toHaveBeenCalledWith('/inventory?locationId=loc-1');
+  it('navigates to filtered inventory by locationId on bar click', async () => {
+    mockLocationSuccess([{ name: 'Living Room', totalValue: 5000, itemCount: 10, key: 'loc-1' }]);
+    renderWithProviders(<ValueByLocationCard />);
+    fireEvent.click(await screen.findByTestId('bar'));
+    await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/inventory?locationId=loc-1'));
   });
 });

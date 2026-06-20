@@ -1,8 +1,12 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const mockTraceQuery = vi.fn();
+import type { TraceNode } from '../inventory-api/index.js';
+import type { ConnectionsTraceResponses } from '../inventory-api/types.gen';
+
+const connectionsTraceMock = vi.hoisted(() => vi.fn());
 const mockNavigate = vi.fn();
 
 vi.mock('react-router', async (importOriginal) => {
@@ -10,9 +14,8 @@ vi.mock('react-router', async (importOriginal) => {
   return { ...actual, useNavigate: () => mockNavigate };
 });
 
-vi.mock('@pops/pillar-sdk/react', () => ({
-  usePillarQuery: (pillarId: string, path: readonly string[], input: unknown) =>
-    mockTraceQuery({ pillarId, path: [...path], input }),
+vi.mock('../inventory-api/index.js', () => ({
+  connectionsTrace: (...args: unknown[]) => connectionsTraceMock(...args),
 }));
 
 vi.mock('@pops/ui', async (importOriginal) => {
@@ -49,33 +52,48 @@ vi.mock('@pops/ui', async (importOriginal) => {
 
 import { ConnectionTracePanel } from './ConnectionTracePanel';
 
-function renderPanel(itemId = 'item-1') {
-  return render(
-    <MemoryRouter>
-      <ConnectionTracePanel itemId={itemId} />
-    </MemoryRouter>
+type TracePayload = NonNullable<ConnectionsTraceResponses[200]>;
+
+function mockTraceSuccess(tree: TraceNode): void {
+  connectionsTraceMock.mockImplementation(async () => ({
+    data: { data: tree } satisfies TracePayload,
+    error: undefined,
+  }));
+}
+
+function mockTraceError(message: string, status: number): void {
+  connectionsTraceMock.mockImplementation(async () => ({
+    data: undefined,
+    error: { message },
+    response: { status },
+  }));
+}
+
+function mockTraceNeverResolves(): void {
+  connectionsTraceMock.mockImplementation(
+    () => new Promise(() => undefined) as Promise<{ data: TracePayload; error: undefined }>
   );
 }
 
-function queryResult(extra: Record<string, unknown>) {
-  return {
-    data: undefined,
-    isLoading: false,
-    error: null,
-    isUnavailable: false,
-    isContractMismatch: false,
-    ...extra,
-  };
+function renderPanel(itemId = 'item-1') {
+  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return render(
+    <QueryClientProvider client={qc}>
+      <MemoryRouter>
+        <ConnectionTracePanel itemId={itemId} />
+      </MemoryRouter>
+    </QueryClientProvider>
+  );
 }
 
 beforeEach(() => {
   vi.clearAllMocks();
-  mockTraceQuery.mockReturnValue(queryResult({}));
+  connectionsTraceMock.mockReset();
 });
 
 describe('ConnectionTracePanel — loading', () => {
   it('renders skeleton rows while loading', () => {
-    mockTraceQuery.mockReturnValue({ data: undefined, isLoading: true, error: null });
+    mockTraceNeverResolves();
     renderPanel();
     const skeletons = screen.getAllByTestId('skeleton');
     expect(skeletons.length).toBeGreaterThan(0);
@@ -83,31 +101,35 @@ describe('ConnectionTracePanel — loading', () => {
 });
 
 describe('ConnectionTracePanel — error', () => {
-  it('renders error message on query failure', () => {
-    mockTraceQuery.mockReturnValue({
-      data: undefined,
-      isLoading: false,
-      error: new Error('Network error'),
-    });
+  it('renders error message on query failure', async () => {
+    mockTraceError('Network error', 400);
     renderPanel();
-    expect(screen.getByText('Failed to load connection trace.')).toBeInTheDocument();
+    expect(await screen.findByText('Failed to load connection trace.')).toBeInTheDocument();
+  });
+
+  it('renders unavailable message when the pillar is unreachable', async () => {
+    mockTraceError('Service unavailable', 500);
+    renderPanel();
+    expect(await screen.findByText('Connection chain unavailable.')).toBeInTheDocument();
   });
 });
 
 describe('ConnectionTracePanel — empty', () => {
-  it('renders empty message when root has no children', () => {
-    mockTraceQuery.mockReturnValue({
-      data: { data: { id: 'item-1', itemName: 'Router', assetId: null, type: null, children: [] } },
-      isLoading: false,
-      error: null,
+  it('renders empty message when root has no children', async () => {
+    mockTraceSuccess({
+      id: 'item-1',
+      itemName: 'Router',
+      assetId: null,
+      type: null,
+      children: [],
     });
     renderPanel('item-1');
-    expect(screen.getByText('No connection chain found.')).toBeInTheDocument();
+    expect(await screen.findByText('No connection chain found.')).toBeInTheDocument();
   });
 });
 
 describe('ConnectionTracePanel — chain rendering', () => {
-  const tree = {
+  const tree: TraceNode = {
     id: 'item-1',
     itemName: 'Power Board',
     assetId: 'PWR01',
@@ -132,98 +154,92 @@ describe('ConnectionTracePanel — chain rendering', () => {
   };
 
   beforeEach(() => {
-    mockTraceQuery.mockReturnValue({
-      data: { data: tree },
-      isLoading: false,
-      error: null,
-    });
+    mockTraceSuccess(tree);
   });
 
-  it('renders root item (current item) with (current) label', () => {
+  it('renders root item (current item) with (current) label', async () => {
     renderPanel('item-1');
-    expect(screen.getByText(/Power Board/)).toBeInTheDocument();
+    expect(await screen.findByText(/Power Board/)).toBeInTheDocument();
     expect(screen.getByText('(current)')).toBeInTheDocument();
   });
 
-  it('renders child items', () => {
+  it('renders child items', async () => {
     renderPanel('item-1');
-    expect(screen.getByText('Monitor')).toBeInTheDocument();
+    expect(await screen.findByText('Monitor')).toBeInTheDocument();
   });
 
-  it('renders deeply nested items', () => {
+  it('renders deeply nested items', async () => {
     renderPanel('item-1');
-    expect(screen.getByText('HDMI Cable')).toBeInTheDocument();
+    expect(await screen.findByText('HDMI Cable')).toBeInTheDocument();
   });
 
-  it('renders AssetIdBadge for items with asset IDs', () => {
+  it('renders AssetIdBadge for items with asset IDs', async () => {
     renderPanel('item-1');
+    await screen.findByText(/Power Board/);
     const badges = screen.getAllByTestId('asset-id-badge');
     expect(badges.some((b) => b.textContent === 'PWR01')).toBe(true);
     expect(badges.some((b) => b.textContent === 'MON02')).toBe(true);
   });
 
-  it('omits AssetIdBadge for items without asset IDs', () => {
+  it('omits AssetIdBadge for items without asset IDs', async () => {
     renderPanel('item-1');
+    await screen.findByText(/Power Board/);
     const badges = screen.getAllByTestId('asset-id-badge');
     expect(badges.every((b) => b.textContent !== '')).toBe(true);
   });
 
-  it('renders TypeBadge for items with type', () => {
+  it('renders TypeBadge for items with type', async () => {
     renderPanel('item-1');
+    await screen.findByText(/Power Board/);
     const typeBadges = screen.getAllByTestId('type-badge');
     expect(typeBadges.length).toBeGreaterThan(0);
   });
 
-  it('shows connected items count in chain summary', () => {
+  it('shows connected items count in chain summary', async () => {
     renderPanel('item-1');
     // Tree has 3 nodes; 2 non-root
-    expect(screen.getByText(/2 connected items in chain/)).toBeInTheDocument();
+    expect(await screen.findByText(/2 connected items in chain/)).toBeInTheDocument();
   });
 
-  it('navigates to child item on click (non-current item)', () => {
+  it('navigates to child item on click (non-current item)', async () => {
     renderPanel('item-1');
-    const monitorRow = screen.getByText('Monitor').closest('[role="treeitem"]');
+    const monitorRow = (await screen.findByText('Monitor')).closest('[role="treeitem"]');
     expect(monitorRow).toBeTruthy();
     fireEvent.click(monitorRow!);
     expect(mockNavigate).toHaveBeenCalledWith('/inventory/items/item-2');
   });
 
-  it('does not navigate when clicking the current item', () => {
+  it('does not navigate when clicking the current item', async () => {
     renderPanel('item-1');
-    const currentRow = screen.getByText('(current)').closest('[role="treeitem"]');
+    const currentRow = (await screen.findByText('(current)')).closest('[role="treeitem"]');
     expect(currentRow).toBeTruthy();
     fireEvent.click(currentRow!);
     expect(mockNavigate).not.toHaveBeenCalled();
   });
 
-  it('renders with role="tree" on container', () => {
+  it('renders with role="tree" on container', async () => {
     renderPanel('item-1');
-    expect(screen.getByRole('tree')).toBeInTheDocument();
+    expect(await screen.findByRole('tree')).toBeInTheDocument();
   });
 
-  it('renders treeitem roles for each node', () => {
+  it('renders treeitem roles for each node', async () => {
     renderPanel('item-1');
+    await screen.findByText(/Power Board/);
     const items = screen.getAllByRole('treeitem');
     expect(items.length).toBeGreaterThanOrEqual(2);
   });
 });
 
 describe('ConnectionTracePanel — singular count', () => {
-  it('shows singular "item" when exactly one connected item', () => {
-    mockTraceQuery.mockReturnValue({
-      data: {
-        data: {
-          id: 'item-1',
-          itemName: 'Router',
-          assetId: null,
-          type: null,
-          children: [{ id: 'item-2', itemName: 'Switch', assetId: null, type: null, children: [] }],
-        },
-      },
-      isLoading: false,
-      error: null,
+  it('shows singular "item" when exactly one connected item', async () => {
+    mockTraceSuccess({
+      id: 'item-1',
+      itemName: 'Router',
+      assetId: null,
+      type: null,
+      children: [{ id: 'item-2', itemName: 'Switch', assetId: null, type: null, children: [] }],
     });
     renderPanel('item-1');
-    expect(screen.getByText('1 connected item in chain')).toBeInTheDocument();
+    expect(await screen.findByText('1 connected item in chain')).toBeInTheDocument();
   });
 });

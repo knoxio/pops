@@ -1,18 +1,14 @@
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { type ReactElement } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { toast } from 'sonner';
 
-import { usePillarMutation, usePillarUtils } from '@pops/pillar-sdk/react';
 import { Button } from '@pops/ui';
 
-import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
+import { unwrap } from '../../food-api-helpers.js';
+import { recipesArchiveVersion, recipesPromote } from '../../food-api/index.js';
 
-import type { AppRouter } from '@pops/api';
-
-type PromoteInput = inferRouterInputs<AppRouter>['food']['recipes']['promote'];
-type PromoteOutput = inferRouterOutputs<AppRouter>['food']['recipes']['promote'];
-type ArchiveVersionInput = inferRouterInputs<AppRouter>['food']['recipes']['archiveVersion'];
-type ArchiveVersionOutput = inferRouterOutputs<AppRouter>['food']['recipes']['archiveVersion'];
+type PromoteReason = 'ConcurrentPromotion' | 'CannotPromoteUncompiledVersion' | 'VersionNotFound';
 
 export interface DraftRow {
   versionId: number;
@@ -61,38 +57,35 @@ function useDraftRowMutations(
   t: (key: string, opts?: Record<string, unknown>) => string
 ): DraftRowMutations {
   const navigate = useNavigate();
-  const utils = usePillarUtils('food');
-  const promoteMutation = usePillarMutation<PromoteInput, PromoteOutput>(
-    'food',
-    ['recipes', 'promote'],
-    {
-      onSuccess: (res) => {
-        if (res.ok === true) {
-          toast.success(t('recipes.drafts.row.promoted'));
-          void utils.invalidate(['recipes', 'list']);
-          void refetch();
-          void navigate(`/food/recipes/${slug}`);
-        } else {
-          toast.error(t(`recipes.edit.promoteFailed.${res.reason}` as const));
-        }
-      },
-      onError: (err) => toast.error(t('recipes.drafts.row.promoteError', { message: err.message })),
-    }
-  );
-  const discardMutation = usePillarMutation<ArchiveVersionInput, ArchiveVersionOutput>(
-    'food',
-    ['recipes', 'archiveVersion'],
-    {
-      onSuccess: () => {
-        toast.success(t('recipes.drafts.row.discarded'));
+  const queryClient = useQueryClient();
+  const promoteMutation = useMutation({
+    mutationFn: async (versionId: number) => unwrap(await recipesPromote({ path: { versionId } })),
+    onSuccess: (res) => {
+      if (res.ok) {
+        toast.success(t('recipes.drafts.row.promoted'));
+        void queryClient.invalidateQueries({ queryKey: ['food', 'recipes', 'list'] });
         void refetch();
-      },
-      onError: (err) => toast.error(t('recipes.drafts.row.discardError', { message: err.message })),
-    }
-  );
+        void navigate(`/food/recipes/${slug}`);
+      } else {
+        toast.error(t(`recipes.edit.promoteFailed.${res.reason satisfies PromoteReason}` as const));
+      }
+    },
+    onError: (err: Error) =>
+      toast.error(t('recipes.drafts.row.promoteError', { message: err.message })),
+  });
+  const discardMutation = useMutation({
+    mutationFn: async (versionId: number) =>
+      unwrap(await recipesArchiveVersion({ path: { versionId } })),
+    onSuccess: () => {
+      toast.success(t('recipes.drafts.row.discarded'));
+      void refetch();
+    },
+    onError: (err: Error) =>
+      toast.error(t('recipes.drafts.row.discardError', { message: err.message })),
+  });
   return {
-    promote: (versionId) => promoteMutation.mutate({ versionId }),
-    discard: (versionId) => discardMutation.mutate({ versionId }),
+    promote: (versionId) => promoteMutation.mutate(versionId),
+    discard: (versionId) => discardMutation.mutate(versionId),
     isPromoting: promoteMutation.isPending,
     isDiscarding: discardMutation.isPending,
     isPending: promoteMutation.isPending || discardMutation.isPending,

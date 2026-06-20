@@ -8,12 +8,14 @@
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "generate:media-client": "openapi-ts && oxfmt --write src/media-api"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
+    "@hey-api/client-fetch": "^0.13.1",
     "@pops/navigation": "workspace:*",
     "@pops/pillar-sdk": "workspace:*",
     "@pops/types": "workspace:*",
@@ -29,9 +31,11 @@
     "sonner": "^2.0.7"
   },
   "devDependencies": {
+    "@hey-api/openapi-ts": "^0.98.2",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",
+    "@types/node": "^25.9.3",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.0.0",
     "@vitest/coverage-v8": "^4.1.8",

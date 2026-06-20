@@ -2,7 +2,9 @@ import { Link } from 'react-router';
 
 import { Badge, Button, Card, SkeletonGrid } from '@pops/ui';
 
-import type { Transaction } from '@pops/api/modules/finance/transactions/types';
+import type { TransactionsListResponse } from '../../finance-api/types.gen.js';
+
+type Transaction = NonNullable<TransactionsListResponse['data']>[number];
 
 function TransactionRow({ transaction }: { transaction: Transaction }) {
   return (

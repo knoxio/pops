@@ -4,25 +4,15 @@
  * Shows pending glia actions with approve/reject/modify controls.
  * Fetches from glia.actions.list tRPC endpoint.
  */
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 
-import { usePillarMutation, usePillarQuery } from '@pops/pillar-sdk/react';
 import { Button } from '@pops/ui';
 
+import { gliaActionsDecide, gliaActionsList } from '../cerebrum-api';
+import { unwrap } from '../cerebrum-api-helpers';
+
 type Decision = 'approve' | 'reject' | 'modify';
-
-interface ProposalAction {
-  id: string;
-  actionType: string;
-  rationale: string;
-  affectedIds: string[];
-  createdAt: string;
-}
-
-interface ProposalListResult {
-  actions: ProposalAction[];
-  total: number;
-}
 
 interface DecideInput {
   id: string;
@@ -31,17 +21,19 @@ interface DecideInput {
 }
 
 export function ProposalQueuePage() {
-  const { data, isLoading } = usePillarQuery<ProposalListResult>(
-    'cerebrum',
-    ['glia', 'actions', 'list'],
-    { status: 'pending', limit: 50 }
-  );
+  const queryClient = useQueryClient();
+  const listInput = { status: 'pending', limit: 50 } as const;
+  const { data, isLoading } = useQuery({
+    queryKey: ['cerebrum', 'glia', 'actions', 'list', listInput],
+    queryFn: async () => unwrap(await gliaActionsList({ body: listInput })),
+  });
 
-  const decideMutation = usePillarMutation<DecideInput, unknown>('cerebrum', [
-    'glia',
-    'actions',
-    'decide',
-  ]);
+  const decideMutation = useMutation({
+    mutationFn: async ({ id, decision, note }: DecideInput) =>
+      unwrap(await gliaActionsDecide({ path: { id }, body: { decision, note } })),
+    onSuccess: () =>
+      void queryClient.invalidateQueries({ queryKey: ['cerebrum', 'glia', 'actions'] }),
+  });
 
   const [noteState, setNoteState] = useState<Record<string, string>>({});
 

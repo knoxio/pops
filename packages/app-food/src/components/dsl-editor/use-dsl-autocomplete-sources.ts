@@ -5,26 +5,23 @@
  * Builds three async lookups that the CodeMirror source calls per
  * keystroke:
  *
- *   - `searchSlugs(query, kinds)` → `food.slugs.search`
- *   - `listVariantsForIngredient(slug)` → `food.ingredients.get`
- *   - `listPrepStates()` → `food.prepStates.list`
+ *   - `searchSlugs(query, kinds)` → `slugsSearch` (GET /slugs/search)
+ *   - `listVariantsForIngredient(slug)` → `ingredientsGet` (GET /ingredients/:idOrSlug)
+ *   - `listPrepStates()` → `prepStatesList` (GET /prep-states)
  *
- * All three go through `trpc.useUtils().*.fetch`, which read-through
- * the React Query cache: repeated calls with the same input return the
- * cached payload instead of round-tripping. That's the PRD's
- * "Results are cached in React Query for the session" requirement.
+ * Each lookup goes straight through the generated Hey API SDK and reads
+ * `result.data`. React Query is intentionally not involved here — the
+ * CodeMirror source owns its own per-keystroke calls and the SDK client
+ * is cheap to invoke; the prior tRPC-utils read-through cache is dropped
+ * with the pillar-call shim.
  *
  * Tests do NOT import this hook — `DslEditor` accepts an
  * `autocompleteSources` prop and tests construct a synthetic object
  * implementing `DslAutocompleteSources` directly.
  */
-import { useMemo, useRef } from 'react';
+import { useMemo } from 'react';
 
-import { usePillarCall } from '../../lib/pillar-call.js';
-
-import type { inferRouterOutputs } from '@trpc/server';
-
-import type { AppRouter } from '@pops/api';
+import { ingredientsGet, prepStatesList, slugsSearch } from '../../food-api/index.js';
 
 import type {
   DslAutocompleteSources,
@@ -34,18 +31,7 @@ import type {
   VariantSuggestion,
 } from './autocomplete-types';
 
-type SlugsSearchOutput = inferRouterOutputs<AppRouter>['food']['slugs']['search'];
-type IngredientsGetOutput = inferRouterOutputs<AppRouter>['food']['ingredients']['get'];
-type PrepStatesListOutput = inferRouterOutputs<AppRouter>['food']['prepStates']['list'];
-
 export function useDslAutocompleteSources(): DslAutocompleteSources {
-  const call = usePillarCall();
-  // Mirror the settings-page pattern: stash the callable in a ref so the
-  // memo doesn't invalidate every render (call identity is not stable
-  // across renders in production OR in tests).
-  const callRef = useRef(call);
-  callRef.current = call;
-
   return useMemo<DslAutocompleteSources>(
     () => ({
       // Every lookup swallows network / auth / server errors and resolves
@@ -54,25 +40,20 @@ export function useDslAutocompleteSources(): DslAutocompleteSources {
       // what we want when a backend round-trip is flaky mid-keystroke.
       async searchSlugs(query, kinds) {
         try {
-          const result = await callRef.current<SlugsSearchOutput>('food', ['slugs', 'search'], {
-            query,
-            kinds: kinds === undefined ? undefined : [...kinds],
+          const result = await slugsSearch({
+            query: { query, kinds: kinds === undefined ? undefined : [...kinds] },
           });
-          if (result.kind !== 'ok') return [];
-          return mapSlugs(result.value.items);
+          if (result.data === undefined) return [];
+          return mapSlugs(result.data.items);
         } catch {
           return [];
         }
       },
       async listVariantsForIngredient(slug) {
         try {
-          const result = await callRef.current<IngredientsGetOutput>(
-            'food',
-            ['ingredients', 'get'],
-            { idOrSlug: slug }
-          );
-          if (result.kind !== 'ok') return [];
-          return mapVariants(result.value.variants);
+          const result = await ingredientsGet({ path: { idOrSlug: slug } });
+          if (result.data === undefined) return [];
+          return mapVariants(result.data.variants);
         } catch {
           // Missing ingredients are a normal autocomplete state (the
           // user typed a not-yet-created slug); never throw out of a
@@ -83,19 +64,15 @@ export function useDslAutocompleteSources(): DslAutocompleteSources {
       },
       async listPrepStates() {
         try {
-          const result = await callRef.current<PrepStatesListOutput>(
-            'food',
-            ['prepStates', 'list'],
-            undefined
-          );
-          if (result.kind !== 'ok') return [];
-          return mapPrepStates(result.value.items);
+          const result = await prepStatesList({});
+          if (result.data === undefined) return [];
+          return mapPrepStates(result.data.items);
         } catch {
           return [];
         }
       },
     }),
-    [] // call accessed via ref; never invalidate
+    []
   );
 }
 

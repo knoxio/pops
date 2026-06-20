@@ -1,12 +1,12 @@
-import type { ChangeSet } from '@pops/api/modules/core/corrections/types';
-import type { TagRuleChangeSet } from '@pops/api/modules/core/tag-rules/types';
 import type {
+  ChangeSet,
+  CommitResult,
   ConfirmedTransaction,
   ImportWarning,
   ParsedTransaction,
   ProcessedTransaction as BaseProcessedTransaction,
-  CommitResult,
-} from '@pops/api/modules/finance/imports';
+  TagRuleChangeSet,
+} from '@pops/finance';
 
 export type BankType = 'ANZ' | 'Amex' | 'ING' | 'Up';
 export type { ChangeSet };

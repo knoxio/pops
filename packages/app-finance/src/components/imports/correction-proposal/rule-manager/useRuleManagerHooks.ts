@@ -1,14 +1,10 @@
+import { useQuery } from '@tanstack/react-query';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
-import { usePillarQuery } from '@pops/pillar-sdk/react';
-
+import { unwrap } from '../../../../finance-api-helpers.js';
+import { transactionsDescriptionsForPreview } from '../../../../finance-api/index.js';
+import { toRestPendingChangeSets } from '../../../../lib/rest-changeset';
 import { useImportStore } from '../../../../store/importStore';
-
-interface DescriptionsForPreviewResult {
-  data: Array<{ description: string; checksum: string }>;
-  total: number;
-  truncated: boolean;
-}
 import { type PreviewView } from '../../CorrectionProposalDialogPanels';
 import { useLocalOps } from '../../hooks/useLocalOps';
 import { usePreviewEffects } from '../../hooks/usePreviewEffects';
@@ -41,7 +37,11 @@ function useDialogState(open: boolean) {
 
 export function useRuleManagerHooks(props: RuleManagerInputs) {
   const { open, minConfidence, previewTransactions } = props;
-  const pendingChangeSets = useImportStore((s) => s.pendingChangeSets);
+  const pendingChangeSetsRaw = useImportStore((s) => s.pendingChangeSets);
+  const pendingChangeSets = useMemo(
+    () => toRestPendingChangeSets(pendingChangeSetsRaw),
+    [pendingChangeSetsRaw]
+  );
   const localOpsHook = useLocalOps({
     open,
     signal: null,
@@ -49,15 +49,12 @@ export function useRuleManagerHooks(props: RuleManagerInputs) {
     proposeData: undefined,
   });
   const dialogState = useDialogState(open);
-  const dbTxnsQuery = usePillarQuery<DescriptionsForPreviewResult>(
-    'finance',
-    ['transactions', 'listDescriptionsForPreview'],
-    undefined,
-    {
-      enabled: open,
-      staleTime: 60_000,
-    }
-  );
+  const dbTxnsQuery = useQuery({
+    queryKey: ['finance', 'transactions', 'descriptionsForPreview'],
+    queryFn: async () => unwrap(await transactionsDescriptionsForPreview()),
+    enabled: open,
+    staleTime: 60_000,
+  });
   const previewHook = usePreviewEffects(
     {
       open,

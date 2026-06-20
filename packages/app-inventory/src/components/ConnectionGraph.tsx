@@ -1,23 +1,29 @@
+import { useQuery } from '@tanstack/react-query';
 import { useRef } from 'react';
 import { useNavigate } from 'react-router';
 
-import { usePillarQuery } from '@pops/pillar-sdk/react';
 import { Skeleton } from '@pops/ui';
 
+import { isUnavailableError, unwrap } from '../inventory-api-helpers.js';
+import { connectionsGraph } from '../inventory-api/index.js';
 import { useGraphInteraction } from './connection-graph/useGraphInteraction';
 import { useGraphSimulation } from './connection-graph/useGraphSimulation';
 
 import type { GraphLink, GraphNode, Transform } from './connection-graph/types';
 
-interface GraphResult {
-  data: {
-    nodes: Array<{ id: string; itemName: string; assetId: string | null; type: string | null }>;
-    edges: Array<{ source: string; target: string }>;
-  };
-}
-
 export interface ConnectionGraphProps {
   itemId: string;
+}
+
+const MAX_GRAPH_DEPTH = 10;
+
+function useConnectionGraphQuery(itemId: string) {
+  return useQuery({
+    queryKey: ['inventory', 'connections', 'graph', itemId],
+    queryFn: async () =>
+      unwrap(await connectionsGraph({ path: { itemId }, query: { maxDepth: MAX_GRAPH_DEPTH } })),
+    enabled: !!itemId,
+  });
 }
 
 function GraphCanvas({ itemId }: { itemId: string }): React.ReactElement {
@@ -28,12 +34,7 @@ function GraphCanvas({ itemId }: { itemId: string }): React.ReactElement {
   const linksRef = useRef<GraphLink[]>([]);
   const transformRef = useRef<Transform>({ x: 0, y: 0, k: 1 });
 
-  const { data } = usePillarQuery<GraphResult>(
-    'inventory',
-    ['connections', 'graph'],
-    { itemId },
-    { enabled: !!itemId }
-  );
+  const { data } = useConnectionGraphQuery(itemId);
 
   useGraphSimulation({
     rawData: data?.data ?? null,
@@ -67,15 +68,10 @@ function GraphCanvas({ itemId }: { itemId: string }): React.ReactElement {
 }
 
 export function ConnectionGraph({ itemId }: ConnectionGraphProps): React.ReactElement {
-  const { data, isLoading, error, isUnavailable, isContractMismatch } = usePillarQuery<GraphResult>(
-    'inventory',
-    ['connections', 'graph'],
-    { itemId },
-    { enabled: !!itemId }
-  );
+  const { data, isLoading, error } = useConnectionGraphQuery(itemId);
 
   if (isLoading) return <Skeleton className="h-100 w-full rounded-lg" />;
-  if (isUnavailable || isContractMismatch) {
+  if (isUnavailableError(error)) {
     return <p className="text-sm text-muted-foreground">Connection graph unavailable.</p>;
   }
   if (error) return <p className="text-sm text-destructive">Failed to load connection graph.</p>;

@@ -5,36 +5,34 @@ on:
     branches: [main]
     paths:
       - "apps/pops-shell/**"
-      - "packages/api-client/**"
       - "packages/app-*/**"
-      - "packages/cerebrum-db/**"
-      - "packages/*-contract/**"
+      - "pillars/core/openapi/**"
+      - "pillars/inventory/openapi/**"
+      - "pillars/finance/openapi/**"
+      - "pillars/food/openapi/**"
+      - "pillars/cerebrum/openapi/**"
+      - "pillars/media/openapi/**"
       - "packages/db-types/**"
-      - "packages/food-db/**"
-      - "packages/inventory-db/**"
-      - "packages/lists-db/**"
       - "packages/navigation/**"
       - "packages/pillar-sdk/**"
       - "packages/types/**"
       - "packages/ui/**"
-      - "packages/widgets/**"
       - ".github/workflows/fe-quality.yml"
   pull_request:
     paths:
       - "apps/pops-shell/**"
-      - "packages/api-client/**"
       - "packages/app-*/**"
-      - "packages/cerebrum-db/**"
-      - "packages/*-contract/**"
+      - "pillars/core/openapi/**"
+      - "pillars/inventory/openapi/**"
+      - "pillars/finance/openapi/**"
+      - "pillars/food/openapi/**"
+      - "pillars/cerebrum/openapi/**"
+      - "pillars/media/openapi/**"
       - "packages/db-types/**"
-      - "packages/food-db/**"
-      - "packages/inventory-db/**"
-      - "packages/lists-db/**"
       - "packages/navigation/**"
       - "packages/pillar-sdk/**"
       - "packages/types/**"
       - "packages/ui/**"
-      - "packages/widgets/**"
       - ".github/workflows/fe-quality.yml"
 
 jobs:
@@ -52,19 +50,17 @@ jobs:
           filters: |
             shell:
               - 'apps/pops-shell/**'
-              - 'packages/api-client/**'
               - 'packages/app-*/**'
-              - 'packages/cerebrum-db/**'
-              - 'packages/*-contract/**'
               - 'packages/db-types/**'
-              - 'packages/food-db/**'
-              - 'packages/inventory-db/**'
-              - 'packages/lists-db/**'
+              - 'pillars/core/openapi/**'
+              - 'pillars/finance/openapi/**'
+              - 'pillars/food/openapi/**'
+              - 'pillars/cerebrum/openapi/**'
+              - 'pillars/media/openapi/**'
               - 'packages/navigation/**'
               - 'packages/pillar-sdk/**'
               - 'packages/types/**'
               - 'packages/ui/**'
-              - 'packages/widgets/**'
               - '.github/workflows/fe-quality.yml'
 
   quality:

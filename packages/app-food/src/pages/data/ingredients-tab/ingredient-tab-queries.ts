@@ -9,15 +9,12 @@
  * default during the in-flight window would temporarily enable the
  * destructive action and surface a confusing FK-CONFLICT path.
  */
-import { usePillarQuery } from '@pops/pillar-sdk/react';
+import { useQuery } from '@tanstack/react-query';
 
-import type { inferRouterOutputs } from '@trpc/server';
+import { unwrap } from '../../../food-api-helpers.js';
+import { ingredientsBlockers, ingredientsRecipeRefs } from '../../../food-api/index.js';
 
-import type { AppRouter } from '@pops/api';
-import type { DeleteBlockerSummary, IngredientRow } from '@pops/app-food-db';
-
-type BlockersOutput = inferRouterOutputs<AppRouter>['food']['ingredients']['blockers'];
-type RecipeRefsOutput = inferRouterOutputs<AppRouter>['food']['ingredients']['recipeRefs'];
+import type { DeleteBlockerSummary, IngredientRow } from './ingredient-wire-types.js';
 
 interface BlockerQueryArgs {
   ingredient: IngredientRow | null;
@@ -30,12 +27,12 @@ export interface BlockersState {
 }
 
 export function useBlockersQuery({ ingredient, deleteOpen }: BlockerQueryArgs): BlockersState {
-  const query = usePillarQuery<BlockersOutput>(
-    'food',
-    ['ingredients', 'blockers'],
-    { id: ingredient?.id ?? 0 },
-    { enabled: ingredient !== null && deleteOpen }
-  );
+  const id = ingredient?.id ?? 0;
+  const query = useQuery({
+    queryKey: ['food', 'ingredients', 'blockers', id],
+    queryFn: async () => unwrap(await ingredientsBlockers({ path: { id } })).data,
+    enabled: ingredient !== null && deleteOpen,
+  });
   return {
     data: query.data ?? null,
     isLoading: ingredient !== null && deleteOpen && query.data === undefined,
@@ -51,12 +48,12 @@ export function useRecipeRefCount(
   ingredientId: number | null,
   deleteOpen: boolean
 ): RecipeRefCountState {
-  const query = usePillarQuery<RecipeRefsOutput>(
-    'food',
-    ['ingredients', 'recipeRefs'],
-    { id: ingredientId ?? 0 },
-    { enabled: ingredientId !== null && deleteOpen }
-  );
+  const id = ingredientId ?? 0;
+  const query = useQuery({
+    queryKey: ['food', 'ingredients', 'recipeRefs', id],
+    queryFn: async () => unwrap(await ingredientsRecipeRefs({ path: { id } })),
+    enabled: ingredientId !== null && deleteOpen,
+  });
   return {
     count: query.data?.count ?? 0,
     isLoading: ingredientId !== null && deleteOpen && query.data === undefined,

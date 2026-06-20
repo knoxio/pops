@@ -6,45 +6,45 @@
  * Heavier behavioural coverage (mutation flows, modal validation) lives
  * in the per-modal tests and the API integration tests.
  */
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createInstance } from 'i18next';
 import { useMemo, type ReactElement } from 'react';
 import { I18nextProvider, initReactI18next } from 'react-i18next';
 import { MemoryRouter } from 'react-router';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import enAUFood from '../../../../../../apps/pops-shell/src/i18n/locales/en-AU/food.json';
 
-import type { FridgeView } from '@pops/app-food-db';
+import type { FridgeViewResponses } from '../../../food-api/types.gen.js';
 
-const mockViewQuery = vi.fn();
+type FridgeView = FridgeViewResponses[200];
 
-vi.mock('@pops/pillar-sdk/react', () => ({
-  usePillarQuery: (_pillarId: string, path: readonly string[]) => {
-    const key = path.join('.');
-    if (key === 'fridge.view') return mockViewQuery();
-    if (key === 'fridge.recipesUsingBatch') return { data: { items: [] }, isLoading: false };
-    if (key === 'ingredients.list') return { data: { items: [] } };
-    if (key === 'ingredients.get') return { data: undefined };
-    if (key === 'prepStates.list') return { data: { items: [] } };
-    if (key === 'batches.get') return { data: null };
-    throw new Error(`Unexpected pillar query: ${key}`);
-  },
-  usePillarMutation: (_pillarId: string, path: readonly string[]) => {
-    const key = path.join('.');
-    if (
-      key === 'batches.create' ||
-      key === 'batches.edit' ||
-      key === 'batches.relocate' ||
-      key === 'batches.adjustQty' ||
-      key === 'batches.delete'
-    ) {
-      return { mutate: vi.fn(), isPending: false };
-    }
-    throw new Error(`Unexpected pillar mutation: ${key}`);
-  },
-  usePillarUtils: () => ({ invalidate: vi.fn() }),
+const fridgeViewMock = vi.hoisted(() => vi.fn());
+const fridgeRecipesUsingBatchMock = vi.hoisted(() => vi.fn());
+const batchesGetMock = vi.hoisted(() => vi.fn());
+const batchesCreateMock = vi.hoisted(() => vi.fn());
+const batchesEditMock = vi.hoisted(() => vi.fn());
+const batchesRelocateMock = vi.hoisted(() => vi.fn());
+const batchesAdjustQtyMock = vi.hoisted(() => vi.fn());
+const batchesDeleteMock = vi.hoisted(() => vi.fn());
+const ingredientsListMock = vi.hoisted(() => vi.fn());
+const ingredientsGetMock = vi.hoisted(() => vi.fn());
+const prepStatesListMock = vi.hoisted(() => vi.fn());
+
+vi.mock('../../../food-api/index.js', () => ({
+  fridgeView: fridgeViewMock,
+  fridgeRecipesUsingBatch: fridgeRecipesUsingBatchMock,
+  batchesGet: batchesGetMock,
+  batchesCreate: batchesCreateMock,
+  batchesEdit: batchesEditMock,
+  batchesRelocate: batchesRelocateMock,
+  batchesAdjustQty: batchesAdjustQtyMock,
+  batchesDelete: batchesDeleteMock,
+  ingredientsList: ingredientsListMock,
+  ingredientsGet: ingredientsGetMock,
+  prepStatesList: prepStatesListMock,
 }));
 
 import { FridgePage } from '../FridgePage.js';
@@ -62,10 +62,19 @@ function Wrapper({ children }: { children: ReactElement }): ReactElement {
     });
     return instance;
   }, []);
+  const client = useMemo(
+    () =>
+      new QueryClient({
+        defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+      }),
+    []
+  );
   return (
-    <I18nextProvider i18n={i18n}>
-      <MemoryRouter>{children}</MemoryRouter>
-    </I18nextProvider>
+    <QueryClientProvider client={client}>
+      <I18nextProvider i18n={i18n}>
+        <MemoryRouter>{children}</MemoryRouter>
+      </I18nextProvider>
+    </QueryClientProvider>
   );
 }
 
@@ -121,8 +130,15 @@ function viewWithOneTomato(): FridgeView {
 }
 
 describe('FridgePage — PRD-147', () => {
-  it('renders the heading and the Add batch button', () => {
-    mockViewQuery.mockReturnValue({ data: emptyView(), isLoading: false, error: null });
+  beforeEach(() => {
+    vi.clearAllMocks();
+    fridgeRecipesUsingBatchMock.mockResolvedValue({ data: { items: [] } });
+    ingredientsListMock.mockResolvedValue({ data: { items: [] } });
+    prepStatesListMock.mockResolvedValue({ data: { items: [] } });
+  });
+
+  it('renders the heading and the Add batch button', async () => {
+    fridgeViewMock.mockResolvedValue({ data: emptyView() });
     render(
       <Wrapper>
         <FridgePage />
@@ -130,47 +146,40 @@ describe('FridgePage — PRD-147', () => {
     );
     expect(screen.getByRole('heading', { name: /fridge/i, level: 1 })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /\+ add batch/i })).toBeInTheDocument();
+    await screen.findByText(/nothing in the fridge yet/i);
   });
 
-  it('shows the empty state when no visible batches', () => {
-    mockViewQuery.mockReturnValue({ data: emptyView(), isLoading: false, error: null });
+  it('shows the empty state when no visible batches', async () => {
+    fridgeViewMock.mockResolvedValue({ data: emptyView() });
     render(
       <Wrapper>
         <FridgePage />
       </Wrapper>
     );
-    expect(screen.getByText(/nothing in the fridge yet/i)).toBeInTheDocument();
+    expect(await screen.findByText(/nothing in the fridge yet/i)).toBeInTheDocument();
   });
 
-  it('renders sections with batch rows when data is present', () => {
-    mockViewQuery.mockReturnValue({
-      data: viewWithOneTomato(),
-      isLoading: false,
-      error: null,
-    });
+  it('renders sections with batch rows when data is present', async () => {
+    fridgeViewMock.mockResolvedValue({ data: viewWithOneTomato() });
     render(
       <Wrapper>
         <FridgePage />
       </Wrapper>
     );
-    expect(screen.getByRole('button', { name: /fridge \(1\)/i })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: /fridge \(1\)/i })).toBeInTheDocument();
     expect(screen.getByText(/Tomato \/ Diced/)).toBeInTheDocument();
     expect(screen.getByText(/200 g/)).toBeInTheDocument();
   });
 
   it('toggles a location section', async () => {
-    mockViewQuery.mockReturnValue({
-      data: viewWithOneTomato(),
-      isLoading: false,
-      error: null,
-    });
+    fridgeViewMock.mockResolvedValue({ data: viewWithOneTomato() });
     const user = userEvent.setup();
     render(
       <Wrapper>
         <FridgePage />
       </Wrapper>
     );
-    const toggle = screen.getByRole('button', { name: /fridge \(1\)/i });
+    const toggle = await screen.findByRole('button', { name: /fridge \(1\)/i });
     await user.click(toggle);
     expect(toggle.getAttribute('aria-expanded')).toBe('false');
   });

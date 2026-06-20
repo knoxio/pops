@@ -64,28 +64,67 @@ export default defineConfig({
       host: 'localhost',
     },
     proxy: {
-      // PRD-187 splitLink routes per-pillar batches through dedicated URL
-      // prefixes. The per-pillar rule MUST come before the bare `/trpc`
-      // rule because Vite's `proxy` is a regex-first / prefix-match
-      // dispatcher and `/trpc` is a prefix of `/trpc-<pillar>`; if the
-      // bare rule is listed first it wins and the rewrite never fires.
-      // While the legacy monolith still serves every router on /trpc,
-      // the dev proxy rewrites `/trpc-<pillar>` back to `/trpc` so
-      // existing endpoints keep answering. Once per-pillar APIs run as
-      // separate processes the rewrite goes away and each prefix targets
-      // its own upstream.
-      '^/trpc-(core|finance|media|inventory|cerebrum|food|lists)': {
-        target: 'http://localhost:3000',
+      // The core pillar now serves a REST contract; app-ai's generated Hey
+      // API client targets the shell's `/core-api` path (see
+      // `@pops/app-ai` core-api-runtime-config). Mirrors `/media-api`.
+      '/core-api': {
+        target: 'http://localhost:3001',
         changeOrigin: true,
-        rewrite: (urlPath: string) => urlPath.replace(/^\/trpc-[^/]+/, '/trpc'),
+        rewrite: (urlPath: string) => urlPath.replace(/^\/core-api/, ''),
       },
-      '/trpc': {
-        target: 'http://localhost:3000',
+      '/lists-api': {
+        target: 'http://localhost:3006',
         changeOrigin: true,
-        // Don't rewrite — tRPC expects /trpc prefix
+        rewrite: (urlPath: string) => urlPath.replace(/^\/lists-api/, ''),
+      },
+      '/inventory-api': {
+        target: 'http://localhost:3002',
+        changeOrigin: true,
+        rewrite: (urlPath: string) => urlPath.replace(/^\/inventory-api/, ''),
+      },
+      '/finance-api': {
+        target: 'http://localhost:3004',
+        changeOrigin: true,
+        rewrite: (urlPath: string) => urlPath.replace(/^\/finance-api/, ''),
+      },
+      '/food-api': {
+        target: 'http://localhost:3005',
+        changeOrigin: true,
+        rewrite: (urlPath: string) => urlPath.replace(/^\/food-api/, ''),
+      },
+      '/media-api': {
+        target: 'http://localhost:3003',
+        changeOrigin: true,
+        rewrite: (urlPath: string) => urlPath.replace(/^\/media-api/, ''),
+      },
+      '/cerebrum-api': {
+        target: 'http://localhost:3007',
+        changeOrigin: true,
+        rewrite: (urlPath: string) => urlPath.replace(/^\/cerebrum-api/, ''),
+      },
+      // The orchestrator (ADR-029, epic 06) federates search over the pillars
+      // and serves `POST /search` at root. The shell's global search panel
+      // (`@pops/navigation` useSearchInputData) posts to `/orchestrator-api/search`;
+      // strip the prefix so the orchestrator router sees its natural `/search`.
+      // Mirrors the `/<pillar>-api` proxies above.
+      '/orchestrator-api': {
+        target: 'http://localhost:3009',
+        changeOrigin: true,
+        rewrite: (urlPath: string) => urlPath.replace(/^\/orchestrator-api/, ''),
+      },
+      // SSE streaming endpoints (ego chat + cerebrum query) live on the
+      // cerebrum pillar. These MUST precede the bare `/api` rule below,
+      // which otherwise sends every `/api/*` request to core-api (3000).
+      '/api/ego': {
+        target: 'http://localhost:3007',
+        changeOrigin: true,
+      },
+      '/api/cerebrum': {
+        target: 'http://localhost:3007',
+        changeOrigin: true,
       },
       '/media/images': {
-        target: 'http://localhost:3000',
+        target: 'http://localhost:3003',
         changeOrigin: true,
       },
       '/inventory/documents': {

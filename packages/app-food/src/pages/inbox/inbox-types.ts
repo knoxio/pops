@@ -1,3 +1,4 @@
+import type { IngestSourceKind } from '../../food-api-shared-types.js';
 /**
  * PRD-138 — shared types + tiny helpers for the Rejected / Failed tabs.
  *
@@ -6,10 +7,14 @@
  * surface stays stable when the underlying tRPC procedure types are
  * regenerated.
  */
-import { type IngestSourceKind } from '@pops/app-food-db';
+import type {
+  InboxListFailedResponses,
+  InboxListRejectedResponses,
+} from '../../food-api/types.gen.js';
 
-export type { FailedRow, RejectedRow, RejectionReason } from '@pops/app-food-db';
-export type { IngestSourceKind } from '@pops/app-food-db';
+export type { IngestSourceKind, RejectionReason } from '../../food-api-shared-types.js';
+export type FailedRow = InboxListFailedResponses[200]['items'][number];
+export type RejectedRow = InboxListRejectedResponses[200]['items'][number];
 
 export type SinceDays = 7 | 30 | 90 | null;
 

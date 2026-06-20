@@ -10,8 +10,11 @@
  * `makeRecipeData` lets each test override individual slices without
  * restating the full payload — keeps the test file readable.
  */
-import type { ResolvedStepBody } from '@pops/app-food-db';
-import type { RecipeLineWithResolved, RecipeVersionWithCompiledData } from '@pops/app-food-db';
+import type {
+  RecipeLineWithResolved,
+  RecipeVersionWithCompiledData,
+  ResolvedStepBody,
+} from '../recipe-render-types.js';
 
 const BASE_RECIPE = {
   id: 1,
@@ -157,7 +160,7 @@ export function makeRecipeData(
         bodyResolvedJson: JSON.stringify(bodyResolved),
         durationMinutes: null,
         temperatureValue: null,
-        temperatureUnit: null,
+        temperatureUnit: 'c',
       },
     ],
     yieldIngredient: yieldIngredientPancake,

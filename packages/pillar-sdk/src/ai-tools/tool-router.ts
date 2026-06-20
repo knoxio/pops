@@ -96,6 +96,16 @@ function parseToolName(name: string): { pillarId: string; toolName: string } | n
   return { pillarId, toolName };
 }
 
+const TOOL_ERROR_FALLBACK: Record<
+  'not-found' | 'conflict' | 'bad-request' | 'unauthorized',
+  string
+> = {
+  'not-found': 'not found',
+  conflict: 'conflict',
+  'bad-request': 'bad request',
+  unauthorized: 'unauthorized',
+};
+
 function mapCallResult(pillarId: string, result: CallResult<unknown>): ToolResult {
   switch (result.kind) {
     case 'ok':
@@ -106,11 +116,10 @@ function mapCallResult(pillarId: string, result: CallResult<unknown>): ToolResul
     case 'contract-mismatch':
       return { kind: 'tool-error', reason: 'contract mismatch' };
     case 'not-found':
-      return { kind: 'tool-error', reason: result.message ?? 'not found' };
     case 'conflict':
-      return { kind: 'tool-error', reason: result.message ?? 'conflict' };
     case 'bad-request':
-      return { kind: 'tool-error', reason: result.message ?? 'bad request' };
+    case 'unauthorized':
+      return { kind: 'tool-error', reason: result.message ?? TOOL_ERROR_FALLBACK[result.kind] };
   }
 }
 

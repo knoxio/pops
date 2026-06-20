@@ -6,11 +6,11 @@
  *   - Enumerate workspace packages matching `@pops/*-contract`
  *     (`packages/*-contract/package.json`).
  *   - For each contract package that declares a `./manifest` subpath in its
- *     `exports`, dynamically import `@pops/<x>-contract/manifest` and collect
- *     every exported value that satisfies `ModuleManifest` (a contract
- *     package may export more than one — `@pops/core-contract/manifest`
- *     carries both `coreManifest` and `aiManifest`; `@pops/cerebrum-contract`
- *     carries `cerebrumManifest` and `egoManifest`).
+ *     `exports`, dynamically import its `./manifest` and collect every
+ *     exported value that satisfies `ModuleManifest` (a package may export
+ *     more than one — the collapsed `@pops/core` pillar carries both
+ *     `coreManifest` and `aiManifest`; `@pops/cerebrum` carries
+ *     `cerebrumManifest` and `egoManifest`).
  *   - Packages without a `./manifest` subpath (e.g. the legacy
  *     `@pops/food-contracts` plural variant, or contracts for surfaces not
  *     yet promoted to pillar) are skipped with a build-log info line.
@@ -28,6 +28,8 @@ import { assertModuleManifest, type ModuleManifest } from '@pops/types';
 const here = dirname(fileURLToPath(import.meta.url));
 const PACKAGE_ROOT = join(here, '..');
 const PACKAGES_ROOT = join(PACKAGE_ROOT, '..');
+const REPO_ROOT = join(PACKAGES_ROOT, '..');
+const PILLARS_ROOT = join(REPO_ROOT, 'pillars');
 
 const CONTRACT_SUFFIX = '-contract';
 const MANIFEST_SUBPATH = './manifest';
@@ -69,8 +71,41 @@ function pickManifestEntry(exportsField: ExportsField | undefined): string | und
   return entry.default;
 }
 
+async function readContractPackage(
+  pkgDir: string,
+  expectedSuffix: string
+): Promise<ContractPackage | null> {
+  const pkgPath = join(pkgDir, 'package.json');
+  let raw: string;
+  try {
+    raw = await readFile(pkgPath, 'utf8');
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code === 'ENOENT') return null;
+    throw err;
+  }
+  const parsed: unknown = JSON.parse(raw);
+  if (!isContractPackageJson(parsed)) {
+    throw new Error(`malformed package.json at ${pkgPath}`);
+  }
+  const name = parsed.name;
+  if (name === undefined || !name.startsWith('@pops/') || !name.endsWith(expectedSuffix)) {
+    return null;
+  }
+  return {
+    name,
+    dir: pkgDir,
+    manifestEntry: pickManifestEntry(parsed.exports),
+  };
+}
+
 async function listContractPackages(packagesRoot: string): Promise<ContractPackage[]> {
-  const entries = await readdir(packagesRoot, { withFileTypes: true });
+  let entries: { name: string; isDirectory: () => boolean }[];
+  try {
+    entries = await readdir(packagesRoot, { withFileTypes: true });
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code === 'ENOENT') return [];
+    throw err;
+  }
   const candidates = entries
     .filter((entry) => entry.isDirectory() && entry.name.endsWith(CONTRACT_SUFFIX))
     .map((entry) => entry.name)
@@ -78,23 +113,73 @@ async function listContractPackages(packagesRoot: string): Promise<ContractPacka
 
   const out: ContractPackage[] = [];
   for (const dirName of candidates) {
-    const pkgPath = join(packagesRoot, dirName, 'package.json');
-    const raw = await readFile(pkgPath, 'utf8');
-    const parsed: unknown = JSON.parse(raw);
-    if (!isContractPackageJson(parsed)) {
-      throw new Error(`malformed package.json at ${pkgPath}`);
-    }
-    const name = parsed.name;
-    if (name === undefined || !name.startsWith('@pops/') || !name.endsWith(CONTRACT_SUFFIX)) {
-      continue;
-    }
-    out.push({
-      name,
-      dir: join(packagesRoot, dirName),
-      manifestEntry: pickManifestEntry(parsed.exports),
-    });
+    const pkg = await readContractPackage(join(packagesRoot, dirName), CONTRACT_SUFFIX);
+    if (pkg !== null) out.push(pkg);
   }
   return out;
+}
+
+/**
+ * Walk `pillars/<id>/` directories and return contract package records
+ * shaped like `listContractPackages` produces. Returns `[]` if `pillars/`
+ * is absent.
+ *
+ * Two pillar layouts are supported:
+ *   - **Colocated (PRD-253):** `pillars/<id>/contract/package.json` for a
+ *     `@pops/<id>-contract` package alongside `db/`, `api/`, etc.
+ *   - **Collapsed:** `pillars/<id>/package.json` for a single `@pops/<id>`
+ *     workspace member whose `./manifest` export points at the pillar's
+ *     manifest file (no `-contract` suffix).
+ */
+async function listColocatedContractPackages(pillarsRoot: string): Promise<ContractPackage[]> {
+  let entries: { name: string; isDirectory: () => boolean }[];
+  try {
+    entries = await readdir(pillarsRoot, { withFileTypes: true });
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code === 'ENOENT') return [];
+    throw err;
+  }
+  const candidates = entries
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name)
+    .toSorted((a, b) => a.localeCompare(b, 'en'));
+
+  const out: ContractPackage[] = [];
+  for (const dirName of candidates) {
+    const colocated = await readContractPackage(
+      join(pillarsRoot, dirName, 'contract'),
+      CONTRACT_SUFFIX
+    );
+    if (colocated !== null) {
+      out.push(colocated);
+      continue;
+    }
+    const collapsed = await readCollapsedPillarPackage(join(pillarsRoot, dirName));
+    if (collapsed !== null) out.push(collapsed);
+  }
+  return out;
+}
+
+async function readCollapsedPillarPackage(pkgDir: string): Promise<ContractPackage | null> {
+  const pkgPath = join(pkgDir, 'package.json');
+  let raw: string;
+  try {
+    raw = await readFile(pkgPath, 'utf8');
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code === 'ENOENT') return null;
+    throw err;
+  }
+  const parsed: unknown = JSON.parse(raw);
+  if (!isContractPackageJson(parsed)) {
+    throw new Error(`malformed package.json at ${pkgPath}`);
+  }
+  const name = parsed.name;
+  if (name === undefined || !name.startsWith('@pops/') || name.endsWith(CONTRACT_SUFFIX)) {
+    return null;
+  }
+  const manifestEntry = pickManifestEntry(parsed.exports);
+  if (manifestEntry === undefined) return null;
+  return { name, dir: pkgDir, manifestEntry };
 }
 
 function looksLikeModuleManifest(value: unknown): value is ModuleManifest {
@@ -121,6 +206,13 @@ export interface DiscoverOptions {
   /** Override the packages directory; defaults to the monorepo `packages/`. */
   readonly packagesRoot?: string;
   /**
+   * Override the pillars directory (PRD-253 colocated layout); defaults to
+   * the monorepo `pillars/` when `packagesRoot` is at its default. When
+   * `packagesRoot` is overridden (test fixtures), `pillarsRoot` falls back
+   * to `undefined` (no scan) unless the caller sets it explicitly.
+   */
+  readonly pillarsRoot?: string;
+  /**
    * Resolve `@pops/<id>-contract/manifest` to a module spec. Defaults to the
    * file-URL of the package's `exports['./manifest']` entry — works under
    * `tsx`, vitest, and compiled Node identically. Overridden by tests that
@@ -144,9 +236,13 @@ async function defaultImportManifest(pkg: ContractPackage): Promise<Record<strin
 }
 
 /**
- * Walk `packages/*-contract` and return every `ModuleManifest` exported by a
- * contract package's `./manifest` subpath. Results are sorted by manifest id
- * so the downstream sort is stable regardless of filesystem iteration order.
+ * Walk `packages/*-contract` AND `pillars/<id>/contract` (PRD-253 colocated
+ * layout) and return every `ModuleManifest` exported by a contract package's
+ * `./manifest` subpath. Results are sorted by manifest id so the downstream
+ * sort is stable regardless of filesystem iteration order.
+ *
+ * When the caller overrides `packagesRoot` without setting `pillarsRoot`,
+ * the pillars scan is skipped so test fixtures isolate cleanly.
  */
 export async function discoverManifestSources(
   options: DiscoverOptions = {}
@@ -156,8 +252,13 @@ export async function discoverManifestSources(
     importManifest = defaultImportManifest,
     log = (message) => process.stdout.write(`${message}\n`),
   } = options;
+  const pillarsRoot =
+    options.pillarsRoot ?? (packagesRoot === PACKAGES_ROOT ? PILLARS_ROOT : undefined);
 
-  const contracts = await listContractPackages(packagesRoot);
+  const contracts = [
+    ...(await listContractPackages(packagesRoot)),
+    ...(pillarsRoot === undefined ? [] : await listColocatedContractPackages(pillarsRoot)),
+  ].toSorted((a, b) => a.name.localeCompare(b.name, 'en'));
   const manifests: ModuleManifest[] = [];
 
   for (const pkg of contracts) {

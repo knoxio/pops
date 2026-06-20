@@ -11,23 +11,24 @@
  * Save button; the renderer remains live for archived versions (a
  * frozen view of what was archived).
  */
+import { useMutation } from '@tanstack/react-query';
 import { type ReactElement, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
-import { usePillarMutation } from '@pops/pillar-sdk/react';
 import { Button } from '@pops/ui';
 
 import { DslEditor } from '../../../components/DslEditor.js';
+import { unwrap } from '../../../food-api-helpers.js';
+import { recipesSaveDraft } from '../../../food-api/index.js';
 import { InspectorRenderer } from './InspectorRenderer.js';
 
-import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
+import type { RecipesSaveDraftResponses } from '../../../food-api/types.gen.js';
+import type { InspectorDraftView } from './inspector-wire-types.js';
 
-import type { AppRouter } from '@pops/api';
-import type { InspectorDraftView } from '@pops/app-food-db';
+type CompileResult = RecipesSaveDraftResponses[200]['compile'];
 
-type SaveDraftInput = inferRouterInputs<AppRouter>['food']['recipes']['saveDraft'];
-type SaveDraftOutput = inferRouterOutputs<AppRouter>['food']['recipes']['saveDraft'];
+type SaveDraftInput = { versionId: number; dsl: string };
 
 type EditorTab = 'editor' | 'renderer';
 
@@ -118,19 +119,23 @@ interface EditorTabBodyProps {
 
 function EditorTab(props: EditorTabBodyProps): ReactElement {
   const { draft, body, onChange, isReadOnly, onSaved, pendingCursor, t } = props;
-  const saveMutation = usePillarMutation<SaveDraftInput, SaveDraftOutput>(
-    'food',
-    ['recipes', 'saveDraft'],
-    {
-      onSuccess: (res) => {
-        if (res.compile.ok) toast.success(t('inbox.inspector.editor.savedOk'));
-        else toast.error(t('inbox.inspector.editor.savedFailed'));
-        onSaved();
-      },
-      onError: (err) =>
-        toast.error(t('inbox.inspector.editor.saveError', { message: err.message })),
-    }
-  );
+  const saveMutation = useMutation({
+    mutationFn: async (input: SaveDraftInput) => {
+      const res = unwrap(
+        await recipesSaveDraft({ path: { versionId: input.versionId }, body: { dsl: input.dsl } })
+      );
+      // The pillar serves `compile` as an opaque blob (`unknown` in the
+      // generated SDK); narrow from `unknown` to the compiler's result type.
+      return { compile: res.compile as CompileResult };
+    },
+    onSuccess: (res) => {
+      if (res.compile.ok) toast.success(t('inbox.inspector.editor.savedOk'));
+      else toast.error(t('inbox.inspector.editor.savedFailed'));
+      onSaved();
+    },
+    onError: (err: Error) =>
+      toast.error(t('inbox.inspector.editor.saveError', { message: err.message })),
+  });
   return (
     <div className="space-y-2">
       <DslEditor

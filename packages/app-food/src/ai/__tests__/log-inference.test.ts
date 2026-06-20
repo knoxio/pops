@@ -7,7 +7,7 @@
  * each assertion flushes the microtask queue before reading
  * `sink.rows` — `vi.waitFor` keeps the wait bounded.
  */
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   callClaudeWithLogging,
@@ -59,29 +59,84 @@ describe('computeCostUsd', () => {
   });
 });
 
+const sampleRow: LogFoodInferenceInput = {
+  operation: 'recipe-extract-text',
+  contextId: 'ingest_source:1',
+  provider: 'claude',
+  model: 'claude-haiku-4-5-20251001',
+  promptVersion: 'text-v0.1',
+  inputTokens: 0,
+  outputTokens: 0,
+  costUsd: 0,
+  latencyMs: 0,
+  status: 'success',
+  cached: false,
+};
+
 describe('logFoodInference (default sink)', () => {
+  const savedUrl = process.env['POPS_API_URL'];
+  const savedToken = process.env['POPS_API_INTERNAL_TOKEN'];
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    restoreEnv('POPS_API_URL', savedUrl);
+    restoreEnv('POPS_API_INTERNAL_TOKEN', savedToken);
+  });
+
+  function restoreEnv(name: string, value: string | undefined): void {
+    if (value === undefined) delete process.env[name];
+    else process.env[name] = value;
+  }
+
   it('no-ops when POPS_API_URL is unset', async () => {
-    const before = process.env['POPS_API_URL'];
     delete process.env['POPS_API_URL'];
-    try {
-      await expect(
-        logFoodInference({
-          operation: 'recipe-extract-text',
-          contextId: 'ingest_source:1',
-          provider: 'claude',
-          model: 'claude-haiku-4-5-20251001',
-          promptVersion: 'text-v0.1',
-          inputTokens: 0,
-          outputTokens: 0,
-          costUsd: 0,
-          latencyMs: 0,
-          status: 'success',
-          cached: false,
+    const fetchSpy = vi.fn();
+    vi.stubGlobal('fetch', fetchSpy);
+    await expect(logFoodInference(sampleRow)).resolves.toBeUndefined();
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it('no-ops when POPS_API_INTERNAL_TOKEN is unset', async () => {
+    process.env['POPS_API_URL'] = 'http://food-api:3005';
+    delete process.env['POPS_API_INTERNAL_TOKEN'];
+    const fetchSpy = vi.fn();
+    vi.stubGlobal('fetch', fetchSpy);
+    await expect(logFoodInference(sampleRow)).resolves.toBeUndefined();
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it('POSTs the row verbatim to the REST /ai/log-inference route with the internal token', async () => {
+    process.env['POPS_API_URL'] = 'http://food-api:3005/';
+    process.env['POPS_API_INTERNAL_TOKEN'] = 'secret-token';
+    const fetchSpy = vi.fn(
+      async () =>
+        new Response(JSON.stringify({ ok: true }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
         })
-      ).resolves.toBeUndefined();
-    } finally {
-      if (before !== undefined) process.env['POPS_API_URL'] = before;
-    }
+    );
+    vi.stubGlobal('fetch', fetchSpy);
+
+    await logFoodInference(sampleRow);
+
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+    const [url, init] = fetchSpy.mock.calls[0]!;
+    expect(url).toBe('http://food-api:3005/ai/log-inference');
+    expect(init?.method).toBe('POST');
+    const headers = init?.headers as Record<string, string>;
+    expect(headers['x-pops-internal-token']).toBe('secret-token');
+    expect(headers['content-type']).toBe('application/json');
+    expect(JSON.parse(init?.body as string)).toEqual(sampleRow);
+  });
+
+  it('throws on a non-2xx response so the wrapper can route it to warn', async () => {
+    process.env['POPS_API_URL'] = 'http://food-api:3005';
+    process.env['POPS_API_INTERNAL_TOKEN'] = 'secret-token';
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => new Response('nope', { status: 401 }))
+    );
+    await expect(logFoodInference(sampleRow)).rejects.toThrow(/HTTP 401/);
   });
 });
 

@@ -1,67 +1,37 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
-import { usePillarMutation, usePillarQuery, usePillarUtils } from '@pops/pillar-sdk/react';
 import { Skeleton } from '@pops/ui';
 
+import { unwrap } from '../../core-api-helpers.js';
+import { aiProvidersHealthCheck, aiProvidersList } from '../../core-api/index.js';
 import { ProviderCard } from './provider-card';
 
-interface ProviderModel {
-  id: number;
-  modelId: string;
-  displayName: string | null;
-  inputCostPerMtok: number;
-  outputCostPerMtok: number;
-  contextWindow: number | null;
-  isDefault: boolean;
-}
-
-interface Provider {
-  id: string;
-  name: string;
-  type: string;
-  baseUrl: string | null;
-  apiKeyRef: string | null;
-  status: string;
-  lastHealthCheck: string | null;
-  lastLatencyMs: number | null;
-  createdAt: string;
-  updatedAt: string;
-  models: ProviderModel[];
-}
-
-interface HealthCheckInput {
-  providerId: string;
-}
-
-interface HealthCheckResult {
-  status: 'active' | 'error';
-  latencyMs: number;
-  error?: string;
-}
+import type {
+  AiProvidersHealthCheckResponse,
+  AiProvidersListResponse,
+} from '../../core-api/types.gen.js';
 
 export function ProviderStatusSection() {
-  const utils = usePillarUtils('core');
-  const { data: providers, isLoading } = usePillarQuery<Provider[]>(
-    'core',
-    ['aiProviders', 'list'],
-    undefined
-  );
+  const queryClient = useQueryClient();
+  const { data: providers, isLoading } = useQuery<AiProvidersListResponse>({
+    queryKey: ['core', 'aiProviders', 'list'],
+    queryFn: async () => unwrap(await aiProvidersList()),
+  });
 
-  const healthCheckMutation = usePillarMutation<HealthCheckInput, HealthCheckResult>(
-    'core',
-    ['aiProviders', 'healthCheck'],
-    {
-      onSuccess: (result) => {
-        if (result.status === 'active') {
-          toast.success(`Provider healthy (${result.latencyMs}ms)`);
-        } else {
-          toast.error(`Provider unhealthy: ${result.error ?? 'unknown error'}`);
-        }
-        void utils.invalidate(['aiProviders', 'list']);
-      },
-      onError: () => toast.error('Health check failed'),
-    }
-  );
+  const healthCheckMutation = useMutation<AiProvidersHealthCheckResponse, Error, string>({
+    mutationFn: async (providerId) =>
+      unwrap(await aiProvidersHealthCheck({ path: { providerId } })),
+    onSuccess: (result) => {
+      if (result.status === 'active') {
+        toast.success(`Provider healthy (${result.latencyMs}ms)`);
+      } else {
+        toast.error(`Provider unhealthy: ${result.error ?? 'unknown error'}`);
+      }
+      void queryClient.invalidateQueries({ queryKey: ['core', 'aiProviders'] });
+    },
+    onError: () => toast.error('Health check failed'),
+  });
 
   if (isLoading) return <Skeleton className="h-32" />;
   if (!providers?.length) return null;
@@ -74,7 +44,7 @@ export function ProviderStatusSection() {
           <ProviderCard
             key={p.id}
             provider={p}
-            onCheck={(providerId) => healthCheckMutation.mutate({ providerId })}
+            onCheck={(providerId) => healthCheckMutation.mutate(providerId)}
             isChecking={healthCheckMutation.isPending}
           />
         ))}

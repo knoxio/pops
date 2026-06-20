@@ -1,3 +1,4 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createInstance } from 'i18next';
@@ -8,31 +9,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import enAUFood from '../../../../../../apps/pops-shell/src/i18n/locales/en-AU/food.json';
 
-const mockCreateMutate = vi.fn();
-let mockOnSuccess:
-  | ((res: {
-      slug: string;
-      recipeId: number;
-      versionId: number;
-      compile: { ok: boolean; errors?: unknown[] };
-    }) => void)
-  | undefined;
-let mockOnError: ((err: Error) => void) | undefined;
+const recipesCreateMock = vi.hoisted(() => vi.fn());
 
-vi.mock('@pops/pillar-sdk/react', () => ({
-  usePillarMutation: (
-    _pillarId: string,
-    path: readonly string[],
-    opts: { onSuccess?: typeof mockOnSuccess; onError?: typeof mockOnError }
-  ) => {
-    const key = path.join('.');
-    if (key === 'recipes.create') {
-      mockOnSuccess = opts.onSuccess;
-      mockOnError = opts.onError;
-      return { mutate: mockCreateMutate, isPending: false };
-    }
-    throw new Error(`Unexpected pillar mutation: ${key}`);
-  },
+vi.mock('../../../food-api/index.js', () => ({
+  recipesCreate: recipesCreateMock,
 }));
 
 vi.mock('../../../components/DslEditor.js', () => ({
@@ -68,18 +48,25 @@ function Wrapper({ children }: { children: ReactElement }): ReactElement {
     });
     return instance;
   }, []);
+  const client = useMemo(
+    () =>
+      new QueryClient({
+        defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+      }),
+    []
+  );
   return (
-    <I18nextProvider i18n={i18n}>
-      <MemoryRouter>{children}</MemoryRouter>
-    </I18nextProvider>
+    <QueryClientProvider client={client}>
+      <I18nextProvider i18n={i18n}>
+        <MemoryRouter>{children}</MemoryRouter>
+      </I18nextProvider>
+    </QueryClientProvider>
   );
 }
 
 beforeEach(() => {
-  mockCreateMutate.mockReset();
+  recipesCreateMock.mockReset();
   navigateMock.mockReset();
-  mockOnSuccess = undefined;
-  mockOnError = undefined;
 });
 
 describe('PRD-119-C — RecipeNewPage', () => {
@@ -96,6 +83,9 @@ describe('PRD-119-C — RecipeNewPage', () => {
 
   it('passes the current DSL value to the create mutation on save', async () => {
     const user = userEvent.setup();
+    recipesCreateMock.mockResolvedValue({
+      data: { slug: 'pancakes', recipeId: 1, versionId: 11, compile: { ok: true } },
+    });
     render(
       <Wrapper>
         <RecipeNewPage />
@@ -105,34 +95,63 @@ describe('PRD-119-C — RecipeNewPage', () => {
     await user.clear(textarea);
     await user.type(textarea, '@recipe(slug=\\"pancakes\\")');
     await user.click(screen.getByRole('button', { name: /save draft/i }));
-    expect(mockCreateMutate).toHaveBeenCalledTimes(1);
-    expect(mockCreateMutate).toHaveBeenCalledWith(
-      expect.objectContaining({ dsl: expect.stringContaining('pancakes') })
+    await waitFor(() =>
+      expect(recipesCreateMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          body: expect.objectContaining({ dsl: expect.stringContaining('pancakes') }),
+        })
+      )
     );
   });
 
   it('navigates to the edit page on success', async () => {
+    const user = userEvent.setup();
+    recipesCreateMock.mockResolvedValue({
+      data: { slug: 'pancakes', recipeId: 1, versionId: 11, compile: { ok: true } },
+    });
     render(
       <Wrapper>
         <RecipeNewPage />
       </Wrapper>
     );
-    expect(mockOnSuccess).toBeDefined();
-    mockOnSuccess?.({
-      slug: 'pancakes',
-      recipeId: 1,
-      versionId: 11,
-      compile: { ok: true },
-    });
+    await user.click(screen.getByRole('button', { name: /save draft/i }));
     await waitFor(() => expect(navigateMock).toHaveBeenCalledWith('/food/recipes/pancakes/edit'));
   });
 
-  it('does not throw when onError fires (covers error toast branch)', () => {
+  it('surfaces inline compile issues and still navigates on a failed compile', async () => {
+    const user = userEvent.setup();
+    recipesCreateMock.mockResolvedValue({
+      data: {
+        slug: 'pancakes',
+        recipeId: 1,
+        versionId: 11,
+        compile: {
+          ok: false,
+          phase: 'parse',
+          errors: [{ code: 'ParseError', message: 'bad token' }],
+        },
+      },
+    });
     render(
       <Wrapper>
         <RecipeNewPage />
       </Wrapper>
     );
-    expect(() => mockOnError?.(new Error('boom'))).not.toThrow();
+    await user.click(screen.getByRole('button', { name: /save draft/i }));
+    await waitFor(() => expect(navigateMock).toHaveBeenCalledWith('/food/recipes/pancakes/edit'));
+    expect(screen.getByTestId('dsl-editor').getAttribute('data-issues')).toContain('bad token');
+  });
+
+  it('does not navigate when the create call fails', async () => {
+    const user = userEvent.setup();
+    recipesCreateMock.mockResolvedValue({ error: { message: 'boom' }, response: { status: 500 } });
+    render(
+      <Wrapper>
+        <RecipeNewPage />
+      </Wrapper>
+    );
+    await user.click(screen.getByRole('button', { name: /save draft/i }));
+    await waitFor(() => expect(recipesCreateMock).toHaveBeenCalledTimes(1));
+    expect(navigateMock).not.toHaveBeenCalled();
   });
 });

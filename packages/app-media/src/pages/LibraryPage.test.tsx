@@ -1,25 +1,18 @@
-import { render, screen } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { createElement, type ReactNode } from 'react';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const mockListQuery = vi.fn();
-const mockGenresQuery = vi.fn();
-const mockRefetch = vi.fn();
+const { libraryListMock, libraryGenresMock } = vi.hoisted(() => ({
+  libraryListMock: vi.fn(),
+  libraryGenresMock: vi.fn(),
+}));
 
-vi.mock('@pops/pillar-sdk/react', () => ({
-  usePillarQuery: (_pillarId: string, path: readonly string[], input: unknown) => {
-    const key = path.join('.');
-    if (key === 'library.list') return mockListQuery(input);
-    if (key === 'library.genres') return mockGenresQuery();
-    return { data: undefined, isLoading: false };
-  },
-  usePillarMutation: () => ({ mutate: vi.fn(), isPending: false }),
-  usePillarUtils: () => ({
-    setData: vi.fn(),
-    invalidate: vi.fn(),
-    fetchQuery: vi.fn(),
-  }),
+vi.mock('../media-api/index.js', () => ({
+  libraryList: (...args: unknown[]) => libraryListMock(...args),
+  libraryGenres: (...args: unknown[]) => libraryGenresMock(...args),
 }));
 
 vi.mock('../components/MediaGrid', () => ({
@@ -46,89 +39,98 @@ vi.mock('../components/QuickPickDialog', () => ({
 
 import { LibraryPage } from './LibraryPage';
 
-function renderPage(initialPath = '/media') {
+function ok<T>(data: T) {
+  return { data, error: undefined };
+}
+
+function makeQueryClient() {
+  return new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  });
+}
+
+function renderPage(initialPath = '/media', queryClient = makeQueryClient()) {
+  const wrapper = ({ children }: { children: ReactNode }) =>
+    createElement(QueryClientProvider, { client: queryClient }, children);
   return render(
     <MemoryRouter initialEntries={[initialPath]}>
       <Routes>
         <Route path="/media" element={<LibraryPage />} />
         <Route path="/media/search" element={<div data-testid="search-page" />} />
       </Routes>
-    </MemoryRouter>
+    </MemoryRouter>,
+    { wrapper }
   );
 }
 
-const emptyList = {
-  data: {
-    data: [],
-    pagination: { page: 1, pageSize: 24, total: 0, totalPages: 0, hasMore: false },
-  },
-  isLoading: false,
-  error: null,
-  refetch: mockRefetch,
-};
+function listEnvelope(
+  items: unknown[],
+  pagination: {
+    page: number;
+    pageSize: number;
+    total: number;
+    totalPages: number;
+    hasMore: boolean;
+  }
+) {
+  return ok({ data: items, pagination });
+}
 
-const populatedList = {
-  data: {
-    data: [
-      {
-        id: 1,
-        type: 'movie',
-        title: 'Inception',
-        year: 2010,
-        posterUrl: null,
-        genres: ['Sci-Fi'],
-        voteAverage: 8.8,
-        createdAt: '2026-01-01',
-        releaseDate: '2010-07-16',
-      },
-      {
-        id: 2,
-        type: 'tv',
-        title: 'Breaking Bad',
-        year: 2008,
-        posterUrl: null,
-        genres: ['Drama'],
-        voteAverage: 9.5,
-        createdAt: '2026-01-02',
-        releaseDate: '2008-01-20',
-      },
-    ],
-    pagination: { page: 1, pageSize: 24, total: 2, totalPages: 1, hasMore: false },
-  },
-  isLoading: false,
-  error: null,
-  refetch: mockRefetch,
-};
+const emptyEnvelope = listEnvelope([], {
+  page: 1,
+  pageSize: 24,
+  total: 0,
+  totalPages: 0,
+  hasMore: false,
+});
+
+const populatedEnvelope = listEnvelope(
+  [
+    {
+      id: 1,
+      type: 'movie',
+      title: 'Inception',
+      year: 2010,
+      posterUrl: null,
+      genres: ['Sci-Fi'],
+      voteAverage: 8.8,
+      createdAt: '2026-01-01',
+      releaseDate: '2010-07-16',
+    },
+    {
+      id: 2,
+      type: 'tv',
+      title: 'Breaking Bad',
+      year: 2008,
+      posterUrl: null,
+      genres: ['Drama'],
+      voteAverage: 9.5,
+      createdAt: '2026-01-02',
+      releaseDate: '2008-01-20',
+    },
+  ],
+  { page: 1, pageSize: 24, total: 2, totalPages: 1, hasMore: false }
+);
 
 describe('LibraryPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockGenresQuery.mockReturnValue({ data: { data: ['Drama', 'Sci-Fi'] } });
+    libraryGenresMock.mockResolvedValue(ok({ data: ['Drama', 'Sci-Fi'] }));
+    libraryListMock.mockResolvedValue(emptyEnvelope);
   });
 
   describe('Loading state', () => {
     it('renders skeleton cards while loading', () => {
-      mockListQuery.mockReturnValue({
-        data: null,
-        isLoading: true,
-        error: null,
-        refetch: mockRefetch,
-      });
+      libraryListMock.mockReturnValue(new Promise(() => {}));
       renderPage();
 
       const grid = screen.getByTestId('media-grid');
-      // Default page size is 24, so 24 skeleton groups (each with 3 Skeleton divs)
       const skeletons = grid.querySelectorAll('.space-y-2');
       expect(skeletons.length).toBe(24);
     });
 
     it('renders skeleton count matching pageSize param', () => {
-      mockListQuery.mockReturnValue({
-        data: null,
-        isLoading: true,
-        error: null,
-        refetch: mockRefetch,
-      });
+      libraryListMock.mockReturnValue(new Promise(() => {}));
       renderPage('/media?pageSize=48');
 
       const grid = screen.getByTestId('media-grid');
@@ -138,122 +140,93 @@ describe('LibraryPage', () => {
   });
 
   describe('Error state', () => {
-    it('renders error message with retry button', () => {
-      mockListQuery.mockReturnValue({
-        data: null,
-        isLoading: false,
-        error: new Error('Network error'),
-        refetch: mockRefetch,
-      });
+    it('renders error message with retry button', async () => {
+      libraryListMock.mockRejectedValue(new Error('Network error'));
       renderPage();
 
-      expect(screen.getByText('Something went wrong loading your library.')).toBeInTheDocument();
+      expect(
+        await screen.findByText('Something went wrong loading your library.')
+      ).toBeInTheDocument();
       expect(screen.getByRole('button', { name: 'Retry' })).toBeInTheDocument();
     });
 
-    it('calls refetch when Retry is clicked', async () => {
-      mockListQuery.mockReturnValue({
-        data: null,
-        isLoading: false,
-        error: new Error('Network error'),
-        refetch: mockRefetch,
-      });
+    it('calls the library API again when Retry is clicked', async () => {
+      libraryListMock.mockRejectedValue(new Error('Network error'));
       renderPage();
 
+      await screen.findByRole('button', { name: 'Retry' });
+      libraryListMock.mockClear();
       await userEvent.click(screen.getByRole('button', { name: 'Retry' }));
-      expect(mockRefetch).toHaveBeenCalled();
+      await waitFor(() => expect(libraryListMock).toHaveBeenCalled());
     });
 
-    it('does not expose technical error details', () => {
-      mockListQuery.mockReturnValue({
-        data: null,
-        isLoading: false,
-        error: new Error('TRPC_INTERNAL_ERROR: connection refused at postgres:5432'),
-        refetch: mockRefetch,
-      });
+    it('does not expose technical error details', async () => {
+      libraryListMock.mockRejectedValue(
+        new Error('TRPC_INTERNAL_ERROR: connection refused at postgres:5432')
+      );
       renderPage();
 
+      expect(
+        await screen.findByText('Something went wrong loading your library.')
+      ).toBeInTheDocument();
       expect(screen.queryByText(/TRPC_INTERNAL_ERROR/)).not.toBeInTheDocument();
       expect(screen.queryByText(/postgres/)).not.toBeInTheDocument();
-      expect(screen.getByText('Something went wrong loading your library.')).toBeInTheDocument();
     });
   });
 
   describe('Empty state', () => {
-    it('shows empty library message when no items exist', () => {
-      mockListQuery.mockReturnValue(emptyList);
+    it('shows empty library message when no items exist', async () => {
+      libraryListMock.mockResolvedValue(emptyEnvelope);
       renderPage();
 
       expect(
-        screen.getByText('Your library is empty. Search for movies and shows to get started.')
+        await screen.findByText(
+          'Your library is empty. Search for movies and shows to get started.'
+        )
       ).toBeInTheDocument();
       expect(screen.getByText('Search for media')).toBeInTheDocument();
     });
 
-    it('links to search page from empty state', () => {
-      mockListQuery.mockReturnValue(emptyList);
+    it('links to search page from empty state', async () => {
+      libraryListMock.mockResolvedValue(emptyEnvelope);
       renderPage();
 
-      const link = screen.getByText('Search for media');
+      const link = await screen.findByText('Search for media');
       expect(link.closest('a')).toHaveAttribute('href', '/media/search');
     });
   });
 
   describe('Empty search state', () => {
-    it("shows 'No results for' message with the search query", () => {
-      mockListQuery.mockReturnValue({
-        data: {
-          data: [],
-          pagination: { page: 1, pageSize: 24, total: 0, totalPages: 0, hasMore: false },
-        },
-        isLoading: false,
-        error: null,
-        refetch: mockRefetch,
-      });
+    it("shows 'No results for' message with the search query", async () => {
+      libraryListMock.mockResolvedValue(emptyEnvelope);
       renderPage('/media?q=xyznonexistent');
 
-      expect(screen.getByText(/No results for/)).toBeInTheDocument();
+      expect(await screen.findByText(/No results for/)).toBeInTheDocument();
       expect(screen.getByText(/xyznonexistent/)).toBeInTheDocument();
     });
 
-    it('shows Clear search button when search has no results', () => {
-      mockListQuery.mockReturnValue({
-        data: {
-          data: [],
-          pagination: { page: 1, pageSize: 24, total: 0, totalPages: 0, hasMore: false },
-        },
-        isLoading: false,
-        error: null,
-        refetch: mockRefetch,
-      });
+    it('shows Clear search button when search has no results', async () => {
+      libraryListMock.mockResolvedValue(emptyEnvelope);
       renderPage('/media?q=xyznonexistent');
 
-      expect(screen.getByRole('button', { name: 'Clear search' })).toBeInTheDocument();
+      expect(await screen.findByRole('button', { name: 'Clear search' })).toBeInTheDocument();
     });
 
-    it('shows generic filter message when no search query', () => {
-      mockListQuery.mockReturnValue({
-        data: {
-          data: [],
-          pagination: { page: 1, pageSize: 24, total: 0, totalPages: 0, hasMore: false },
-        },
-        isLoading: false,
-        error: null,
-        refetch: mockRefetch,
-      });
+    it('shows generic filter message when no search query', async () => {
+      libraryListMock.mockResolvedValue(emptyEnvelope);
       renderPage('/media?type=movie&genre=Horror');
 
-      expect(screen.getByText('No results match your filters.')).toBeInTheDocument();
+      expect(await screen.findByText('No results match your filters.')).toBeInTheDocument();
       expect(screen.queryByRole('button', { name: 'Clear search' })).not.toBeInTheDocument();
     });
   });
 
   describe('Populated state', () => {
-    it('renders media cards when data is loaded', () => {
-      mockListQuery.mockReturnValue(populatedList);
+    it('renders media cards when data is loaded', async () => {
+      libraryListMock.mockResolvedValue(populatedEnvelope);
       renderPage();
 
-      expect(screen.getByText('Inception')).toBeInTheDocument();
+      expect(await screen.findByText('Inception')).toBeInTheDocument();
       expect(screen.getByText('Breaking Bad')).toBeInTheDocument();
     });
   });

@@ -1,18 +1,13 @@
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { type ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useParams } from 'react-router';
 
-import { isNotFound } from '@pops/pillar-sdk/client';
-import { usePillarQuery, usePillarUtils } from '@pops/pillar-sdk/react';
 import { Button } from '@pops/ui';
 
-import { DraftRowCard } from './DraftRowCard.js';
-
-import type { inferRouterOutputs } from '@trpc/server';
-
-import type { AppRouter } from '@pops/api';
-
-type ListDraftsOutput = inferRouterOutputs<AppRouter>['food']['recipes']['listDrafts'];
+import { isNotFoundError, unwrap } from '../../food-api-helpers.js';
+import { recipesListDrafts } from '../../food-api/index.js';
+import { DraftRowCard, type DraftRow } from './DraftRowCard.js';
 
 /**
  * `/food/recipes/:slug/drafts` — list of every `status='draft'` version
@@ -34,9 +29,10 @@ export function RecipeDraftsPage(): ReactElement {
 
 function RecipeDraftsBody({ slug }: { slug: string }): ReactElement {
   const { t } = useTranslation('food');
-  const utils = usePillarUtils('food');
-  const draftsQuery = usePillarQuery<ListDraftsOutput>('food', ['recipes', 'listDrafts'], {
-    slug,
+  const queryClient = useQueryClient();
+  const draftsQuery = useQuery({
+    queryKey: ['food', 'recipes', 'listDrafts', { slug }],
+    queryFn: async () => unwrap(await recipesListDrafts({ path: { slug } })),
   });
   const drafts = draftsQuery.data?.drafts ?? [];
 
@@ -51,7 +47,7 @@ function RecipeDraftsBody({ slug }: { slug: string }): ReactElement {
     // NOT_FOUND (unknown slug) gets a fully-localised copy via
     // recipes.detail.notFound. Other errors fall back to the generic
     // localised template with the server message appended.
-    if (isNotFound(draftsQuery.error)) {
+    if (isNotFoundError(draftsQuery.error)) {
       return (
         <p role="alert" className="p-6 text-sm text-destructive">
           {t('recipes.detail.notFound')}
@@ -82,20 +78,30 @@ function RecipeDraftsBody({ slug }: { slug: string }): ReactElement {
       {drafts.length === 0 ? (
         <EmptyState slug={slug} t={t} />
       ) : (
-        <ul className="space-y-2" aria-label={t('recipes.drafts.listAriaLabel')}>
-          {drafts.map((d) => (
-            <li key={d.versionId}>
-              <DraftRowCard
-                slug={slug}
-                draft={d}
-                refetch={() => utils.invalidate(['recipes', 'listDrafts'])}
-                t={t}
-              />
-            </li>
-          ))}
-        </ul>
+        <DraftsList slug={slug} drafts={drafts} queryClient={queryClient} t={t} />
       )}
     </div>
+  );
+}
+
+interface DraftsListProps {
+  slug: string;
+  drafts: readonly DraftRow[];
+  queryClient: ReturnType<typeof useQueryClient>;
+  t: (key: string, opts?: Record<string, unknown>) => string;
+}
+
+function DraftsList({ slug, drafts, queryClient, t }: DraftsListProps): ReactElement {
+  const refetch = () =>
+    queryClient.invalidateQueries({ queryKey: ['food', 'recipes', 'listDrafts'] });
+  return (
+    <ul className="space-y-2" aria-label={t('recipes.drafts.listAriaLabel')}>
+      {drafts.map((d) => (
+        <li key={d.versionId}>
+          <DraftRowCard slug={slug} draft={d} refetch={refetch} t={t} />
+        </li>
+      ))}
+    </ul>
   );
 }
 

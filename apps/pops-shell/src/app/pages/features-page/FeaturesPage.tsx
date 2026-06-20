@@ -1,6 +1,8 @@
+import { featuresGetManifests, featuresList } from '@/core-api';
+import { unwrap } from '@/core-api-helpers';
+import { useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
 
-import { usePillarQuery } from '@pops/pillar-sdk/react';
 import { Skeleton } from '@pops/ui';
 
 import { FeatureCard } from './FeatureCard';
@@ -8,9 +10,6 @@ import { FeatureCard } from './FeatureCard';
 import type { FeatureManifest, FeatureStatus } from '@pops/types';
 
 import type { FeaturesByManifest } from './types';
-
-type GetManifestsResult = { manifests: FeatureManifest[] };
-type ListFeaturesResult = { features: FeatureStatus[] };
 
 function groupByManifest(
   manifests: FeatureManifest[],
@@ -28,25 +27,24 @@ function groupByManifest(
 }
 
 export function FeaturesPage() {
-  const manifestsQuery = usePillarQuery<GetManifestsResult>(
-    'core',
-    ['features', 'getManifests'],
-    undefined
-  );
-  const listQuery = usePillarQuery<ListFeaturesResult>('core', ['features', 'list'], undefined);
+  const manifestsQuery = useQuery({
+    queryKey: ['core', 'features', 'getManifests'],
+    queryFn: async () => unwrap(await featuresGetManifests()),
+  });
+  const listQuery = useQuery({
+    queryKey: ['core', 'features', 'list'],
+    queryFn: async () => unwrap(await featuresList()),
+  });
 
   const grouped = useMemo<FeaturesByManifest[]>(
     () => groupByManifest(manifestsQuery.data?.manifests ?? [], listQuery.data?.features ?? []),
     [manifestsQuery.data?.manifests, listQuery.data?.features]
   );
 
-  const corePillarMissing =
-    manifestsQuery.isUnavailable ||
-    listQuery.isUnavailable ||
-    manifestsQuery.isContractMismatch ||
-    listQuery.isContractMismatch;
-
-  if ((manifestsQuery.isLoading || listQuery.isLoading) && !corePillarMissing) {
+  // On a failed fetch (pillar unavailable / 404 / drifted contract) react-query
+  // reports `isError`, not `isLoading`, so the skeleton only shows on the genuine
+  // first load. Errors fall through to the "No features registered." empty state.
+  if (manifestsQuery.isLoading || listQuery.isLoading) {
     return (
       <div className="p-6 max-w-3xl mx-auto space-y-3">
         <Skeleton className="h-32 w-full" />

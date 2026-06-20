@@ -4,7 +4,6 @@ on:
   push:
     branches: [main]
     paths:
-      - "packages/api-client/**"
       - "packages/app-ai/**"
       - "packages/db-types/**"
       - "packages/types/**"
@@ -13,7 +12,6 @@ on:
       - ".github/workflows/_pkg-check.yml"
   pull_request:
     paths:
-      - "packages/api-client/**"
       - "packages/app-ai/**"
       - "packages/db-types/**"
       - "packages/types/**"
@@ -35,7 +33,6 @@ jobs:
         with:
           filters: |
             relevant:
-              - 'packages/api-client/**'
               - 'packages/app-ai/**'
               - 'packages/db-types/**'
               - 'packages/types/**'

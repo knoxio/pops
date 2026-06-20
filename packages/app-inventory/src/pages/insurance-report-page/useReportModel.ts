@@ -1,7 +1,9 @@
+import { useQuery } from '@tanstack/react-query';
 import { useCallback } from 'react';
 import { useSearchParams } from 'react-router';
 
-import { usePillarQuery } from '@pops/pillar-sdk/react';
+import { unwrap } from '../../inventory-api-helpers.js';
+import { locationsTree, reportsInsuranceReport } from '../../inventory-api/index.js';
 
 import type { LocationTreeNode } from '../../components/LocationPicker';
 import type { ReportGroup } from './csv';
@@ -68,16 +70,19 @@ export function useReportModel() {
   const includeChildren = searchParams.get('includeChildren') !== 'false';
   const sortBy = (searchParams.get('sortBy') as SortBy) || 'value';
 
-  const { data, isLoading } = usePillarQuery<InsuranceReportResult>(
-    'inventory',
-    ['reports', 'insuranceReport'],
-    { locationId, includeChildren: locationId ? includeChildren : undefined, sortBy }
-  );
-  const { data: locationsData } = usePillarQuery<LocationsTreeResult>(
-    'inventory',
-    ['locations', 'tree'],
-    undefined
-  );
+  const reportInput = {
+    locationId,
+    includeChildren: locationId ? includeChildren : undefined,
+    sortBy,
+  };
+  const { data, isLoading } = useQuery<InsuranceReportResult>({
+    queryKey: ['inventory', 'reports', 'insuranceReport', reportInput],
+    queryFn: async () => unwrap(await reportsInsuranceReport({ query: reportInput })),
+  });
+  const { data: locationsData } = useQuery<LocationsTreeResult>({
+    queryKey: ['inventory', 'locations', 'tree', undefined],
+    queryFn: async () => unwrap(await locationsTree()),
+  });
   const { updateParam, handleLocationChange } = useSearchParamHelpers();
 
   return {

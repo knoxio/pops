@@ -10,20 +10,18 @@
  * batch ids so the parent toast can localise the message per location
  * (Copilot R1).
  */
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { usePillarMutation, usePillarUtils } from '@pops/pillar-sdk/react';
+import { unwrap } from '../../food-api-helpers.js';
+import { cookMarkCooked } from '../../food-api/index.js';
 
-import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
-
-import type { AppRouter } from '@pops/api';
-
+import type { CookMarkCookedData } from '../../food-api/types.gen.js';
 import type { buildSubmitInput } from './cook-modal-helpers.js';
 import type { CookedSuccess } from './CookModal.js';
 
-type MarkCookedInput = inferRouterInputs<AppRouter>['food']['cook']['markCooked'];
-type MarkCookedOutput = inferRouterOutputs<AppRouter>['food']['cook']['markCooked'];
+type MarkCookedInput = NonNullable<CookMarkCookedData['body']>;
 
 interface Args {
   onSuccess?: (result: CookedSuccess) => void;
@@ -39,30 +37,27 @@ interface Result {
 export function useMarkCookedMutation(args: Args): Result {
   const { t } = useTranslation('food');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const utils = usePillarUtils('food');
-  const mutation = usePillarMutation<MarkCookedInput, MarkCookedOutput>(
-    'food',
-    ['cook', 'markCooked'],
-    {
-      onSuccess: (result, input) => {
-        if (result.ok) {
-          setErrorMessage(null);
-          void utils.invalidate(['batches', 'searchForConsume']);
-          args.onSuccess?.({
-            recipeRunId: result.recipeRunId,
-            yieldedBatchId: result.yieldedBatchId,
-            location: input.yield?.location ?? null,
-          });
-          args.onClose();
-          return;
-        }
-        setErrorMessage(t(`cook.modal.error.${result.reason}`, { defaultValue: result.reason }));
-      },
-      onError: (err) => {
-        setErrorMessage(err.message);
-      },
-    }
-  );
+  const queryClient = useQueryClient();
+  const mutation = useMutation({
+    mutationFn: async (input: MarkCookedInput) => unwrap(await cookMarkCooked({ body: input })),
+    onSuccess: (result, input) => {
+      if (result.ok) {
+        setErrorMessage(null);
+        void queryClient.invalidateQueries({ queryKey: ['food', 'batches', 'searchForConsume'] });
+        args.onSuccess?.({
+          recipeRunId: result.recipeRunId,
+          yieldedBatchId: result.yieldedBatchId,
+          location: input.yield?.location ?? null,
+        });
+        args.onClose();
+        return;
+      }
+      setErrorMessage(t(`cook.modal.error.${result.reason}`, { defaultValue: result.reason }));
+    },
+    onError: (err: Error) => {
+      setErrorMessage(err.message);
+    },
+  });
   return {
     submit: (input) => {
       setErrorMessage(null);

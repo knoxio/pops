@@ -4,13 +4,13 @@ import {
   callContractMismatch,
   callOk,
   callUnavailable,
-  mockClient,
+  mockPillarCore,
   mockPillarFinance,
+  pillarMockGetter,
 } from './test-helpers.js';
 
-vi.mock('../client.js', () => ({ getClient: () => mockClient }));
 vi.mock('../pillar-client.js', () => ({
-  getPillar: () => mockPillarFinance,
+  getPillar: pillarMockGetter,
   __resetPillarClientForTests: () => {},
 }));
 
@@ -18,11 +18,13 @@ const { financeTools } = await import('./finance.js');
 
 const transactions = mockPillarFinance.finance.transactions;
 const budgets = mockPillarFinance.finance.budgets;
+const entities = mockPillarCore.core.entities;
 
 beforeEach(() => {
   vi.clearAllMocks();
   transactions.list.mockResolvedValue(callOk({ data: [], pagination: { total: 0 } }));
   budgets.list.mockResolvedValue(callOk({ data: [], pagination: { total: 0 } }));
+  entities.list.mockResolvedValue(callOk({ data: [], pagination: { total: 0 } }));
 });
 
 describe('finance.transactions.list', () => {
@@ -59,20 +61,18 @@ describe('finance.entities.list', () => {
 
   it('calls core.entities.list with search filter', async () => {
     await tool.handler({ search: 'woolworths' });
-    expect(mockClient.core.entities.list.query).toHaveBeenCalledWith(
-      expect.objectContaining({ search: 'woolworths' })
-    );
+    expect(entities.list).toHaveBeenCalledWith(expect.objectContaining({ search: 'woolworths' }));
   });
 
   it('ignores unknown entity type values', async () => {
     await tool.handler({ type: 'alien' });
-    const call = mockClient.core.entities.list.query.mock.lastCall?.[0];
+    const call = entities.list.mock.lastCall?.[0];
     expect((call as Record<string, unknown>)['type']).toBeUndefined();
   });
 
   it('passes valid entity type values', async () => {
     await tool.handler({ type: 'company' });
-    const call = mockClient.core.entities.list.query.mock.lastCall?.[0];
+    const call = entities.list.mock.lastCall?.[0];
     expect((call as Record<string, unknown>)['type']).toBe('company');
   });
 });

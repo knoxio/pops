@@ -6,54 +6,51 @@ If another agent-specific file exists (e.g. `CLAUDE.md`), it should **only** poi
 
 ## Project Overview
 
-POPS (Personal Operations System) is a self-hosted personal operations platform covering finance, media, inventory, and AI. SQLite is the **primary data store**. Self-hosted services on a home server provide analytics, dashboards, and AI-powered automation. Cloudflare Tunnel exposes services with zero port forwarding.
+POPS (Personal Operations System) is a self-hosted personal operations platform built as a set of independent REST **pillars**. Each pillar is a standalone service that **owns its own SQLite database** (there is no shared store), serves a [ts-rest](https://ts-rest.com) contract built from zod, projects an OpenAPI document, exports a `./manifest`, and self-registers with the `core` registry on boot. Self-hosted services on a home server provide analytics, dashboards, and AI-powered automation. Cloudflare Tunnel exposes services with zero port forwarding.
 
-**Domains:** Finance (transactions, budgets, entities) | Media (movies, TV, watchlist, watch history, Plex/TMDB/TVDB integration) | Inventory (items, locations, warranties, insurance) | AI (usage tracking, model config, rules)
+**Pillars (data) and their ports:** `core` :3001 (registry / settings / users / service-accounts / ai-ops / entities / features) | `inventory` :3002 (items, locations, warranties, insurance) | `media` :3003 (movies, TV, watchlist, watch history, Plex/TMDB/TVDB) | `finance` :3004 (transactions, budgets, wishlists, entities, CSV import) | `food` :3005 (food domain + ingest worker) | `lists` :3006 | `cerebrum` :3007 (memory / retrieval / ego + worker). The standalone `orchestrator` :3009 (federated search + AI-tool registry) owns no DB.
 
-Phases 0 (infrastructure) and 1 (foundation) are complete. Phase 2 (core apps) is **in progress** — Finance, Media, Inventory, and AI Ops are largely shipped. See `docs/roadmap.md` for the full tracker.
+**Pillar kinds (ADR-035):** a pillar is any service registered with the `core` registry that exposes `/manifest.json`. **Data** pillars are the seven above; **bridge** pillars adapt external systems into the platform; **UI** pillars host frontend SPAs (`pops-shell` registers as `id: 'shell'`).
+
+The frontend is **one SPA** (`pops-shell`) that lazy-loads per-domain feature apps (`packages/app-*`), each consuming its pillar over a generated **Hey API** REST client. Cross-pillar calls go through the REST `@pops/pillar-sdk` `pillar()` client. There is **no tRPC** and **no `pops-api` monolith** — both were removed.
+
+See `docs/roadmap.md` for the full implementation tracker.
 
 ## Commands
 
 ### Mise Task Runner (Recommended)
 
-POPS uses [mise](https://mise.jdx.dev/) for task running and tool version management. Run `mise tasks` to see all available tasks.
+POPS uses [mise](https://mise.jdx.dev/) for task running and tool version management. The task list is the source of truth for command names — **run `mise tasks`** rather than memorising them, as the pillar-based workflow evolves.
 
 **Quick Start:**
 
 ```bash
-mise dev              # Run all dev servers
-mise dev:api          # Run pops-api only
-mise dev:shell        # Run pops-shell only
-mise dev:storybook    # Run Storybook
+mise setup            # Initial project setup (install deps + tools)
+mise tasks            # Discover dev/test/db tasks
 
-mise test             # Run all tests
-mise test:watch       # Run tests in watch mode
 mise typecheck        # Type check all packages
-
-mise build            # Build all packages
 mise lint             # Lint all packages
-mise setup            # Initial project setup
+mise test             # Run all tests
+mise build            # Build all packages
 ```
 
-**Database Management:**
+For a full local stack, the dev Docker Compose file builds and runs every pillar plus the shell from source (each pillar applies its own migrations on startup and owns its own SQLite file):
 
 ```bash
-mise db:init          # Initialize empty database with schema
-mise db:clear         # Clear all data (preserves schema)
-mise db:seed          # Seed with comprehensive test data (78 records)
+docker compose -f infra/docker-compose.dev.yml up -d --build
 ```
+
+Run a single pillar directly with `cd pillars/<id> && pnpm dev`.
+
+**Per-pillar databases:**
+
+There is **no shared database step**. Each pillar provisions and migrates its own SQLite DB (under `pillars/<id>/src/db`) on startup and in its own tests. Database scripts are scoped per pillar — see that pillar's `package.json` and `mise tasks`.
 
 **Redis (local development):**
 
-Redis is optional for development. The API starts without it (degraded mode: queues and cache disabled). Only start Redis when working on job queue or cache features.
+Redis is optional for most pillars (degraded mode: queues and cache disabled). The food and cerebrum pillars run workers that need it; start Redis when working on job-queue or cache features.
 
-```bash
-mise redis:start      # Start local Redis on localhost:6379
-mise redis:stop       # Stop and remove the local Redis container
-mise redis:cli        # Open redis-cli against the local instance
-```
-
-Set `REDIS_URL=redis://localhost:6379` in `apps/pops-api/.env` (already in `.env.example`). In production, `REDIS_URL=redis://redis:6379` is set via Docker Compose.
+Set `REDIS_URL=redis://localhost:6379` in the relevant pillar's `.env`. In production, `REDIS_URL=redis://pops-redis:6379` is set via Docker Compose.
 
 **Docker:**
 
@@ -63,7 +60,7 @@ mise docker:up        # Start services
 mise docker:logs      # Show logs
 ```
 
-**Deployment:** pops ships code, Dockerfiles, and `infra/docker-compose.yml`. Pushing to `main` publishes images to `ghcr.io/knoxio/pops-{api,shell}`; deployers (including the knoxio home lab via [`knoxio/homelab-infra`](https://github.com/knoxio/homelab-infra)) run Watchtower against those images for auto-rollout. Host provisioning (ansible, vault, networks) belongs in the deployer's own infra repo, not here.
+**Deployment:** pops ships code, per-pillar Dockerfiles, and `infra/docker-compose.yml`. Pushing to `main` publishes one image per pillar — `ghcr.io/knoxio/pops-<id>` (built from `pillars/<id>/Dockerfile`) plus `ghcr.io/knoxio/pops-shell` and `ghcr.io/knoxio/pops-docs`; `publish-images.yml` discovers and publishes them. Deployers (including the knoxio home lab via [`knoxio/homelab-infra`](https://github.com/knoxio/homelab-infra)) run Watchtower against those images for auto-rollout. Host provisioning (ansible, vault, networks) belongs in the deployer's own infra repo, not here.
 
 **Git Worktrees:**
 
@@ -76,25 +73,19 @@ Run `mise tasks` for the full list. All tasks are defined in `mise.toml`.
 
 ### Services (each has its own package.json)
 
+Each pillar and app is its own package. Work inside the package you're touching:
+
 ```bash
-cd apps/pops-api && pnpm install && pnpm dev        # API with watch mode
-cd apps/pops-shell && pnpm install && pnpm dev      # Vite dev server
+cd pillars/<id> && pnpm install && pnpm dev          # Run one pillar with watch mode
+cd apps/pops-shell && pnpm install && pnpm dev       # Vite dev server (the SPA host)
 
-# Typecheck a service
-cd apps/<service> && pnpm typecheck
-
-# Run tests
-cd apps/<service> && pnpm test                      # single run (unit tests only)
-cd apps/<service> && pnpm test:watch                # watch mode
+# Typecheck / test a single package
+cd pillars/<id> && pnpm typecheck
+cd pillars/<id> && pnpm test                         # single run
+cd pillars/<id> && pnpm test:watch                   # watch mode
 ```
 
-**Integration tests are CI-only.** The following tests create full Express apps and SQLite databases per test, which hangs in resource-constrained environments. They run in CI only:
-
-- `env-context.integration.test.ts`
-- `envs/router.integration.test.ts`
-- `ai-categorizer-disk.integration.test.ts`
-
-Do NOT run `pnpm test:integration` locally. CI handles these automatically.
+Tests live next to the code they cover (`pillars/<id>/src/**/__tests__/`, `packages/<pkg>/src/**`). A pillar applies its own migrations against a real in-memory/temp SQLite DB inside its own tests — no shared monolith test path.
 
 ### Git Worktrees (manual)
 
@@ -135,45 +126,56 @@ Lives in private [`knoxio/homelab-infra`](https://github.com/knoxio/homelab-infr
 ## Repo Structure
 
 ```
+pillars/                   # One REST pillar per folder. Each: own SQLite DB (src/db),
+│                          # zod → ts-rest contract (src/contract), OpenAPI snapshot (openapi/<id>.openapi.json),
+│                          # ./manifest export (self-registers with core), Dockerfile, migrations/
+├── core/                  # Registry / platform: registry, settings, users, service-accounts, ai-ops, entities, features
+├── inventory/  media/  finance/  food/  lists/  cerebrum/   # Domain data pillars (food + cerebrum run workers)
+
 apps/
-├── pops-api/              # Backend: tRPC API (Express + Drizzle ORM)
-├── pops-shell/            # Frontend: React shell + app packages (Vite + nginx)
-└── moltbot/               # Bot: Telegram assistant
+├── pops-shell/            # UI pillar: React SPA host (Vite + nginx reverse proxy), lazy-loads app-* feature apps
+├── pops-orchestrator/     # Federated search + AI-tool registry (GET /ai/tools); owns no DB
+├── pops-mcp/              # MCP gateway
+├── pops-cli/              # CLI tooling
+├── pops-docs/             # OpenAPI docs browser (Stoplight Elements over each contract's snapshot)
+├── pops-storybook/        # Component workshop
+└── moltbot/               # Telegram bot config + skills
 
 packages/
-├── app-finance/           # App: Finance domain (transactions, budgets, entities, imports)
-├── app-media/             # App: Media domain (library, watchlist, watch history, Plex, compare arena)
-├── app-inventory/         # App: Inventory domain (items, locations, warranties, insurance)
-├── app-ai/                # App: AI domain (usage tracking, model config, rules browser)
-├── db-types/              # Shared: Drizzle schema + TypeScript types
-├── ui/                    # Shared: @pops/ui component library (shadcn-based)
-├── auth/                  # Shared: Authentication utilities
-├── navigation/            # Shared: App navigation config
-├── widgets/               # Shared: Dashboard widgets
-├── types/                 # Shared: Cross-package type definitions
-├── test-utils/            # Shared: Test helpers
-└── api-client/            # Shared: tRPC client setup
+├── app-{finance,media,inventory,food,lists,cerebrum,ai}/   # Per-domain frontend feature apps (Hey API clients per pillar)
+├── pillar-sdk/            # REST cross-pillar SDK: pillar() client + manifest/registry/discovery helpers
+├── types/                 # ModuleManifest + pillar manifest types
+├── db-types/              # Shared DB type helpers
+├── shared-schema/         # Shared zod schemas
+├── module-registry/       # Module/pillar registry helpers
+├── ui/                    # @pops/ui component library (shadcn-based)
+├── navigation/            # App navigation config
+├── overlay-ego/           # Shared ego overlay
+└── wire-conformance/      # Wire-format conformance fixtures/tests
 
 infra/
-├── docker-compose.yml     # Production compose (ghcr.io images + Watchtower)
-└── docker-compose.dev.yml # Local dev compose (build: contexts)
+├── docker-compose.yml     # Production compose (ghcr.io/knoxio/pops-<id> images + Watchtower)
+├── docker-compose.dev.yml # Local dev compose (build: contexts)
+└── litestream/            # One <id>.yml backup-stream config per pillar SQLite DB
 ```
 
-- `apps/pops-api/` — Express + tRPC API over SQLite via Drizzle ORM
-- `apps/pops-shell/` — React app shell with lazy-loaded app packages, served via nginx
-- `apps/moltbot/` — Config + custom finance skill for Moltbot (no Dockerfile, uses upstream image)
-- `packages/app-*` — Domain-specific frontend packages (pages, components, hooks)
-- `packages/db-types/` — Drizzle schema definitions and inferred TypeScript types
+- `pillars/<id>/` — a REST pillar: zod-backed ts-rest contract over its own SQLite DB (Drizzle), OpenAPI projection, `./manifest`, self-registration with `core`
+- `apps/pops-shell/` — React SPA host with lazy-loaded `app-*` feature apps, served via nginx (the reverse proxy that fronts every public service)
+- `apps/pops-orchestrator/` — federated search + AI-tool registry (`GET /ai/tools`); stateless, owns no DB
+- `apps/moltbot/` — config + custom skills for Moltbot (no Dockerfile, uses upstream image)
+- `packages/app-*` — domain-specific frontend packages (pages, components, hooks) consuming their pillar over a generated Hey API client
+- `packages/pillar-sdk/` — the cross-pillar REST SDK; use `pillar('<id>')` for pillar-to-pillar calls
 - `infra/docker-compose.yml` — production compose, references `ghcr.io/knoxio/pops-*` images and includes Watchtower for auto-updates
+- `infra/litestream/<id>.yml` — per-pillar SQLite backup-stream config (mirrored into the deployer's Litestream config)
 - Server provisioning (ansible, secrets, Cloudflare Tunnel, backups) lives in private [`knoxio/homelab-infra`](https://github.com/knoxio/homelab-infra)
 
 ### Docker Networks
 
-- `pops-frontend` — cloudflared, pops-shell, metabase, pops-api
-- `pops-backend` — pops-api, moltbot, tools (SQLite access)
-- `pops-documents` — cloudflared, paperless-ngx, paperless-redis (isolated)
+- `pops-frontend` — pops-shell, every pillar, orchestrator, metabase, pops-docs (public-facing, via nginx)
+- `pops-backend` — every pillar, redis, workers, orchestrator, moltbot, mcp (internal pillar-to-pillar REST + Redis)
+- `pops-documents` — paperless-ngx, paperless-redis (isolated)
 
-pops-api bridges frontend ↔ backend. cloudflared bridges frontend ↔ documents.
+`pops-shell` (frontend network only) is the nginx reverse proxy that fronts public services. Pillars sit on both `frontend` (browser/proxy) and `backend` (cross-pillar calls).
 
 ### Secrets
 
@@ -187,16 +189,22 @@ Interfaces: iPhone (PWA) | Telegram (Moltbot) | Web (Metabase)
     │
     Cloudflare Tunnel + Cloudflare Access (Zero Trust)
     │
-Server (Docker Compose):
-    pops-api ── Node.js tRPC API over SQLite (Drizzle ORM)
-    metabase ───── Dashboards & analytics
-    moltbot ────── AI assistant (Telegram + finance plugin)
-    paperless-ngx  Receipt archive + OCR
-    pops-shell ─── React PWA (Vite + nginx reverse proxy)
+pops-shell (UI pillar): React SPA, Vite + nginx reverse proxy — fronts every service,
+    lazy-loads app-* feature apps, each on a generated Hey API REST client
+    │
+REST pillars (Docker Compose) — each owns its SQLite DB, serves a ts-rest contract + OpenAPI,
+    self-registers with core; cross-pillar calls via @pops/pillar-sdk pillar()
+    core :3001 (registry/platform) | inventory :3002 | media :3003 | finance :3004
+    food :3005 (+worker) | lists :3006 | cerebrum :3007 (+worker)
+    │
+Standalone services:
+    orchestrator :3009 — federated search + AI-tool registry (GET /ai/tools), no DB
+    metabase — dashboards & analytics | moltbot — Telegram AI assistant
+    mcp — MCP gateway | paperless-ngx — receipt archive + OCR
     │
 Data Layer:
-    SQLite (source of truth for all domains)
-    Claude API (categorization, NL queries)
+    One SQLite DB per pillar (each pillar is the source of truth for its own domain)
+    Claude API (categorization, retrieval, NL queries)
     │
 External APIs:
     Finance: Up API (webhooks) | ANZ/Amex/ING CSV imports
@@ -209,7 +217,7 @@ External APIs:
 2. Import script parses, normalizes, cleans
 3. Entity matching: aliases → exact → prefix → contains → AI fallback (cached)
 4. Deduplication: date + amount count-based against existing records
-5. Write to SQLite database
+5. Write to the finance pillar's SQLite database
 
 ### Data Flow — Media
 
@@ -237,29 +245,25 @@ When a movie is added to the POPS library, automatically checks Plex Discover cl
 - Plex → POPS: items on Plex watchlist are added to POPS watchlist
 - POPS → Plex: manually added watchlist items are pushed to Plex Discover
 
-### Media Module Structure (`apps/pops-api/src/modules/media/`)
+### Media Pillar Structure (`pillars/media/src/`)
 
-- `plex/` — Plex client, sync (movies, TV, watchlist, watch history, Discover cloud), scheduler
-- `tmdb/` — TMDB API client + image cache
-- `thetvdb/` — TheTVDB API client for TV show metadata
-- `arr/` — Radarr/Sonarr integration (request movies/shows for download)
-- `movies/` — Movie CRUD service
-- `tv-shows/` — TV show/season/episode CRUD service
-- `library/` — High-level add/refresh/list orchestration
-- `watch-history/` — Watch event logging, progress tracking, batch operations
-- `watchlist/` — Watchlist CRUD + Plex push
-- `comparisons/` — ELO-based compare arena for ranking media
-- `discovery/` — Calendar, upcoming releases
-- `search/` — Cross-domain search
+- `contract/` — zod schemas + the ts-rest contract the pillar serves
+- `db/schema/` — Drizzle schema for the media SQLite DB; `db/services/` — domain services (comparisons, discovery, rotation, …)
+- `api/clients/` — external clients: `plex/` (sync: movies, TV, watchlist, watch history, Discover cloud), `tmdb/` (+ image cache), `thetvdb/` (TV metadata), `arr/` (Radarr/Sonarr)
+- `api/rest/`, `api/handlers.ts` — REST route handlers backing the contract
+- `api/modules/` — feature modules (discovery, rotation-sources, …)
+- `api/cron/` — scheduled syncs; `api/manifest.ts` — manifest + self-registration
+- `openapi/media.openapi.json` — projected OpenAPI snapshot consumed by `app-media`'s Hey API client
 
 ## Tech Stack
 
 - **Runtime:** Node.js
-- **Database:** SQLite via Drizzle ORM (source of truth)
-- **API:** tRPC (type-safe RPC between frontend and backend)
-- **Frontend:** React PWA (Vite, React Router, shadcn/ui)
+- **Database:** SQLite via Drizzle ORM — one database per pillar; each pillar is the source of truth for its own domain
+- **API:** Per-pillar REST. zod → [ts-rest](https://ts-rest.com) contracts → OpenAPI projection. The frontend consumes generated **Hey API** (`@hey-api/openapi-ts`) clients; cross-pillar calls use the `@pops/pillar-sdk` `pillar()` client. No tRPC.
+- **Registry:** the `core` pillar hosts the registry; every pillar self-registers via its `./manifest` on boot (ADR-035)
+- **Frontend:** one React SPA (`pops-shell`) lazy-loading per-domain feature apps (Vite, React Router, shadcn/ui)
 - **Dashboards:** Metabase (self-hosted, Docker)
-- **AI:** Claude API (categorization, NL queries)
+- **AI:** Claude API (categorization, retrieval, NL queries); orchestrator exposes an AI-tool registry at `GET /ai/tools`
 - **Media APIs:** Plex (local + Discover cloud), TMDB, TheTVDB, Radarr, Sonarr
 - **Infra:** Docker Compose, Cloudflare Tunnel, Cloudflare Access
 - **OCR:** Paperless-ngx
@@ -270,9 +274,9 @@ When a movie is added to the POPS library, automatically checks Plex Discover cl
 
 ## Import Pipeline
 
-The user-facing entry point is the **Import Wizard** (7-step UI in `app-finance`), which drives the import pipeline in `apps/pops-api/src/modules/finance/imports/`.
+The user-facing entry point is the **Import Wizard** (multi-step UI in `app-finance`), which drives the import pipeline in `pillars/finance/src/api/modules/imports/`.
 
-### Entity Matching Chain (`apps/pops-api/src/modules/finance/imports/`)
+### Entity Matching Chain (`pillars/finance/src/api/modules/imports/`)
 
 6-stage pipeline, highest priority first:
 
@@ -284,7 +288,7 @@ The user-facing entry point is the **Import Wizard** (7-step UI in `app-finance`
 6. **Punctuation stripping** — strip apostrophes, retry stages 2-5
 7. **AI fallback** — Claude Haiku API call, cached to disk + DB, rate-limited
 
-Hit rate: ~95-100% with aliases. AI fallback handles the rest. See `docs/themes/02-finance/prds/021-entity-matching-engine/` for the full PRD.
+Hit rate: ~95-100% with aliases. AI fallback handles the rest. See `pillars/finance/docs/prds/021-entity-matching-engine/` for the full PRD.
 
 ## Security Rules (Do Not Violate)
 
@@ -302,9 +306,9 @@ Hit rate: ~95-100% with aliases. AI fallback handles the rest. See `docs/themes/
 
 ## Production
 
-- **Go-live runbook:** [docs/runbooks/go-live.md](docs/runbooks/go-live.md) — step-by-step procedure for transitioning from dev to production data
-- **Never run destructive commands in production:** `db:init`, `db:seed`, `db:clear` are for dev/test only
-- **Schema changes go through Drizzle:** edit schema → `drizzle-kit generate` → review → commit → deploy → auto-migrate on startup
+- **Never run destructive database commands in production:** per-pillar seed/clear/reset scripts are for dev/test only
+- **Schema changes go through Drizzle, per pillar:** edit the pillar's schema → `drizzle-kit generate` → review → commit → deploy → the pillar auto-migrates its own SQLite DB on startup
+- **Each pillar backs up independently** via its `infra/litestream/<id>.yml` stream — there is no single database to back up
 
 ## Phases
 
@@ -324,32 +328,14 @@ See `docs/roadmap.md` for the detailed implementation tracker.
 
 ### Database Management
 
-**For Local Development:**
+Databases are **per pillar** — there is no global init/seed/clear. Each pillar applies its own migrations on startup and provisions a real SQLite DB inside its own tests. To work on a domain locally, run that pillar plus the shell:
 
 ```bash
-mise db:init     # First time: Initialize empty database
-mise db:seed     # Seed with test data (78 records)
-mise dev:api     # Start API server
-mise dev:shell   # Start shell
+cd pillars/<id> && pnpm dev      # Start one pillar (applies its own migrations)
+cd apps/pops-shell && pnpm dev   # Start the SPA host
 ```
 
-**For E2E Testing:**
-
-```bash
-mise db:seed     # Reset to known test state
-# Run tests
-mise db:seed     # Reset between test runs
-```
-
-**Test Data Includes:**
-
-- 10 entities (Woolworths, Coles, Netflix, Spotify, Shell, Amazon AU, JB Hi-Fi, Apple, Bunnings, Employer)
-- 16 transactions (income, expenses, transfers across multiple accounts/categories)
-- 8 budgets (monthly and yearly)
-- 5 inventory items (MacBook, headphones, TV, vacuum, coffee machine)
-- 5 wish list items (gaming PC, desk, Japan trip, chair, camera)
-- 10 movies (Shawshank Redemption, Godfather, Dark Knight, Pulp Fiction, Forrest Gump, Fight Club, LOTR, Matrix, Interstellar, Spider-Verse)
-- 3 TV shows (Breaking Bad, Severance, Shogun) with 5 seasons and 16 episodes
+Seed/reset for tests is scoped per pillar — check that pillar's `package.json` scripts and `mise tasks`. E2E tests in `apps/pops-shell/e2e/` drive against the pillars they exercise.
 
 ### Process
 
@@ -381,11 +367,11 @@ mise lint             # Lint all packages
 mise typecheck        # Type check all packages
 ```
 
-For changes scoped to a single app, at minimum run that app's checks:
+For changes scoped to a single package, at minimum run that package's checks:
 
 ```bash
-# pops-api
-cd apps/pops-api && pnpm format --check && pnpm lint && pnpm typecheck
+# A pillar
+cd pillars/<id> && pnpm format --check && pnpm lint && pnpm typecheck
 
 # pops-shell
 cd apps/pops-shell && pnpm format --check && pnpm lint && pnpm typecheck
@@ -543,10 +529,19 @@ Full design context lives in `.impeccable.md`. Key principles for all UI work:
 
 ### Services
 
-| Service                         | Port | Command                          |
-| ------------------------------- | ---- | -------------------------------- |
-| **pops-api** (Express + tRPC)   | 3000 | `cd apps/pops-api && pnpm dev`   |
-| **pops-shell** (Vite React PWA) | 5568 | `cd apps/pops-shell && pnpm dev` |
+Each pillar is its own service on its own port. The shell is the SPA host; the orchestrator is stateless. For a full stack, prefer `docker compose -f infra/docker-compose.dev.yml up -d --build`.
+
+| Service                        | Port | Command                                 |
+| ------------------------------ | ---- | --------------------------------------- |
+| **core** (registry/platform)   | 3001 | `cd pillars/core && pnpm dev`           |
+| **inventory**                  | 3002 | `cd pillars/inventory && pnpm dev`      |
+| **media**                      | 3003 | `cd pillars/media && pnpm dev`          |
+| **finance**                    | 3004 | `cd pillars/finance && pnpm dev`        |
+| **food** (+ worker)            | 3005 | `cd pillars/food && pnpm dev`           |
+| **lists**                      | 3006 | `cd pillars/lists && pnpm dev`          |
+| **cerebrum** (+ worker)        | 3007 | `cd pillars/cerebrum && pnpm dev`       |
+| **orchestrator** (no DB)       | 3009 | `cd apps/pops-orchestrator && pnpm dev` |
+| **pops-shell** (Vite SPA host) | 5568 | `cd apps/pops-shell && pnpm dev`        |
 
 ### Node.js version
 
@@ -554,15 +549,16 @@ Node.js 24.5.0 is managed via **mise** (see `mise.toml`). NVM must be disabled i
 
 ### Environment files
 
-- Root `.env` — copy from `.env.example`. The `SQLITE_PATH` variable must be an **absolute** path pointing at the SQLite DB file under `apps/pops-api/data/` because pops-api loads it from its own working directory via dotenvx.
-- `apps/pops-api/.env` — copy from `.env.example`. Set the database path to point at the SQLite file in the `data/` subdirectory. Only the database path and `PORT` are required for basic local dev. Media/AI API keys are optional.
+- Each pillar has its own `.env` (copy from its `.env.example`). A pillar resolves its own SQLite path and `PORT` from its environment; only those are required for basic local dev. Media/AI API keys are optional and live with the pillar that uses them.
+- The shell consumes pillars over HTTP by port (`core :3001`, … `cerebrum :3007`, `orchestrator :3009`) — its dev proxy points at the running pillars.
 
 ### Database setup
 
-Run `pnpm db:seed` from `apps/pops-api/` (or `mise db:seed`) to initialize and seed the SQLite database. This is idempotent — it clears and re-seeds each time.
+There is no global seed. Each pillar migrates its own SQLite DB on startup; per-pillar seed/reset scripts (where present) live in that pillar's `package.json`.
 
 ### Gotchas
 
-- `SQLITE_PATH` in root `.env` must be an **absolute path** because pops-api runs from `apps/pops-api/` and loads the root `.env` via dotenvx path traversal (`../../.env`). A relative path would resolve incorrectly from the API's working directory.
+- Each pillar owns and resolves its own SQLite file — never assume a single shared DB path.
 - The pops-shell Vite dev server uses port **5568** (not the default 5173).
-- `pnpm.onlyBuiltDependencies` in root `package.json` already covers `better-sqlite3`, `esbuild`, and `msw` — no interactive `pnpm approve-builds` needed.
+- `pnpm.onlyBuiltDependencies` in root `package.json` already covers `better-sqlite3`, `esbuild`, `msw`, and `sharp` — no interactive `pnpm approve-builds` needed.
+- Regenerate a pillar's frontend client after contract changes: run that app's `generate:*-client` script (Hey API `openapi-ts` over the pillar's OpenAPI snapshot).

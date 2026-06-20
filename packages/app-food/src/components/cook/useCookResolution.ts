@@ -13,7 +13,7 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import type { LineConsumeNeed, LineResolution, LineShortfall } from '@pops/app-food-db';
+import type { LineConsumeNeed, LineResolution, LineShortfall } from './cook-resolution-types.js';
 
 export interface UseCookResolutionArgs {
   lineNeeds: readonly LineConsumeNeed[];

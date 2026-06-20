@@ -8,19 +8,14 @@
  * `set` procedure returns `{ ok: false, reason }` so the UI can map to
  * localised copy without a try/catch ladder.
  */
+import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 
-import { usePillarQuery } from '@pops/pillar-sdk/react';
 import { Button, Chip, TextInput } from '@pops/ui';
 
+import { unwrap } from '../../../food-api-helpers.js';
+import { ingredientTagsDistinct, ingredientTagsList } from '../../../food-api/index.js';
 import { useTagsDraft, type TagsDraft } from './useTagsDraft.js';
-
-import type { inferRouterOutputs } from '@trpc/server';
-
-import type { AppRouter } from '@pops/api';
-
-type TagsListOutput = inferRouterOutputs<AppRouter>['food']['ingredients']['tags']['list'];
-type TagsDistinctOutput = inferRouterOutputs<AppRouter>['food']['ingredients']['tags']['distinct'];
 
 const DATALIST_ID = 'ingredient-tag-suggestions';
 
@@ -30,14 +25,14 @@ interface Props {
 
 export function IngredientTagsEditor({ ingredientId }: Props) {
   const { t } = useTranslation('food');
-  const tagsQuery = usePillarQuery<TagsListOutput>('food', ['ingredients', 'tags', 'list'], {
-    ingredientId,
+  const tagsQuery = useQuery({
+    queryKey: ['food', 'ingredients', 'tags', 'list', { ingredientId }],
+    queryFn: async () => unwrap(await ingredientTagsList({ query: { ingredientId } })),
   });
-  const distinctQuery = usePillarQuery<TagsDistinctOutput>(
-    'food',
-    ['ingredients', 'tags', 'distinct'],
-    {}
-  );
+  const distinctQuery = useQuery({
+    queryKey: ['food', 'ingredients', 'tags', 'distinct', {}],
+    queryFn: async () => unwrap(await ingredientTagsDistinct({ query: {} })),
+  });
   const draft = useTagsDraft({
     ingredientId,
     remoteTags: tagsQuery.data?.tags ?? null,

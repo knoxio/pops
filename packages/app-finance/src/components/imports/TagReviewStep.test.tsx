@@ -1,4 +1,6 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { type ReactElement } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ---------------------------------------------------------------------------
@@ -30,31 +32,13 @@ vi.mock('../../store/importStore', () => ({
 }));
 
 // ---------------------------------------------------------------------------
-// Mock trpc
+// Mock finance SDK
 // ---------------------------------------------------------------------------
 
-vi.mock('@pops/pillar-sdk/react', () => ({
-  usePillarQuery: (_pillarId: string, path: readonly string[]) => {
-    const key = path.join('.');
-    if (key === 'transactions.availableTags') {
-      return { data: ['Groceries', 'Transport', 'Subscriptions'] };
-    }
-    if (key === 'tagRules.proposeTagRuleChangeSet') {
-      return {
-        data: null,
-        isLoading: false,
-        isError: false,
-        error: null,
-      };
-    }
-    return { data: undefined };
-  },
-  usePillarMutation: () => ({ mutate: vi.fn(), mutateAsync: vi.fn(), isPending: false }),
-  usePillarUtils: () => ({
-    invalidate: vi.fn(),
-    setData: vi.fn(),
-    fetchQuery: vi.fn(),
-  }),
+const { mockAvailableTags } = vi.hoisted(() => ({ mockAvailableTags: vi.fn() }));
+
+vi.mock('../../finance-api/index.js', () => ({
+  transactionsAvailableTags: (...args: unknown[]) => mockAvailableTags(...args),
 }));
 
 // ---------------------------------------------------------------------------
@@ -212,8 +196,7 @@ vi.mock('../../lib/utils', () => ({
 
 import { TagReviewStep } from './TagReviewStep';
 
-import type { TagRuleChangeSet, TagRuleImpactItem } from '@pops/api/modules/core/tag-rules/types';
-import type { ConfirmedTransaction } from '@pops/api/modules/finance/imports';
+import type { ConfirmedTransaction, TagRuleChangeSet, TagRuleImpactItem } from '@pops/finance';
 
 // ---------------------------------------------------------------------------
 // Fixtures
@@ -278,7 +261,15 @@ function seedTransactions(txns: ConfirmedTransaction[]) {
 }
 
 function renderTagReviewStep() {
-  return render(<TagReviewStep />);
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  });
+  const tree: ReactElement = (
+    <QueryClientProvider client={queryClient}>
+      <TagReviewStep />
+    </QueryClientProvider>
+  );
+  return render(tree);
 }
 
 // ---------------------------------------------------------------------------
@@ -290,6 +281,11 @@ beforeEach(() => {
   mockOnAppliedFn = null;
   mockDialogCapture.signal = null;
   mockDialogCapture.previewTransactions = null;
+  mockAvailableTags.mockReset();
+  mockAvailableTags.mockResolvedValue({
+    data: { tags: ['Groceries', 'Transport', 'Subscriptions'] },
+    error: undefined,
+  });
   mockAddPendingTagRuleChangeSet.mockReset();
   mockUpdateTransactionTags.mockReset();
   mockNextStep.mockReset();

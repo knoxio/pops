@@ -1,9 +1,12 @@
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
+import { useQuery } from '@tanstack/react-query';
 import { useCallback, useState } from 'react';
 import { useForm } from 'react-hook-form';
 
-import { usePillarQuery } from '@pops/pillar-sdk/react';
-
+import { unwrap as unwrapCore } from '../../core-api-helpers.js';
+import { entitiesList } from '../../core-api/index.js';
+import { unwrap } from '../../finance-api-helpers.js';
+import { transactionsAvailableTags, transactionsList } from '../../finance-api/index.js';
 import {
   DEFAULT_TRANSACTION_VALUES,
   type Transaction,
@@ -12,23 +15,8 @@ import {
 } from './types';
 import { useTransactionMutations } from './useTransactionMutations';
 
-import type { Transaction as ApiTransaction } from '@pops/api/modules/finance/transactions/types';
-
-interface TransactionsListResult {
-  data: ApiTransaction[];
-  pagination: { total: number };
-}
-
-interface EntityRef {
-  id: string;
-  name: string;
-  type: string;
-}
-
-interface EntitiesListResult {
-  data: EntityRef[];
-  pagination: { total: number };
-}
+const TRANSACTIONS_LIST_INPUT = { limit: 100 } as const;
+const ENTITIES_LIST_INPUT = { limit: 500 } as const;
 
 /**
  * Build the API payload from the form values.
@@ -121,18 +109,19 @@ function useDialogHandlers(deps: DialogHandlersDeps) {
 }
 
 function useTransactionsPageQueries() {
-  const query = usePillarQuery<TransactionsListResult>('finance', ['transactions', 'list'], {
-    limit: 100,
+  const query = useQuery({
+    queryKey: ['finance', 'transactions', 'list', TRANSACTIONS_LIST_INPUT],
+    queryFn: async () => unwrap(await transactionsList({ query: TRANSACTIONS_LIST_INPUT })),
   });
-  const { data: availableTagsData } = usePillarQuery<string[]>(
-    'finance',
-    ['transactions', 'availableTags'],
-    undefined
-  );
-  const entitiesQuery = usePillarQuery<EntitiesListResult>('core', ['entities', 'list'], {
-    limit: 500,
+  const { data: availableTagsData } = useQuery({
+    queryKey: ['finance', 'transactions', 'availableTags'],
+    queryFn: async () => unwrap(await transactionsAvailableTags()),
   });
-  return { query, availableTagsData, entitiesQuery };
+  const entitiesQuery = useQuery({
+    queryKey: ['core', 'entities', 'list', ENTITIES_LIST_INPUT],
+    queryFn: async () => unwrapCore(await entitiesList({ query: ENTITIES_LIST_INPUT })),
+  });
+  return { query, availableTags: availableTagsData?.tags ?? [], entitiesQuery };
 }
 
 export function useTransactionsPage() {
@@ -140,7 +129,7 @@ export function useTransactionsPage() {
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [deletingTx, setDeletingTx] = useState<Transaction | null>(null);
 
-  const { query, availableTagsData, entitiesQuery } = useTransactionsPageQueries();
+  const { query, availableTags, entitiesQuery } = useTransactionsPageQueries();
 
   const { createMutation, updateMutation, deleteMutation, confirmDelete } = useTransactionMutations(
     {
@@ -178,7 +167,7 @@ export function useTransactionsPage() {
 
   return {
     query,
-    availableTags: availableTagsData ?? [],
+    availableTags,
     entities: entitiesQuery.data?.data ?? [],
     form,
     isDialogOpen,

@@ -6,18 +6,15 @@
  * `/food/recipes/<slug>` (the PRD-119 page; until that route exists the
  * link still renders but lands on a 404 placeholder).
  */
+import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
 
-import { usePillarQuery } from '@pops/pillar-sdk/react';
 import { Button } from '@pops/ui';
 
-import type { inferRouterOutputs } from '@trpc/server';
-
-import type { AppRouter } from '@pops/api';
-
-type RecipeRefsOutput = inferRouterOutputs<AppRouter>['food']['ingredients']['recipeRefs'];
+import { unwrap } from '../../../food-api-helpers.js';
+import { ingredientsRecipeRefs } from '../../../food-api/index.js';
 
 interface Props {
   ingredientId: number;
@@ -26,8 +23,9 @@ interface Props {
 export function RecipeRefsSection({ ingredientId }: Props) {
   const { t } = useTranslation('food');
   const [open, setOpen] = useState(false);
-  const query = usePillarQuery<RecipeRefsOutput>('food', ['ingredients', 'recipeRefs'], {
-    id: ingredientId,
+  const query = useQuery({
+    queryKey: ['food', 'ingredients', 'recipeRefs', ingredientId],
+    queryFn: async () => unwrap(await ingredientsRecipeRefs({ path: { id: ingredientId } })),
   });
 
   if (query.isLoading) {

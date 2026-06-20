@@ -25,7 +25,7 @@ export interface ReviewTabBaseProps {
   editingTransaction: ProcessedTransaction | null;
   onSaveEdit: (t: ProcessedTransaction, edited: Partial<ProcessedTransaction>) => void;
   onCancelEdit: () => void;
-  entities?: Array<{ id: string; name: string; type: string }>;
+  entities?: Array<{ id: string; name: string }>;
 }
 
 export function ViewModeToggle({

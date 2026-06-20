@@ -11,8 +11,7 @@ import {
 } from './create-form-helpers.js';
 import { EndpointPicker } from './EndpointPicker';
 
-import type { SubstitutionScope } from '@pops/app-food-db';
-
+import type { SubstitutionScope } from '../../../food-api-shared-types.js';
 import type { CreateSubstitutionFormInput } from './types';
 
 interface Props {

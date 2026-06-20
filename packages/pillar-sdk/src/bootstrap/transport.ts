@@ -10,15 +10,24 @@ export interface HeartbeatResult {
   acknowledgedAt: string;
 }
 
+/**
+ * Live capability statuses a pillar reports for the capability keys it owns —
+ * `<capabilityKey> → up/down`. Carried additively on register + heartbeat so
+ * core can resolve cross-pillar `capability` features against the owning
+ * pillar's last-reported status. A pillar with no capabilities omits it.
+ */
+export type CapabilityStatuses = Record<string, boolean>;
+
 export interface RegisterRequest {
   pillarId: string;
   baseUrl: string;
   manifest: ManifestPayload;
+  capabilities?: CapabilityStatuses;
 }
 
 export interface RegistryTransport {
   register(payload: RegisterRequest): Promise<RegistrationResult>;
-  heartbeat(pillarId: string): Promise<HeartbeatResult>;
+  heartbeat(pillarId: string, capabilities?: CapabilityStatuses): Promise<HeartbeatResult>;
   unregister(pillarId: string): Promise<void>;
 }
 
@@ -105,8 +114,11 @@ export function createHttpRegistryTransport(
     async register(payload) {
       return post<RegistrationResult>('/core.registry.register', payload);
     },
-    async heartbeat(pillarId) {
-      return post<HeartbeatResult>('/core.registry.heartbeat', { pillarId });
+    async heartbeat(pillarId, capabilities) {
+      return post<HeartbeatResult>('/core.registry.heartbeat', {
+        pillarId,
+        ...(capabilities ? { capabilities } : {}),
+      });
     },
     async unregister(pillarId) {
       await post<void>('/core.registry.deregister', { pillarId });

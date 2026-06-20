@@ -1,14 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import { unwrap } from '../../media-api-helpers.js';
+import { comparisonsScores } from '../../media-api/index.js';
 import { buildScoreDelta } from './scoreDelta';
 
-import type { usePillarUtils } from '@pops/pillar-sdk/react';
+import type { QueryClient } from '@tanstack/react-query';
 
 import type { DrawTier, ScoreDelta } from './types';
 
 const DELTA_DISPLAY_MS = 1500;
 
-export type MediaUtils = ReturnType<typeof usePillarUtils>;
+export type MediaQueryClient = QueryClient;
 
 export interface RecordVariables {
   mediaAId: number;
@@ -24,29 +26,37 @@ interface ScoresResult {
 interface FetchScoresArgs {
   variables: RecordVariables;
   dimensionId: number | null;
-  utils: MediaUtils;
+  queryClient: MediaQueryClient;
 }
 
 function getScoreFor(data: ScoresResult | undefined, dimensionId: number | null): number {
   return data?.data?.find((s) => s.dimensionId === dimensionId)?.score ?? 1500;
 }
 
-async function fetchPairScores({ variables, dimensionId, utils }: FetchScoresArgs) {
+function fetchScoresFor(
+  queryClient: MediaQueryClient,
+  mediaId: number,
+  dimensionId: number | null
+): Promise<ScoresResult> {
+  const query = {
+    mediaType: 'movie' as const,
+    mediaId,
+    ...(dimensionId !== null ? { dimensionId } : {}),
+  };
+  return queryClient.fetchQuery({
+    queryKey: ['media', 'comparisons', 'scores', query],
+    queryFn: async () => unwrap(await comparisonsScores({ query })),
+  });
+}
+
+async function fetchPairScores({ variables, dimensionId, queryClient }: FetchScoresArgs) {
   const isDraw = variables.winnerId === 0;
   const winnerId = isDraw ? variables.mediaAId : variables.winnerId;
   const loserId = variables.mediaAId === winnerId ? variables.mediaBId : variables.mediaAId;
 
   const [scoresA, scoresB] = await Promise.all([
-    utils.fetchQuery<ScoresResult>(['comparisons', 'scores'], {
-      mediaType: 'movie',
-      mediaId: winnerId,
-      dimensionId: dimensionId ?? undefined,
-    }),
-    utils.fetchQuery<ScoresResult>(['comparisons', 'scores'], {
-      mediaType: 'movie',
-      mediaId: loserId,
-      dimensionId: dimensionId ?? undefined,
-    }),
+    fetchScoresFor(queryClient, winnerId, dimensionId),
+    fetchScoresFor(queryClient, loserId, dimensionId),
   ]);
 
   return {
@@ -85,13 +95,13 @@ export function useScoreDeltaTimer() {
 
 export function useFetchScoreDelta(
   dimensionId: number | null,
-  utils: MediaUtils,
+  queryClient: MediaQueryClient,
   setScoreDelta: (d: ScoreDelta) => void
 ) {
   return useCallback(
     async (variables: RecordVariables): Promise<void> => {
       try {
-        const result = await fetchPairScores({ variables, dimensionId, utils });
+        const result = await fetchPairScores({ variables, dimensionId, queryClient });
         setScoreDelta(
           buildScoreDelta({
             ...result,
@@ -102,6 +112,6 @@ export function useFetchScoreDelta(
         // Score fetch failed — skip animation
       }
     },
-    [utils, dimensionId, setScoreDelta]
+    [queryClient, dimensionId, setScoreDelta]
   );
 }

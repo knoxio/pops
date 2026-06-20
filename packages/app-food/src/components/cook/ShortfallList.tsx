@@ -15,7 +15,7 @@ import { ShortfallRow } from './ShortfallRow.js';
 
 import type { ReactNode } from 'react';
 
-import type { LineConsumeNeed, LineResolution, LineShortfall } from '@pops/app-food-db';
+import type { LineConsumeNeed, LineResolution, LineShortfall } from './cook-resolution-types.js';
 
 export interface ShortfallListProps {
   shortfalls: readonly LineShortfall[];

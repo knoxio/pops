@@ -25,7 +25,6 @@ dist/
 *-wal
 *-shm
 *.csv
-!apps/pops-api/src/modules/finance/imports/test-data/amex-sample.csv
 entity_lookup.json
 ai_entity_cache.json
 
@@ -64,9 +63,6 @@ apps/pops-shell/.e2e/
 
 # Temporary files
 tmp/
-
-# Junk DB files from SQLITE_PATH=[REDACTED] placeholder (legacy)
-apps/pops-api/\[REDACTED\]*
 
 .room-sandbox/
 .room-agent.json

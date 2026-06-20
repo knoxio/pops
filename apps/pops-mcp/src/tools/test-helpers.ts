@@ -130,11 +130,20 @@ export const mockPillarCerebrum = {
   },
 };
 
+export const mockPillarCore = {
+  core: {
+    entities: {
+      list: vi.fn().mockResolvedValue(callOk({ data: [], pagination: { total: 0 } })),
+    },
+  },
+};
+
 const PILLAR_MOCKS = {
   inventory: mockPillarInventory,
   finance: mockPillarFinance,
   media: mockPillarMedia,
   cerebrum: mockPillarCerebrum,
+  core: mockPillarCore,
 } as const;
 
 /** Used as the `getPillar` mock implementation in tool tests: dispatches by pillarId. */
@@ -143,18 +152,6 @@ export function pillarMockGetter<TRouter>(pillarId: string): TRouter {
   if (!handle) throw new Error(`No mock pillar handle for '${pillarId}'`);
   return handle as TRouter;
 }
-
-// `mockClient` still mocks the legacy `getClient()` surface for the lone
-// remaining risky cross-pillar call site (`finance.entities.list` → core)
-// and the registry sanity tests that need `getClient` to be importable. New
-// tool tests should mock `../pillar-client.js` and use `mockPillar*`.
-export const mockClient = {
-  core: {
-    entities: {
-      list: { query: vi.fn().mockResolvedValue({ data: [], pagination: { total: 0 } }) },
-    },
-  },
-};
 
 interface TextResultLike {
   content: readonly { type: string; text?: string }[];

@@ -5,15 +5,16 @@
  * then renders the inferred type / template / scopes / tags as editable chips
  * alongside any scope reconciliation suggestions ("Did you mean: …").
  */
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+  type UseMutationResult,
+} from '@tanstack/react-query';
 import { useState } from 'react';
 
-import {
-  usePillarMutation,
-  usePillarQuery,
-  usePillarUtils,
-  type UsePillarMutationResult,
-} from '@pops/pillar-sdk/react';
-
+import { engramsUpdate, ingestEnrichmentStatus, ingestRetryEnrichment } from '../cerebrum-api';
+import { unwrap } from '../cerebrum-api-helpers';
 import {
   appendUnique,
   hasStoppedPolling,
@@ -50,36 +51,34 @@ type EnrichmentUpdateInput = {
 };
 
 function useEnrichmentMutations() {
-  const utils = usePillarUtils('cerebrum');
-  const invalidate = () => void utils.invalidate(['ingest', 'enrichmentStatus']);
-  const updateMutation = usePillarMutation<EnrichmentUpdateInput, unknown>(
-    'cerebrum',
-    ['engrams', 'update'],
-    { onSuccess: invalidate }
-  );
-  const retryMutation = usePillarMutation<{ engramId: string }, unknown>(
-    'cerebrum',
-    ['ingest', 'retryEnrichment'],
-    { onSuccess: invalidate }
-  );
+  const queryClient = useQueryClient();
+  const invalidate = () =>
+    void queryClient.invalidateQueries({ queryKey: ['cerebrum', 'ingest', 'enrichmentStatus'] });
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, ...patch }: EnrichmentUpdateInput) =>
+      unwrap(await engramsUpdate({ path: { id }, body: patch })),
+    onSuccess: invalidate,
+  });
+  const retryMutation = useMutation({
+    mutationFn: async (input: { engramId: string }) =>
+      unwrap(await ingestRetryEnrichment({ body: input })),
+    onSuccess: invalidate,
+  });
   return { updateMutation, retryMutation };
 }
 
 export function EnrichmentChips({ engramId }: EnrichmentChipsProps) {
   const [startedAt] = useState(() => Date.now());
 
-  const statusQuery = usePillarQuery<EnrichmentStatus>(
-    'cerebrum',
-    ['ingest', 'enrichmentStatus'],
-    { engramId },
-    {
-      refetchInterval: (query) => {
-        const elapsed = Date.now() - startedAt;
-        const data = query.state.data;
-        return refetchInterval(elapsed, data?.enriched ?? false);
-      },
-    }
-  );
+  const statusQuery = useQuery({
+    queryKey: ['cerebrum', 'ingest', 'enrichmentStatus', { engramId }],
+    queryFn: async () => unwrap(await ingestEnrichmentStatus({ body: { engramId } })),
+    refetchInterval: (query) => {
+      const elapsed = Date.now() - startedAt;
+      const data = query.state.data;
+      return refetchInterval(elapsed, data?.enriched ?? false);
+    },
+  });
 
   const { updateMutation, retryMutation } = useEnrichmentMutations();
 
@@ -112,7 +111,7 @@ export function EnrichmentChips({ engramId }: EnrichmentChipsProps) {
 function useChipHandlers(
   engramId: string,
   status: EnrichmentStatus | undefined,
-  updateMutation: UsePillarMutationResult<EnrichmentUpdateInput, unknown>
+  updateMutation: UseMutationResult<{ engram: unknown }, Error, EnrichmentUpdateInput>
 ) {
   const acceptSuggestion = (original: string, canonical: string) => {
     if (!status) return;

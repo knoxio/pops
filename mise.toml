@@ -13,13 +13,9 @@ node = "24.5.0"
 # Development Servers
 # ============================================================================
 
-[tasks."dev:api"]
-description = "Run pops-api in dev mode with watch"
-dir = "apps/pops-api"
-run = """
-pnpm install
-pnpm dev
-"""
+[tasks."dev:pillars"]
+description = "Run every pillar API in watch mode (turbo across pillars/*)"
+run = "pnpm exec turbo run dev dev:api --filter='./pillars/*'"
 
 [tasks."dev:shell"]
 description = "Run pops-shell Vite dev server"
@@ -44,7 +40,7 @@ dir = "apps/pops-cli"
 run = "pnpm build"
 
 [tasks."dev:mcp"]
-description = "Run pops-mcp HTTP MCP server in dev mode (requires pops-api running)"
+description = "Run pops-mcp HTTP MCP server in dev mode (talks to the pillar APIs over REST)"
 dir = "apps/pops-mcp"
 run = """
 pnpm install
@@ -64,10 +60,9 @@ run = "pnpm storybook"
 description = "Type check all packages"
 run = "pnpm typecheck"
 
-[tasks."typecheck:api"]
-description = "Type check pops-api"
-dir = "apps/pops-api"
-run = "pnpm typecheck"
+[tasks."typecheck:pillars"]
+description = "Type check every pillar API (turbo across pillars/*)"
+run = "pnpm exec turbo run typecheck --filter='./pillars/*'"
 
 [tasks."typecheck:shell"]
 description = "Type check pops-shell"
@@ -82,10 +77,9 @@ run = "pnpm test"
 description = "Run all tests in watch mode"
 run = "pnpm run test:watch"
 
-[tasks."test:api"]
-description = "Run pops-api tests"
-dir = "apps/pops-api"
-run = "pnpm test"
+[tasks."test:pillars"]
+description = "Run every pillar API's test suite (turbo across pillars/*)"
+run = "pnpm exec turbo run test --filter='./pillars/*'"
 
 [tasks."test:shell"]
 description = "Run pops-shell tests"
@@ -100,54 +94,26 @@ run = "pnpm lint"
 description = "Build all packages"
 run = "pnpm build"
 
-[tasks."openapi:validate"]
-description = "Validate OpenAPI annotations and spec (PRD-075 US-04)"
-dir = "apps/pops-api"
-run = "pnpm openapi:validate"
+[tasks."openapi:generate"]
+description = "Regenerate every pillar's OpenAPI snapshot + typed client (turbo across pillars/*)"
+run = "pnpm exec turbo run generate:openapi generate:api-types --filter='./pillars/*'"
 
 # ============================================================================
 # Database Management
 # ============================================================================
-
-[tasks."db:init"]
-description = "Initialize empty database with schema"
-dir = "apps/pops-api"
-run = "pnpm dev:init"
-
-[tasks."db:clear"]
-description = "Wipe all application tables, then restore bare-minimum system rows (tags, Manual Queue)"
-dir = "apps/pops-api"
-run = "pnpm db:clear"
-
-[tasks."db:seed"]
-description = "Full wipe (all app tables) then seed comprehensive cross-domain test data (incl. PRD-113 food fixtures)"
-dir = "apps/pops-api"
-run = ["pnpm db:seed", "mise run db:seed:food"]
+#
+# Post-monolith reality: each pillar owns its own SQLite file and applies
+# its committed `pillars/<x>/migrations/` journal at runtime when the DB is
+# opened (drizzle's `migrate()` in each pillar's `open-<x>-db.ts`). There is
+# no drizzle-kit step, no shared `db:init`/`db:clear`, and no cross-domain
+# seeder — those lived in the now-deleted monolith. The food pillar is the
+# only one shipping a dev seeder, kept below.
 
 [tasks."db:seed:food"]
-description = "Wipe food + lists tables only, then seed PRD-113 phase-1 food fixtures"
-dir = "packages/app-food"
-env = { SQLITE_PATH = "{{config_root}}/apps/pops-api/data/pops.db" }
+description = "Wipe food tables only, then seed PRD-113 phase-1 food fixtures into the food pillar's dev DB"
+dir = "pillars/food"
+env = { SQLITE_PATH = "{{config_root}}/pillars/food/data/food.db" }
 run = "pnpm db:seed:food"
-
-# ============================================================================
-# Drizzle ORM
-# ============================================================================
-
-[tasks."drizzle:generate"]
-description = "Generate Drizzle migrations from schema changes"
-dir = "apps/pops-api"
-run = "pnpm exec drizzle-kit generate"
-
-[tasks."drizzle:migrate"]
-description = "Apply pending Drizzle migrations"
-dir = "apps/pops-api"
-run = "pnpm exec drizzle-kit migrate"
-
-[tasks."drizzle:studio"]
-description = "Open Drizzle Studio (DB browser)"
-dir = "apps/pops-api"
-run = "pnpm exec drizzle-kit studio"
 
 # ============================================================================
 # Food DSL

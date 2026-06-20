@@ -1,7 +1,7 @@
 /**
  * E2E — AI cache: view stats and clear stale entries (#2134)
  *
- * Tier 3 flow covering /ai/cache:
+ * Tier 3 flow covering /cerebrum/admin/cache:
  *   1. Navigate to the Cache Management page.
  *   2. Confirm the three stat cards mount (Total Entries, Disk Size, Hit Rate).
  *   3. Note the "before" Total Entries value.
@@ -14,17 +14,22 @@
  *
  *   The AI entity cache is NOT isolated by the `e2e` named-env system: it's
  *   a process-level singleton backed by a JSON file on disk (see
- *   ai-categorizer-cache.ts). Running `clearStaleCache` against the real API
- *   would mutate shared state used by other tests (and the dev environment),
- *   so we mock the two cache procedures. All other tRPC calls (session,
- *   auth, etc.) still flow through useRealApi → seeded e2e DB.
+ *   ai-categorizer-cache.ts). Running the prune against the real pillar would
+ *   mutate shared state used by other tests (and the dev environment), so we
+ *   mock the three core-api cache REST routes the page calls.
  *
- *   The mock drives a deterministic before/after comparison: cacheStats is
- *   routed through a mutable state object so the FIRST response returns a
- *   high entry count (1500), and after the clearStaleCache mutation fires
- *   the state flips so subsequent responses return a lower count (300).
- *   The cache model invalidates cacheStats on mutation success, which
- *   triggers the re-fetch and re-renders the StatCard with the new total.
+ *   The page reads its data via the generated core Hey API client
+ *   (`@pops/app-ai` core-api, baseUrl `/core-api`):
+ *     - GET  /core-api/ai-usage/cache        → { totalEntries, diskSizeBytes }
+ *     - GET  /core-api/ai-usage/stats        → usage roll-up
+ *     - POST /core-api/ai-usage/cache/prune  → { removed }   (Clear Stale)
+ *
+ *   The mock drives a deterministic before/after comparison: the cache GET is
+ *   routed through a mutable state object so the FIRST response returns a high
+ *   entry count (1500), and after the prune fires the state flips so subsequent
+ *   responses return a lower count (300). The cache model invalidates the
+ *   `['core', 'aiUsage']` query key on mutation success, which triggers the
+ *   re-fetch and re-renders the StatCard with the new total.
  *
  * Product feedback — StatCard value semantics.
  *
@@ -42,12 +47,10 @@
  */
 import { expect, test, type Page } from '@playwright/test';
 
-import { useRealApi } from './helpers/use-real-api';
-
 // -----------------------------------------------------------------------------
 // Deterministic mock state — entries drop from BEFORE_ENTRIES to AFTER_ENTRIES
-// once clearStaleCache fires. Disk size + hit rate stay constant because only
-// the stale-clear flow is under test here.
+// once the prune fires. Disk size + hit rate stay constant because only the
+// stale-clear flow is under test here.
 // -----------------------------------------------------------------------------
 const BEFORE_ENTRIES = 1500;
 const AFTER_ENTRIES = 300;
@@ -61,8 +64,8 @@ const AFTER_ENTRIES_RENDERED = '300';
 const DISK_SIZE_BYTES = 524_288;
 const EXPECTED_DISK_LABEL = '512.0 KB';
 
-// Usage stats feed the Hit Rate card. 120 hits / (500 calls + 120 hits) is not
-// what the UI computes — it uses cacheHitRate directly (0.24 → "24.0%").
+// Usage stats feed the Hit Rate card. The UI uses cacheHitRate directly
+// (0.24 → "24.0%").
 const USAGE_STATS = {
   totalApiCalls: 500,
   totalCacheHits: 120,
@@ -73,81 +76,50 @@ const USAGE_STATS = {
   totalOutputTokens: 20_000,
 };
 
-/**
- * Parse the procedure list out of a tRPC URL.
- *
- * httpBatchLink encodes multiple procedures as a comma-separated path segment:
- *   /trpc/core.aiUsage.cacheStats,core.aiUsage.getStats?batch=1&input=...
- *
- * Non-batch URLs have a single procedure after /trpc/.
- */
-function parseProcedures(url: string): string[] {
-  const match = /\/trpc\/([^?]+)/.exec(url);
-  if (!match) return [];
-  return decodeURIComponent(match[1] ?? '').split(',');
-}
-
 type CacheState = {
   entries: number;
   clearCalls: number;
 };
 
-function resolveProcedureData(name: string, state: CacheState): unknown {
-  if (name === 'core.aiUsage.cacheStats') {
-    return { totalEntries: state.entries, diskSizeBytes: DISK_SIZE_BYTES };
-  }
-  if (name === 'core.aiUsage.getStats') {
-    return USAGE_STATS;
-  }
-  if (name === 'core.aiUsage.clearStaleCache') {
-    state.clearCalls += 1;
-    state.entries = AFTER_ENTRIES;
-    return { removed: REMOVED_COUNT };
-  }
-  return null;
-}
-
 /**
- * Install mocks for the three cache-related procedures.
+ * Install REST mocks for the core-api cache routes the page calls. The
+ * generated core Hey API client (`@pops/app-ai`) targets baseUrl `/core-api`,
+ * which the shell proxy strips before forwarding to the core pillar:
+ *   GET  /core-api/ai-usage/cache        — cache stats (entry count + disk size)
+ *   GET  /core-api/ai-usage/stats        — usage roll-up (feeds the Hit Rate card)
+ *   POST /core-api/ai-usage/cache/prune  — clear stale entries (Clear Stale button)
  *
- * Intercepts /trpc/** and inspects the procedure list. If EVERY procedure in
- * the (possibly batched) request is a cache procedure we know about, we
- * fulfill with a mocked response. Otherwise we fall through to the real API
- * by calling route.fallback(), which lets useRealApi's handler run.
+ * The cache GET is driven by a mutable `state.entries` so the value drops from
+ * BEFORE_ENTRIES to AFTER_ENTRIES once the prune POST fires.
  *
- * The cache page only reads two queries (cacheStats, getStats) and writes
- * two mutations (clearStaleCache, clearAllCache), and batched tRPC will not
- * mix these with unrelated procedures from other pages. This makes the
- * "all-or-fall-through" rule safe in practice.
- *
- * Returns a handle exposing the counter of clearStaleCache invocations.
+ * Returns a handle exposing the counter of prune invocations.
  */
 async function installCacheMocks(page: Page): Promise<{ getClearCalls: () => number }> {
   const state: CacheState = { entries: BEFORE_ENTRIES, clearCalls: 0 };
-  const knownProcedures = new Set([
-    'core.aiUsage.cacheStats',
-    'core.aiUsage.getStats',
-    'core.aiUsage.clearStaleCache',
-  ]);
 
-  await page.route('/trpc/**', async (route) => {
-    const procedures = parseProcedures(route.request().url());
-
-    const allKnown = procedures.length > 0 && procedures.every((name) => knownProcedures.has(name));
-    if (!allKnown) {
-      await route.fallback();
-      return;
-    }
-
-    const isBatch = new URL(route.request().url()).searchParams.has('batch');
-    const payloads = procedures.map((name) => ({
-      result: { data: resolveProcedureData(name, state) },
-    }));
-
+  await page.route('**/core-api/ai-usage/cache', async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify(isBatch ? payloads : payloads[0]),
+      body: JSON.stringify({ totalEntries: state.entries, diskSizeBytes: DISK_SIZE_BYTES }),
+    });
+  });
+
+  await page.route('**/core-api/ai-usage/stats', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(USAGE_STATS),
+    });
+  });
+
+  await page.route('**/core-api/ai-usage/cache/prune', async (route) => {
+    state.clearCalls += 1;
+    state.entries = AFTER_ENTRIES;
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ removed: REMOVED_COUNT }),
     });
   });
 
@@ -169,10 +141,6 @@ test.describe('AI — cache management: view stats and clear stale entries', () 
       if (msg.type() === 'error') consoleErrors.push(msg.text());
     });
 
-    // Register useRealApi FIRST so that the cache mock (registered last,
-    // LIFO) can use route.fallback() to hand non-cache procedures off to the
-    // real-API handler. Playwright routes match most-recently-added first.
-    await useRealApi(page);
     cacheMocks = await installCacheMocks(page);
 
     await page.goto('/cerebrum/admin/cache');
@@ -224,7 +192,7 @@ test.describe('AI — cache management: view stats and clear stale entries', () 
     const daysInput = page.getByLabel('Days threshold for stale entries');
     await expect(daysInput).toHaveValue('30');
 
-    // Fire the mutation.
+    // Fire the prune mutation.
     await page.getByRole('button', { name: 'Clear Stale' }).click();
 
     // Success toast from sonner — filter to visible to avoid responsive dupes.
@@ -232,7 +200,7 @@ test.describe('AI — cache management: view stats and clear stale entries', () 
       page.getByText(`Removed ${REMOVED_COUNT} stale cache entries`).filter({ visible: true })
     ).toBeVisible({ timeout: 10_000 });
 
-    // Total Entries re-fetches via cacheStats invalidation → new value renders.
+    // Total Entries re-fetches via cache-stats invalidation → new value renders.
     await expect(page.getByText(AFTER_ENTRIES_RENDERED, { exact: true }).first()).toBeVisible({
       timeout: 10_000,
     });

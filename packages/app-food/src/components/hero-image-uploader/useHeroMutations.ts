@@ -3,21 +3,17 @@
  * client-side file validation. Returns a single object so the parent
  * component reads only the four fields it actually needs.
  */
+import { useMutation } from '@tanstack/react-query';
 import { useCallback } from 'react';
 import { toast } from 'sonner';
 
-import { usePillarMutation } from '@pops/pillar-sdk/react';
-
+import { unwrap } from '../../food-api-helpers.js';
+import { heroImageRemove, heroImageUpload } from '../../food-api/index.js';
 import { HERO_ALLOWED_MIME_TYPES } from '../../storage/hero-paths';
 
-import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
+import type { HeroImageUploadData } from '../../food-api/types.gen.js';
 
-import type { AppRouter } from '@pops/api';
-
-type HeroImageUploadInput = inferRouterInputs<AppRouter>['food']['heroImage']['upload'];
-type HeroImageUploadOutput = inferRouterOutputs<AppRouter>['food']['heroImage']['upload'];
-type HeroImageRemoveInput = inferRouterInputs<AppRouter>['food']['heroImage']['remove'];
-type HeroImageRemoveOutput = inferRouterOutputs<AppRouter>['food']['heroImage']['remove'];
+type HeroImageUploadBody = NonNullable<HeroImageUploadData['body']>;
 
 interface ValidationResult {
   ok: boolean;
@@ -76,29 +72,24 @@ export interface MutationOptions {
 
 export function useHeroMutations(opts: MutationOptions): MutationState {
   const { recipeId, maxBytes, onUploaded, onRemoved, uploadedMsg, removedMsg } = opts;
-  const uploadMutation = usePillarMutation<HeroImageUploadInput, HeroImageUploadOutput>(
-    'food',
-    ['heroImage', 'upload'],
-    {
-      onSuccess: (res) => {
-        onUploaded(res.data.heroImagePath);
-        toast.success(uploadedMsg);
-      },
-      onError: (err) => toast.error(err.message),
-    }
-  );
+  const uploadMutation = useMutation({
+    mutationFn: async (body: HeroImageUploadBody) =>
+      unwrap(await heroImageUpload({ path: { recipeId }, body })),
+    onSuccess: (res) => {
+      onUploaded(res.data.heroImagePath);
+      toast.success(uploadedMsg);
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
 
-  const removeMutation = usePillarMutation<HeroImageRemoveInput, HeroImageRemoveOutput>(
-    'food',
-    ['heroImage', 'remove'],
-    {
-      onSuccess: () => {
-        onRemoved();
-        toast.success(removedMsg);
-      },
-      onError: (err) => toast.error(err.message),
-    }
-  );
+  const removeMutation = useMutation({
+    mutationFn: async () => unwrap(await heroImageRemove({ path: { recipeId } })),
+    onSuccess: () => {
+      onRemoved();
+      toast.success(removedMsg);
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
 
   const uploadFile = useCallback(
     async (file: File) => {
@@ -110,20 +101,19 @@ export function useHeroMutations(opts: MutationOptions): MutationState {
       try {
         const contentBase64 = await readAsBase64(file);
         uploadMutation.mutate({
-          recipeId,
-          mimeType: file.type as (typeof HERO_ALLOWED_MIME_TYPES)[number],
+          mimeType: file.type as HeroImageUploadBody['mimeType'],
           contentBase64,
         });
       } catch (err) {
         toast.error(err instanceof Error ? err.message : 'Could not read the selected file.');
       }
     },
-    [maxBytes, recipeId, uploadMutation]
+    [maxBytes, uploadMutation]
   );
 
   const removeHero = useCallback(() => {
-    removeMutation.mutate({ recipeId });
-  }, [recipeId, removeMutation]);
+    removeMutation.mutate();
+  }, [removeMutation]);
 
   return {
     uploadIsPending: uploadMutation.isPending,

@@ -2,10 +2,10 @@
  * Glia audit trail panel — chronological view of every action with
  * filterable type/status. Backed by `cerebrum.glia.actions.list`.
  */
+import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { usePillarQuery } from '@pops/pillar-sdk/react';
 import {
   Button,
   Skeleton,
@@ -17,6 +17,8 @@ import {
   TooltipProvider,
 } from '@pops/ui';
 
+import { gliaActionsList } from '../../cerebrum-api';
+import { unwrap } from '../../cerebrum-api-helpers';
 import {
   GLIA_ACTION_STATUSES,
   GLIA_ACTION_TYPES,
@@ -64,7 +66,7 @@ function FilterSelect<T extends string>({
 interface AuditBodyProps {
   query: {
     isLoading: boolean;
-    error: { message: string } | null;
+    error: unknown;
     refetch: () => Promise<unknown>;
   };
   actions: GliaAction[];
@@ -130,15 +132,15 @@ export function AuditTrailPanel() {
   const [actionType, setActionType] = useState<GliaActionType | null>(null);
   const [status, setStatus] = useState<GliaActionStatus | null>(null);
 
-  const query = usePillarQuery<{ actions: GliaAction[]; total: number }>(
-    'cerebrum',
-    ['glia', 'actions', 'list'],
-    {
-      ...(actionType ? { actionType } : {}),
-      ...(status ? { status } : {}),
-      limit: 100,
-    }
-  );
+  const input = {
+    ...(actionType ? { actionType } : {}),
+    ...(status ? { status } : {}),
+    limit: 100,
+  };
+  const query = useQuery({
+    queryKey: ['cerebrum', 'glia', 'actions', 'list', input],
+    queryFn: async () => unwrap(await gliaActionsList({ body: input })),
+  });
   const actions: GliaAction[] = query.data?.actions ?? [];
 
   return (

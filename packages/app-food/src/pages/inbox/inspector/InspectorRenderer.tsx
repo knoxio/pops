@@ -6,18 +6,15 @@
  * `compileStatus !== 'compiled'` we show a stub instead — the renderer is
  * only meaningful against materialised lines + steps.
  */
+import { useQuery } from '@tanstack/react-query';
 import { type ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { usePillarQuery } from '@pops/pillar-sdk/react';
-
 import { RecipeRenderer } from '../../../components/RecipeRenderer.js';
+import { unwrap } from '../../../food-api-helpers.js';
+import { recipesGetForRendering } from '../../../food-api/index.js';
 
-import type { inferRouterOutputs } from '@trpc/server';
-
-import type { AppRouter } from '@pops/api';
-
-type GetForRenderingOutput = inferRouterOutputs<AppRouter>['food']['recipes']['getForRendering'];
+import type { RecipeVersionWithCompiledData } from '../../../components/recipe-render-types.js';
 
 interface Props {
   slug: string;
@@ -44,9 +41,15 @@ interface BodyProps {
 }
 
 function RendererBody({ slug, versionNo, t }: BodyProps): ReactElement {
-  const query = usePillarQuery<GetForRenderingOutput>('food', ['recipes', 'getForRendering'], {
-    slug,
-    versionNo,
+  const query = useQuery({
+    queryKey: ['food', 'recipes', 'getForRendering', { slug, versionNo }],
+    queryFn: async (): Promise<RecipeVersionWithCompiledData> =>
+      // The renderer endpoint serves the joined payload as an opaque blob
+      // (`unknown` in the generated SDK); narrow it from `unknown` to the
+      // renderer's view type — a single narrowing assertion.
+      unwrap(
+        await recipesGetForRendering({ path: { slug }, query: { versionNo } })
+      ) as RecipeVersionWithCompiledData,
   });
   if (query.isLoading) {
     return <p className="text-sm text-muted-foreground">{t('inbox.inspector.renderer.loading')}</p>;

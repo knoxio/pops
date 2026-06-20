@@ -1,8 +1,16 @@
+import { useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
 
 import { useSetPageContext } from '@pops/navigation';
-import { usePillarQuery } from '@pops/pillar-sdk/react';
 
+import { unwrap } from '../../media-api-helpers.js';
+import {
+  tvShowsGet,
+  tvShowsListEpisodes,
+  tvShowsListSeasons,
+  watchHistoryList,
+  watchHistoryProgress,
+} from '../../media-api/index.js';
 import { useEpisodeWatchState } from './useEpisodeWatchState';
 import { useSonarrMonitoring } from './useSonarrMonitoring';
 
@@ -13,7 +21,7 @@ interface ShowEnvelope {
 interface SeasonItem {
   id: number;
   seasonNumber: number;
-  name: string;
+  name: string | null;
   posterUrl: string | null;
   airDate: string | null;
   overview: string | null;
@@ -59,41 +67,40 @@ interface ProgressEnvelope {
 
 function useSeasonQueries(showId: number, seasonNum: number) {
   const enabled = !Number.isNaN(showId);
-  const showQuery = usePillarQuery<ShowEnvelope>(
-    'media',
-    ['tvShows', 'get'],
-    { id: showId },
-    { enabled }
-  );
-  const seasonsQuery = usePillarQuery<SeasonsEnvelope>(
-    'media',
-    ['tvShows', 'listSeasons'],
-    { tvShowId: showId },
-    { enabled }
-  );
+  const showQuery = useQuery({
+    queryKey: ['media', 'tvShows', 'get', { id: showId }],
+    queryFn: async (): Promise<ShowEnvelope> => unwrap(await tvShowsGet({ path: { id: showId } })),
+    enabled,
+  });
+  const seasonsQuery = useQuery({
+    queryKey: ['media', 'tvShows', 'listSeasons', { tvShowId: showId }],
+    queryFn: async (): Promise<SeasonsEnvelope> =>
+      unwrap(await tvShowsListSeasons({ path: { tvShowId: showId } })),
+    enabled,
+  });
   const season = seasonsQuery.data?.data?.find((s) => s.seasonNumber === seasonNum);
-  const episodesQuery = usePillarQuery<EpisodesEnvelope>(
-    'media',
-    ['tvShows', 'listEpisodes'],
-    { seasonId: season?.id ?? 0 },
-    { enabled: !!season?.id }
-  );
+  const episodesQuery = useQuery({
+    queryKey: ['media', 'tvShows', 'listEpisodes', { seasonId: season?.id ?? 0 }],
+    queryFn: async (): Promise<EpisodesEnvelope> =>
+      unwrap(await tvShowsListEpisodes({ path: { seasonId: season?.id ?? 0 } })),
+    enabled: !!season?.id,
+  });
   return { showQuery, seasonsQuery, season, episodesQuery };
 }
 
 function useWatchHistoryAndProgress(showId: number, episodeIds: number[]) {
-  const watchHistoryQuery = usePillarQuery<WatchHistoryEnvelope>(
-    'media',
-    ['watchHistory', 'list'],
-    { mediaType: 'episode', limit: 500 },
-    { enabled: episodeIds.length > 0 }
-  );
-  const progressQuery = usePillarQuery<ProgressEnvelope>(
-    'media',
-    ['watchHistory', 'progress'],
-    { tvShowId: showId },
-    { enabled: !Number.isNaN(showId) }
-  );
+  const watchHistoryQuery = useQuery({
+    queryKey: ['media', 'watchHistory', 'list', { mediaType: 'episode', limit: 500 }],
+    queryFn: async (): Promise<WatchHistoryEnvelope> =>
+      unwrap(await watchHistoryList({ query: { mediaType: 'episode', limit: 500 } })),
+    enabled: episodeIds.length > 0,
+  });
+  const progressQuery = useQuery({
+    queryKey: ['media', 'watchHistory', 'progress', { tvShowId: showId }],
+    queryFn: async (): Promise<ProgressEnvelope> =>
+      unwrap(await watchHistoryProgress({ path: { tvShowId: showId } })),
+    enabled: !Number.isNaN(showId),
+  });
   return { watchHistoryQuery, progressQuery };
 }
 

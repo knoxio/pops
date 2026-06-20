@@ -4,13 +4,17 @@
  * The streaming path uses the SSE endpoint for token-by-token rendering.
  * The non-streaming tRPC ego.chat mutation remains for MCP/CLI channels.
  */
+import { useMutation, useQueryClient, type QueryClient } from '@tanstack/react-query';
 import { useCallback, useState } from 'react';
 
-import { trpc } from '@pops/api-client';
-
+import { egoDeleteConversation } from '../ego-api';
+import { unwrap } from '../ego-api-helpers';
 import { useStreamingChat } from './useStreamingChat';
 
+import type { EgoGetConversationResponses } from '../ego-api/types.gen';
 import type { RetrievedEngram } from './types';
+
+type ConversationDetail = EgoGetConversationResponses[200];
 
 interface UseChatMutationsParams {
   selectedConversationId: string | null;
@@ -37,15 +41,17 @@ function useDeleteConversation(
   selectedConversationId: string | null,
   setSelectedConversationId: (id: string | null) => void,
   setRetrievedEngrams: (e: RetrievedEngram[]) => void,
-  utils: ReturnType<typeof trpc.useUtils>
+  queryClient: QueryClient
 ) {
-  const mutation = trpc.ego.conversations.delete.useMutation({
-    onSuccess: (_data: { success: boolean }, variables: { id: string }) => {
+  const mutation = useMutation({
+    mutationFn: async ({ id }: { id: string }) =>
+      unwrap(await egoDeleteConversation({ path: { id } })),
+    onSuccess: (_data, variables) => {
       if (selectedConversationId === variables.id) {
         setSelectedConversationId(null);
         setRetrievedEngrams([]);
       }
-      void utils.ego.conversations.list.invalidate();
+      void queryClient.invalidateQueries({ queryKey: ['ego', 'conversations', 'list'] });
     },
   });
   const deleteConversation = useCallback((id: string) => mutation.mutate({ id }), [mutation]);
@@ -59,13 +65,13 @@ export function useChatMutations({
   setInputValue,
 }: UseChatMutationsParams) {
   const [retrievedEngrams, setRetrievedEngrams] = useState<RetrievedEngram[]>([]);
-  const utils = trpc.useUtils();
+  const queryClient = useQueryClient();
   const streaming = useStreamingChat();
   const { deleteConversation, isDeleting } = useDeleteConversation(
     selectedConversationId,
     setSelectedConversationId,
     setRetrievedEngrams,
-    utils
+    queryClient
   );
 
   const sendMessage = useCallback(() => {
@@ -74,9 +80,9 @@ export function useChatMutations({
     setInputValue('');
     if (selectedConversationId) {
       const msg = buildOptimisticMessage(selectedConversationId, trimmed);
-      utils.ego.conversations.get.setData(
-        { id: selectedConversationId },
-        (prev) => (prev ? { ...prev, messages: [...prev.messages, msg] } : prev),
+      queryClient.setQueryData<ConversationDetail>(
+        ['ego', 'conversations', 'get', { id: selectedConversationId }],
+        (prev) => (prev ? { ...prev, messages: [...prev.messages, msg] } : prev)
       );
     }
     streaming.stream(
@@ -85,12 +91,14 @@ export function useChatMutations({
         onConversation: setSelectedConversationId,
         onEngrams: setRetrievedEngrams,
         onInvalidate: (conversationId) => {
-          void utils.ego.conversations.list.invalidate();
-          void utils.ego.conversations.get.invalidate({ id: conversationId });
+          void queryClient.invalidateQueries({ queryKey: ['ego', 'conversations', 'list'] });
+          void queryClient.invalidateQueries({
+            queryKey: ['ego', 'conversations', 'get', { id: conversationId }],
+          });
         },
-      },
+      }
     );
-  }, [inputValue, selectedConversationId, streaming, setInputValue, setSelectedConversationId, utils]); // prettier-ignore
+  }, [inputValue, selectedConversationId, streaming, setInputValue, setSelectedConversationId, queryClient]); // prettier-ignore
 
   const clearEngrams = useCallback(() => setRetrievedEngrams([]), []);
 

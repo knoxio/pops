@@ -1,7 +1,8 @@
+import { useQuery } from '@tanstack/react-query';
 import { useCallback, useState } from 'react';
 
-import { usePillarQuery } from '@pops/pillar-sdk/react';
-
+import { unwrap } from '../../media-api-helpers.js';
+import { comparisonsListDimensions } from '../../media-api/index.js';
 import { reorderDimension, useDimensionMutations } from './useDimensionMutations';
 
 import type { Dimension, EditState } from './types';
@@ -32,21 +33,30 @@ export interface DimensionManagerModel {
   handleReorder: (dim: Dimension, direction: 'up' | 'down') => void;
 }
 
-function normalizeDimensions(
-  raw: ReadonlyArray<{
-    id: number;
-    name: string;
-    description: string | null;
-    active: boolean | number;
-    sortOrder: number;
-    weight: number | null;
-  }>
-): Dimension[] {
+interface RawDimension {
+  id: number;
+  name: string;
+  description: string | null;
+  active: boolean | number;
+  sortOrder: number;
+  weight: number | null;
+}
+
+function normalizeDimensions(raw: ReadonlyArray<RawDimension>): Dimension[] {
   return raw.map((d) => ({
     ...d,
     active: Boolean(d.active),
     weight: d.weight ?? 1.0,
   }));
+}
+
+function useDimensionsQuery(open: boolean) {
+  const { data, isLoading } = useQuery<{ data: ReadonlyArray<RawDimension> }>({
+    queryKey: ['media', 'comparisons', 'listDimensions'],
+    queryFn: async () => unwrap(await comparisonsListDimensions()),
+    enabled: open,
+  });
+  return { dimensions: normalizeDimensions(data?.data ?? []), isLoading };
 }
 
 export function useDimensionManagerModel(): DimensionManagerModel {
@@ -56,18 +66,7 @@ export function useDimensionManagerModel(): DimensionManagerModel {
   const [addDescription, setAddDescription] = useState('');
   const [editing, setEditing] = useState<EditState | null>(null);
 
-  const { data: dimensionsData, isLoading } = usePillarQuery<{
-    data: ReadonlyArray<{
-      id: number;
-      name: string;
-      description: string | null;
-      active: boolean | number;
-      sortOrder: number;
-      weight: number | null;
-    }>;
-  }>('media', ['comparisons', 'listDimensions'], undefined, { enabled: open });
-
-  const dimensions = normalizeDimensions(dimensionsData?.data ?? []);
+  const { dimensions, isLoading } = useDimensionsQuery(open);
 
   const mutations = useDimensionMutations({
     dimensionsLength: dimensions.length,

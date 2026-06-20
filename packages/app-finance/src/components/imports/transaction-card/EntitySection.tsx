@@ -4,7 +4,7 @@ import { Badge, Button } from '@pops/ui';
 
 import { EntitySelect } from '../EntitySelect';
 
-import type { ProcessedTransaction } from '@pops/api/modules/finance/imports';
+import type { ProcessedTransaction } from '@pops/finance';
 
 interface AiSuggestionProps {
   transaction: ProcessedTransaction;
@@ -55,7 +55,7 @@ function AiSuggestionPanel({
 
 interface EntitySectionProps {
   transaction: ProcessedTransaction;
-  entities?: Array<{ id: string; name: string; type: string }>;
+  entities?: Array<{ id: string; name: string }>;
   onEntitySelect?: (
     transaction: ProcessedTransaction,
     entityId: string,

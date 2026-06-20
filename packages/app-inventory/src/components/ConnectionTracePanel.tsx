@@ -1,8 +1,8 @@
+import { useQuery } from '@tanstack/react-query';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
 
-import { usePillarQuery } from '@pops/pillar-sdk/react';
 /**
  * ConnectionTracePanel — displays connection chain as an expandable tree.
  *
@@ -19,13 +19,12 @@ import {
   TypeBadge,
 } from '@pops/ui';
 
-interface TraceNode {
-  id: string;
-  itemName: string;
-  assetId: string | null;
-  type: string | null;
-  children: TraceNode[];
-}
+import { isUnavailableError, unwrap } from '../inventory-api-helpers.js';
+import { connectionsTrace } from '../inventory-api/index.js';
+
+import type { TraceNode } from '../inventory-api/index.js';
+
+const MAX_TRACE_DEPTH = 10;
 
 interface TraceNodeRowProps {
   node: TraceNode;
@@ -137,13 +136,16 @@ export interface ConnectionTracePanelProps {
 }
 
 export function ConnectionTracePanel({ itemId }: ConnectionTracePanelProps) {
-  const { data, isLoading, error, isUnavailable, isContractMismatch } = usePillarQuery<{
-    data: TraceNode;
-  }>('inventory', ['connections', 'trace'], { itemId }, { enabled: !!itemId });
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['inventory', 'connections', 'trace', itemId],
+    queryFn: async () =>
+      unwrap(await connectionsTrace({ path: { itemId }, query: { maxDepth: MAX_TRACE_DEPTH } })),
+    enabled: !!itemId,
+  });
 
   if (isLoading) return <TraceSkeleton />;
 
-  if (isUnavailable || isContractMismatch) {
+  if (isUnavailableError(error)) {
     return <p className="text-sm text-muted-foreground">Connection chain unavailable.</p>;
   }
 

@@ -1,17 +1,15 @@
+import { useMutation } from '@tanstack/react-query';
 import { useCallback } from 'react';
 import { toast } from 'sonner';
 
-import { usePillarMutation } from '@pops/pillar-sdk/react';
+import { unwrap } from '../../media-api-helpers.js';
+import { comparisonsExcludeFromDimension, comparisonsMarkStale } from '../../media-api/index.js';
 
-import type { MediaUtils } from './useScoreDelta';
+import type { MediaQueryClient } from './useScoreDelta';
 
 interface MarkStaleInput {
   mediaType: 'movie';
   mediaId: number;
-}
-
-interface MarkStaleResult {
-  data: { staleness: number };
 }
 
 interface ExcludeInput {
@@ -22,30 +20,30 @@ interface ExcludeInput {
 
 interface Args {
   dimensionId: number | null;
-  utils: MediaUtils;
+  queryClient: MediaQueryClient;
   resolveTitle: (id: number) => string;
   onAfterAction: () => void;
 }
 
 export function useStaleAndExcludeMutations({
   dimensionId,
-  utils,
+  queryClient,
   resolveTitle,
   onAfterAction,
 }: Args) {
-  const markStaleMutation = usePillarMutation<MarkStaleInput, MarkStaleResult>(
-    'media',
-    ['comparisons', 'markStale'],
-    {
-      onSuccess: (data, variables) => {
-        const staleness = data.data.staleness;
-        const timesMarked = Math.round(Math.log(staleness) / Math.log(0.5));
-        toast.success(`${resolveTitle(variables.mediaId)} marked stale (×${timesMarked})`);
-        onAfterAction();
-        void utils.invalidate(['comparisons', 'getSmartPair']);
-      },
-    }
-  );
+  const markStaleMutation = useMutation({
+    mutationFn: async (variables: MarkStaleInput) =>
+      unwrap(await comparisonsMarkStale({ body: variables })),
+    onSuccess: (data, variables) => {
+      const staleness = data.data.staleness;
+      const timesMarked = Math.round(Math.log(staleness) / Math.log(0.5));
+      toast.success(`${resolveTitle(variables.mediaId)} marked stale (×${timesMarked})`);
+      onAfterAction();
+      void queryClient.invalidateQueries({
+        queryKey: ['media', 'comparisons', 'getSmartPair'],
+      });
+    },
+  });
 
   const handleMarkStale = useCallback(
     (movieId: number) => {
@@ -55,10 +53,10 @@ export function useStaleAndExcludeMutations({
     [markStaleMutation]
   );
 
-  const excludeMutation = usePillarMutation<ExcludeInput, unknown>('media', [
-    'comparisons',
-    'excludeFromDimension',
-  ]);
+  const excludeMutation = useMutation({
+    mutationFn: async (variables: ExcludeInput) =>
+      unwrap(await comparisonsExcludeFromDimension({ body: variables })),
+  });
 
   const handleNA = useCallback(
     (movieId: number) => {
@@ -68,12 +66,14 @@ export function useStaleAndExcludeMutations({
         {
           onSuccess: () => {
             toast.success(`${resolveTitle(movieId)} excluded from this dimension`);
-            void utils.invalidate(['comparisons', 'getSmartPair']);
+            void queryClient.invalidateQueries({
+              queryKey: ['media', 'comparisons', 'getSmartPair'],
+            });
           },
         }
       );
     },
-    [dimensionId, excludeMutation, resolveTitle, utils]
+    [dimensionId, excludeMutation, resolveTitle, queryClient]
   );
 
   return { markStaleMutation, handleMarkStale, excludeMutation, handleNA };

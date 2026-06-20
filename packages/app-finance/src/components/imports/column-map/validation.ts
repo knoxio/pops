@@ -2,7 +2,7 @@ import crypto from 'crypto-js';
 
 import { extractLocation, parseAmount, parseDate, type ColumnMap } from './parsers';
 
-import type { ParsedTransaction } from '@pops/api/modules/finance/imports';
+import type { ParsedTransaction } from '@pops/finance';
 
 export interface ValidationResult {
   valid: boolean;

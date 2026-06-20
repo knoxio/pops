@@ -21,18 +21,16 @@ vi.mock('@pops/pillar-sdk/client', () => ({
 
 vi.mock('@pops/pillar-sdk/react', () => ({
   usePillarSdkOptions: () => ({}),
-  usePillarQuery: (pillarId: string, path: readonly string[], input: unknown) => {
-    if (pillarId === 'core' && path.join('.') === 'settings.getBulk') {
-      return mocks.getBulk(input);
-    }
-    return { data: undefined, isLoading: false, isUnavailable: false, isContractMismatch: false };
-  },
-  usePillarMutation: (pillarId: string, path: readonly string[]) => {
-    if (pillarId === 'core' && path.join('.') === 'settings.setBulk') {
-      return { mutate: mocks.setBulkMutate };
-    }
-    return { mutate: () => undefined };
-  },
+}));
+
+// Drive the renderer's react-query usage directly: `useQuery` returns the
+// settings.getMany payload, `useMutation` exposes the `mutate` spy so the
+// auto-save tests can both assert the call and invoke the success/error
+// callbacks the hook passes. `useQueryClient` is a no-op invalidation stub.
+vi.mock('@tanstack/react-query', () => ({
+  useQuery: () => mocks.getBulk(),
+  useMutation: () => ({ mutate: mocks.setBulkMutate, isPending: false }),
+  useQueryClient: () => ({ invalidateQueries: vi.fn() }),
 }));
 
 vi.mock('sonner', () => ({

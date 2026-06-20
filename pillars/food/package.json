@@ -1,0 +1,86 @@
+{
+  "name": "@pops/food",
+  "version": "0.1.0",
+  "private": true,
+  "files": [
+    "dist/contract/**",
+    "dist/dsl/**",
+    "openapi/food.openapi.json"
+  ],
+  "type": "module",
+  "main": "./dist/contract/index.js",
+  "types": "./dist/contract/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/contract/index.d.ts",
+      "default": "./dist/contract/index.js"
+    },
+    "./manifest": {
+      "types": "./dist/contract/manifest.d.ts",
+      "default": "./dist/contract/manifest.js"
+    },
+    "./api-types": {
+      "types": "./dist/contract/api-types.generated.d.ts",
+      "default": "./dist/contract/api-types.generated.js"
+    },
+    "./queue": {
+      "types": "./dist/contract/queue/index.d.ts",
+      "default": "./dist/contract/queue/index.js"
+    },
+    "./dsl": {
+      "types": "./dist/dsl/public.d.ts",
+      "default": "./dist/dsl/public.js"
+    },
+    "./openapi": "./openapi/food.openapi.json",
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "build": "tsx scripts/verify-manifest.ts && tsc && tsx scripts/generate-openapi.ts && tsx scripts/generate-api-types.ts",
+    "dev:api": "tsx watch --clear-screen=false src/api/server.ts",
+    "dev:worker": "tsx watch --clear-screen=false src/worker/worker.ts",
+    "start:api": "node dist/api/server.js",
+    "start:worker": "node dist/worker/worker.js",
+    "db:seed:food": "tsx scripts/db-seed-food.ts",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p scripts/tsconfig.json",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:watch": "vitest",
+    "generate:manifest": "tsx scripts/generate-manifest.ts",
+    "verify:manifest": "tsx scripts/verify-manifest.ts",
+    "generate:openapi": "tsx scripts/generate-openapi.ts",
+    "generate:api-types": "tsx scripts/generate-api-types.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.104.1",
+    "@mozilla/readability": "^0.6.0",
+    "@pops/pillar-sdk": "workspace:*",
+    "@pops/shared-schema": "workspace:*",
+    "@pops/types": "workspace:*",
+    "@ts-rest/core": "3.53.0-rc.1",
+    "@ts-rest/express": "3.53.0-rc.1",
+    "@ts-rest/open-api": "3.53.0-rc.1",
+    "better-sqlite3": "^12.10.0",
+    "bullmq": "^5.78.0",
+    "drizzle-orm": "^0.45.2",
+    "drizzle-zod": "^0.8.3",
+    "express": "^5.1.0",
+    "ioredis": "^5.11.1",
+    "jsdom": "^25.0.1",
+    "pino": "^10.3.1",
+    "sharp": "^0.34.5",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.12",
+    "@types/express": "^5.0.4",
+    "@types/jsdom": "^21.1.7",
+    "@types/node": "^25.9.3",
+    "@types/supertest": "^6.0.3",
+    "@vitest/coverage-v8": "^4.1.8",
+    "openapi-typescript": "^7.13.0",
+    "supertest": "^7.1.4",
+    "tsx": "^4.22.4",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.8"
+  }
+}

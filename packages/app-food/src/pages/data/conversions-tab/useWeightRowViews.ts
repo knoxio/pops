@@ -6,19 +6,18 @@
  * Lookups for missing rows fall back to a sentinel so the row still
  * renders even if the parent data load races behind.
  */
+import { useQueries } from '@tanstack/react-query';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { pillarQueryArg, usePillarQueries, type PillarQueryArg } from '@pops/pillar-sdk/react';
+import { unwrap } from '../../../food-api-helpers.js';
+import { ingredientsGet } from '../../../food-api/index.js';
 
-import type { inferRouterOutputs } from '@trpc/server';
-
-import type { AppRouter } from '@pops/api';
-
+import type { IngredientsGetResponses } from '../../../food-api/types.gen.js';
 import type { IngredientWeightRow } from './types';
 import type { WeightRowView } from './WeightsTable';
 
-type IngredientsGetOutput = inferRouterOutputs<AppRouter>['food']['ingredients']['get'];
+type IngredientsGetOutput = IngredientsGetResponses[200];
 
 interface IngredientLookup {
   byId: Map<number, { name: string; slug: string }>;
@@ -36,17 +35,13 @@ function isIngredientsGetOutput(data: unknown): data is IngredientsGetOutput {
 }
 
 function useVariantLookup(ingredientIds: readonly number[]): Map<number, string> {
-  // `usePillarQueries` runs a known-length array in parallel; the array
-  // shape is stable across renders (memoised by caller). React Query
-  // dedupes identical queries so repeated mounts are free.
-  const args: readonly PillarQueryArg<unknown>[] = ingredientIds.map((id) =>
-    pillarQueryArg<unknown>({
-      pillarId: 'food',
-      path: ['ingredients', 'get'],
-      input: { idOrSlug: id },
-    })
-  );
-  const queries = usePillarQueries(args);
+  const queries = useQueries({
+    queries: ingredientIds.map((id) => ({
+      queryKey: ['food', 'ingredients', 'get', id],
+      queryFn: async () => unwrap(await ingredientsGet({ path: { idOrSlug: String(id) } })),
+      enabled: true,
+    })),
+  });
   return useMemo(() => {
     const map = new Map<number, string>();
     for (const q of queries) {

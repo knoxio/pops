@@ -1,9 +1,9 @@
+import { useMutation, useQueryClient, type QueryClient } from '@tanstack/react-query';
 import { useCallback, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
-import { usePillarMutation, usePillarUtils } from '@pops/pillar-sdk/react';
-
-import type { UsePillarUtilsResult } from '@pops/pillar-sdk/react';
+import { unwrap } from '../../media-api-helpers.js';
+import { watchHistoryDelete, watchHistoryLog } from '../../media-api/index.js';
 
 interface UseEpisodeToggleArgs {
   watchHistory: Array<{ id: number; mediaId: number }> | undefined;
@@ -18,12 +18,23 @@ interface DeleteInput {
   id: number;
 }
 
-function useLogMutation(utils: UsePillarUtilsResult, removeToggling: (id: number) => void) {
-  return usePillarMutation<LogInput, unknown>('media', ['watchHistory', 'log'], {
+function useLogMutation(queryClient: QueryClient, removeToggling: (id: number) => void) {
+  return useMutation({
+    mutationFn: async (variables: LogInput) =>
+      unwrap(
+        await watchHistoryLog({
+          body: {
+            mediaType: variables.mediaType,
+            mediaId: variables.mediaId,
+            completed: 1,
+            source: 'manual',
+          },
+        })
+      ),
     onSuccess: () => {
-      void utils.invalidate(['tvShows', 'listSeasons']);
+      void queryClient.invalidateQueries({ queryKey: ['media', 'tvShows', 'listSeasons'] });
     },
-    onError: (err) => {
+    onError: (err: Error) => {
       toast.error(`Failed to log watch: ${err.message}`);
     },
     onSettled: (_data, _err, variables) => {
@@ -33,15 +44,17 @@ function useLogMutation(utils: UsePillarUtilsResult, removeToggling: (id: number
 }
 
 function useDeleteMutation(
-  utils: UsePillarUtilsResult,
+  queryClient: QueryClient,
   deleteEntryToEpisode: React.RefObject<Map<number, number>>,
   removeToggling: (id: number) => void
 ) {
-  return usePillarMutation<DeleteInput, unknown>('media', ['watchHistory', 'delete'], {
+  return useMutation({
+    mutationFn: async (variables: DeleteInput) =>
+      unwrap(await watchHistoryDelete({ path: { id: variables.id } })),
     onSuccess: () => {
-      void utils.invalidate(['tvShows', 'listSeasons']);
+      void queryClient.invalidateQueries({ queryKey: ['media', 'tvShows', 'listSeasons'] });
     },
-    onError: (err) => {
+    onError: (err: Error) => {
       toast.error(`Failed to remove watch: ${err.message}`);
     },
     onSettled: (_data, _err, variables) => {
@@ -54,7 +67,7 @@ function useDeleteMutation(
 }
 
 export function useEpisodeToggle({ watchHistory }: UseEpisodeToggleArgs) {
-  const utils = usePillarUtils('media');
+  const queryClient = useQueryClient();
   const [togglingIds, setTogglingIds] = useState<Set<number>>(new Set());
   const deleteEntryToEpisode = useRef<Map<number, number>>(new Map());
 
@@ -66,8 +79,8 @@ export function useEpisodeToggle({ watchHistory }: UseEpisodeToggleArgs) {
     });
   }, []);
 
-  const logMutation = useLogMutation(utils, removeToggling);
-  const deleteMutation = useDeleteMutation(utils, deleteEntryToEpisode, removeToggling);
+  const logMutation = useLogMutation(queryClient, removeToggling);
+  const deleteMutation = useDeleteMutation(queryClient, deleteEntryToEpisode, removeToggling);
 
   const handleToggleWatched = useCallback(
     (episodeId: number, watched: boolean) => {

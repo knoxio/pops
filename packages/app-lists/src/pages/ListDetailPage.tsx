@@ -1,9 +1,9 @@
+import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState, type ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router';
 
-import { usePillarQuery } from '@pops/pillar-sdk/react';
-
+import { listGet } from '../lists-api/index.js';
 import { ShoppingDetailContent } from './components/shopping/ShoppingDetailContent.js';
 import { GenericDetailContent } from './detail/GenericDetailContent.js';
 import { useDetailMutations } from './detail/useDetailMutations.js';
@@ -13,6 +13,10 @@ import type { DetailContentProps, DialogState } from './detail/detail-handlers.j
 import type { ListItemRow, ListRow } from './detail/types.js';
 
 export type ListDetailPayload = { list: ListRow; items: readonly ListItemRow[] } | null;
+
+export function listDetailQueryKey(id: number): readonly unknown[] {
+  return ['lists', 'list', 'get', { id }];
+}
 
 /**
  * `/lists/:id` — generic list detail page (PRD-140-C) with PRD-141's
@@ -49,12 +53,22 @@ function useDialogs(): DialogState {
 
 function ListDetailBody({ listId }: { listId: number }): ReactElement {
   const { t } = useTranslation('lists');
-  const query = usePillarQuery<ListDetailPayload>(
-    'lists',
-    ['list', 'get'],
-    { id: listId },
-    { refetchInterval: 60_000, refetchIntervalInBackground: false }
-  );
+  const query = useQuery<ListDetailPayload>({
+    queryKey: listDetailQueryKey(listId),
+    queryFn: async () => {
+      const { data, error } = await listGet({ path: { id: listId } });
+      if (error !== undefined) {
+        const message =
+          typeof error === 'object' && error !== null && 'message' in error
+            ? String((error as { message: unknown }).message)
+            : 'request failed';
+        throw new Error(message);
+      }
+      return data ?? null;
+    },
+    refetchInterval: 60_000,
+    refetchIntervalInBackground: false,
+  });
   const detailMx = useDetailMutations();
   const itemMx = useItemMutations(listId);
   const dialogs = useDialogs();

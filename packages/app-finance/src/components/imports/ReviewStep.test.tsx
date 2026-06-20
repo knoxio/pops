@@ -1,69 +1,31 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen } from '@testing-library/react';
+import { type ReactElement } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // --- Mock setup ---
 
 const mockAnalyzeCorrectionMutateAsync = vi.fn();
 const mockEntitiesQuery = vi.fn();
-const mockReevaluateMutate = vi.fn();
 
-vi.mock('@pops/pillar-sdk/react', () => ({
-  usePillarQuery: (_pillarId: string, path: readonly string[], ...args: unknown[]) => {
-    const key = path.join('.');
-    if (key === 'transactions.listDescriptionsForPreview') {
-      return { data: { data: [], total: 0, truncated: false }, isLoading: false };
-    }
-    if (key === 'entities.list') return mockEntitiesQuery(...args);
-    if (key === 'corrections.list') return { data: { data: [] }, isLoading: false, isError: false };
-    if (key === 'corrections.proposeChangeSet') return { data: null, isFetching: false };
-    return { data: undefined };
-  },
-  usePillarMutation: (_pillarId: string, path: readonly string[]) => {
-    const key = path.join('.');
-    if (key === 'imports.reevaluateWithPendingRules') {
-      return {
-        mutate: (
-          _input: unknown,
-          opts?: {
-            onSuccess?: (data: { result: unknown; affectedCount: number }) => void;
-            onError?: (err: Error) => void;
-          }
-        ) => mockReevaluateMutate(_input, opts),
-        mutateAsync: vi.fn(),
-        isPending: false,
-      };
-    }
-    if (key === 'corrections.analyzeCorrection') {
-      return {
-        mutateAsync: mockAnalyzeCorrectionMutateAsync,
-        isPending: false,
-      };
-    }
-    if (key === 'corrections.previewChangeSet') {
-      return {
-        mutate: vi.fn(),
-        mutateAsync: vi.fn().mockResolvedValue({
-          diffs: [],
-          summary: {
-            total: 0,
-            newMatches: 0,
-            removedMatches: 0,
-            statusChanges: 0,
-            netMatchedDelta: 0,
-          },
-        }),
-        isPending: false,
-        isError: false,
-        error: null,
-      };
-    }
-    return { mutate: vi.fn(), mutateAsync: vi.fn(), isPending: false };
-  },
-  usePillarUtils: () => ({
-    invalidate: vi.fn(),
-    setData: vi.fn(),
-    fetchQuery: vi.fn(),
+// Finance-served reevaluate moved to the generated REST SDK. The mock resolves
+// the Hey API `{ data, error }` envelope; per-call `onSuccess` in the component
+// fires on resolve, so tests assert via the resulting UI rather than callbacks.
+const { mockReevaluate } = vi.hoisted(() => ({ mockReevaluate: vi.fn() }));
+
+vi.mock('../../finance-api/index.js', () => ({
+  importsReevaluateWithPendingRules: (...args: unknown[]) => mockReevaluate(...args),
+  correctionsAnalyzeCorrection: async (arg: { body: unknown }) => ({
+    data: await mockAnalyzeCorrectionMutateAsync(arg.body),
   }),
+}));
+
+// The entity picker reads `entities.list` over the generated core REST client;
+// the mock resolves the Hey API `{ data, error }` envelope so the picker's
+// `unwrap` returns the list payload. Corrections are finance REST (mocked
+// above) and the proposal dialog itself is stubbed below.
+vi.mock('../../core-api/index.js', () => ({
+  entitiesList: (...args: unknown[]) => mockEntitiesQuery(...args),
 }));
 
 const mockToastSuccess = vi.fn();
@@ -350,6 +312,17 @@ import { ReviewStep } from './ReviewStep';
 
 // --- Helpers ---
 
+function reviewStepTree(): ReactElement {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  });
+  return (
+    <QueryClientProvider client={queryClient}>
+      <ReviewStep />
+    </QueryClientProvider>
+  );
+}
+
 function makeTx(description: string, overrides: Record<string, unknown> = {}) {
   return {
     date: '2026-01-15',
@@ -378,16 +351,26 @@ beforeEach(() => {
   proposalDialogApproveMode = 'success';
   mockPendingEntities = [];
   mockPendingChangeSets = [];
-  mockEntitiesQuery.mockReturnValue({
+  mockEntitiesQuery.mockResolvedValue({
     data: {
       data: [
         { id: 'ent-1', name: 'Woolworths', type: 'company' },
         { id: 'ent-2', name: 'Coles', type: 'company' },
       ],
+      pagination: { total: 2, limit: 100, offset: 0, hasMore: false },
     },
+    error: undefined,
   });
   // Default: AI analysis returns null (fallback to contains pattern)
   mockAnalyzeCorrectionMutateAsync.mockResolvedValue({ data: null });
+  // Default: reevaluate resolves with an empty result envelope.
+  mockReevaluate.mockResolvedValue({
+    data: {
+      result: { matched: [], uncertain: [], failed: [], skipped: [] },
+      affectedCount: 0,
+    },
+    error: undefined,
+  });
   // Default: merged-state helpers return the DB data as-is
   mockComputeMergedEntities.mockImplementation((dbEntities: unknown[]) => dbEntities);
   mockComputeMergedRules.mockReturnValue([]);
@@ -424,7 +407,7 @@ describe('ReviewStep — Save & Learn proposal flow', () => {
       failed: [],
       skipped: [],
     };
-    render(<ReviewStep />);
+    render(reviewStepTree());
 
     const acceptBtn = screen.getByTestId('accept-WOOLWORTHS 1234 SYDNEY');
     fireEvent.click(acceptBtn);
@@ -461,7 +444,7 @@ describe('ReviewStep — Save & Learn proposal flow', () => {
       failed: [],
       skipped: [],
     };
-    render(<ReviewStep />);
+    render(reviewStepTree());
 
     // Accept the first Woolworths transaction
     const acceptBtn = screen.getByTestId('accept-WOOLWORTHS 1234 SYDNEY');
@@ -484,7 +467,7 @@ describe('ReviewStep — Save & Learn proposal flow', () => {
       failed: [],
       skipped: [],
     };
-    render(<ReviewStep />);
+    render(reviewStepTree());
 
     fireEvent.click(screen.getByTestId('accept-WOOLWORTHS 1234 SYDNEY'));
 
@@ -505,7 +488,7 @@ describe('ReviewStep — Save & Learn proposal flow', () => {
       failed: [],
       skipped: [],
     };
-    render(<ReviewStep />);
+    render(reviewStepTree());
 
     fireEvent.click(screen.getByTestId('accept-WOOLWORTHS 1234 SYDNEY'));
 
@@ -523,7 +506,7 @@ describe('ReviewStep — Save & Learn proposal flow', () => {
       failed: [failedTx],
       skipped: [],
     };
-    render(<ReviewStep />);
+    render(reviewStepTree());
 
     fireEvent.click(screen.getByTestId('accept-WOOLWORTHS 1234 SYDNEY'));
 
@@ -542,27 +525,22 @@ describe('ReviewStep — Save & Learn proposal flow', () => {
       skipped: [],
     };
 
-    // Server-side re-eval fires onSuccess with the new bucket layout.
-    mockReevaluateMutate.mockImplementation(
-      (
-        _input: unknown,
-        opts?: {
-          onSuccess?: (data: { result: unknown; affectedCount: number }) => void;
-        }
-      ) => {
-        opts?.onSuccess?.({
-          result: {
-            matched: [{ ...tx, status: 'matched' }],
-            uncertain: [],
-            failed: [],
-            skipped: [],
-          },
-          affectedCount: 1,
-        });
-      }
-    );
+    // Server-side re-eval resolves with the new bucket layout; the per-call
+    // onSuccess in useTransactionReview applies it to local state.
+    mockReevaluate.mockResolvedValue({
+      data: {
+        result: {
+          matched: [{ ...tx, status: 'matched' }],
+          uncertain: [],
+          failed: [],
+          skipped: [],
+        },
+        affectedCount: 1,
+      },
+      error: undefined,
+    });
 
-    const { rerender } = render(<ReviewStep />);
+    const { rerender } = render(reviewStepTree());
 
     fireEvent.click(screen.getByTestId('proposal-approve'));
 
@@ -577,14 +555,16 @@ describe('ReviewStep — Save & Learn proposal flow', () => {
         source: 'correction-proposal',
       },
     ];
-    rerender(<ReviewStep />);
+    rerender(reviewStepTree());
 
     await vi.waitFor(() => {
       expect(screen.getByText(/Matched \(1\)/)).toBeInTheDocument();
       expect(screen.getByText(/Uncertain \(0\)/)).toBeInTheDocument();
     });
 
-    expect(mockReevaluateMutate).toHaveBeenCalled();
+    expect(mockReevaluate).toHaveBeenCalledWith({
+      body: expect.objectContaining({ sessionId: '11111111-1111-1111-1111-111111111111' }),
+    });
     expect(mockToastSuccess).toHaveBeenCalledWith('Rules saved locally');
   });
 
@@ -595,7 +575,7 @@ describe('ReviewStep — Save & Learn proposal flow', () => {
       failed: [],
       skipped: [],
     };
-    render(<ReviewStep />);
+    render(reviewStepTree());
 
     proposalDialogApproveMode = 'error';
     fireEvent.click(screen.getByTestId('proposal-approve'));
@@ -624,7 +604,7 @@ describe('ReviewStep — rule-matched edit proposal flow', () => {
     });
 
     mockProcessedTransactions = { matched: [tx], uncertain: [], failed: [], skipped: [] };
-    render(<ReviewStep />);
+    render(reviewStepTree());
 
     // Click edit and save (mocked EditableTransactionCard emits Save Once)
     fireEvent.click(screen.getByLabelText(`Edit ${tx.description}`));
@@ -647,13 +627,15 @@ describe('ReviewStep — low-confidence confirmation flow', () => {
     const tx = makeTx('SPOTIFY PREMIUM', {
       entity: { entityId: 'ent-3', entityName: 'Spotify', matchType: 'ai', confidence: 0.6 },
     });
-    mockEntitiesQuery.mockReturnValue({
+    mockEntitiesQuery.mockResolvedValue({
       data: {
         data: [
           { id: 'ent-1', name: 'Woolworths', type: 'company' },
           { id: 'ent-3', name: 'Spotify', type: 'company' },
         ],
+        pagination: { total: 2, limit: 100, offset: 0, hasMore: false },
       },
+      error: undefined,
     });
     mockProcessedTransactions = {
       matched: [],
@@ -661,7 +643,7 @@ describe('ReviewStep — low-confidence confirmation flow', () => {
       failed: [],
       skipped: [],
     };
-    render(<ReviewStep />);
+    render(reviewStepTree());
 
     fireEvent.click(screen.getByTestId('accept-SPOTIFY PREMIUM'));
 
@@ -683,7 +665,7 @@ describe('ReviewStep — low-confidence confirmation flow', () => {
       failed: [],
       skipped: [],
     };
-    render(<ReviewStep />);
+    render(reviewStepTree());
 
     fireEvent.click(screen.getByTestId('accept-WOOLWORTHS 1234 SYDNEY'));
 
@@ -699,10 +681,12 @@ describe('ReviewStep — low-confidence confirmation flow', () => {
     const tx2 = makeTx('SPOTIFY FAMILY PLAN', {
       entity: { entityId: 'ent-3', entityName: 'Spotify', matchType: 'ai', confidence: 0.5 },
     });
-    mockEntitiesQuery.mockReturnValue({
+    mockEntitiesQuery.mockResolvedValue({
       data: {
         data: [{ id: 'ent-3', name: 'Spotify', type: 'company' }],
+        pagination: { total: 1, limit: 100, offset: 0, hasMore: false },
       },
+      error: undefined,
     });
     mockProcessedTransactions = {
       matched: [],
@@ -710,7 +694,7 @@ describe('ReviewStep — low-confidence confirmation flow', () => {
       failed: [],
       skipped: [],
     };
-    render(<ReviewStep />);
+    render(reviewStepTree());
 
     fireEvent.click(screen.getByTestId('accept-SPOTIFY PREMIUM'));
 
@@ -725,13 +709,15 @@ describe('ReviewStep — low-confidence confirmation flow', () => {
     const tx = makeTx('SPOTIFY PREMIUM', {
       entity: { entityId: 'ent-3', entityName: 'Spotify', matchType: 'ai', confidence: 0.4 },
     });
-    mockEntitiesQuery.mockReturnValue({
+    mockEntitiesQuery.mockResolvedValue({
       data: {
         data: [{ id: 'ent-3', name: 'Spotify', type: 'company' }],
+        pagination: { total: 1, limit: 100, offset: 0, hasMore: false },
       },
+      error: undefined,
     });
     mockProcessedTransactions = { matched: [], uncertain: [tx], failed: [], skipped: [] };
-    render(<ReviewStep />);
+    render(reviewStepTree());
 
     fireEvent.click(screen.getByTestId('accept-SPOTIFY PREMIUM'));
 
@@ -753,17 +739,19 @@ describe('ReviewStep — AI correction analysis', () => {
       failed: [],
       skipped: [],
     };
-    render(<ReviewStep />);
+    render(reviewStepTree());
 
     fireEvent.click(screen.getByTestId('accept-WOOLWORTHS 1234 SYDNEY'));
 
     // Should call analyzeCorrection with transaction context (no account — PII rule)
-    expect(mockAnalyzeCorrectionMutateAsync).toHaveBeenCalledWith(
-      expect.objectContaining({
-        description: 'WOOLWORTHS 1234 SYDNEY',
-        entityName: 'Woolworths',
-        amount: -42.5,
-      })
+    await vi.waitFor(() =>
+      expect(mockAnalyzeCorrectionMutateAsync).toHaveBeenCalledWith(
+        expect.objectContaining({
+          description: 'WOOLWORTHS 1234 SYDNEY',
+          entityName: 'Woolworths',
+          amount: -42.5,
+        })
+      )
     );
     // Verify account is NOT sent to AI
     expect(mockAnalyzeCorrectionMutateAsync).not.toHaveBeenCalledWith(
@@ -782,7 +770,7 @@ describe('ReviewStep — AI correction analysis', () => {
       failed: [],
       skipped: [],
     };
-    render(<ReviewStep />);
+    render(reviewStepTree());
 
     fireEvent.click(screen.getByTestId('accept-WOOLWORTHS 1234 SYDNEY'));
 
@@ -814,7 +802,7 @@ describe('ReviewStep — AI correction analysis', () => {
       failed: [],
       skipped: [],
     };
-    render(<ReviewStep />);
+    render(reviewStepTree());
 
     fireEvent.click(screen.getByTestId('accept-WOOLWORTHS 1234 SYDNEY'));
 
@@ -846,7 +834,7 @@ describe('ReviewStep — AI correction analysis', () => {
       failed: [],
       skipped: [],
     };
-    render(<ReviewStep />);
+    render(reviewStepTree());
 
     fireEvent.click(screen.getByTestId('accept-WOOLWORTHS 1234 SYDNEY'));
 
@@ -881,7 +869,7 @@ describe('ReviewStep — AI correction analysis', () => {
       skipped: [],
     };
 
-    render(<ReviewStep />);
+    render(reviewStepTree());
 
     const bulkBtn = screen.getByTestId('bulk-assign-Woolworths');
     fireEvent.click(bulkBtn);

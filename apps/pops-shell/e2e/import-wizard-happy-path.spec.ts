@@ -4,9 +4,9 @@
  * Tier 1 minimum: walks the full 8-step import wizard end-to-end with a
  * 2-transaction CSV where the backend is fully mocked via `page.route()`:
  *
- *   1. Upload CSV         → parsed client-side (no tRPC call)
+ *   1. Upload CSV         → parsed client-side (no REST call)
  *   2. Map Columns        → auto-detected mapping, confirm via Next
- *   3. Processing         → polls getImportProgress until `completed`
+ *   3. Processing         → polls GET /imports/progress until `completed`
  *   4. Review             → both transactions land in Matched tab
  *   5. Tag Review         → no edits, continue
  *   6. Create Rules       → skip (no patterns in mocked data)
@@ -14,20 +14,24 @@
  *   8. Summary            → "Import Complete" with 2 transactions imported
  *
  * Why mocked:
- *   The import wizard orchestrates many tRPC endpoints (processImport,
- *   getImportProgress, commitImport, entities.list, corrections.list,
- *   availableTags). Exercising them against the real API in CI would be
- *   slow and flaky; the Tier-1 goal here is the UI flow, not the backend
- *   plumbing. All endpoints are stubbed via `page.route()` — no DB writes.
+ *   The import wizard orchestrates many REST endpoints across the finance and
+ *   core pillars. Exercising them against real pillar backends in CI would be
+ *   slow and flaky (and the backends are not started for e2e); the Tier-1 goal
+ *   here is the UI flow, not the backend plumbing. All endpoints are stubbed
+ *   via `page.route()` — no DB writes.
  *
- * Endpoints mocked:
- *   - finance.imports.processImport         → returns sessionId
- *   - finance.imports.getImportProgress     → returns status: 'completed'
- *                                             with 2 matched transactions
- *   - finance.imports.commitImport          → returns CommitResult (2 imported)
- *   - core.entities.list                    → returns the matched entities
- *   - core.corrections.list                 → empty list (used by re-eval hook)
- *   - finance.transactions.availableTags    → empty tag list (TagReviewStep)
+ * The wizard reads its data via the generated finance/core Hey API clients
+ * (`@pops/app-finance`), which target the shell's `/finance-api` and
+ * `/core-api` proxy paths (the prefix is stripped before forwarding). Each
+ * route returns the plain REST body the Hey client unwraps — NOT a tRPC
+ * `{ result: { data } }` envelope.
+ *
+ * Endpoints mocked (happy path):
+ *   POST /finance-api/imports/process              → { sessionId }
+ *   GET  /finance-api/imports/progress             → { status:'completed', result:{matched:[…2…]} }
+ *   POST /finance-api/imports/commit               → { data:{ transactionsImported:2 … }, message }
+ *   GET  /core-api/entities                        → { data:[], pagination }
+ *   GET  /finance-api/transactions/available-tags  → { tags:[] }
  *
  * Crash detection is wired via beforeEach/afterEach so the test also
  * verifies the wizard doesn't throw uncaught errors during the full flow.
@@ -38,56 +42,11 @@ import type { Page, Route } from '@playwright/test';
 
 const PROCESS_SESSION_ID = 'e2e-process-session';
 
-/**
- * tRPC v11 `httpBatchLink` batches multiple procedures of the same type
- * (query/mutation) into a single HTTP request. The URL path becomes a
- * comma-joined list (e.g. `/trpc/core.entities.list,core.corrections.list`)
- * and the client always expects an array of envelopes matching the
- * procedure order when `?batch=1` is present.
- *
- * A single-procedure regex mock (`/\/trpc\/core\.entities\.list/`) will
- * match the batched URL prefix but can only return ONE envelope, which
- * makes the client reject the remaining items with `Missing result`.
- *
- * To handle this correctly, the test installs one `/trpc/**` route that:
- *   1. Splits the procedure path list from the URL,
- *   2. Looks up a registered payload provider for each procedure,
- *   3. Emits an envelope array matching the request order.
- */
-type PayloadProvider = (input: unknown) => unknown;
+// ---------------------------------------------------------------------------
+// Fixtures
+// ---------------------------------------------------------------------------
 
-/** Build a tRPC v11 success envelope. */
-function envelope(data: unknown): { result: { data: unknown } } {
-  return { result: { data } };
-}
-
-/**
- * Parse the `?input=...` query param for a batched tRPC request.
- * Batched inputs are keyed by positional index: `{ "0": { json: ... }, "1": ... }`.
- */
-function parseBatchInputs(rawInput: string | null): Record<string, unknown> {
-  if (!rawInput) return {};
-  try {
-    const parsed: unknown = JSON.parse(decodeURIComponent(rawInput));
-    if (parsed && typeof parsed === 'object') {
-      return parsed as Record<string, unknown>;
-    }
-    return {};
-  } catch {
-    return {};
-  }
-}
-
-/** Extract a single procedure's input from a parsed batch inputs bag. */
-function inputAt(inputs: Record<string, unknown>, index: number): unknown {
-  const entry = inputs[String(index)];
-  if (entry && typeof entry === 'object' && 'json' in entry) {
-    return (entry as { json: unknown }).json;
-  }
-  return entry;
-}
-
-/** Two matched transactions so the Review step auto-lands on Matched tab. */
+/** Two matched transactions so the Review step auto-lands on the Matched tab. */
 const matchedTransactions = [
   {
     date: '2026-02-13',
@@ -127,77 +86,39 @@ const processedOutput = {
   warnings: [],
 };
 
-/**
- * Map of tRPC procedure path → function producing the raw return value
- * (pre-envelope). Procedures not listed here fall through to a 404 so
- * unexpected calls surface as visible failures.
- */
-const payloadProviders: Record<string, PayloadProvider> = {
-  'finance.imports.processImport': () => ({ sessionId: PROCESS_SESSION_ID }),
-  'finance.imports.getImportProgress': () => ({
+function progressBody(result: unknown) {
+  return {
     sessionId: PROCESS_SESSION_ID,
-    status: 'completed',
-    result: processedOutput,
-  }),
-  // commitImport router wraps its result as `{ data, message }`.
-  'finance.imports.commitImport': () => ({
-    data: {
-      entitiesCreated: 0,
-      rulesApplied: { add: 0, edit: 0, disable: 0, remove: 0 },
-      tagRulesApplied: 0,
-      transactionsImported: 2,
-      transactionsFailed: 0,
-      failedDetails: [],
-      retroactiveReclassifications: 0,
-    },
-    message: 'Import committed',
-  }),
-  // entities.list router returns `{ data, pagination }`.
-  'core.entities.list': () => ({
-    data: [
-      { id: 'entity-woolworths', name: 'Woolworths', type: 'company' },
-      { id: 'entity-netflix', name: 'Netflix', type: 'company' },
-    ],
-    pagination: { total: 2, limit: 50, offset: 0, hasMore: false },
-  }),
-  'core.corrections.list': () => ({
-    data: [],
-    pagination: { total: 0, limit: 50, offset: 0, hasMore: false },
-  }),
-  'finance.transactions.availableTags': () => [],
+    status: 'completed' as const,
+    startedAt: '2026-02-14T00:00:00.000Z',
+    totalTransactions: 2,
+    processedCount: 2,
+    currentStep: 'matching' as const,
+    currentBatch: [],
+    errors: [],
+    result,
+  };
+}
+
+const commitBody = {
+  data: {
+    entitiesCreated: 0,
+    rulesApplied: { add: 0, edit: 0, disable: 0, remove: 0 },
+    tagRulesApplied: 0,
+    transactionsImported: 2,
+    transactionsFailed: 0,
+    failedDetails: [],
+    retroactiveReclassifications: 0,
+  },
+  message: 'Import committed',
 };
 
-async function handleTrpcRoute(route: Route): Promise<void> {
-  const url = new URL(route.request().url());
-  // The pathname looks like `/trpc/core.entities.list,core.corrections.list`.
-  const pathSegment = url.pathname.replace(/^.*\/trpc\//, '');
-  const procedures = pathSegment.split(',').filter(Boolean);
-  const isBatch = url.searchParams.has('batch');
-  const inputs = parseBatchInputs(url.searchParams.get('input'));
+const emptyEntitiesBody = {
+  data: [],
+  pagination: { total: 0, limit: 50, offset: 0, hasMore: false },
+};
 
-  const envelopes = procedures.map((procedure, index) => {
-    const provider = payloadProviders[procedure];
-    if (!provider) {
-      // Return a tRPC-shaped error so the client surfaces it instead of
-      // rejecting with the opaque "Missing result" message.
-      return {
-        error: {
-          json: {
-            message: `Unmocked procedure: ${procedure}`,
-            code: -32603,
-            data: {
-              code: 'INTERNAL_SERVER_ERROR',
-              httpStatus: 500,
-              path: procedure,
-            },
-          },
-        },
-      };
-    }
-    return envelope(provider(inputAt(inputs, index)));
-  });
-
-  const body = isBatch ? envelopes : envelopes[0];
+async function fulfillJson(route: Route, body: unknown): Promise<void> {
   await route.fulfill({
     status: 200,
     contentType: 'application/json',
@@ -206,7 +127,17 @@ async function handleTrpcRoute(route: Route): Promise<void> {
 }
 
 async function setupMocks(page: Page): Promise<void> {
-  await page.route('**/trpc/**', handleTrpcRoute);
+  await page.route('**/finance-api/imports/process', (route) =>
+    fulfillJson(route, { sessionId: PROCESS_SESSION_ID })
+  );
+  await page.route('**/finance-api/imports/progress?**', (route) =>
+    fulfillJson(route, progressBody(processedOutput))
+  );
+  await page.route('**/finance-api/imports/commit', (route) => fulfillJson(route, commitBody));
+  await page.route('**/core-api/entities?**', (route) => fulfillJson(route, emptyEntitiesBody));
+  await page.route('**/finance-api/transactions/available-tags', (route) =>
+    fulfillJson(route, { tags: [] })
+  );
 }
 
 const csvContent = `Date,Description,Amount
@@ -313,9 +244,19 @@ test.describe('Finance — import wizard happy path (mocked)', () => {
 // combined preview so Apply ChangeSet stays reachable without the user clicking
 // the ↺ refresh button.
 //
-// Uses the same batch-aware tRPC mock infrastructure as the happy-path tests
-// above — a single /trpc/** route splits batched procedures and returns one
-// envelope per procedure.
+// REST flow exercised (all under /finance-api unless noted):
+//   POST /imports/process                 → { sessionId }
+//   GET  /imports/progress                → { status:'completed', result:{ uncertain:[1] } }
+//   GET  /core-api/entities               → the candidate entity
+//   POST /corrections/analyze             → { data:{ pattern, matchType, confidence } }
+//   POST /corrections/propose-changeset   → { changeSet:{ ops:[add] }, preview, rationale, targetRules }
+//   POST /corrections/preview-changeset   → { diffs, summary }  (initial + after type change)
+//   POST /imports/reevaluate-pending      → { affectedCount, result }  (after local Apply)
+//   GET  /transactions/available-tags     → { tags:[] }
+//
+// Note: "Apply ChangeSet" stages the change locally (Zustand store) — it does
+// NOT hit a corrections/apply endpoint. The follow-on network call is
+// /imports/reevaluate-pending, fired by the pendingChangeSets change.
 
 test.describe('Correction Proposal Dialog (mocked)', () => {
   const UNCERTAIN_ENTITY_ID = 'entity-woolworths';
@@ -329,7 +270,7 @@ test.describe('Correction Proposal Dialog (mocked)', () => {
     account: 'Amex',
     rawRow: '{}',
     checksum: UNCERTAIN_CHECKSUM,
-    entity: null,
+    entity: { matchType: 'none' as const },
     status: 'uncertain' as const,
   };
 
@@ -341,92 +282,122 @@ test.describe('Correction Proposal Dialog (mocked)', () => {
     warnings: [],
   };
 
-  const correctionPayloadProviders: Record<string, PayloadProvider> = {
-    'finance.imports.processImport': () => ({ sessionId: PROCESS_SESSION_ID }),
-    'finance.imports.getImportProgress': () => ({
-      sessionId: PROCESS_SESSION_ID,
-      status: 'completed',
-      result: processedWithUncertain,
-    }),
-    'core.entities.list': () => ({
-      data: [{ id: UNCERTAIN_ENTITY_ID, name: UNCERTAIN_ENTITY_NAME, type: 'company' }],
-      pagination: { total: 1, limit: 50, offset: 0, hasMore: false },
-    }),
-    'core.corrections.list': () => ({
-      data: [],
-      pagination: { total: 0, limit: 50, offset: 0, hasMore: false },
-    }),
-    'core.corrections.proposeChangeSet': () => ({
-      changeSet: {
-        ops: [
-          {
-            op: 'add',
-            id: 'op-1',
-            data: {
-              descriptionPattern: 'UNKNOWN MERCHANT',
-              matchType: 'exact',
-              entityName: UNCERTAIN_ENTITY_NAME,
-              entityId: UNCERTAIN_ENTITY_ID,
-              transactionType: null,
-              location: null,
-              tags: [],
-            },
-          },
-        ],
-      },
-      rationale: 'Rule for UNKNOWN MERCHANT',
-      targetRules: {},
-    }),
-    'core.corrections.previewChangeSet': () => ({
-      diffs: [
+  const proposeBody = {
+    changeSet: {
+      ops: [
         {
-          description: 'UNKNOWN MERCHANT',
-          checksum: UNCERTAIN_CHECKSUM,
-          before: { entityName: null, transactionType: null, location: null },
-          after: { entityName: UNCERTAIN_ENTITY_NAME, transactionType: null, location: null },
-          matchedRule: null,
-          status: 'matched',
+          op: 'add' as const,
+          data: {
+            descriptionPattern: 'UNKNOWN MERCHANT',
+            matchType: 'contains' as const,
+            entityName: UNCERTAIN_ENTITY_NAME,
+            entityId: UNCERTAIN_ENTITY_ID,
+            tags: [],
+          },
         },
       ],
-      summary: { newMatches: 1, removedMatches: 0, statusChanges: 0 },
-    }),
-    'core.corrections.applyChangeSet': () => ({ success: true }),
-    'finance.transactions.availableTags': () => [],
-    'core.settings.get': () => ({ data: null }),
-    'cerebrum.nudges.list': () => ({ items: [] }),
+      reason: 'Rule for UNKNOWN MERCHANT',
+      source: 'correction-proposal',
+    },
+    preview: {
+      affected: [
+        {
+          transactionId: UNCERTAIN_CHECKSUM,
+          description: 'UNKNOWN MERCHANT',
+          before: {
+            entityId: null,
+            entityName: null,
+            location: null,
+            ruleId: null,
+            tags: [],
+            transactionType: 'purchase' as const,
+          },
+          after: {
+            entityId: UNCERTAIN_ENTITY_ID,
+            entityName: UNCERTAIN_ENTITY_NAME,
+            location: null,
+            ruleId: null,
+            tags: [],
+            transactionType: 'purchase' as const,
+          },
+        },
+      ],
+      counts: { affected: 1, entityChanges: 1, locationChanges: 0, tagChanges: 0, typeChanges: 0 },
+    },
+    rationale: 'Rule for UNKNOWN MERCHANT',
+    targetRules: {},
+  };
+
+  const previewBody = {
+    diffs: [
+      {
+        description: 'UNKNOWN MERCHANT',
+        checksum: UNCERTAIN_CHECKSUM,
+        changed: true,
+        before: { confidence: null, matched: false, ruleId: null, status: 'uncertain' as const },
+        after: { confidence: 0.95, matched: true, ruleId: null, status: 'matched' as const },
+      },
+    ],
+    summary: { netMatchedDelta: 1, newMatches: 1, removedMatches: 0, statusChanges: 1, total: 1 },
+  };
+
+  const reevaluateBody = {
+    affectedCount: 1,
+    result: {
+      matched: [{ ...uncertainTransaction, status: 'matched' as const }],
+      uncertain: [],
+      failed: [],
+      skipped: [],
+    },
+  };
+
+  const candidateEntitiesBody = {
+    data: [
+      {
+        id: UNCERTAIN_ENTITY_ID,
+        name: UNCERTAIN_ENTITY_NAME,
+        type: 'company',
+        abn: null,
+        aliases: [],
+        defaultTags: [],
+        defaultTransactionType: null,
+        notes: null,
+        lastEditedTime: '2026-02-14T00:00:00.000Z',
+      },
+    ],
+    pagination: { total: 1, limit: 50, offset: 0, hasMore: false },
   };
 
   async function setupCorrectionMocks(page: Page): Promise<void> {
-    await page.route('**/trpc/**', async (route) => {
-      const url = new URL(route.request().url());
-      const pathSegment = url.pathname.replace(/^.*\/trpc\//, '');
-      const procedures = pathSegment.split(',').filter(Boolean);
-      const isBatch = url.searchParams.has('batch');
-      const inputs = parseBatchInputs(url.searchParams.get('input'));
-
-      const envelopes = procedures.map((procedure, index) => {
-        const provider = correctionPayloadProviders[procedure];
-        if (!provider) {
-          return {
-            error: {
-              json: {
-                message: `Unmocked procedure: ${procedure}`,
-                code: -32603,
-                data: { code: 'INTERNAL_SERVER_ERROR', httpStatus: 500, path: procedure },
-              },
-            },
-          };
-        }
-        return envelope(provider(inputAt(inputs, index)));
-      });
-
-      const body = isBatch ? envelopes : envelopes[0];
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(body),
-      });
-    });
+    await page.route('**/finance-api/imports/process', (route) =>
+      fulfillJson(route, { sessionId: PROCESS_SESSION_ID })
+    );
+    await page.route('**/finance-api/imports/progress?**', (route) =>
+      fulfillJson(route, progressBody(processedWithUncertain))
+    );
+    await page.route('**/finance-api/imports/reevaluate-pending', (route) =>
+      fulfillJson(route, reevaluateBody)
+    );
+    await page.route('**/core-api/entities?**', (route) =>
+      fulfillJson(route, candidateEntitiesBody)
+    );
+    await page.route('**/finance-api/corrections/analyze', (route) =>
+      fulfillJson(route, {
+        data: { pattern: 'UNKNOWN MERCHANT', matchType: 'contains', confidence: 0.9 },
+      })
+    );
+    await page.route('**/finance-api/corrections/propose-changeset', (route) =>
+      fulfillJson(route, proposeBody)
+    );
+    await page.route('**/finance-api/corrections/preview-changeset', (route) =>
+      fulfillJson(route, previewBody)
+    );
+    await page.route('**/finance-api/corrections?**', (route) =>
+      fulfillJson(route, emptyEntitiesBody)
+    );
+    await page.route('**/finance-api/transactions/available-tags', (route) =>
+      fulfillJson(route, { tags: [] })
+    );
   }
 
   async function navigateToCorrectionProposal(page: Page): Promise<void> {

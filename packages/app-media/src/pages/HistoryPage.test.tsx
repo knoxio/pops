@@ -1,9 +1,10 @@
-import { act, render, screen } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { createElement, type ReactNode } from 'react';
 import { MemoryRouter } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-// Mock sonner toast
 const mockToastSuccess = vi.fn();
 const mockToastError = vi.fn();
 vi.mock('sonner', () => ({
@@ -13,49 +14,31 @@ vi.mock('sonner', () => ({
   },
 }));
 
-const mockListRecentQuery = vi.fn();
-const mockDeleteMutate = vi.fn();
-let deleteMutationOpts: Record<string, (...args: unknown[]) => unknown> = {};
-let deleteMutationPending = false;
-const mockInvalidateWatchHistory = vi.fn();
-const mockInvalidateWatchlist = vi.fn();
+const mockWatchHistoryListRecent = vi.fn();
+const mockWatchHistoryDelete = vi.fn();
 
-vi.mock('@pops/pillar-sdk/react', () => ({
-  usePillarQuery: (_pillarId: string, path: readonly string[], input: unknown) => {
-    const key = path.join('.');
-    if (key === 'watchHistory.listRecent') return mockListRecentQuery(input);
-    return { data: undefined, isLoading: false };
-  },
-  usePillarMutation: (
-    _pillarId: string,
-    path: readonly string[],
-    opts: Record<string, (...args: unknown[]) => unknown>
-  ) => {
-    const key = path.join('.');
-    if (key === 'watchHistory.delete') {
-      deleteMutationOpts = opts;
-      return { mutate: mockDeleteMutate, isPending: deleteMutationPending };
-    }
-    return { mutate: vi.fn(), isPending: false };
-  },
-  usePillarUtils: () => ({
-    setData: vi.fn(),
-    invalidate: (path?: readonly string[]) => {
-      const key = path?.join('.') ?? '';
-      if (key === 'watchHistory') mockInvalidateWatchHistory();
-      if (key === 'watchlist') mockInvalidateWatchlist();
-    },
-  }),
+vi.mock('../media-api/index.js', () => ({
+  watchHistoryListRecent: (opts: unknown) => mockWatchHistoryListRecent(opts),
+  watchHistoryDelete: (opts: unknown) => mockWatchHistoryDelete(opts),
 }));
 
 import { HistoryPage } from './HistoryPage';
 
 function renderPage() {
-  return render(
-    <MemoryRouter initialEntries={['/media/history']}>
-      <HistoryPage />
-    </MemoryRouter>
-  );
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  });
+  const wrapper = ({ children }: { children: ReactNode }) =>
+    createElement(
+      QueryClientProvider,
+      { client },
+      createElement(MemoryRouter, { initialEntries: ['/media/history'] }, children)
+    );
+  return render(<HistoryPage />, { wrapper });
+}
+
+function listResult(data: unknown[], total: number) {
+  return { data: { data, pagination: { total } } };
 }
 
 const episodeEntry = {
@@ -103,73 +86,55 @@ const episodeNoShow = {
 describe('HistoryPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    deleteMutationPending = false;
-    deleteMutationOpts = {};
-    mockListRecentQuery.mockReturnValue({
-      data: { data: [episodeEntry, movieEntry], pagination: { total: 2 } },
-      isLoading: false,
-      error: null,
-    });
+    mockWatchHistoryListRecent.mockResolvedValue(listResult([episodeEntry, movieEntry], 2));
+    mockWatchHistoryDelete.mockResolvedValue({ data: { id: 1 } });
   });
 
   describe('episode enrichment', () => {
-    it('renders episode subtitle in S02E10 format with em-dash', () => {
+    it('renders episode subtitle in S02E10 format with em-dash', async () => {
       renderPage();
-      expect(screen.getAllByText('Breaking Bad').length).toBeGreaterThan(0);
+      expect((await screen.findAllByText('Breaking Bad')).length).toBeGreaterThan(0);
       expect(screen.getAllByText('S02E10').length).toBeGreaterThan(0);
     });
 
-    it('renders show name as link to show detail page', () => {
+    it('renders show name as link to show detail page', async () => {
       renderPage();
-      const showLinks = screen.getAllByText('Breaking Bad');
+      const showLinks = await screen.findAllByText('Breaking Bad');
       const showLink = showLinks.find(
         (el) => el.closest('a')?.getAttribute('href') === '/media/tv/7'
       );
       expect(showLink).toBeTruthy();
     });
 
-    it('renders season code as link to season detail page', () => {
+    it('renders season code as link to season detail page', async () => {
       renderPage();
-      const codeLinks = screen.getAllByText('S02E10');
+      const codeLinks = await screen.findAllByText('S02E10');
       const seasonLink = codeLinks.find(
         (el) => el.closest('a')?.getAttribute('href') === '/media/tv/7?season=2'
       );
       expect(seasonLink).toBeTruthy();
     });
 
-    it('renders movie entries with no subtitle', () => {
-      mockListRecentQuery.mockReturnValue({
-        data: { data: [movieEntry], pagination: { total: 1 } },
-        isLoading: false,
-        error: null,
-      });
+    it('renders movie entries with no subtitle', async () => {
+      mockWatchHistoryListRecent.mockResolvedValue(listResult([movieEntry], 1));
       renderPage();
-      expect(screen.getAllByText('The Matrix').length).toBeGreaterThan(0);
+      expect((await screen.findAllByText('The Matrix')).length).toBeGreaterThan(0);
       expect(screen.queryByText(/S\d+E\d+/)).toBeNull();
     });
 
-    it('renders episode with missing show data as title only (graceful fallback)', () => {
-      mockListRecentQuery.mockReturnValue({
-        data: { data: [episodeNoShow], pagination: { total: 1 } },
-        isLoading: false,
-        error: null,
-      });
+    it('renders episode with missing show data as title only (graceful fallback)', async () => {
+      mockWatchHistoryListRecent.mockResolvedValue(listResult([episodeNoShow], 1));
       renderPage();
-      expect(screen.getAllByText('Mystery Episode').length).toBeGreaterThan(0);
+      expect((await screen.findAllByText('Mystery Episode')).length).toBeGreaterThan(0);
       expect(screen.queryByText(/S\d+E\d+/)).toBeNull();
     });
 
-    it('renders mixed entries correctly', () => {
-      mockListRecentQuery.mockReturnValue({
-        data: {
-          data: [episodeEntry, movieEntry, episodeNoShow],
-          pagination: { total: 3 },
-        },
-        isLoading: false,
-        error: null,
-      });
+    it('renders mixed entries correctly', async () => {
+      mockWatchHistoryListRecent.mockResolvedValue(
+        listResult([episodeEntry, movieEntry, episodeNoShow], 3)
+      );
       renderPage();
-      expect(screen.getAllByText('Breaking Bad').length).toBeGreaterThan(0);
+      expect((await screen.findAllByText('Breaking Bad')).length).toBeGreaterThan(0);
       expect(screen.getAllByText('S02E10').length).toBeGreaterThan(0);
       expect(screen.getAllByText('The Matrix').length).toBeGreaterThan(0);
       expect(screen.getAllByText('Mystery Episode').length).toBeGreaterThan(0);
@@ -177,9 +142,9 @@ describe('HistoryPage', () => {
   });
 
   describe('delete button visibility', () => {
-    it('renders delete buttons with correct aria-label', () => {
+    it('renders delete buttons with correct aria-label', async () => {
       renderPage();
-      const deleteButtons = screen.getAllByLabelText('Delete watch event');
+      const deleteButtons = await screen.findAllByLabelText('Delete watch event');
       expect(deleteButtons.length).toBeGreaterThanOrEqual(2);
     });
   });
@@ -188,7 +153,7 @@ describe('HistoryPage', () => {
     it('opens confirmation dialog when delete is clicked', async () => {
       const user = userEvent.setup();
       renderPage();
-      const deleteButtons = screen.getAllByLabelText('Delete watch event');
+      const deleteButtons = await screen.findAllByLabelText('Delete watch event');
       await user.click(deleteButtons[0]!);
       expect(screen.getByText('Remove watch event?')).toBeInTheDocument();
       expect(screen.getByText(/This cannot be undone/)).toBeInTheDocument();
@@ -197,7 +162,7 @@ describe('HistoryPage', () => {
     it('shows cancel and remove buttons in dialog', async () => {
       const user = userEvent.setup();
       renderPage();
-      const deleteButtons = screen.getAllByLabelText('Delete watch event');
+      const deleteButtons = await screen.findAllByLabelText('Delete watch event');
       await user.click(deleteButtons[0]!);
       expect(screen.getByText('Cancel')).toBeInTheDocument();
       expect(screen.getByText('Remove')).toBeInTheDocument();
@@ -206,141 +171,128 @@ describe('HistoryPage', () => {
     it('calls delete mutation when confirmed', async () => {
       const user = userEvent.setup();
       renderPage();
-      const deleteButtons = screen.getAllByLabelText('Delete watch event');
+      const deleteButtons = await screen.findAllByLabelText('Delete watch event');
       await user.click(deleteButtons[0]!);
       await user.click(screen.getByText('Remove'));
-      expect(mockDeleteMutate).toHaveBeenCalledWith({ id: episodeEntry.id });
+      await waitFor(() =>
+        expect(mockWatchHistoryDelete).toHaveBeenCalledWith({ path: { id: episodeEntry.id } })
+      );
     });
 
     it('closes dialog on cancel without calling delete', async () => {
       const user = userEvent.setup();
       renderPage();
-      const deleteButtons = screen.getAllByLabelText('Delete watch event');
+      const deleteButtons = await screen.findAllByLabelText('Delete watch event');
       await user.click(deleteButtons[0]!);
       await user.click(screen.getByText('Cancel'));
-      expect(mockDeleteMutate).not.toHaveBeenCalled();
+      expect(mockWatchHistoryDelete).not.toHaveBeenCalled();
       expect(screen.queryByText('Remove watch event?')).not.toBeInTheDocument();
     });
   });
 
   describe('delete success', () => {
-    it('shows success toast on deletion', () => {
+    it('shows success toast on deletion', async () => {
+      const user = userEvent.setup();
       renderPage();
-      deleteMutationOpts.onSuccess?.();
-      expect(mockToastSuccess).toHaveBeenCalledWith('Watch event removed');
+      const deleteButtons = await screen.findAllByLabelText('Delete watch event');
+      await user.click(deleteButtons[0]!);
+      await user.click(screen.getByText('Remove'));
+      await waitFor(() => expect(mockToastSuccess).toHaveBeenCalledWith('Watch event removed'));
     });
 
-    it('invalidates queries on success', () => {
+    it('refetches history after a successful deletion', async () => {
+      const user = userEvent.setup();
       renderPage();
-      deleteMutationOpts.onSuccess?.();
-      expect(mockInvalidateWatchHistory).toHaveBeenCalled();
-      expect(mockInvalidateWatchlist).toHaveBeenCalled();
+      const deleteButtons = await screen.findAllByLabelText('Delete watch event');
+      const callsBefore = mockWatchHistoryListRecent.mock.calls.length;
+      await user.click(deleteButtons[0]!);
+      await user.click(screen.getByText('Remove'));
+      await waitFor(() =>
+        expect(mockWatchHistoryListRecent.mock.calls.length).toBeGreaterThan(callsBefore)
+      );
     });
   });
 
   describe('delete error', () => {
-    it('shows error toast on failure', () => {
+    it('shows error toast on failure', async () => {
+      mockWatchHistoryDelete.mockResolvedValue({ error: { message: 'Server error' } });
+      const user = userEvent.setup();
       renderPage();
-      deleteMutationOpts.onError?.({ message: 'Server error' });
-      expect(mockToastError).toHaveBeenCalledWith('Failed to delete watch event: Server error');
-    });
-  });
-
-  describe('delete disabled while in flight', () => {
-    it('disables delete buttons while mutation is pending', () => {
-      deleteMutationPending = true;
-      renderPage();
-      const deleteButtons = screen.getAllByLabelText('Delete watch event');
-      deleteButtons.forEach((btn) => expect(btn).toBeDisabled());
+      const deleteButtons = await screen.findAllByLabelText('Delete watch event');
+      await user.click(deleteButtons[0]!);
+      await user.click(screen.getByText('Remove'));
+      await waitFor(() =>
+        expect(mockToastError).toHaveBeenCalledWith('Failed to delete watch event: Server error')
+      );
     });
   });
 
   describe('delete pagination edge case', () => {
     it('goes to previous page when last entry on a non-first page is deleted', async () => {
-      // Single entry with total > PAGE_SIZE so Next button is visible on page 1.
-      // After clicking Next (offset → 50), triggering onSuccess with 1 entry should
-      // reset offset back to 0.
       const singleEntry = { ...movieEntry, id: 99 };
-      mockListRecentQuery.mockReturnValue({
-        data: { data: [singleEntry], pagination: { total: 51 } },
-        isLoading: false,
-        error: null,
-      });
+      mockWatchHistoryListRecent.mockResolvedValue(listResult([singleEntry], 51));
       const user = userEvent.setup();
       renderPage();
 
-      // Page 1: Next should be visible because total (51) > PAGE_SIZE (50)
-      await user.click(screen.getByText('Next'));
-
-      // Now at offset 50 with 1 entry — trigger onSuccess inside act to simulate delete
-      await act(async () => {
-        deleteMutationOpts.onSuccess?.();
+      await user.click(await screen.findByText('Next'));
+      await waitFor(() => {
+        const calls = mockWatchHistoryListRecent.mock.calls as Array<
+          [{ query: { offset: number } }]
+        >;
+        expect(calls.some((args) => args[0]?.query.offset === 50)).toBe(true);
       });
 
-      // Offset should have been reset to 0 — verify via subsequent query call args
-      const calls = mockListRecentQuery.mock.calls as Array<[{ offset: number }]>;
-      const resetCall = calls.find((args) => args[0]?.offset === 0);
-      expect(resetCall).toBeDefined();
+      const deleteButtons = await screen.findAllByLabelText('Delete watch event');
+      await user.click(deleteButtons[0]!);
+      await user.click(screen.getByText('Remove'));
+
+      await waitFor(() => {
+        const calls = mockWatchHistoryListRecent.mock.calls as Array<
+          [{ query: { offset: number } }]
+        >;
+        const resetCall = calls.find((args) => args[0]?.query.offset === 0);
+        expect(resetCall).toBeDefined();
+      });
     });
   });
 
   describe('empty state', () => {
-    it('shows empty state when no entries', () => {
-      mockListRecentQuery.mockReturnValue({
-        data: { data: [], pagination: { total: 0 } },
-        isLoading: false,
-        error: null,
-      });
+    it('shows empty state when no entries', async () => {
+      mockWatchHistoryListRecent.mockResolvedValue(listResult([], 0));
       renderPage();
       expect(
-        screen.getByText('No watch history yet. Start watching something!')
+        await screen.findByText('No watch history yet. Start watching something!')
       ).toBeInTheDocument();
     });
 
     it('shows filtered empty state for movies', async () => {
       const user = userEvent.setup();
-      mockListRecentQuery.mockReturnValue({
-        data: { data: [], pagination: { total: 0 } },
-        isLoading: false,
-        error: null,
-      });
+      mockWatchHistoryListRecent.mockResolvedValue(listResult([], 0));
       renderPage();
-      await user.click(screen.getByText('Movies'));
-      expect(screen.getByText('No movies in your history.')).toBeInTheDocument();
+      await user.click(await screen.findByText('Movies'));
+      expect(await screen.findByText('No movies in your history.')).toBeInTheDocument();
     });
 
-    it('shows browse library link in empty state', () => {
-      mockListRecentQuery.mockReturnValue({
-        data: { data: [], pagination: { total: 0 } },
-        isLoading: false,
-        error: null,
-      });
+    it('shows browse library link in empty state', async () => {
+      mockWatchHistoryListRecent.mockResolvedValue(listResult([], 0));
       renderPage();
-      expect(screen.getByText('Browse library')).toHaveAttribute('href', '/media');
+      expect(await screen.findByText('Browse library')).toHaveAttribute('href', '/media');
     });
   });
 
   describe('loading state', () => {
     it('shows skeleton when loading', () => {
-      mockListRecentQuery.mockReturnValue({
-        data: null,
-        isLoading: true,
-        error: null,
-      });
+      mockWatchHistoryListRecent.mockReturnValue(new Promise(() => {}));
       const { container } = renderPage();
       expect(container.querySelectorAll("[data-slot='skeleton']").length).toBeGreaterThan(0);
     });
   });
 
   describe('error state', () => {
-    it('shows error alert on query error', () => {
-      mockListRecentQuery.mockReturnValue({
-        data: null,
-        isLoading: false,
-        error: { message: 'Failed to fetch' },
-      });
+    it('shows error alert on query error', async () => {
+      mockWatchHistoryListRecent.mockResolvedValue({ error: { message: 'Failed to fetch' } });
       renderPage();
-      expect(screen.getByText('Error')).toBeInTheDocument();
+      expect(await screen.findByText('Error')).toBeInTheDocument();
       expect(screen.getByText('Failed to fetch')).toBeInTheDocument();
     });
   });
@@ -349,47 +301,53 @@ describe('HistoryPage', () => {
     it('passes mediaType filter when Movies tab is selected', async () => {
       const user = userEvent.setup();
       renderPage();
-      await user.click(screen.getByText('Movies'));
-      const lastCall = mockListRecentQuery.mock.calls.at(-1);
-      expect(lastCall?.[0]).toMatchObject({ mediaType: 'movie' });
+      await user.click(await screen.findByText('Movies'));
+      await waitFor(() => {
+        const lastCall = mockWatchHistoryListRecent.mock.calls.at(-1);
+        expect(lastCall?.[0]).toMatchObject({ query: { mediaType: 'movie' } });
+      });
     });
 
     it('passes mediaType filter when Episodes tab is selected', async () => {
       const user = userEvent.setup();
       renderPage();
-      await user.click(screen.getByText('Episodes'));
-      const lastCall = mockListRecentQuery.mock.calls.at(-1);
-      expect(lastCall?.[0]).toMatchObject({ mediaType: 'episode' });
+      await user.click(await screen.findByText('Episodes'));
+      await waitFor(() => {
+        const lastCall = mockWatchHistoryListRecent.mock.calls.at(-1);
+        expect(lastCall?.[0]).toMatchObject({ query: { mediaType: 'episode' } });
+      });
     });
 
-    it('does not pass mediaType filter when All tab is selected', () => {
+    it('does not pass mediaType filter when All tab is selected', async () => {
       renderPage();
-      const lastCall = mockListRecentQuery.mock.calls.at(-1);
-      expect(lastCall?.[0]).not.toHaveProperty('mediaType');
+      await screen.findAllByText('Breaking Bad');
+      const lastCall = mockWatchHistoryListRecent.mock.calls.at(-1);
+      const opts = lastCall?.[0] as { query: Record<string, unknown> } | undefined;
+      expect(opts).toBeDefined();
+      expect(opts?.query).not.toHaveProperty('mediaType');
     });
   });
 
   describe('pagination', () => {
-    it('shows pagination info', () => {
+    it('shows pagination info', async () => {
       renderPage();
-      expect(screen.getByText('Showing 2 of 2')).toBeInTheDocument();
+      expect(await screen.findByText('Showing 2 of 2')).toBeInTheDocument();
     });
 
-    it('shows Next button when there are more pages', () => {
-      mockListRecentQuery.mockReturnValue({
-        data: {
-          data: Array.from({ length: 50 }, (_, i) => ({ ...movieEntry, id: i + 1 })),
-          pagination: { total: 100 },
-        },
-        isLoading: false,
-        error: null,
-      });
+    it('shows Next button when there are more pages', async () => {
+      mockWatchHistoryListRecent.mockResolvedValue(
+        listResult(
+          Array.from({ length: 50 }, (_, i) => ({ ...movieEntry, id: i + 1 })),
+          100
+        )
+      );
       renderPage();
-      expect(screen.getByText('Next')).toBeInTheDocument();
+      expect(await screen.findByText('Next')).toBeInTheDocument();
     });
 
-    it('hides Previous button on first page', () => {
+    it('hides Previous button on first page', async () => {
       renderPage();
+      await screen.findAllByText('Breaking Bad');
       expect(screen.queryByText('Previous')).not.toBeInTheDocument();
     });
   });

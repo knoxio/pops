@@ -2,8 +2,8 @@
 
 /**
  * Canonical engram types supported by the ingest pipeline.
- * Must stay in sync with KNOWN_TYPES in apps/pops-api/src/modules/cerebrum/ingest/classifier.ts
- * and the default template files under apps/pops-api/src/modules/cerebrum/templates/defaults/.
+ * Must stay in sync with KNOWN_TYPES in pillars/cerebrum/src/api/modules/ingest/classifier.ts
+ * and the default template files under pillars/cerebrum/src/api/modules/templates/defaults/.
  */
 export const ENGRAM_TYPES = [
   'capture',

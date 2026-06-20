@@ -1,4 +1,7 @@
-import { usePillarQuery } from '@pops/pillar-sdk/react';
+import { useQuery } from '@tanstack/react-query';
+
+import { unwrap } from '../media-api-helpers.js';
+import { libraryGenres, libraryList } from '../media-api/index.js';
 
 export type MediaType = 'all' | 'movie' | 'tv';
 export type SortOption = 'title' | 'dateAdded' | 'releaseDate' | 'rating';
@@ -58,17 +61,16 @@ function buildListInput(params: UseMediaLibraryParams) {
 }
 
 export function useMediaLibrary(params: UseMediaLibraryParams) {
-  const { data, isLoading, error, refetch } = usePillarQuery<LibraryListResult>(
-    'media',
-    ['library', 'list'],
-    buildListInput(params)
-  );
+  const listInput = buildListInput(params);
+  const { data, isLoading, error, refetch } = useQuery<LibraryListResult>({
+    queryKey: ['media', 'library', 'list', listInput],
+    queryFn: async () => unwrap(await libraryList({ query: listInput })),
+  });
 
-  const { data: genresData } = usePillarQuery<GenresResult>(
-    'media',
-    ['library', 'genres'],
-    undefined
-  );
+  const { data: genresData } = useQuery<GenresResult>({
+    queryKey: ['media', 'library', 'genres'],
+    queryFn: async () => unwrap(await libraryGenres()),
+  });
 
   const total = data?.pagination.total ?? 0;
   const isEmpty = !isLoading && !error && total === 0;

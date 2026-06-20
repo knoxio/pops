@@ -5,7 +5,7 @@
  * input exits with code 2 and a clear error message. Network failures exit
  * with code 3. Server-side validation/auth errors exit with code 1.
  */
-import { trpcMutation } from '../api-client.js';
+import { restMutation } from '../api-client.js';
 import { loadConfig } from '../config.js';
 import { writeApiError } from '../error-output.js';
 import { readStdin, type StdinSource } from '../stdin.js';
@@ -42,11 +42,10 @@ export async function runCapture(options: RunCaptureOptions): Promise<number> {
 
   const config = loadConfig(options.env);
   try {
-    const result = await trpcMutation<QuickCaptureResponse>(
-      config,
-      'cerebrum.ingest.quickCapture',
-      { text, source: options.source ?? 'cli' }
-    );
+    const result = await restMutation<QuickCaptureResponse>(config, '/ingest/quick-capture', {
+      text,
+      source: options.source ?? 'cli',
+    });
     stdout.write(`Captured ${result.id}\n`);
     stdout.write(`  path:   ${result.path}\n`);
     stdout.write(`  type:   ${result.type}\n`);

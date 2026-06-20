@@ -16,7 +16,9 @@ import { relativeTimeFrom, hasOpenableSourceUrl } from './inbox-types.js';
 import { QualityBandBadge } from './QualityBandBadge.js';
 import { ViewSourceDialog, type ViewSource } from './ViewSourceDialog.js';
 
-import type { InboxDraftRow } from '@pops/app-food-db';
+import type { InboxListResponses } from '../../food-api/types.gen.js';
+
+type InboxDraftRow = InboxListResponses[200]['items'][number];
 
 interface Props {
   row: InboxDraftRow;

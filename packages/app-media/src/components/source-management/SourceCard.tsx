@@ -1,9 +1,15 @@
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Clock, Database, RefreshCw, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { usePillarMutation } from '@pops/pillar-sdk/react';
 import { Button, Switch } from '@pops/ui';
 
+import { unwrap } from '../../media-api-helpers.js';
+import {
+  rotationDeleteSource,
+  rotationSyncSource,
+  rotationUpdateSource,
+} from '../../media-api/index.js';
 import { formatSyncDate, sourceTypeLabel, type Source } from './types';
 
 interface SyncSourceResult {
@@ -16,35 +22,38 @@ interface SourceCardProps {
 }
 
 function useSourceMutations(source: Source) {
-  const syncMutation = usePillarMutation<{ sourceId: number }, SyncSourceResult>(
-    'media',
-    ['rotation', 'syncSource'],
-    {
-      onSuccess: (data) => {
-        toast.success(`Synced "${source.name}": ${data.candidatesInserted} new candidates`);
-      },
-      onError: () => toast.error(`Failed to sync "${source.name}"`),
-    }
-  );
+  const queryClient = useQueryClient();
+  const invalidateRotation = () =>
+    void queryClient.invalidateQueries({ queryKey: ['media', 'rotation'] });
 
-  const toggleMutation = usePillarMutation<{ id: number; enabled: boolean }, unknown>(
-    'media',
-    ['rotation', 'updateSource'],
-    {
-      onError: () => toast.error('Failed to update source'),
-    }
-  );
+  const syncMutation = useMutation({
+    mutationFn: async (input: { sourceId: number }): Promise<SyncSourceResult> =>
+      (await unwrap(await rotationSyncSource({ path: { id: input.sourceId } }))).data,
+    onSuccess: (data) => {
+      toast.success(`Synced "${source.name}": ${data.candidatesInserted} new candidates`);
+      invalidateRotation();
+    },
+    onError: () => toast.error(`Failed to sync "${source.name}"`),
+  });
 
-  const deleteMutation = usePillarMutation<{ id: number }, unknown>(
-    'media',
-    ['rotation', 'deleteSource'],
-    {
-      onSuccess: () => {
-        toast.success(`Deleted "${source.name}"`);
-      },
-      onError: (err) => toast.error(err.message || 'Failed to delete source'),
-    }
-  );
+  const toggleMutation = useMutation({
+    mutationFn: async (input: { id: number; enabled: boolean }) =>
+      unwrap(
+        await rotationUpdateSource({ path: { id: input.id }, body: { enabled: input.enabled } })
+      ),
+    onSuccess: invalidateRotation,
+    onError: () => toast.error('Failed to update source'),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (input: { id: number }) =>
+      unwrap(await rotationDeleteSource({ path: { id: input.id } })),
+    onSuccess: () => {
+      toast.success(`Deleted "${source.name}"`);
+      invalidateRotation();
+    },
+    onError: (err: Error) => toast.error(err.message || 'Failed to delete source'),
+  });
 
   return { syncMutation, toggleMutation, deleteMutation };
 }

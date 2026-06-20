@@ -10,7 +10,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
  * Uses Storybook decorators to pre-populate the import store with confirmed
  * transaction fixtures so the component renders without a real backend.
  */
-import type { ConfirmedTransaction } from '@pops/api/modules/finance/imports';
+import type { ConfirmedTransaction } from '@pops/finance';
 
 // ---------------------------------------------------------------------------
 // Fixtures

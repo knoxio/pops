@@ -6,11 +6,11 @@
  * the dependency graph between effects is obvious. The page component
  * is purely presentational against the returned shape.
  */
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useMemo } from 'react';
 
-import { isNotFound as isPillarNotFound } from '@pops/pillar-sdk/client';
-import { usePillarMutation, usePillarQuery, usePillarUtils } from '@pops/pillar-sdk/react';
-
+import { engramsGet, engramsList, engramsUpdate } from '../cerebrum-api';
+import { isNotFoundError, unwrap } from '../cerebrum-api-helpers';
 import { extractMessage } from '../utils/errors';
 import { clearDraft } from './draft-storage';
 import { findInvalidScopes, normaliseScope } from './scope-validation';
@@ -73,13 +73,6 @@ function resolveError(
   return { message: extractMessage(err, t('errors.unknown')) };
 }
 
-function isNotFound(err: unknown): boolean {
-  if (isPillarNotFound(err)) return true;
-  if (!err || typeof err !== 'object') return false;
-  const data = (err as { data?: { code?: string } }).data;
-  return data?.code === 'NOT_FOUND';
-}
-
 interface UseEngramDetailOptions {
   id: string;
   storage?: Storage;
@@ -87,40 +80,38 @@ interface UseEngramDetailOptions {
 }
 
 function useEngramQueries(id: string) {
-  const getQuery = usePillarQuery<{ engram: Engram | null; body: string }>(
-    'cerebrum',
-    ['engrams', 'get'],
-    { id }
-  );
+  const getQuery = useQuery({
+    queryKey: ['cerebrum', 'engrams', 'get', { id }],
+    queryFn: async () => unwrap(await engramsGet({ path: { id } })),
+    retry: false,
+  });
   const engram = getQuery.data?.engram ?? null;
   const body = getQuery.data?.body ?? '';
   const linkIds = useMemo(() => engram?.links ?? [], [engram]);
-  const connectedQuery = usePillarQuery<{ engrams: Engram[]; total: number }>(
-    'cerebrum',
-    ['engrams', 'list'],
-    { ids: linkIds, limit: linkIds.length || 1 },
-    { enabled: linkIds.length > 0 }
-  );
+  const connectedInput = { ids: linkIds, limit: linkIds.length || 1 };
+  const connectedQuery = useQuery({
+    queryKey: ['cerebrum', 'engrams', 'list', connectedInput],
+    queryFn: async () => unwrap(await engramsList({ body: connectedInput })),
+    enabled: linkIds.length > 0,
+  });
   return { getQuery, engram, body, connectedQuery };
 }
 
 export function useEngramDetailModel(options: UseEngramDetailOptions): EngramDetailModel {
   const { id, storage, t } = options;
-  const utils = usePillarUtils('cerebrum');
+  const queryClient = useQueryClient();
   const { getQuery, engram, body, connectedQuery } = useEngramQueries(id);
   const formState = useEngramFormState({ engram, body, storage });
 
-  const updateMutation = usePillarMutation<EngramUpdateInput, unknown>(
-    'cerebrum',
-    ['engrams', 'update'],
-    {
-      onSuccess: async () => {
-        if (engram) clearDraft(engram.id, storage);
-        formState.finishEditing();
-        await utils.invalidate(['engrams']);
-      },
-    }
-  );
+  const updateMutation = useMutation({
+    mutationFn: async ({ id: engramId, ...patch }: EngramUpdateInput) =>
+      unwrap(await engramsUpdate({ path: { id: engramId }, body: patch })),
+    onSuccess: async () => {
+      if (engram) clearDraft(engram.id, storage);
+      formState.finishEditing();
+      await queryClient.invalidateQueries({ queryKey: ['cerebrum', 'engrams'] });
+    },
+  });
 
   const validationErrors = useMemo(
     () => (formState.isEditing ? validate(formState.form, t) : []),
@@ -143,7 +134,7 @@ export function useEngramDetailModel(options: UseEngramDetailOptions): EngramDet
     id,
     isLoading: getQuery.isLoading,
     error: resolveError(getQuery.error, t),
-    notFound: isNotFound(getQuery.error),
+    notFound: isNotFoundError(getQuery.error),
     engram,
     body,
     connectedEngrams: connectedQuery.data?.engrams ?? [],

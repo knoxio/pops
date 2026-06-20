@@ -14,26 +14,22 @@
  * resolution kind. Sub picks carry the `substitutionEdgeId` + ratio so
  * the shortfall row can compute the override's `consumeQty`.
  */
+import { useQuery } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { usePillarQuery } from '@pops/pillar-sdk/react';
 import { Button } from '@pops/ui';
 
+import { unwrap } from '../../food-api-helpers.js';
+import { batchesSearchForConsume } from '../../food-api/index.js';
 import { SameVariantSection } from './BatchOverridePicker.same-variant.js';
 import { SubstitutionsSection } from './BatchOverridePicker.substitutions.js';
 import { useSubstitutionResolution } from './useSubstitutionResolution.js';
 
-import type { inferRouterOutputs } from '@trpc/server';
 import type { ReactNode } from 'react';
 
-import type { AppRouter } from '@pops/api';
-import type { BatchForConsumeRow } from '@pops/app-food-db';
-
+import type { BatchForConsumeRow } from './cook-resolution-types.js';
 import type { SubCandidate, SubCandidateBatch } from './useSubstitutionResolution.js';
-
-type BatchesSearchForConsumeOutput =
-  inferRouterOutputs<AppRouter>['food']['batches']['searchForConsume'];
 
 export type BatchPickerSelection =
   | { kind: 'same-variant'; batch: BatchForConsumeRow }
@@ -71,12 +67,12 @@ export function BatchOverridePicker(props: BatchOverridePickerProps): ReactNode 
   const { t } = useTranslation('food');
   const [search, setSearch] = useState('');
 
-  const query = usePillarQuery<BatchesSearchForConsumeOutput>(
-    'food',
-    ['batches', 'searchForConsume'],
-    { ingredientId, limit: 20 },
-    { enabled: ingredientId !== undefined }
-  );
+  const searchInput = { ingredientId, limit: 20 };
+  const query = useQuery({
+    queryKey: ['food', 'batches', 'searchForConsume', searchInput],
+    queryFn: async () => unwrap(await batchesSearchForConsume({ body: searchInput })),
+    enabled: ingredientId !== undefined,
+  });
 
   const sameVariant = useMemo(() => {
     const items = query.data?.items ?? [];

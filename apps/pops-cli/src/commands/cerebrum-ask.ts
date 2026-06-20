@@ -5,7 +5,7 @@
  * answer followed by citations. Exit codes mirror `capture`: 2 for empty
  * input, 3 for unreachable API, 1 for server-side errors.
  */
-import { trpcMutation } from '../api-client.js';
+import { restMutation } from '../api-client.js';
 import { loadConfig } from '../config.js';
 import { writeApiError } from '../error-output.js';
 import { readStdin, type StdinSource } from '../stdin.js';
@@ -65,7 +65,7 @@ export async function runAsk(options: RunAskOptions): Promise<number> {
   try {
     const payload: { question: string; scopes?: string[] } = { question };
     if (options.scopes && options.scopes.length > 0) payload.scopes = options.scopes;
-    const result = await trpcMutation<AskResponse>(config, 'cerebrum.query.ask', payload);
+    const result = await restMutation<AskResponse>(config, '/query/ask', payload);
     writeAskResult(stdout, result);
     return 0;
   } catch (err) {

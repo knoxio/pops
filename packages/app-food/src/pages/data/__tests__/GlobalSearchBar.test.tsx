@@ -1,20 +1,24 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { Suspense } from 'react';
+import { Suspense, type ReactNode } from 'react';
 import { createMemoryRouter, RouterProvider } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { GlobalSearchBar } from '../GlobalSearchBar';
 
-const mockSearch = vi.fn();
+const slugsSearchMock = vi.hoisted(() => vi.fn());
 
-vi.mock('@pops/pillar-sdk/react', () => ({
-  usePillarQuery: (_pillarId: string, path: readonly string[], input: unknown, opts: unknown) => {
-    const key = path.join('.');
-    if (key === 'slugs.search') return mockSearch(input, opts);
-    throw new Error(`Unexpected pillar query: ${key}`);
-  },
+vi.mock('../../../food-api/index.js', () => ({
+  slugsSearch: slugsSearchMock,
 }));
+
+function withClient(children: ReactNode): ReactNode {
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  });
+  return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
+}
 
 function PathProbe({ paths }: { paths: string[] }) {
   return <div data-testid="probe">{paths.join('|')}</div>;
@@ -44,16 +48,18 @@ function renderInRouter(initialPath: string) {
     visited.push(`${state.location.pathname}${state.location.search}`);
   });
   const utils = render(
-    <Suspense fallback={null}>
-      <RouterProvider router={router} />
-    </Suspense>
+    withClient(
+      <Suspense fallback={null}>
+        <RouterProvider router={router} />
+      </Suspense>
+    )
   );
   return { ...utils, router };
 }
 
 beforeEach(() => {
   vi.clearAllMocks();
-  mockSearch.mockReturnValue({ data: { items: [] }, isLoading: false });
+  slugsSearchMock.mockResolvedValue({ data: { items: [] } });
 });
 
 describe('PRD-122-D — GlobalSearchBar', () => {
@@ -63,18 +69,17 @@ describe('PRD-122-D — GlobalSearchBar', () => {
   });
 
   it('shows the empty hint when no matches return', async () => {
-    mockSearch.mockReturnValue({ data: { items: [] }, isLoading: false });
+    slugsSearchMock.mockResolvedValue({ data: { items: [] } });
     renderInRouter('/food/data/ingredients');
     await userEvent.type(screen.getByPlaceholderText(/search ingredients/i), 'xyz');
     expect(await screen.findByText(/no matches/i)).toBeInTheDocument();
   });
 
   it('clicking an ingredient result navigates to /food/data/ingredients?focus=<slug>', async () => {
-    mockSearch.mockReturnValue({
+    slugsSearchMock.mockResolvedValue({
       data: {
         items: [{ slug: 'butter', kind: 'ingredient', targetId: 100, name: 'Butter' }],
       },
-      isLoading: false,
     });
     const { router } = renderInRouter('/food/data/ingredients');
     await userEvent.type(screen.getByPlaceholderText(/search ingredients/i), 'but');
@@ -85,11 +90,10 @@ describe('PRD-122-D — GlobalSearchBar', () => {
   });
 
   it('clicking a prep_state result navigates to /food/data/prep-states', async () => {
-    mockSearch.mockReturnValue({
+    slugsSearchMock.mockResolvedValue({
       data: {
         items: [{ slug: 'diced', kind: 'prep_state', targetId: 5, name: 'Diced' }],
       },
-      isLoading: false,
     });
     const { router } = renderInRouter('/food/data/ingredients');
     await userEvent.type(screen.getByPlaceholderText(/search ingredients/i), 'dic');
@@ -100,11 +104,10 @@ describe('PRD-122-D — GlobalSearchBar', () => {
   });
 
   it('recipe results are shown with a badge but disabled (no recipe tab yet)', async () => {
-    mockSearch.mockReturnValue({
+    slugsSearchMock.mockResolvedValue({
       data: {
         items: [{ slug: 'weeknight-pasta', kind: 'recipe', targetId: 1, name: 'Weeknight Pasta' }],
       },
-      isLoading: false,
     });
     renderInRouter('/food/data/ingredients');
     await userEvent.type(screen.getByPlaceholderText(/search ingredients/i), 'weeknight');

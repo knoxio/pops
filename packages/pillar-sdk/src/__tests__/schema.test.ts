@@ -86,7 +86,9 @@ describe('ManifestPayloadSchema', () => {
 
   describe('contract package regex', () => {
     it.each([
-      '@pops/finance',
+      // `@pops/finance` (bare collapsed-pillar name) is VALID — finance
+      // collapsed into `pillars/finance/` and its manifest declares
+      // `contract.package: '@pops/finance'`.
       '@pops/finance-contract-v2',
       '@other/finance-contract',
       'pops/finance-contract',
@@ -807,6 +809,158 @@ describe('ManifestPayloadSchema', () => {
       const m = {
         ...validManifest(),
         captureOverlay: { ...cerebrumCaptureOverlay(), sneaky: true },
+      };
+      const result = ManifestPayloadSchema.safeParse(m);
+      expect(result.success).toBe(false);
+    });
+  });
+
+  describe('features dimension (epic 05 / S0)', () => {
+    const redisFeature = () => ({
+      key: 'core.redis',
+      label: 'Redis',
+      description: 'Job queues and request cache.',
+      default: true,
+      scope: 'capability' as const,
+      capability: { pillar: 'core', key: 'redis' },
+      requiresEnv: ['REDIS_HOST'],
+    });
+
+    const vectorSearchFeature = () => ({
+      key: 'cerebrum.vectorSearch',
+      label: 'Vector search (sqlite-vec)',
+      default: true,
+      scope: 'capability' as const,
+      capability: { pillar: 'cerebrum', key: 'vectorSearch' },
+    });
+
+    it('accepts a manifest with features omitted (backwards-compatible)', () => {
+      const result = ManifestPayloadSchema.safeParse(validManifest());
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.features).toBeUndefined();
+      }
+    });
+
+    it('accepts an empty features array', () => {
+      const m = { ...validManifest(), features: [] };
+      const result = ManifestPayloadSchema.safeParse(m);
+      expect(result.success).toBe(true);
+    });
+
+    it('accepts a capability feature with a declarative capability descriptor', () => {
+      const m = { ...validManifest(), features: [redisFeature(), vectorSearchFeature()] };
+      const result = ManifestPayloadSchema.safeParse(m);
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.features?.[0]?.capability).toEqual({ pillar: 'core', key: 'redis' });
+      }
+    });
+
+    it('accepts a minimal feature with only the required fields', () => {
+      const m = {
+        ...validManifest(),
+        features: [
+          {
+            key: 'finance.autoCategorize',
+            label: 'Auto-categorize',
+            default: false,
+            scope: 'system',
+          },
+        ],
+      };
+      const result = ManifestPayloadSchema.safeParse(m);
+      expect(result.success).toBe(true);
+    });
+
+    it('accepts a system feature carrying requires + settingKey + configureLink', () => {
+      const m = {
+        ...validManifest(),
+        features: [
+          {
+            key: 'media.plex.scheduler',
+            label: 'Plex scheduler',
+            default: true,
+            scope: 'system' as const,
+            requires: ['media.plex.url', 'media.plex.token'],
+            settingKey: 'plex.scheduler.enabled',
+            configureLink: '/settings#media.plex',
+          },
+        ],
+      };
+      const result = ManifestPayloadSchema.safeParse(m);
+      expect(result.success).toBe(true);
+    });
+
+    it.each([
+      ['Core.Redis', 'uppercase key'],
+      ['.redis', 'leading dot'],
+      ['core.', 'trailing dot'],
+      ['1core.redis', 'leading digit'],
+    ])('rejects a malformed feature key (%s — %s)', (key) => {
+      const m = { ...validManifest(), features: [{ ...redisFeature(), key }] };
+      const result = ManifestPayloadSchema.safeParse(m);
+      expect(result.success).toBe(false);
+    });
+
+    it('rejects an unknown feature scope', () => {
+      const m = { ...validManifest(), features: [{ ...redisFeature(), scope: 'mystery' }] };
+      const result = ManifestPayloadSchema.safeParse(m);
+      expect(result.success).toBe(false);
+    });
+
+    it('rejects a feature missing the required default field', () => {
+      const { default: _omitted, ...rest } = redisFeature();
+      const m = { ...validManifest(), features: [rest] };
+      const result = ManifestPayloadSchema.safeParse(m);
+      expect(result.success).toBe(false);
+    });
+
+    it('rejects an empty-string label', () => {
+      const m = { ...validManifest(), features: [{ ...redisFeature(), label: '' }] };
+      const result = ManifestPayloadSchema.safeParse(m);
+      expect(result.success).toBe(false);
+    });
+
+    it('rejects a capability.pillar that is not kebab-case', () => {
+      const m = {
+        ...validManifest(),
+        features: [{ ...redisFeature(), capability: { pillar: 'Core', key: 'redis' } }],
+      };
+      const result = ManifestPayloadSchema.safeParse(m);
+      expect(result.success).toBe(false);
+    });
+
+    it('rejects a capability.key that is not a camelCase identifier', () => {
+      const m = {
+        ...validManifest(),
+        features: [{ ...redisFeature(), capability: { pillar: 'core', key: 'redis-status' } }],
+      };
+      const result = ManifestPayloadSchema.safeParse(m);
+      expect(result.success).toBe(false);
+    });
+
+    it('rejects a runtime capabilityCheck function leaking onto the wire (strict mode)', () => {
+      const m = {
+        ...validManifest(),
+        features: [{ ...redisFeature(), capabilityCheck: () => true }],
+      };
+      const result = ManifestPayloadSchema.safeParse(m);
+      expect(result.success).toBe(false);
+    });
+
+    it('rejects an unknown field on a feature descriptor (strict mode)', () => {
+      const m = { ...validManifest(), features: [{ ...redisFeature(), sneaky: true }] };
+      const result = ManifestPayloadSchema.safeParse(m);
+      expect(result.success).toBe(false);
+    });
+
+    it('rejects an unknown field on the capability descriptor (strict mode)', () => {
+      const m = {
+        ...validManifest(),
+        features: [
+          { ...redisFeature(), capability: { pillar: 'core', key: 'redis', sneaky: true } },
+        ],
       };
       const result = ManifestPayloadSchema.safeParse(m);
       expect(result.success).toBe(false);

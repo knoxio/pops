@@ -7,8 +7,7 @@ import { RecipeRenderer } from './RecipeRenderer';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import type { ResolvedStepBody } from '@pops/app-food-db';
-import type { RecipeVersionWithCompiledData } from '@pops/app-food-db';
+import type { ResolvedStepBody, RecipeVersionWithCompiledData } from './recipe-render-types.js';
 
 /**
  * PRD-121 stories — `apps/pops-storybook/.storybook/main.ts` discovers

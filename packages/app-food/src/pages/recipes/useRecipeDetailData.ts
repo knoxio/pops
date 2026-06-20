@@ -1,12 +1,10 @@
-import { usePillarQuery } from '@pops/pillar-sdk/react';
+import { useQuery } from '@tanstack/react-query';
 
-import type { inferRouterOutputs } from '@trpc/server';
+import { unwrap } from '../../food-api-helpers.js';
+import { recipesGetForRendering, recipesListDrafts } from '../../food-api/index.js';
+import { asRenderingPayload } from './recipe-payloads.js';
 
-import type { AppRouter } from '@pops/api';
-import type { RecipeVersionWithCompiledData } from '@pops/app-food-db';
-
-type GetForRenderingOutput = inferRouterOutputs<AppRouter>['food']['recipes']['getForRendering'];
-type ListDraftsOutput = inferRouterOutputs<AppRouter>['food']['recipes']['listDrafts'];
+import type { RecipeVersionWithCompiledData } from '../../components/recipe-render-types.js';
 
 export interface RecipeDetailQueryArgs {
   slug: string;
@@ -29,8 +27,8 @@ export interface RecipeDetailState {
 
 /**
  * Combine the two reads PRD-119-B's detail page needs: the heavy compile
- * payload (via `food.recipes.getForRendering`) and the draft count (via
- * `food.recipes.listDrafts`). Drafts is keyed off the slug only so it
+ * payload (via `recipes.getForRendering`) and the draft count (via
+ * `recipes.listDrafts`). Drafts is keyed off the slug only so it
  * stays cached across version-no navigation, AND its fetch is gated by
  * `includeDrafts` so the historic-version page doesn't pay for a count
  * it never renders.
@@ -40,16 +38,18 @@ export function useRecipeDetailData({
   versionNo,
   includeDrafts = true,
 }: RecipeDetailQueryArgs): RecipeDetailState {
-  const rendering = usePillarQuery<GetForRenderingOutput>('food', ['recipes', 'getForRendering'], {
-    slug,
-    versionNo,
+  const rendering = useQuery({
+    queryKey: ['food', 'recipes', 'getForRendering', { slug, versionNo }],
+    queryFn: async () =>
+      asRenderingPayload(
+        unwrap(await recipesGetForRendering({ path: { slug }, query: { versionNo } }))
+      ),
   });
-  const drafts = usePillarQuery<ListDraftsOutput>(
-    'food',
-    ['recipes', 'listDrafts'],
-    { slug },
-    { enabled: includeDrafts }
-  );
+  const drafts = useQuery({
+    queryKey: ['food', 'recipes', 'listDrafts', { slug }],
+    queryFn: async () => unwrap(await recipesListDrafts({ path: { slug } })),
+    enabled: includeDrafts,
+  });
   const error = firstError(rendering.error, drafts.error);
   return {
     data: rendering.data,

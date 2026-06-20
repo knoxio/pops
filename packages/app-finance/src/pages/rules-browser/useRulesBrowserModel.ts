@@ -1,7 +1,8 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useState } from 'react';
 
-import { usePillarMutation, usePillarQuery, usePillarUtils } from '@pops/pillar-sdk/react';
-
+import { unwrap } from '../../finance-api-helpers.js';
+import { correctionsDelete, correctionsList } from '../../finance-api/index.js';
 import { useRuleFormState } from './rule-form/useRuleFormState';
 
 import type { Correction, MatchType } from './types';
@@ -43,18 +44,16 @@ function useFilterState(): FilterState {
 function useDeleteFlow() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [removedIds, setRemovedIds] = useState<Set<string>>(new Set());
-  const utils = usePillarUtils('core');
-  const deleteMutation = usePillarMutation<DeleteCorrectionInput, unknown>(
-    'core',
-    ['corrections', 'delete'],
-    {
-      onSuccess: () => {
-        void utils.invalidate(['corrections', 'list']);
-        setDeleteId(null);
-        setRemovedIds(new Set());
-      },
-    }
-  );
+  const queryClient = useQueryClient();
+  const deleteMutation = useMutation({
+    mutationFn: async (vars: DeleteCorrectionInput) =>
+      unwrap(await correctionsDelete({ path: { id: vars.id } })),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['finance', 'corrections', 'list'] });
+      setDeleteId(null);
+      setRemovedIds(new Set());
+    },
+  });
   const handleDelete = useCallback(() => {
     if (!deleteId) return;
     deleteMutation.mutate({ id: deleteId });
@@ -66,11 +65,15 @@ function useDeleteFlow() {
 }
 
 function useCorrectionsListQuery(filters: FilterState) {
-  return usePillarQuery<CorrectionsListResult>('core', ['corrections', 'list'], {
+  const query = {
     minConfidence: filters.minConfidence ? parseFloat(filters.minConfidence) : undefined,
     matchType: parseMatchType(filters.matchType),
     limit: PAGE_SIZE,
     offset: filters.offset,
+  };
+  return useQuery({
+    queryKey: ['finance', 'corrections', 'list', query],
+    queryFn: async (): Promise<CorrectionsListResult> => unwrap(await correctionsList({ query })),
   });
 }
 

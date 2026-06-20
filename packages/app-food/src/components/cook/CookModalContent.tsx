@@ -14,8 +14,7 @@ import { ShortfallList } from './ShortfallList.js';
  */
 import type { Dispatch, ReactElement, SetStateAction } from 'react';
 
-import type { CookPreparation } from '@pops/app-food-db';
-
+import type { CookPreparation } from './cook-resolution-types.js';
 import type { useCookResolution } from './useCookResolution.js';
 
 interface Props {

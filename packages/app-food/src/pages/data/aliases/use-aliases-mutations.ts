@@ -11,29 +11,44 @@
  * server call would still close the dialog and the user would lose their
  * input.
  */
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCallback } from 'react';
 import { toast } from 'sonner';
 
-import { usePillarMutation, usePillarUtils } from '@pops/pillar-sdk/react';
-
-import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
-
-import type { AppRouter } from '@pops/api';
+import { unwrap } from '../../../food-api-helpers.js';
+import {
+  aliasesBulkApprove,
+  aliasesCreate,
+  aliasesDelete,
+  aliasesMerge,
+  aliasesUpdateText,
+} from '../../../food-api/index.js';
 
 import type { AliasSource, AliasTarget } from './types.js';
 
-type CreateInput = inferRouterInputs<AppRouter>['food']['aliases']['create'];
-type CreateOutput = inferRouterOutputs<AppRouter>['food']['aliases']['create'];
-type UpdateTextInput = inferRouterInputs<AppRouter>['food']['aliases']['updateText'];
-type UpdateTextOutput = inferRouterOutputs<AppRouter>['food']['aliases']['updateText'];
-type DeleteInput = inferRouterInputs<AppRouter>['food']['aliases']['delete'];
-type DeleteOutput = inferRouterOutputs<AppRouter>['food']['aliases']['delete'];
-type MergeInput = inferRouterInputs<AppRouter>['food']['aliases']['merge'];
-type MergeOutput = inferRouterOutputs<AppRouter>['food']['aliases']['merge'];
-type BulkApproveInput = inferRouterInputs<AppRouter>['food']['aliases']['bulkApprove'];
-type BulkApproveOutput = inferRouterOutputs<AppRouter>['food']['aliases']['bulkApprove'];
+type AliasTargetWire = { kind: 'ingredient' | 'variant'; id: number };
 
-function targetWire(target: AliasTarget): { kind: 'ingredient' | 'variant'; id: number } {
+interface CreateInput {
+  alias: string;
+  target: AliasTargetWire;
+  source?: AliasSource;
+}
+interface UpdateTextInput {
+  id: number;
+  alias: string;
+}
+interface DeleteInput {
+  id: number;
+}
+interface MergeInput {
+  aliasIds: number[];
+  target: AliasTargetWire;
+}
+interface BulkApproveInput {
+  aliasIds: number[];
+}
+
+function targetWire(target: AliasTarget): AliasTargetWire {
   return { kind: target.kind, id: target.id };
 }
 
@@ -46,52 +61,58 @@ export interface UseAliasMutationsOpts {
   readonly onMergeSuccess?: () => void;
 }
 
-function showError(err: { message: string }): void {
+function showError(err: Error): void {
   toast.error(err.message);
 }
 
 function useRawMutations(baseSuccess: (extra?: () => void) => void, opts: UseAliasMutationsOpts) {
   const { onCreateSuccess, onMergeSuccess } = opts;
   return {
-    create: usePillarMutation<CreateInput, CreateOutput>('food', ['aliases', 'create'], {
+    create: useMutation({
+      mutationFn: async (input: CreateInput) =>
+        unwrap(
+          await aliasesCreate({
+            body: { alias: input.alias, source: input.source, target: input.target },
+          })
+        ),
       onSuccess: () => baseSuccess(onCreateSuccess),
       onError: showError,
     }),
-    updateText: usePillarMutation<UpdateTextInput, UpdateTextOutput>(
-      'food',
-      ['aliases', 'updateText'],
-      {
-        onSuccess: () => baseSuccess(),
-        onError: showError,
-      }
-    ),
-    delete: usePillarMutation<DeleteInput, DeleteOutput>('food', ['aliases', 'delete'], {
+    updateText: useMutation({
+      mutationFn: async (input: UpdateTextInput) =>
+        unwrap(await aliasesUpdateText({ path: { id: input.id }, body: { alias: input.alias } })),
       onSuccess: () => baseSuccess(),
       onError: showError,
     }),
-    merge: usePillarMutation<MergeInput, MergeOutput>('food', ['aliases', 'merge'], {
+    delete: useMutation({
+      mutationFn: async (input: DeleteInput) =>
+        unwrap(await aliasesDelete({ path: { id: input.id } })),
+      onSuccess: () => baseSuccess(),
+      onError: showError,
+    }),
+    merge: useMutation({
+      mutationFn: async (input: MergeInput) =>
+        unwrap(await aliasesMerge({ body: { aliasIds: input.aliasIds, target: input.target } })),
       onSuccess: () => baseSuccess(onMergeSuccess),
       onError: showError,
     }),
-    bulkApprove: usePillarMutation<BulkApproveInput, BulkApproveOutput>(
-      'food',
-      ['aliases', 'bulkApprove'],
-      {
-        onSuccess: () => baseSuccess(),
-        onError: showError,
-      }
-    ),
+    bulkApprove: useMutation({
+      mutationFn: async (input: BulkApproveInput) =>
+        unwrap(await aliasesBulkApprove({ body: { aliasIds: input.aliasIds } })),
+      onSuccess: () => baseSuccess(),
+      onError: showError,
+    }),
   };
 }
 
 export function useAliasMutations(opts: UseAliasMutationsOpts = {}) {
-  const utils = usePillarUtils('food');
+  const qc = useQueryClient();
   const { onAnySuccess } = opts;
 
   const invalidateList = useCallback(async () => {
-    await utils.invalidate(['aliases', 'listWithTargets']);
-    await utils.invalidate(['aliases', 'list']);
-  }, [utils]);
+    await qc.invalidateQueries({ queryKey: ['food', 'aliases', 'listWithTargets'] });
+    await qc.invalidateQueries({ queryKey: ['food', 'aliases', 'list'] });
+  }, [qc]);
 
   const baseSuccess = useCallback(
     (extra?: () => void) => {

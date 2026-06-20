@@ -3,10 +3,11 @@
  *
  * Extracted from CorrectionProposalDialog (tb-364).
  */
+import { useMutation } from '@tanstack/react-query';
 import { useCallback, useMemo, useState } from 'react';
 
-import { usePillarMutation } from '@pops/pillar-sdk/react';
-
+import { unwrap } from '../../../finance-api-helpers.js';
+import { correctionsPreviewChangeSet } from '../../../finance-api/index.js';
 import {
   type PreviewSlotState,
   type PreviewMutateAsync,
@@ -111,11 +112,11 @@ export function usePreviewEffects(
   const selected = useSlot();
   const refs = usePreviewRefs();
   const [rerunToken, setRerunToken] = useState(0);
-  const previewMutation = usePillarMutation<PreviewChangeSetInput, PreviewChangeSetOutput>(
-    'core',
-    ['corrections', 'previewChangeSet'],
-    { retry: false }
-  );
+  const previewMutation = useMutation({
+    mutationFn: async (vars: PreviewChangeSetInput): Promise<PreviewChangeSetOutput> =>
+      unwrap(await correctionsPreviewChangeSet({ body: vars })),
+    retry: false,
+  });
 
   const clearDirtyFlags = useCallback(
     () => setLocalOps((prev) => prev.map((o) => (o.dirty ? { ...o, dirty: false } : o))),

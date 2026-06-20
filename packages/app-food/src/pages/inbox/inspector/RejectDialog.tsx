@@ -4,20 +4,20 @@
  * `food.inbox.reject` mutation; navigates back to the inbox Drafts tab
  * on success.
  */
+import { useMutation } from '@tanstack/react-query';
 import { type ReactElement, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
 import { toast } from 'sonner';
 
-import { usePillarMutation } from '@pops/pillar-sdk/react';
 import { Button, Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@pops/ui';
 
-import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
+import { unwrap } from '../../../food-api-helpers.js';
+import { inboxReject } from '../../../food-api/index.js';
 
-import type { AppRouter } from '@pops/api';
+import type { InboxRejectData } from '../../../food-api/types.gen.js';
 
-type InboxRejectInput = inferRouterInputs<AppRouter>['food']['inbox']['reject'];
-type InboxRejectOutput = inferRouterOutputs<AppRouter>['food']['inbox']['reject'];
+type InboxRejectInput = NonNullable<InboxRejectData['body']>;
 
 const REASONS = [
   'wrong-recipe',
@@ -42,7 +42,8 @@ function useRejectMutation(args: {
 }) {
   const { t } = useTranslation('food');
   const navigate = useNavigate();
-  return usePillarMutation<InboxRejectInput, InboxRejectOutput>('food', ['inbox', 'reject'], {
+  return useMutation({
+    mutationFn: async (input: InboxRejectInput) => unwrap(await inboxReject({ body: input })),
     onSuccess: (res) => {
       if (res.ok) {
         toast.success(t('inbox.inspector.decision.reject.success'));
@@ -53,7 +54,7 @@ function useRejectMutation(args: {
         toast.error(t(`inbox.inspector.decision.reject.error.${res.reason}` as const));
       }
     },
-    onError: (err) =>
+    onError: (err: Error) =>
       toast.error(t('inbox.inspector.decision.reject.error.generic', { message: err.message })),
   });
 }

@@ -12,11 +12,12 @@
  * "Watched + Library" buttons that add the item then trigger the secondary
  * action in a single click.
  */
+import { useQuery } from '@tanstack/react-query';
 import { Search } from 'lucide-react';
 import { useState } from 'react';
 
-import { usePillarQuery } from '@pops/pillar-sdk/react';
-
+import { unwrap } from '../media-api-helpers.js';
+import { searchMovies, searchTvShows } from '../media-api/index.js';
 import { MovieSearchSection } from './search/MovieSearchSection';
 import { SearchInput } from './search/SearchInput';
 import { TvSearchSection } from './search/TvSearchSection';
@@ -58,18 +59,18 @@ function useSearchQueries(debouncedQuery: string, mode: SearchMode) {
   const shouldSearchMovies = debouncedQuery.length > 0 && (mode === 'movies' || mode === 'both');
   const shouldSearchTv = debouncedQuery.length > 0 && (mode === 'tv' || mode === 'both');
 
-  const movieSearch = usePillarQuery<MovieSearchResponse>(
-    'media',
-    ['search', 'movies'],
-    { query: debouncedQuery },
-    { enabled: shouldSearchMovies, staleTime: STALE_TIME_MS }
-  );
-  const tvSearch = usePillarQuery<TvSearchResponse>(
-    'media',
-    ['search', 'tvShows'],
-    { query: debouncedQuery },
-    { enabled: shouldSearchTv, staleTime: STALE_TIME_MS }
-  );
+  const movieSearch = useQuery<MovieSearchResponse>({
+    queryKey: ['media', 'search', 'movies', { query: debouncedQuery }],
+    queryFn: async () => unwrap(await searchMovies({ query: { query: debouncedQuery } })),
+    enabled: shouldSearchMovies,
+    staleTime: STALE_TIME_MS,
+  });
+  const tvSearch = useQuery<TvSearchResponse>({
+    queryKey: ['media', 'search', 'tvShows', { query: debouncedQuery }],
+    queryFn: async () => unwrap(await searchTvShows({ query: { query: debouncedQuery } })),
+    enabled: shouldSearchTv,
+    staleTime: STALE_TIME_MS,
+  });
 
   return { shouldSearchMovies, shouldSearchTv, movieSearch, tvSearch };
 }

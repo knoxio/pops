@@ -1,33 +1,19 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-// ── tRPC mock ────────────────────────────────────────────────────────
+import { withQueryClient } from '../test-utils';
 
-const mockEngramsListQuery = vi.fn();
-const mockSearchQuery = vi.fn();
-const mockScopesListQuery = vi.fn();
-
-vi.mock('@pops/pillar-sdk/react', () => ({
-  usePillarQuery: (
-    _pillarId: string,
-    path: readonly string[],
-    input: unknown,
-    options?: unknown
-  ) => {
-    const key = path.join('.');
-    if (key === 'engrams.list') return mockEngramsListQuery(input, options);
-    if (key === 'retrieval.search') return mockSearchQuery(input, options);
-    if (key === 'scopes.list') return mockScopesListQuery(input, options);
-    throw new Error(`Unexpected pillar query: ${key}`);
-  },
+const sdk = vi.hoisted(() => ({
+  engramsList: vi.fn(),
+  retrievalSearch: vi.fn(),
+  scopesList: vi.fn(),
 }));
 
-// Pull in the page after the mock so it picks up the mocked client.
-import { EngramsListPage } from './EngramsListPage';
+vi.mock('../cerebrum-api', () => sdk);
 
-// ── helpers ──────────────────────────────────────────────────────────
+import { EngramsListPage } from './EngramsListPage';
 
 interface Engram {
   id: string;
@@ -70,115 +56,78 @@ function buildEngram(overrides: Partial<Engram> = {}): Engram {
 
 function renderPage() {
   return render(
-    <MemoryRouter>
-      <EngramsListPage />
-    </MemoryRouter>
+    withQueryClient(
+      <MemoryRouter>
+        <EngramsListPage />
+      </MemoryRouter>
+    )
   );
 }
 
 beforeEach(() => {
   vi.clearAllMocks();
-  mockScopesListQuery.mockReturnValue({
-    data: { scopes: [{ scope: 'work', count: 1 }] },
-    isLoading: false,
-  });
-  mockSearchQuery.mockReturnValue({
-    data: undefined,
-    isLoading: false,
-    error: null,
-    refetch: vi.fn(),
+  sdk.scopesList.mockResolvedValue({ data: { scopes: [{ scope: 'work', count: 1 }] } });
+  sdk.retrievalSearch.mockResolvedValue({
+    data: { results: [], meta: { total: 0, mode: 'hybrid' } },
   });
 });
 
 describe('EngramsListPage', () => {
-  it('renders page header', () => {
-    mockEngramsListQuery.mockReturnValue({
-      data: { engrams: [], total: 0 },
-      isLoading: false,
-      error: null,
-      refetch: vi.fn(),
-    });
+  it('renders page header', async () => {
+    sdk.engramsList.mockResolvedValue({ data: { engrams: [], total: 0 } });
     renderPage();
-    expect(screen.getByText('Engrams')).toBeInTheDocument();
+    expect(await screen.findByText('Engrams')).toBeInTheDocument();
   });
 
   it('shows the loading skeleton while data is in flight', () => {
-    mockEngramsListQuery.mockReturnValue({
-      data: undefined,
-      isLoading: true,
-      error: null,
-      refetch: vi.fn(),
-    });
+    sdk.engramsList.mockReturnValue(new Promise(() => undefined));
     renderPage();
     expect(screen.getByTestId('engrams-loading')).toBeInTheDocument();
   });
 
-  it('shows the empty state when no engrams match', () => {
-    mockEngramsListQuery.mockReturnValue({
-      data: { engrams: [], total: 0 },
-      isLoading: false,
-      error: null,
-      refetch: vi.fn(),
-    });
+  it('shows the empty state when no engrams match', async () => {
+    sdk.engramsList.mockResolvedValue({ data: { engrams: [], total: 0 } });
     renderPage();
-    expect(screen.getByText('No engrams found')).toBeInTheDocument();
+    expect(await screen.findByText('No engrams found')).toBeInTheDocument();
   });
 
   it('shows an error state with retry when the list query fails', async () => {
-    const refetch = vi.fn();
-    mockEngramsListQuery.mockReturnValue({
-      data: undefined,
-      isLoading: false,
-      error: { message: 'boom' },
-      refetch,
-    });
+    sdk.engramsList.mockResolvedValue({ error: { message: 'boom' }, response: { status: 500 } });
     renderPage();
-    expect(screen.getByTestId('engrams-error')).toBeInTheDocument();
+    expect(await screen.findByTestId('engrams-error')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: /retry/i }));
-    expect(refetch).toHaveBeenCalled();
+    await waitFor(() => expect(sdk.engramsList).toHaveBeenCalledTimes(2));
   });
 
-  it('renders rows for the returned engrams', () => {
-    mockEngramsListQuery.mockReturnValue({
+  it('renders rows for the returned engrams', async () => {
+    sdk.engramsList.mockResolvedValue({
       data: {
         engrams: [buildEngram(), buildEngram({ id: 'eng_20260417_0942_two', title: 'Second' })],
         total: 2,
       },
-      isLoading: false,
-      error: null,
-      refetch: vi.fn(),
     });
     renderPage();
-    expect(screen.getAllByTestId('engram-row')).toHaveLength(2);
+    expect(await screen.findAllByTestId('engram-row')).toHaveLength(2);
     expect(screen.getByText('First engram')).toBeInTheDocument();
     expect(screen.getByText('Second')).toBeInTheDocument();
   });
 
   it('switches to the retrieval search query when the user types', async () => {
-    mockEngramsListQuery.mockReturnValue({
-      data: { engrams: [], total: 0 },
-      isLoading: false,
-      error: null,
-      refetch: vi.fn(),
-    });
-    mockSearchQuery.mockReturnValue({
+    sdk.engramsList.mockResolvedValue({ data: { engrams: [], total: 0 } });
+    sdk.retrievalSearch.mockResolvedValue({
       data: {
         results: [{ sourceId: 'eng_20260417_0942_one' }],
         meta: { total: 1, mode: 'hybrid' },
       },
-      isLoading: false,
-      error: null,
-      refetch: vi.fn(),
     });
     renderPage();
 
     const searchBox = screen.getByLabelText('Search');
     await userEvent.type(searchBox, 'agents');
 
-    // The search query should have been called with `enabled: true` once a
-    // query is present. Verify by inspecting the latest call.
-    const lastCall = mockSearchQuery.mock.calls.at(-1);
-    expect(lastCall?.[0]).toMatchObject({ query: 'agents', mode: 'hybrid' });
-    expect(lastCall?.[1]).toMatchObject({ enabled: true });
+    await waitFor(() => {
+      const lastCall = sdk.retrievalSearch.mock.calls.at(-1);
+      expect(lastCall?.[0]?.body).toMatchObject({ query: 'agents', mode: 'hybrid' });
+    });
   });
 });

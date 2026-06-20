@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useParams, useSearchParams } from 'react-router';
 import { toast } from 'sonner';
 
-import { usePillarMutation, usePillarQuery } from '@pops/pillar-sdk/react';
-
+import { isNotFoundError, unwrap } from '../../inventory-api-helpers.js';
+import { itemsGet, itemsList, locationsCreate, locationsTree } from '../../inventory-api/index.js';
 import { itemToFormValues, type ItemQueryResult } from './item-record';
 import { defaultValues, type ItemFormValues, type PendingConnection } from './types';
 import { useAssetIdValidation } from './useAssetIdValidation';
@@ -12,24 +13,30 @@ import { useDocumentUploadState } from './useDocumentUpload';
 import { useItemMutations } from './useItemMutations';
 import { usePhotoUploadState } from './usePhotoUpload';
 
-import type { InventoryItem } from '@pops/api/modules/inventory/items/types';
-
 import type { LocationTreeNode } from '../location-tree-page/utils';
 
 export type { ItemFormValues, PendingConnection };
 export { extractPrefix } from './types';
 
-interface LocationsTreeResult {
-  data: LocationTreeNode[];
-}
-
-interface ItemsListResult {
-  data: InventoryItem[];
-}
-
 interface CreateLocationInput {
   name: string;
   parentId: string | null;
+}
+
+/**
+ * Shape consumed by the page's `ErrorView`, which distinguishes a missing
+ * item (`data.code === 'NOT_FOUND'`) from any other failure. Reproduces the
+ * `{ data: { code }, message }` envelope the pillar SDK used to surface.
+ */
+interface FormQueryError {
+  data: { code: string } | null;
+  message: string;
+}
+
+function toFormQueryError(error: unknown): FormQueryError | null {
+  if (!error) return null;
+  const message = error instanceof Error ? error.message : 'inventory API request failed';
+  return { data: isNotFoundError(error) ? { code: 'NOT_FOUND' } : null, message };
 }
 
 function useResetFromItem(
@@ -78,22 +85,25 @@ function useLocationIdPrefill(
 }
 
 function useLocationsAndCreate() {
-  const { data: locationsData } = usePillarQuery<LocationsTreeResult>(
-    'inventory',
-    ['locations', 'tree'],
-    undefined
-  );
-  const locationTree = locationsData?.data ?? [];
-  const createLocationMutation = usePillarMutation<CreateLocationInput, unknown>(
-    'inventory',
-    ['locations', 'create'],
-    {
-      onSuccess: () => {
-        toast.success('Location created');
-      },
-      onError: (err) => toast.error(`Failed to create location: ${err.message}`),
-    }
-  );
+  const queryClient = useQueryClient();
+  const { data: locationsData } = useQuery({
+    queryKey: ['inventory', 'locations', 'tree', undefined],
+    queryFn: async () => unwrap(await locationsTree()),
+  });
+  const locationTree: LocationTreeNode[] = locationsData?.data ?? [];
+  const createLocationMutation = useMutation({
+    mutationFn: async (input: CreateLocationInput) =>
+      unwrap(
+        await locationsCreate({
+          body: { name: input.name, parentId: input.parentId, sortOrder: 0 },
+        })
+      ),
+    onSuccess: () => {
+      toast.success('Location created');
+    },
+    onError: (err: Error) => toast.error(`Failed to create location: ${err.message}`),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ['inventory', 'locations'] }),
+  });
   return { locationTree, createLocationMutation };
 }
 
@@ -109,6 +119,16 @@ function useLocalFormState() {
     connectionSearch,
     setConnectionSearch,
   };
+}
+
+function useConnectionSearch(connectionSearch: string, isEditMode: boolean) {
+  const searchInput = useMemo(() => ({ search: connectionSearch, limit: 10 }), [connectionSearch]);
+  const { data: searchResults, isLoading: searchLoading } = useQuery({
+    queryKey: ['inventory', 'items', 'list', searchInput],
+    queryFn: async () => unwrap(await itemsList({ query: searchInput })),
+    enabled: !isEditMode && connectionSearch.length >= 2,
+  });
+  return { searchResults, searchLoading };
 }
 
 export function useItemFormPageModel() {
@@ -134,12 +154,7 @@ export function useItemFormPageModel() {
     pendingConnections: local.pendingConnections,
   });
 
-  const { data: searchResults, isLoading: searchLoading } = usePillarQuery<ItemsListResult>(
-    'inventory',
-    ['items', 'list'],
-    { search: local.connectionSearch, limit: 10 },
-    { enabled: !isEditMode && local.connectionSearch.length >= 2 }
-  );
+  const { searchResults, searchLoading } = useConnectionSearch(local.connectionSearch, isEditMode);
   const { locationTree, createLocationMutation } = useLocationsAndCreate();
   useLocationIdPrefill(isEditMode, locationTree, setValue);
 
@@ -147,12 +162,11 @@ export function useItemFormPageModel() {
     data: itemData,
     isLoading,
     error,
-  } = usePillarQuery<ItemQueryResult>(
-    'inventory',
-    ['items', 'get'],
-    { id: id ?? '' },
-    { enabled: isEditMode }
-  );
+  } = useQuery({
+    queryKey: ['inventory', 'items', 'get', { id: id ?? '' }],
+    queryFn: async () => unwrap(await itemsGet({ path: { id: id ?? '' } })),
+    enabled: isEditMode,
+  });
 
   useResetFromItem(itemData, reset);
   useUnsavedChangesGuard(isDirty);
@@ -169,7 +183,7 @@ export function useItemFormPageModel() {
     createLocationMutation,
     itemData,
     isLoading,
-    error,
+    error: toFormQueryError(error),
     ...photoState,
     ...documentState,
     ...assetId,

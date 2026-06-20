@@ -17,6 +17,7 @@ export default defineConfig({
         '**/*.test.{ts,tsx}',
         'src/test-setup.ts',
         'src/**/*.stories.{ts,tsx}',
+        'src/**/*-api/**',
       ],
       thresholds: {
         lines: 59,

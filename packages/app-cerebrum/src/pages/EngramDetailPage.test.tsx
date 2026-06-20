@@ -1,76 +1,17 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-// ── tRPC mock ────────────────────────────────────────────────────────
+import { withQueryClient } from '../test-utils';
 
-const mockGetQuery = vi.fn();
-const mockListQuery = vi.fn();
-const mockUpdateMutate = vi.fn();
-const mockUpdateMutationState = { isPending: false, error: null as unknown };
-const invalidateGet = vi.fn().mockResolvedValue(undefined);
-const invalidateList = vi.fn().mockResolvedValue(undefined);
-
-vi.mock('@pops/pillar-sdk/client', () => {
-  class PillarCallError extends Error {
-    result: { kind: string };
-    constructor(_pillarId: string, result: { kind: string }) {
-      super('pillar error');
-      this.result = result;
-    }
-  }
-  return {
-    PillarCallError,
-    isNotFound: (err: unknown) => err instanceof PillarCallError && err.result.kind === 'not-found',
-    isConflict: (err: unknown) => err instanceof PillarCallError && err.result.kind === 'conflict',
-    isBadRequest: (err: unknown) =>
-      err instanceof PillarCallError && err.result.kind === 'bad-request',
-  };
-});
-
-const { PillarCallError: MockPillarCallError } = await import('@pops/pillar-sdk/client');
-
-vi.mock('@pops/pillar-sdk/react', () => ({
-  usePillarQuery: (_pillarId: string, path: readonly string[], input: unknown) => {
-    const key = path.join('.');
-    if (key === 'engrams.get') return mockGetQuery(input);
-    if (key === 'engrams.list') return mockListQuery(input);
-    throw new Error(`Unexpected pillar query: ${key}`);
-  },
-  usePillarMutation: (
-    _pillarId: string,
-    path: readonly string[],
-    opts: { onSuccess?: () => void | Promise<void> }
-  ) => {
-    const key = path.join('.');
-    if (key === 'engrams.update') {
-      return {
-        mutate: (...args: unknown[]) => {
-          mockUpdateMutate(...args);
-          void opts.onSuccess?.();
-        },
-        isPending: mockUpdateMutationState.isPending,
-        error: mockUpdateMutationState.error,
-      };
-    }
-    throw new Error(`Unexpected pillar mutation: ${key}`);
-  },
-  usePillarUtils: () => ({
-    invalidate: async (routerPath?: readonly string[]) => {
-      const key = routerPath?.join('.') ?? '';
-      if (key === 'engrams' || key === '') {
-        await invalidateGet();
-        await invalidateList();
-      } else if (key === 'engrams.get') {
-        await invalidateGet();
-      } else if (key === 'engrams.list') {
-        await invalidateList();
-      }
-    },
-    setData: vi.fn(),
-  }),
+const sdk = vi.hoisted(() => ({
+  engramsGet: vi.fn(),
+  engramsList: vi.fn(),
+  engramsUpdate: vi.fn(),
 }));
+
+vi.mock('../cerebrum-api', () => sdk);
 
 import { EngramDetailPage } from './EngramDetailPage';
 
@@ -113,106 +54,88 @@ function buildEngram(overrides: Partial<Engram> = {}): Engram {
   };
 }
 
+function notFound() {
+  return { error: { message: 'missing' }, response: { status: 404 } };
+}
+
 function renderAt(path: string) {
   return render(
-    <MemoryRouter initialEntries={[path]}>
-      <Routes>
-        <Route path="/cerebrum/engrams/:id" element={<EngramDetailPage />} />
-      </Routes>
-    </MemoryRouter>
+    withQueryClient(
+      <MemoryRouter initialEntries={[path]}>
+        <Routes>
+          <Route path="/cerebrum/engrams/:id" element={<EngramDetailPage />} />
+        </Routes>
+      </MemoryRouter>
+    )
   );
 }
 
 beforeEach(() => {
   vi.clearAllMocks();
-  mockUpdateMutationState.isPending = false;
-  mockUpdateMutationState.error = null;
+  sdk.engramsList.mockResolvedValue({ data: { engrams: [], total: 0 } });
   window.localStorage.clear();
 });
 
 describe('EngramDetailPage', () => {
   it('shows the loading state while fetching', () => {
-    mockGetQuery.mockReturnValue({ data: undefined, isLoading: true, error: null });
-    mockListQuery.mockReturnValue({ data: undefined, isLoading: false, error: null });
+    sdk.engramsGet.mockReturnValue(new Promise(() => undefined));
     renderAt('/cerebrum/engrams/eng_20260417_0942_one');
     expect(screen.getByTestId('engram-detail-loading')).toBeInTheDocument();
   });
 
-  it('renders the body and metadata in read-only mode', () => {
-    mockGetQuery.mockReturnValue({
-      data: { engram: buildEngram(), body: 'hello world' },
-      isLoading: false,
-      error: null,
-    });
-    mockListQuery.mockReturnValue({ data: { engrams: [], total: 0 }, isLoading: false });
+  it('renders the body and metadata in read-only mode', async () => {
+    sdk.engramsGet.mockResolvedValue({ data: { engram: buildEngram(), body: 'hello world' } });
     renderAt('/cerebrum/engrams/eng_20260417_0942_one');
 
-    expect(screen.getByRole('heading', { level: 2, name: 'First engram' })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { level: 2, name: 'First engram' })
+    ).toBeInTheDocument();
     expect(screen.getByText('hello world')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /edit/i })).toBeInTheDocument();
   });
 
-  it('renders connected engrams when links are present', () => {
+  it('renders connected engrams when links are present', async () => {
     const engram = buildEngram({ links: ['eng_20260417_0942_two'] });
-    mockGetQuery.mockReturnValue({
-      data: { engram, body: 'parent body' },
-      isLoading: false,
-      error: null,
-    });
-    mockListQuery.mockReturnValue({
+    sdk.engramsGet.mockResolvedValue({ data: { engram, body: 'parent body' } });
+    sdk.engramsList.mockResolvedValue({
       data: {
         engrams: [buildEngram({ id: 'eng_20260417_0942_two', title: 'Linked engram' })],
         total: 1,
       },
-      isLoading: false,
-      error: null,
     });
     renderAt('/cerebrum/engrams/eng_20260417_0942_one');
-    expect(screen.getByText('Linked engram')).toBeInTheDocument();
+    expect(await screen.findByText('Linked engram')).toBeInTheDocument();
   });
 
   it('switches into edit mode when Edit is clicked', async () => {
-    mockGetQuery.mockReturnValue({
-      data: { engram: buildEngram(), body: 'hello' },
-      isLoading: false,
-      error: null,
-    });
-    mockListQuery.mockReturnValue({ data: { engrams: [], total: 0 }, isLoading: false });
+    sdk.engramsGet.mockResolvedValue({ data: { engram: buildEngram(), body: 'hello' } });
     renderAt('/cerebrum/engrams/eng_20260417_0942_one');
 
-    await userEvent.click(screen.getByRole('button', { name: /edit/i }));
+    await userEvent.click(await screen.findByRole('button', { name: /edit/i }));
     expect(screen.getByLabelText('Body')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /save/i })).toBeInTheDocument();
   });
 
   it('flags missing title and empty scopes as validation errors', async () => {
-    mockGetQuery.mockReturnValue({
+    sdk.engramsGet.mockResolvedValue({
       data: { engram: buildEngram({ scopes: ['work'] }), body: 'hello' },
-      isLoading: false,
-      error: null,
     });
-    mockListQuery.mockReturnValue({ data: { engrams: [], total: 0 }, isLoading: false });
     renderAt('/cerebrum/engrams/eng_20260417_0942_one');
 
-    await userEvent.click(screen.getByRole('button', { name: /edit/i }));
+    await userEvent.click(await screen.findByRole('button', { name: /edit/i }));
     const titleInput = screen.getByLabelText('Title');
     await userEvent.clear(titleInput);
     expect(screen.getByTestId('engram-edit-errors')).toHaveTextContent('Title is required');
 
-    // Save should be disabled while invalid.
     expect(screen.getByRole('button', { name: /save/i })).toBeDisabled();
   });
 
-  it('calls update with normalised payload on save', async () => {
-    mockGetQuery.mockReturnValue({
-      data: { engram: buildEngram(), body: 'hello' },
-      isLoading: false,
-      error: null,
-    });
-    mockListQuery.mockReturnValue({ data: { engrams: [], total: 0 }, isLoading: false });
+  it('calls update with normalised payload on save and refetches', async () => {
+    sdk.engramsGet.mockResolvedValue({ data: { engram: buildEngram(), body: 'hello' } });
+    sdk.engramsUpdate.mockResolvedValue({ data: { engram: buildEngram() } });
     renderAt('/cerebrum/engrams/eng_20260417_0942_one');
 
-    await userEvent.click(screen.getByRole('button', { name: /edit/i }));
+    await userEvent.click(await screen.findByRole('button', { name: /edit/i }));
     const titleInput = screen.getByLabelText('Title');
     await userEvent.clear(titleInput);
     await userEvent.type(titleInput, 'Updated title');
@@ -223,49 +146,31 @@ describe('EngramDetailPage', () => {
 
     await userEvent.click(screen.getByRole('button', { name: /save/i }));
 
-    expect(mockUpdateMutate).toHaveBeenCalledWith(
-      expect.objectContaining({
-        id: 'eng_20260417_0942_one',
-        title: 'Updated title',
-        body: 'New body',
-        scopes: ['work'],
-        status: 'active',
+    await waitFor(() =>
+      expect(sdk.engramsUpdate).toHaveBeenCalledWith({
+        path: { id: 'eng_20260417_0942_one' },
+        body: expect.objectContaining({
+          title: 'Updated title',
+          body: 'New body',
+          scopes: ['work'],
+          status: 'active',
+        }),
       })
     );
-    expect(invalidateGet).toHaveBeenCalled();
-    expect(invalidateList).toHaveBeenCalled();
+    // The mutation invalidates the engrams cache, which refetches the detail.
+    await waitFor(() => expect(sdk.engramsGet).toHaveBeenCalledTimes(2));
   });
 
-  it('shows the not-found message when get returns NOT_FOUND', () => {
-    mockGetQuery.mockReturnValue({
-      data: undefined,
-      isLoading: false,
-      error: { message: 'missing', data: { code: 'NOT_FOUND' } },
-    });
-    mockListQuery.mockReturnValue({ data: undefined, isLoading: false });
+  it('shows the not-found message when get returns a 404', async () => {
+    sdk.engramsGet.mockResolvedValue(notFound());
     renderAt('/cerebrum/engrams/eng_missing');
-    expect(screen.getByText('Engram not found.')).toBeInTheDocument();
+    expect(await screen.findByText('Engram not found.')).toBeInTheDocument();
   });
 
-  it("shows the not-found message when the SDK raises a typed 'not-found' PillarCallError", () => {
-    mockGetQuery.mockReturnValue({
-      data: undefined,
-      isLoading: false,
-      error: new MockPillarCallError('cerebrum', { kind: 'not-found', pillar: 'cerebrum' }),
-    });
-    mockListQuery.mockReturnValue({ data: undefined, isLoading: false });
+  it('does NOT show not-found for a non-404 server error', async () => {
+    sdk.engramsGet.mockResolvedValue({ error: { message: 'boom' }, response: { status: 500 } });
     renderAt('/cerebrum/engrams/eng_missing');
-    expect(screen.getByText('Engram not found.')).toBeInTheDocument();
-  });
-
-  it("does NOT show not-found for a 'contract-mismatch' PillarCallError (no longer conflated)", () => {
-    mockGetQuery.mockReturnValue({
-      data: undefined,
-      isLoading: false,
-      error: new MockPillarCallError('cerebrum', { kind: 'contract-mismatch', pillar: 'cerebrum' }),
-    });
-    mockListQuery.mockReturnValue({ data: undefined, isLoading: false });
-    renderAt('/cerebrum/engrams/eng_missing');
+    await waitFor(() => expect(sdk.engramsGet).toHaveBeenCalled());
     expect(screen.queryByText('Engram not found.')).not.toBeInTheDocument();
   });
 });

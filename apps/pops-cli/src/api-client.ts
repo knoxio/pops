@@ -1,7 +1,10 @@
 /**
- * Minimal tRPC HTTP client. Speaks the no-transformer wire format that
- * pops-api uses today — inputs are sent as raw JSON (no `{ json: ... }`
- * envelope) and successes come back as `{ result: { data: <payload> } }`.
+ * Minimal REST HTTP client for the cerebrum pillar API.
+ *
+ * The CLI POSTs directly to a cerebrum-api host (`POPS_API_URL`) over the
+ * pillar's idiomatic-REST surface: the request body is raw JSON, a success
+ * comes back as the value verbatim, and a failure carries the REST error
+ * envelope `{ message, code? }` (see `pillars/cerebrum/src/contract`).
  *
  * Kept dependency-free so the CLI binary stays small. The shared
  * `@pops/api-client` package targets React and isn't appropriate here.
@@ -36,33 +39,15 @@ export class ApiUnreachableError extends Error {
   }
 }
 
-interface TrpcSuccess<T> {
-  result: { data: T };
-}
-
-interface TrpcFailureBody {
+interface RestErrorBody {
   message: string;
-  code?: number | string;
-  data?: { httpStatus?: number; code?: string };
+  code?: string;
 }
 
-interface TrpcFailure {
-  error: TrpcFailureBody;
-}
-
-function isTrpcSuccess<T>(value: unknown): value is TrpcSuccess<T> {
+function isRestErrorBody(value: unknown): value is RestErrorBody {
   if (typeof value !== 'object' || value === null) return false;
-  if (!('result' in value)) return false;
-  const result = (value as { result?: unknown }).result;
-  if (typeof result !== 'object' || result === null) return false;
-  return 'data' in result;
-}
-
-function isTrpcFailure(value: unknown): value is TrpcFailure {
-  if (typeof value !== 'object' || value === null) return false;
-  if (!('error' in value)) return false;
-  const err = (value as { error?: unknown }).error;
-  return typeof err === 'object' && err !== null && 'message' in err;
+  const message = (value as { message?: unknown }).message;
+  return typeof message === 'string';
 }
 
 async function sendRequest(
@@ -99,40 +84,37 @@ async function parseBody(response: Response, url: string): Promise<unknown> {
 }
 
 function throwFailure(parsed: unknown, response: Response): never {
-  const failure = isTrpcFailure(parsed) ? parsed.error : null;
+  const failure = isRestErrorBody(parsed) ? parsed : null;
   const message = failure?.message ?? `Request failed with status ${response.status}`;
-  const code =
-    failure?.data?.code ?? (typeof failure?.code === 'string' ? failure.code : undefined);
   throw new ApiError({
     message,
-    code,
-    httpStatus: failure?.data?.httpStatus ?? response.status,
+    code: failure?.code,
+    httpStatus: response.status,
   });
 }
 
 /**
- * Invoke a tRPC mutation. The CLI doesn't make queries today, so we keep
- * the surface narrow — easy to add `query` later if needed.
+ * POST a JSON body to a cerebrum REST mutation `path` (e.g.
+ * `/ingest/quick-capture`) and decode the value. The CLI makes no queries
+ * today, so the surface stays narrow.
+ *
+ * @param config CLI config — `apiUrl` is the cerebrum-api base, `apiKey` (if
+ *   present) is forwarded as `X-API-Key` for gateway compatibility.
+ * @param path REST path on the cerebrum-api host, leading slash included.
+ * @param input request body, serialised verbatim as JSON.
  */
-export async function trpcMutation<T>(
-  config: CliConfig,
-  procedure: string,
-  input: unknown
-): Promise<T> {
-  const url = `${config.apiUrl}/trpc/${procedure}`;
-  const headers: Record<string, string> = { 'content-type': 'application/json' };
+export async function restMutation<T>(config: CliConfig, path: string, input: unknown): Promise<T> {
+  const url = `${config.apiUrl}${path}`;
+  const headers: Record<string, string> = {
+    'content-type': 'application/json',
+    accept: 'application/json',
+  };
   if (config.apiKey) headers['x-api-key'] = config.apiKey;
 
   const response = await sendRequest(url, headers, input, config.apiUrl);
   const parsed = await parseBody(response, url);
 
-  if (!response.ok || isTrpcFailure(parsed)) throwFailure(parsed, response);
-  if (!isTrpcSuccess<T>(parsed)) {
-    throw new ApiError({
-      message: 'Malformed tRPC success response (no result.data)',
-      httpStatus: response.status,
-    });
-  }
+  if (!response.ok) throwFailure(parsed, response);
 
-  return parsed.result.data;
+  return parsed as T;
 }

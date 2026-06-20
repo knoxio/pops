@@ -1,9 +1,11 @@
+import { useQuery } from '@tanstack/react-query';
 import { Trophy } from 'lucide-react';
 import { useState } from 'react';
 
-import { usePillarQuery } from '@pops/pillar-sdk/react';
 import { Alert, AlertDescription, AlertTitle } from '@pops/ui';
 
+import { unwrap } from '../../media-api-helpers.js';
+import { comparisonsRankings } from '../../media-api/index.js';
 import { RankingRow } from './RankingRow';
 import { RankingsSkeleton } from './RankingsSkeleton';
 
@@ -80,11 +82,11 @@ interface RankingsResult {
 export function RankingsList({ dimensionId }: { dimensionId?: number }) {
   const [offset, setOffset] = useState(0);
 
-  const { data, isLoading, error } = usePillarQuery<RankingsResult>(
-    'media',
-    ['comparisons', 'rankings'],
-    { dimensionId, limit: PAGE_SIZE, offset }
-  );
+  const queryInput = { dimensionId, limit: PAGE_SIZE, offset };
+  const { data, isLoading, error } = useQuery<RankingsResult>({
+    queryKey: ['media', 'comparisons', 'rankings', queryInput],
+    queryFn: async () => unwrap(await comparisonsRankings({ query: queryInput })),
+  });
 
   if (error) {
     return (

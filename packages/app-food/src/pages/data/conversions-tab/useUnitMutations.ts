@@ -1,91 +1,87 @@
 /**
- * tRPC mutations for unit_conversions. Each `submit*` returns the
- * underlying mutation's promise so call sites can chain `onSuccess`
- * behaviour (close dialog, etc.) without racing the synchronous-then-
- * stale `errorMessage` state.
+ * React Query mutations for unit_conversions (PRD-123 Phase D). Each
+ * `submit*` returns the underlying mutation's promise so call sites can
+ * chain `onSuccess` behaviour (close dialog, etc.) without racing the
+ * synchronous-then-stale `errorMessage` state.
  */
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { isConflict, isNotFound } from '@pops/pillar-sdk/client';
-import { usePillarMutation, usePillarUtils } from '@pops/pillar-sdk/react';
+import { FoodApiError, unwrap } from '../../../food-api-helpers.js';
+import {
+  conversionsCreateUnit,
+  conversionsDeleteUnit,
+  conversionsUpdateUnit,
+} from '../../../food-api/index.js';
 
-import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
 import type { TFunction } from 'i18next';
-
-import type { AppRouter } from '@pops/api';
 
 import type { CreateUnitInput, UpdateUnitInput } from './types';
 
-type CreateUnitMutationInput = inferRouterInputs<AppRouter>['food']['conversions']['createUnit'];
-type CreateUnitMutationOutput = inferRouterOutputs<AppRouter>['food']['conversions']['createUnit'];
-type UpdateUnitMutationInput = inferRouterInputs<AppRouter>['food']['conversions']['updateUnit'];
-type UpdateUnitMutationOutput = inferRouterOutputs<AppRouter>['food']['conversions']['updateUnit'];
-type DeleteUnitMutationInput = inferRouterInputs<AppRouter>['food']['conversions']['deleteUnit'];
-type DeleteUnitMutationOutput = inferRouterOutputs<AppRouter>['food']['conversions']['deleteUnit'];
+type UpdateUnitMutationInput = UpdateUnitInput & { id: number };
+type DeleteUnitMutationInput = { id: number };
+
+function hasStatus(err: unknown, status: number): boolean {
+  return err instanceof FoodApiError && err.status === status;
+}
 
 function mapMutationError(err: unknown, t: TFunction): string {
-  if (isConflict(err)) return t('data.conversions.units.error.duplicate');
-  if (isNotFound(err)) return t('data.conversions.units.error.notFound');
+  if (hasStatus(err, 409)) return t('data.conversions.units.error.duplicate');
+  if (hasStatus(err, 404)) return t('data.conversions.units.error.notFound');
   return t('data.conversions.units.error.generic');
 }
 
 type SetError = (msg: string | null) => void;
 
 function useCreateUnit(invalidate: () => void, setErrorMessage: SetError, t: TFunction) {
-  return usePillarMutation<CreateUnitMutationInput, CreateUnitMutationOutput>(
-    'food',
-    ['conversions', 'createUnit'],
-    {
-      onSuccess: () => {
-        setErrorMessage(null);
-        invalidate();
-      },
-      onError: (err) => setErrorMessage(mapMutationError(err, t)),
-    }
-  );
+  return useMutation({
+    mutationFn: async (input: CreateUnitInput) =>
+      unwrap(await conversionsCreateUnit({ body: input })),
+    onSuccess: () => {
+      setErrorMessage(null);
+      invalidate();
+    },
+    onError: (err: Error) => setErrorMessage(mapMutationError(err, t)),
+  });
 }
 
 function useUpdateUnit(invalidate: () => void, setErrorMessage: SetError, t: TFunction) {
-  return usePillarMutation<UpdateUnitMutationInput, UpdateUnitMutationOutput>(
-    'food',
-    ['conversions', 'updateUnit'],
-    {
-      onSuccess: () => {
-        setErrorMessage(null);
-        invalidate();
-      },
-      onError: (err) => setErrorMessage(mapMutationError(err, t)),
-    }
-  );
+  return useMutation({
+    mutationFn: async ({ id, ...patch }: UpdateUnitMutationInput) =>
+      unwrap(await conversionsUpdateUnit({ path: { id }, body: patch })),
+    onSuccess: () => {
+      setErrorMessage(null);
+      invalidate();
+    },
+    onError: (err: Error) => setErrorMessage(mapMutationError(err, t)),
+  });
 }
 
 function useDeleteUnit(invalidate: () => void, setErrorMessage: SetError, t: TFunction) {
-  return usePillarMutation<DeleteUnitMutationInput, DeleteUnitMutationOutput>(
-    'food',
-    ['conversions', 'deleteUnit'],
-    {
-      onSuccess: (result) => {
-        if (result.ok) {
-          setErrorMessage(null);
-          invalidate();
-          return;
-        }
-        setErrorMessage(t('data.conversions.units.error.seeded'));
-      },
-      onError: (err) => setErrorMessage(mapMutationError(err, t)),
-    }
-  );
+  return useMutation({
+    mutationFn: async ({ id }: DeleteUnitMutationInput) =>
+      unwrap(await conversionsDeleteUnit({ path: { id } })),
+    onSuccess: (result) => {
+      if (result.ok) {
+        setErrorMessage(null);
+        invalidate();
+        return;
+      }
+      setErrorMessage(t('data.conversions.units.error.seeded'));
+    },
+    onError: (err: Error) => setErrorMessage(mapMutationError(err, t)),
+  });
 }
 
 export function useUnitMutations() {
   const { t } = useTranslation('food');
-  const utils = usePillarUtils('food');
+  const qc = useQueryClient();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const invalidate = useCallback(() => {
-    void utils.invalidate(['conversions', 'listUnits']);
-  }, [utils]);
+    void qc.invalidateQueries({ queryKey: ['food', 'conversions', 'listUnits'] });
+  }, [qc]);
 
   const create = useCreateUnit(invalidate, setErrorMessage, t);
   const update = useUpdateUnit(invalidate, setErrorMessage, t);

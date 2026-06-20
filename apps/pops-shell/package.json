@@ -18,10 +18,11 @@
     "gen:nginx:check": "tsx scripts/generate-nginx-conf.ts --check",
     "gen:nginx:dynamic": "tsx scripts/generate-nginx-conf.ts --dynamic",
     "gen:nginx:watch": "tsx scripts/watch-registry-and-reload-cli.ts",
-    "registry:register": "tsx scripts/register-with-registry.ts"
+    "registry:register": "tsx scripts/register-with-registry.ts",
+    "generate:core-client": "openapi-ts && oxfmt --write src/core-api"
   },
   "dependencies": {
-    "@pops/api": "workspace:*",
+    "@hey-api/client-fetch": "^0.13.1",
     "@pops/app-ai": "workspace:*",
     "@pops/app-cerebrum": "workspace:*",
     "@pops/app-finance": "workspace:*",
@@ -37,8 +38,6 @@
     "@pops/ui": "workspace:*",
     "@tailwindcss/vite": "4.3.0",
     "@tanstack/react-query": "5.101.0",
-    "@trpc/client": "11.17.0",
-    "@trpc/react-query": "11.17.0",
     "i18next": "^26.3.1",
     "lucide-react": "^1.17.0",
     "react": "^19.2.7",
@@ -50,6 +49,7 @@
     "zustand": "5.0.14"
   },
   "devDependencies": {
+    "@hey-api/openapi-ts": "^0.98.2",
     "@playwright/test": "^1.60.0",
     "@tanstack/react-query-devtools": "^5.101.0",
     "@testing-library/jest-dom": "^6.9.1",

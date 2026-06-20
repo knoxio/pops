@@ -2,7 +2,7 @@
 
 ## What is POPS?
 
-POPS (Personal Operations System) is a self-hosted platform that manages finances, home inventory, media tracking, and more — from a single shell, one database, one API. It runs on a home server behind Cloudflare Tunnel with zero port forwarding.
+POPS (Personal Operations System) is a self-hosted platform that manages finances, home inventory, media tracking, and more — from a single shell over a set of independent REST pillars, each owning its own database. It runs on a home server behind Cloudflare Tunnel with zero port forwarding.
 
 See [vision.md](vision.md) for the full design philosophy.
 
@@ -52,4 +52,4 @@ See [CLAUDE.md](CLAUDE.md) for templates and standards.
 
 ## Current State
 
-POPS has a working platform with 4 apps (Finance, Media, Inventory, AI), deployed on a home server with Docker, Cloudflare Tunnel, and CI/CD. Infrastructure work is planned for Cortex prerequisites (Redis, BullMQ, OpenAPI, sqlite-vec). A new subsystem — [Cerebrum](themes/06-cerebrum/README.md) — is fully specced: personal cognitive infrastructure with engram storage, semantic retrieval, autonomous curation, and a multi-channel chat agent. See the [roadmap implementation tracker](roadmap.md#implementation-tracker) for detailed status.
+POPS has a working platform with 4 apps (Finance, Media, Inventory, AI), deployed on a home server with Docker, Cloudflare Tunnel, and CI/CD. Infrastructure work is planned for Cortex prerequisites (Redis, BullMQ, OpenAPI, sqlite-vec). A new subsystem — [Cerebrum](../pillars/cerebrum/docs/README.md) — is fully specced: personal cognitive infrastructure with engram storage, semantic retrieval, autonomous curation, and a multi-channel chat agent. See the [roadmap implementation tracker](roadmap.md#implementation-tracker) for detailed status.

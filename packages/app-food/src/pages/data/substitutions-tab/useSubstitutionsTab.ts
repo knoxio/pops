@@ -1,8 +1,14 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { usePillarMutation, usePillarQuery, usePillarUtils } from '@pops/pillar-sdk/react';
-
+import { unwrap } from '../../../food-api-helpers.js';
+import {
+  substitutionsCreate,
+  substitutionsDelete,
+  substitutionsListHydrated,
+  substitutionsUpdate,
+} from '../../../food-api/index.js';
 import { mapMutationError } from './mapSubstitutionsError';
 import {
   EMPTY_FILTERS,
@@ -11,17 +17,17 @@ import {
   type UpdateSubstitutionFormInput,
 } from './types';
 
-import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
+import type { SubstitutionsCreateData } from '../../../food-api/types.gen.js';
 
-import type { AppRouter } from '@pops/api';
+type CreatePayload = NonNullable<SubstitutionsCreateData['body']>;
 
-type ListHydratedOutput = inferRouterOutputs<AppRouter>['food']['substitutions']['listHydrated'];
-type CreateInput = inferRouterInputs<AppRouter>['food']['substitutions']['create'];
-type CreateOutput = inferRouterOutputs<AppRouter>['food']['substitutions']['create'];
-type UpdateInput = inferRouterInputs<AppRouter>['food']['substitutions']['update'];
-type UpdateOutput = inferRouterOutputs<AppRouter>['food']['substitutions']['update'];
-type DeleteInput = inferRouterInputs<AppRouter>['food']['substitutions']['delete'];
-type DeleteOutput = inferRouterOutputs<AppRouter>['food']['substitutions']['delete'];
+interface UpdatePayload {
+  id: number;
+  ratio?: number;
+  contextTags?: string[];
+}
+
+const LIST_KEY = ['food', 'substitutions', 'listHydrated'] as const;
 
 function buildListInput(filters: SubstitutionsFilterState) {
   return {
@@ -35,7 +41,7 @@ function buildListInput(filters: SubstitutionsFilterState) {
   };
 }
 
-function toCreatePayload(input: CreateSubstitutionFormInput) {
+function toCreatePayload(input: CreateSubstitutionFormInput): CreatePayload {
   return {
     from: endpointPayload(input.from.kind, input.from.id),
     to: endpointPayload(input.to.kind, input.to.id),
@@ -47,7 +53,7 @@ function toCreatePayload(input: CreateSubstitutionFormInput) {
   };
 }
 
-function toUpdatePayload(input: UpdateSubstitutionFormInput) {
+function toUpdatePayload(input: UpdateSubstitutionFormInput): UpdatePayload {
   return {
     id: input.id,
     ratio: input.ratio,
@@ -65,58 +71,51 @@ function useSubstitutionMutations(
   setRowError: (msg: string | null) => void
 ) {
   const { t } = useTranslation('food');
-  const createMutation = usePillarMutation<CreateInput, CreateOutput>(
-    'food',
-    ['substitutions', 'create'],
-    {
-      onSuccess: () => {
-        setCreateError(null);
-        invalidate();
-      },
-      onError: (err) => setCreateError(mapMutationError(err, t)),
-    }
-  );
-  const updateMutation = usePillarMutation<UpdateInput, UpdateOutput>(
-    'food',
-    ['substitutions', 'update'],
-    {
-      onSuccess: () => {
-        setRowError(null);
-        invalidate();
-      },
-      onError: (err) => setRowError(mapMutationError(err, t)),
-    }
-  );
-  const deleteMutation = usePillarMutation<DeleteInput, DeleteOutput>(
-    'food',
-    ['substitutions', 'delete'],
-    {
-      onSuccess: () => {
-        setRowError(null);
-        invalidate();
-      },
-      onError: (err) => setRowError(mapMutationError(err, t)),
-    }
-  );
+  const createMutation = useMutation({
+    mutationFn: async (payload: CreatePayload) =>
+      unwrap(await substitutionsCreate({ body: payload })),
+    onSuccess: () => {
+      setCreateError(null);
+      invalidate();
+    },
+    onError: (err: Error) => setCreateError(mapMutationError(err, t)),
+  });
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, ratio, contextTags }: UpdatePayload) =>
+      unwrap(await substitutionsUpdate({ path: { id }, body: { ratio, contextTags } })),
+    onSuccess: () => {
+      setRowError(null);
+      invalidate();
+    },
+    onError: (err: Error) => setRowError(mapMutationError(err, t)),
+  });
+  const deleteMutation = useMutation({
+    mutationFn: async ({ id }: { id: number }) =>
+      unwrap(await substitutionsDelete({ path: { id } })),
+    onSuccess: () => {
+      setRowError(null);
+      invalidate();
+    },
+    onError: (err: Error) => setRowError(mapMutationError(err, t)),
+  });
   return { createMutation, updateMutation, deleteMutation };
 }
 
 export function useSubstitutionsTab() {
-  const utils = usePillarUtils('food');
+  const queryClient = useQueryClient();
   const [filters, setFilters] = useState<SubstitutionsFilterState>(EMPTY_FILTERS);
   const [createError, setCreateError] = useState<string | null>(null);
   const [rowError, setRowError] = useState<string | null>(null);
 
   const listInput = useMemo(() => buildListInput(filters), [filters]);
-  const listQuery = usePillarQuery<ListHydratedOutput>(
-    'food',
-    ['substitutions', 'listHydrated'],
-    listInput
-  );
+  const listQuery = useQuery({
+    queryKey: [...LIST_KEY, listInput],
+    queryFn: async () => unwrap(await substitutionsListHydrated({ query: listInput })),
+  });
 
   const invalidate = useCallback(
-    () => void utils.invalidate(['substitutions', 'listHydrated']),
-    [utils]
+    () => void queryClient.invalidateQueries({ queryKey: LIST_KEY }),
+    [queryClient]
   );
 
   const { createMutation, updateMutation, deleteMutation } = useSubstitutionMutations(

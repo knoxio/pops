@@ -2,6 +2,7 @@ export {
   ManifestPayloadSchema,
   type ManifestPayload,
   type SinkDescriptor,
+  type FeatureManifestDescriptor,
   type SettingsManifestDescriptor,
   type CaptureOverlayDescriptor,
   type NavConfigDescriptor,

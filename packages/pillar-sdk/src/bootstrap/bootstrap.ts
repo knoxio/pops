@@ -4,7 +4,19 @@ import { errSummary, PillarManifestInvalidError } from './errors.js';
 import { mountHealthRoute, type HealthApp } from './health-route.js';
 import { consoleLogger, type BootstrapLogger } from './logger.js';
 import { registerWithRetry } from './register.js';
-import { createHttpRegistryTransport, type RegistryTransport } from './transport.js';
+import {
+  createHttpRegistryTransport,
+  type CapabilityStatuses,
+  type RegistryTransport,
+} from './transport.js';
+
+/**
+ * Snapshots this pillar's live capability statuses for the keys it owns
+ * (`<capabilityKey> → up/down`). Invoked on register and on every heartbeat so
+ * the registry always carries the freshest status. Optional — a pillar that
+ * declares no capabilities omits it. See {@link CapabilityStatuses}.
+ */
+export type CapabilityReporter = () => CapabilityStatuses;
 
 export interface BootstrapPillarOptions {
   manifest: ManifestPayload;
@@ -17,6 +29,13 @@ export interface BootstrapPillarOptions {
    * `POST /core.registry.register`.
    */
   baseUrl: string;
+  /**
+   * Optional snapshot of this pillar's owned capability statuses, called on
+   * register and every heartbeat. Pillars without capabilities omit it; the
+   * register/heartbeat wire then carries no `capabilities` field (the registry
+   * treats an absent field as "nothing reported", preserving backward compat).
+   */
+  capabilityReporter?: CapabilityReporter;
   app?: HealthApp;
   transport?: RegistryTransport;
   heartbeatMs?: number;
@@ -62,10 +81,13 @@ export async function bootstrapPillar(
 
   mountHealthRoute(options.app, manifest, logger);
 
+  const capabilityReporter = options.capabilityReporter;
+
   const registration = await registerWithRetry({
     transport,
     manifest,
     baseUrl: options.baseUrl,
+    capabilities: capabilityReporter?.(),
     logger,
     maxAttempts: options.maxRegisterAttempts ?? DEFAULT_MAX_REGISTER_ATTEMPTS,
     initialBackoffMs: options.registerInitialBackoffMs ?? DEFAULT_REGISTER_INITIAL_BACKOFF_MS,
@@ -78,6 +100,7 @@ export async function bootstrapPillar(
     transport,
     logger,
     heartbeatMs,
+    capabilityReporter,
     setIntervalImpl,
     clearIntervalImpl,
   });
@@ -88,6 +111,7 @@ interface StartRuntimeArgs {
   transport: RegistryTransport;
   logger: BootstrapLogger;
   heartbeatMs: number;
+  capabilityReporter: CapabilityReporter | undefined;
   setIntervalImpl: typeof setInterval;
   clearIntervalImpl: typeof clearInterval;
 }
@@ -96,7 +120,7 @@ function startRuntime(args: StartRuntimeArgs): PillarBootstrapHandle {
   let stopped = false;
   const interval = args.setIntervalImpl(() => {
     if (stopped) return;
-    args.transport.heartbeat(args.pillarId).catch((err: unknown) => {
+    args.transport.heartbeat(args.pillarId, args.capabilityReporter?.()).catch((err: unknown) => {
       args.logger.warn('[pillar-sdk] heartbeat failed', {
         pillar: args.pillarId,
         err: errSummary(err),

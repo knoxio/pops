@@ -10,11 +10,12 @@
  * Pagination + filter state live here. The page component is a dumb
  * consumer of the returned shape.
  */
+import { useQuery } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { usePillarQuery } from '@pops/pillar-sdk/react';
-
+import { engramsList, retrievalSearch, scopesList } from '../cerebrum-api';
+import { unwrap } from '../cerebrum-api-helpers';
 import { extractMessage } from '../utils/errors';
 import {
   DEFAULT_ENGRAM_FILTERS,
@@ -132,12 +133,12 @@ interface BrowseHook {
  */
 function useBrowseList(filters: EngramListFilters, offset: number, enabled: boolean): BrowseHook {
   const { t } = useTranslation('cerebrum');
-  const query = usePillarQuery<{ engrams: Engram[]; total: number }>(
-    'cerebrum',
-    ['engrams', 'list'],
-    buildListInput(filters, offset, DEFAULT_PAGE_SIZE),
-    { enabled }
-  );
+  const input = buildListInput(filters, offset, DEFAULT_PAGE_SIZE);
+  const query = useQuery({
+    queryKey: ['cerebrum', 'engrams', 'list', input],
+    queryFn: async () => unwrap(await engramsList({ body: input })),
+    enabled,
+  });
   return {
     result: {
       engrams: query.data?.engrams ?? [],
@@ -154,29 +155,24 @@ function useBrowseList(filters: EngramListFilters, offset: number, enabled: bool
  * second `engrams.list({ ids })` query to hydrate the matched ids
  * into full Engram rows.
  */
-interface SearchResult {
-  results: unknown[];
-  meta: { total: number; mode: string };
-}
-
 function useSearchList(filters: EngramListFilters, offset: number, enabled: boolean): BrowseHook {
   const { t } = useTranslation('cerebrum');
-  const searchQuery = usePillarQuery<SearchResult>(
-    'cerebrum',
-    ['retrieval', 'search'],
-    buildSearchInput(filters, offset, DEFAULT_PAGE_SIZE),
-    { enabled }
-  );
+  const searchInput = buildSearchInput(filters, offset, DEFAULT_PAGE_SIZE);
+  const searchQuery = useQuery({
+    queryKey: ['cerebrum', 'retrieval', 'search', searchInput],
+    queryFn: async () => unwrap(await retrievalSearch({ body: searchInput })),
+    enabled,
+  });
   const ids = useMemo<string[]>(
     () => (enabled ? extractRetrievalIds(searchQuery.data?.results) : []),
     [enabled, searchQuery.data]
   );
-  const hydration = usePillarQuery<{ engrams: Engram[]; total: number }>(
-    'cerebrum',
-    ['engrams', 'list'],
-    { ids, limit: ids.length || 1 },
-    { enabled: enabled && ids.length > 0 }
-  );
+  const hydrationInput = { ids, limit: ids.length || 1 };
+  const hydration = useQuery({
+    queryKey: ['cerebrum', 'engrams', 'list', hydrationInput],
+    queryFn: async () => unwrap(await engramsList({ body: hydrationInput })),
+    enabled: enabled && ids.length > 0,
+  });
   const engrams = hydration.data?.engrams ?? [];
   return {
     result: {
@@ -202,11 +198,10 @@ export function useEngramListModel(): EngramListModel {
 
   const browse = useBrowseList(filters, offset, !isSearching);
   const search = useSearchList(filters, offset, isSearching);
-  const scopesQuery = usePillarQuery<{ scopes: { scope: string; count: number }[] }>(
-    'cerebrum',
-    ['scopes', 'list'],
-    undefined
-  );
+  const scopesQuery = useQuery({
+    queryKey: ['cerebrum', 'scopes', 'list'],
+    queryFn: async () => unwrap(await scopesList({ query: {} })),
+  });
 
   const scopeOptions = useMemo(
     () => (scopesQuery.data?.scopes ?? []).map((s) => s.scope),

@@ -1,7 +1,9 @@
+import { useQuery } from '@tanstack/react-query';
 import { useMemo, useRef } from 'react';
 
-import { usePillarQuery } from '@pops/pillar-sdk/react';
-
+import { unwrap } from '../../../../finance-api-helpers.js';
+import { correctionsProposeChangeSet } from '../../../../finance-api/index.js';
+import { toRestPendingChangeSets } from '../../../../lib/rest-changeset';
 import { useImportStore } from '../../../../store/importStore';
 import { useApplyRejectMutations } from '../../hooks/useApplyRejectMutations';
 import { useLocalOps } from '../../hooks/useLocalOps';
@@ -38,16 +40,26 @@ export function useProposalQuery(
     () => (signal ? { signal, minConfidence, maxPreviewItems: 200 } : null),
     [signal, minConfidence]
   );
-  return usePillarQuery<ProposeChangeSetOutput>(
-    'core',
-    ['corrections', 'proposeChangeSet'],
-    proposeInput ?? { signal: disabledSignal, minConfidence, maxPreviewItems: 200 },
-    { enabled: Boolean(open && proposeInput), staleTime: 0, retry: false }
-  );
+  return useQuery({
+    queryKey: ['finance', 'corrections', 'proposeChangeSet', proposeInput],
+    queryFn: async (): Promise<ProposeChangeSetOutput> =>
+      unwrap(
+        await correctionsProposeChangeSet({
+          body: proposeInput ?? { signal: disabledSignal, minConfidence, maxPreviewItems: 200 },
+        })
+      ),
+    enabled: Boolean(open && proposeInput),
+    staleTime: 0,
+    retry: false,
+  });
 }
 
 export function useWorkflowHooks(props: CorrectionProposalWorkflowProps) {
-  const pendingChangeSets = useImportStore((s) => s.pendingChangeSets);
+  const pendingChangeSetsRaw = useImportStore((s) => s.pendingChangeSets);
+  const pendingChangeSets = useMemo(
+    () => toRestPendingChangeSets(pendingChangeSetsRaw),
+    [pendingChangeSetsRaw]
+  );
   const proposeQuery = useProposalQuery(props.signal, props.open, props.minConfidence);
   const localOpsHook = useLocalOps({
     open: props.open,

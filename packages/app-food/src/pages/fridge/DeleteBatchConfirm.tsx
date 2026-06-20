@@ -1,3 +1,4 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 /**
  * Soft-delete confirm — PRD-147.
  *
@@ -6,20 +7,17 @@
  */
 import { useEffect, useState, type ReactElement } from 'react';
 
-import { usePillarMutation, usePillarQuery, usePillarUtils } from '@pops/pillar-sdk/react';
 import { Button, Dialog, DialogContent, DialogHeader, DialogTitle } from '@pops/ui';
 
+import { unwrap } from '../../food-api-helpers.js';
+import { batchesDelete, batchesGet } from '../../food-api/index.js';
 import { FormError } from './form-controls.js';
 import { formatQty } from './format.js';
 
-import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
+import type { BatchesDeleteData, BatchesGetResponses } from '../../food-api/types.gen.js';
 
-import type { AppRouter } from '@pops/api';
-import type { BatchDetail } from '@pops/app-food-db';
-
-type BatchesGetOutput = inferRouterOutputs<AppRouter>['food']['batches']['get'];
-type BatchesDeleteInput = inferRouterInputs<AppRouter>['food']['batches']['delete'];
-type BatchesDeleteOutput = inferRouterOutputs<AppRouter>['food']['batches']['delete'];
+type BatchesDeleteInput = BatchesDeleteData['path'];
+type BatchDetail = BatchesGetResponses[200]['data'];
 
 export interface DeleteBatchConfirmProps {
   batchId: number | null;
@@ -34,35 +32,33 @@ export function DeleteBatchConfirm({
   onClose,
   onConfirmed,
 }: DeleteBatchConfirmProps): ReactElement {
-  const utils = usePillarUtils('food');
-  const detail = usePillarQuery<BatchesGetOutput>(
-    'food',
-    ['batches', 'get'],
-    { id: batchId ?? 0 },
-    { enabled: isOpen && batchId !== null }
-  );
+  const queryClient = useQueryClient();
+  const detail = useQuery({
+    queryKey: ['food', 'batches', 'get', { id: batchId ?? 0 }],
+    queryFn: async () => unwrap(await batchesGet({ path: { id: batchId ?? 0 } })).data,
+    enabled: isOpen && batchId !== null,
+  });
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isOpen) setError(null);
   }, [isOpen]);
 
-  const deleteMutation = usePillarMutation<BatchesDeleteInput, BatchesDeleteOutput>(
-    'food',
-    ['batches', 'delete'],
-    {
-      onSuccess: (res) => {
-        if (res.ok) {
-          void utils.invalidate(['fridge', 'view']);
-          onConfirmed?.();
-          onClose();
-        } else {
-          setError(res.reason);
-        }
-      },
-      onError: (err) => setError(err.message),
-    }
-  );
+  const deleteMutation = useMutation({
+    mutationFn: async (input: BatchesDeleteInput) => unwrap(await batchesDelete({ path: input })),
+    onSuccess: (res) => {
+      if (res.ok) {
+        onConfirmed?.();
+        onClose();
+      } else {
+        setError(res.reason);
+      }
+    },
+    onError: (err: Error) => setError(err.message),
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: ['food', 'fridge'] });
+    },
+  });
 
   function handleDelete(): void {
     if (batchId === null) return;

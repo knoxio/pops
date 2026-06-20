@@ -1,17 +1,24 @@
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCallback } from 'react';
 import { toast } from 'sonner';
 
-import { usePillarMutation, usePillarUtils } from '@pops/pillar-sdk/react';
-
+import { unwrap } from '../../../finance-api-helpers.js';
+import {
+  tagRulesApply,
+  tagRulesReject,
+  type TagRulesApplyData,
+  type TagRulesRejectData,
+} from '../../../finance-api/index.js';
 import {
   collectNewTagNames,
   parseTags,
-  type ApplyInput,
   type ProposeOutput,
-  type RejectInput,
   type RejectOutput,
   type TagRuleProposalDialogProps,
 } from './types';
+
+type ApplyBody = NonNullable<TagRulesApplyData['body']>;
+type RejectBody = NonNullable<TagRulesRejectData['body']>;
 
 interface FormStateForMutations {
   pattern: string;
@@ -35,7 +42,7 @@ function buildRejectInput(
   props: TagRuleProposalDialogProps,
   form: FormStateForMutations,
   feedback: string
-): RejectInput | null {
+): RejectBody | null {
   if (!props.signal) return null;
   return {
     changeSet: proposal.changeSet,
@@ -57,42 +64,38 @@ function buildRejectInput(
 
 export function useTagRuleMutations(args: MutationsArgs) {
   const { props, form, proposal } = args;
-  const utils = usePillarUtils('core');
-  const applyMutation = usePillarMutation<ApplyInput, unknown>(
-    'core',
-    ['tagRules', 'applyTagRuleChangeSet'],
-    {
-      onError: (e) => toast.error(e.message),
-    }
-  );
-  const rejectMutation = usePillarMutation<RejectInput, RejectOutput>(
-    'core',
-    ['tagRules', 'rejectTagRuleChangeSet'],
-    {
-      onSuccess: (data: RejectOutput) => {
-        if (data.followUpProposal) {
-          form.setFollowUpProposal(data.followUpProposal);
-          form.setRejectOpen(false);
-          form.setRejectFeedback('');
-          toast.message('Proposal revised based on your feedback');
-        } else {
-          toast.message('Proposal dismissed');
-          props.onOpenChange(false);
-        }
-      },
-      onError: (e) => toast.error(e.message),
-    }
-  );
+  const queryClient = useQueryClient();
+  const applyMutation = useMutation({
+    mutationFn: async (vars: ApplyBody) => unwrap(await tagRulesApply({ body: vars })),
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const rejectMutation = useMutation({
+    mutationFn: async (vars: RejectBody): Promise<RejectOutput> =>
+      unwrap(await tagRulesReject({ body: vars })),
+    onSuccess: (data: RejectOutput) => {
+      if (data.followUpProposal) {
+        form.setFollowUpProposal(data.followUpProposal);
+        form.setRejectOpen(false);
+        form.setRejectFeedback('');
+        toast.message('Proposal revised based on your feedback');
+      } else {
+        toast.message('Proposal dismissed');
+        props.onOpenChange(false);
+      }
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
 
   const handleApply = useCallback(async () => {
     if (!proposal) return;
     const changeSet = proposal.changeSet;
     await applyMutation.mutateAsync({ changeSet, acceptedNewTags: [...form.acceptedNewTags] });
-    await utils.invalidate(['tagRules', 'listVocabulary']);
+    await queryClient.invalidateQueries({ queryKey: ['finance', 'tagRules'] });
+    await queryClient.invalidateQueries({ queryKey: ['finance', 'transactions', 'availableTags'] });
     toast.success('Tag rule saved');
     props.onApplied?.(changeSet, proposal.preview.affected);
     props.onOpenChange(false);
-  }, [proposal, applyMutation, form.acceptedNewTags, utils, props]);
+  }, [proposal, applyMutation, form.acceptedNewTags, queryClient, props]);
 
   const handleReject = useCallback(() => {
     if (!proposal) return;

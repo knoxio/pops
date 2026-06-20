@@ -3,7 +3,7 @@ import type {
   IngredientVariantRow,
   PrepStateRow,
   RecipeLineWithResolved,
-} from '@pops/app-food-db';
+} from './recipe-render-types.js';
 
 /**
  * `scaleFactor=0` or negative is clamped to 1.0. Fractional / large scales

@@ -4,12 +4,14 @@
  * Lives in its own file so `CookModal.tsx` stays under the 200-line
  * per-file lint cap. Nothing here is exported outside this directory.
  */
+import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState, type Dispatch, type ReactElement, type SetStateAction } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { usePillarQuery } from '@pops/pillar-sdk/react';
 import { Button } from '@pops/ui';
 
+import { unwrap } from '../../food-api-helpers.js';
+import { cookPrepareCook } from '../../food-api/index.js';
 import {
   buildSubmitInput,
   initialForm,
@@ -18,31 +20,28 @@ import {
 } from './cook-modal-helpers.js';
 import { CookModalContent } from './CookModalContent.js';
 
-import type { inferRouterOutputs } from '@trpc/server';
-
-import type { AppRouter } from '@pops/api';
-import type { CookPreparation } from '@pops/app-food-db';
-
+import type { CookPreparation } from './cook-resolution-types.js';
 import type { CookModalProps } from './CookModal.js';
 import type { useCookResolution } from './useCookResolution.js';
-
-type PrepareCookOutput = inferRouterOutputs<AppRouter>['food']['cook']['prepareCook'];
 
 export function usePrepareCook(props: CookModalProps): {
   data: CookPreparation | undefined;
   error: { message: string } | null;
 } {
-  const query = usePillarQuery<PrepareCookOutput>(
-    'food',
-    ['cook', 'prepareCook'],
-    {
-      recipeVersionId: props.recipeVersionId,
-      scaleFactor: props.scaleFactor ?? 1,
-      ...(props.planEntryId !== undefined ? { planEntryId: props.planEntryId } : {}),
-    },
-    { enabled: props.isOpen }
-  );
-  return { data: query.data, error: query.error ?? null };
+  const input = {
+    recipeVersionId: props.recipeVersionId,
+    scaleFactor: props.scaleFactor ?? 1,
+    ...(props.planEntryId !== undefined ? { planEntryId: props.planEntryId } : {}),
+  };
+  const query = useQuery({
+    queryKey: ['food', 'cook', 'prepare', input],
+    queryFn: async () => unwrap(await cookPrepareCook({ body: input })),
+    enabled: props.isOpen,
+  });
+  return {
+    data: query.data,
+    error: query.error === null ? null : { message: query.error.message },
+  };
 }
 
 export interface PrepareBranchArgs {

@@ -1,3 +1,4 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 /**
  * State + mutation hook for the "+ Add batch" modal.
  *
@@ -7,20 +8,23 @@
  */
 import { useEffect, useState } from 'react';
 
-import { usePillarMutation, usePillarQuery, usePillarUtils } from '@pops/pillar-sdk/react';
-
+import { unwrap } from '../../food-api-helpers.js';
+import {
+  batchesCreate,
+  ingredientsGet,
+  ingredientsList,
+  prepStatesList,
+} from '../../food-api/index.js';
 import { toIsoFromDateInput } from './form-controls.js';
 
-import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
+import type {
+  BatchLocation,
+  BatchUnit,
+  ManualBatchSourceType,
+} from '../../food-api-shared-types.js';
+import type { BatchesCreateData } from '../../food-api/types.gen.js';
 
-import type { AppRouter } from '@pops/api';
-import type { BatchLocation, BatchUnit, ManualBatchSourceType } from '@pops/app-food-db';
-
-type IngredientsListOutput = inferRouterOutputs<AppRouter>['food']['ingredients']['list'];
-type IngredientsGetOutput = inferRouterOutputs<AppRouter>['food']['ingredients']['get'];
-type PrepStatesListOutput = inferRouterOutputs<AppRouter>['food']['prepStates']['list'];
-type BatchesCreateInput = inferRouterInputs<AppRouter>['food']['batches']['create'];
-type BatchesCreateOutput = inferRouterOutputs<AppRouter>['food']['batches']['create'];
+type BatchesCreateInput = NonNullable<BatchesCreateData['body']>;
 
 export interface AddBatchFormState {
   ingredientId: string;
@@ -94,14 +98,17 @@ function useCreateBatchMutation(args: {
   onClose: () => void;
   setError: (msg: string | null) => void;
 }) {
-  const utils = usePillarUtils('food');
-  return usePillarMutation<BatchesCreateInput, BatchesCreateOutput>('food', ['batches', 'create'], {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: BatchesCreateInput) => unwrap(await batchesCreate({ body: input })),
     onSuccess: ({ batchId }) => {
-      void utils.invalidate(['fridge', 'view']);
       args.onAdded?.(batchId);
       args.onClose();
     },
-    onError: (err) => args.setError(err.message),
+    onError: (err: Error) => args.setError(err.message),
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: ['food', 'fridge'] });
+    },
   });
 }
 
@@ -116,28 +123,27 @@ export function useAddBatchForm({ isOpen, onAdded, onClose }: UseAddBatchFormArg
     }
   }, [isOpen]);
 
-  const ingredientsQuery = usePillarQuery<IngredientsListOutput>(
-    'food',
-    ['ingredients', 'list'],
-    { search: form.search.trim().length > 0 ? form.search.trim() : undefined },
-    { enabled: isOpen }
-  );
+  const ingredientsSearch = form.search.trim().length > 0 ? form.search.trim() : undefined;
+  const ingredientsQuery = useQuery({
+    queryKey: ['food', 'ingredients', 'list', { search: ingredientsSearch }],
+    queryFn: async () => unwrap(await ingredientsList({ query: { search: ingredientsSearch } })),
+    enabled: isOpen,
+  });
 
   const selectedIngredientId = form.ingredientId.length > 0 ? Number(form.ingredientId) : null;
 
-  const ingredientDetail = usePillarQuery<IngredientsGetOutput>(
-    'food',
-    ['ingredients', 'get'],
-    { idOrSlug: selectedIngredientId ?? 0 },
-    { enabled: isOpen && selectedIngredientId !== null }
-  );
+  const ingredientDetail = useQuery({
+    queryKey: ['food', 'ingredients', 'get', { idOrSlug: selectedIngredientId ?? 0 }],
+    queryFn: async () =>
+      unwrap(await ingredientsGet({ path: { idOrSlug: String(selectedIngredientId ?? 0) } })),
+    enabled: isOpen && selectedIngredientId !== null,
+  });
 
-  const prepStatesQuery = usePillarQuery<PrepStatesListOutput>(
-    'food',
-    ['prepStates', 'list'],
-    undefined,
-    { enabled: isOpen }
-  );
+  const prepStatesQuery = useQuery({
+    queryKey: ['food', 'prepStates', 'list'],
+    queryFn: async () => unwrap(await prepStatesList()),
+    enabled: isOpen,
+  });
 
   const createMutation = useCreateBatchMutation({ onAdded, onClose, setError });
 

@@ -1,33 +1,21 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const mockListQuery = vi.fn();
-const mockHealthMutate = vi.fn();
-const mockSyncMutate = vi.fn();
-
-vi.mock('@pops/pillar-sdk/react', () => ({
-  usePillarQuery: (_pillarId: string, path: readonly string[], input: unknown) => {
-    const key = path.join('.');
-    if (key === 'plexus.adapters.list') return mockListQuery(input);
-    throw new Error(`Unexpected pillar query: ${key}`);
-  },
-  usePillarMutation: (_pillarId: string, path: readonly string[]) => {
-    const key = path.join('.');
-    if (key === 'plexus.adapters.healthCheck') {
-      return { mutate: mockHealthMutate, isPending: false, error: null };
-    }
-    if (key === 'plexus.adapters.sync') {
-      return { mutate: mockSyncMutate, isPending: false, error: null };
-    }
-    throw new Error(`Unexpected pillar mutation: ${key}`);
-  },
-}));
-
-import { PlexusListPage } from './PlexusListPage';
+import { withQueryClient } from '../test-utils';
 
 import type { PlexusAdapter } from '../plexus/types';
+
+const sdk = vi.hoisted(() => ({
+  plexusAdaptersList: vi.fn(),
+  plexusAdaptersHealthCheck: vi.fn(),
+  plexusAdaptersSync: vi.fn(),
+}));
+
+vi.mock('../cerebrum-api', () => sdk);
+
+import { PlexusListPage } from './PlexusListPage';
 
 function buildAdapter(overrides: Partial<PlexusAdapter> = {}): PlexusAdapter {
   return {
@@ -47,65 +35,55 @@ function buildAdapter(overrides: Partial<PlexusAdapter> = {}): PlexusAdapter {
 
 function renderPage() {
   return render(
-    <MemoryRouter>
-      <PlexusListPage />
-    </MemoryRouter>
+    withQueryClient(
+      <MemoryRouter>
+        <PlexusListPage />
+      </MemoryRouter>
+    )
   );
 }
 
 beforeEach(() => {
   vi.clearAllMocks();
+  sdk.plexusAdaptersHealthCheck.mockResolvedValue({ data: { ok: true } });
+  sdk.plexusAdaptersSync.mockResolvedValue({ data: { ok: true } });
 });
 
 describe('PlexusListPage', () => {
   it('renders the loading skeleton during fetch', () => {
-    mockListQuery.mockReturnValue({
-      data: undefined,
-      isLoading: true,
-      error: null,
-      refetch: vi.fn(),
-    });
+    sdk.plexusAdaptersList.mockReturnValue(new Promise(() => undefined));
     renderPage();
     expect(screen.getByTestId('plexus-loading')).toBeInTheDocument();
   });
 
-  it('renders the empty state when no adapters exist', () => {
-    mockListQuery.mockReturnValue({
-      data: { adapters: [] },
-      isLoading: false,
-      error: null,
-      refetch: vi.fn(),
-    });
+  it('renders the empty state when no adapters exist', async () => {
+    sdk.plexusAdaptersList.mockResolvedValue({ data: { adapters: [] } });
     renderPage();
-    expect(screen.getByText('No adapters registered')).toBeInTheDocument();
+    expect(await screen.findByText('No adapters registered')).toBeInTheDocument();
   });
 
   it('renders error state with retry', async () => {
-    const refetch = vi.fn();
-    mockListQuery.mockReturnValue({
-      data: undefined,
-      isLoading: false,
+    sdk.plexusAdaptersList.mockResolvedValue({
       error: { message: 'boom' },
-      refetch,
+      response: { status: 500 },
     });
     renderPage();
-    expect(screen.getByTestId('plexus-error')).toBeInTheDocument();
+    expect(await screen.findByTestId('plexus-error')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: /retry/i }));
-    expect(refetch).toHaveBeenCalled();
+    await waitFor(() => expect(sdk.plexusAdaptersList).toHaveBeenCalledTimes(2));
   });
 
   it('renders rows and triggers health-check + sync mutations', async () => {
-    mockListQuery.mockReturnValue({
-      data: { adapters: [buildAdapter()] },
-      isLoading: false,
-      error: null,
-      refetch: vi.fn(),
-    });
+    sdk.plexusAdaptersList.mockResolvedValue({ data: { adapters: [buildAdapter()] } });
     renderPage();
-    expect(screen.getAllByTestId('plexus-row')).toHaveLength(1);
+    expect(await screen.findByTestId('plexus-row')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: /health check/i }));
-    expect(mockHealthMutate).toHaveBeenCalledWith({ adapterId: 'gmail' });
+    await waitFor(() =>
+      expect(sdk.plexusAdaptersHealthCheck).toHaveBeenCalledWith({ path: { adapterId: 'gmail' } })
+    );
     await userEvent.click(screen.getByRole('button', { name: /^sync$/i }));
-    expect(mockSyncMutate).toHaveBeenCalledWith({ adapterId: 'gmail' });
+    await waitFor(() =>
+      expect(sdk.plexusAdaptersSync).toHaveBeenCalledWith({ path: { adapterId: 'gmail' } })
+    );
   });
 });

@@ -4,13 +4,13 @@
  * actions. Extracted so the page component stays under the
  * line/complexity limits and so this logic stays unit-testable.
  */
+import { useMutation } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
-import { usePillarMutation } from '@pops/pillar-sdk/react';
-
-import { usePillarCall } from '../lib/pillar-call';
+import { emitGenerate, emitPreview } from '../cerebrum-api';
+import { unwrap } from '../cerebrum-api-helpers';
 import { extractMessage } from '../utils/errors';
 import { errorMessageKey, validateForm, type ValidatedRequest } from './form-mapping';
 import {
@@ -43,12 +43,14 @@ function useGenerateMutation(
   setDocument: (next: GeneratedDocument | null) => void,
   setNotice: (next: string | null) => void
 ) {
-  return usePillarMutation<ValidatedRequest, GenerateResult>('cerebrum', ['emit', 'generate'], {
+  return useMutation({
+    mutationFn: async (request: ValidatedRequest): Promise<GenerateResult> =>
+      unwrap(await emitGenerate({ body: request })),
     onSuccess: (result) => {
       setDocument(result?.document ?? null);
       setNotice(result?.notice ?? null);
     },
-    onError: (err) => toast.error(extractMessage(err, t('errors.unknown'))),
+    onError: (err: Error) => toast.error(extractMessage(err, t('errors.unknown'))),
   });
 }
 
@@ -56,21 +58,12 @@ function usePreviewRunner(
   setPreview: (next: PreviewResult | null) => void,
   t: (key: string) => string
 ) {
-  const pillarCall = usePillarCall();
   const [isPreviewing, setIsPreviewing] = useState(false);
   const runPreview = async (request: ValidatedRequest) => {
     setIsPreviewing(true);
     try {
-      const result = await pillarCall<PreviewResult | null>(
-        'cerebrum',
-        ['emit', 'preview'],
-        request
-      );
-      if (result.kind !== 'ok') {
-        toast.error(t('errors.unknown'));
-        return;
-      }
-      setPreview(result.value ?? null);
+      const result = await emitPreview({ body: request });
+      setPreview(unwrap(result));
     } catch (err) {
       toast.error(extractMessage(err, t('errors.unknown')));
     } finally {

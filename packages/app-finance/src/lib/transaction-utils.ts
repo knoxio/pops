@@ -1,4 +1,4 @@
-import type { ProcessedTransaction } from '@pops/api/modules/finance/imports';
+import type { ProcessedTransaction } from '@pops/finance';
 
 /**
  * Transaction group for displaying similar transactions together

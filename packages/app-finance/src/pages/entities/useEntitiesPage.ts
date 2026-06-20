@@ -1,10 +1,13 @@
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 
-import { usePillarMutation, usePillarQuery, usePillarUtils } from '@pops/pillar-sdk/react';
-
+import { unwrap } from '../../core-api-helpers.js';
+import { entitiesCreate, entitiesDelete, entitiesUpdate } from '../../core-api/index.js';
+import { unwrap as unwrapFinance } from '../../finance-api-helpers.js';
+import { entityUsageList } from '../../finance-api/index.js';
 import {
   DEFAULT_FORM_VALUES,
   type Entity,
@@ -13,20 +16,9 @@ import {
   type ENTITY_TYPES,
 } from './types';
 
-interface EntitiesListResult {
-  data: Entity[];
-  pagination: { total: number };
-}
+import type { EntitiesCreateData } from '../../core-api/types.gen.js';
 
-interface CreateEntityInput {
-  name: string;
-  type: (typeof ENTITY_TYPES)[number];
-  abn: string | null;
-  aliases: string[];
-  defaultTransactionType: string | null;
-  defaultTags: string[];
-  notes: string | null;
-}
+type CreateEntityInput = NonNullable<EntitiesCreateData['body']>;
 
 interface UpdateEntityInput {
   id: string;
@@ -37,6 +29,9 @@ interface DeleteEntityInput {
   id: string;
 }
 
+/** Query key for the entity list (usage-augmented, finance-served). */
+const ENTITIES_KEY = ['core', 'entities'] as const;
+
 interface MutationDeps {
   setIsDialogOpen: (v: boolean) => void;
   setEditingEntity: (e: Entity | null) => void;
@@ -44,44 +39,39 @@ interface MutationDeps {
 }
 
 function useEntityMutations(deps: MutationDeps) {
-  const utils = usePillarUtils('core');
-  const createMutation = usePillarMutation<CreateEntityInput, unknown>(
-    'core',
-    ['entities', 'create'],
-    {
-      onSuccess: () => {
-        toast.success('Entity created');
-        void utils.invalidate(['entities', 'list']);
-        deps.setIsDialogOpen(false);
-      },
-      onError: (err) => toast.error(err.message),
-    }
-  );
-  const updateMutation = usePillarMutation<UpdateEntityInput, unknown>(
-    'core',
-    ['entities', 'update'],
-    {
-      onSuccess: () => {
-        toast.success('Entity updated');
-        void utils.invalidate(['entities', 'list']);
-        deps.setIsDialogOpen(false);
-        deps.setEditingEntity(null);
-      },
-      onError: (err) => toast.error(err.message),
-    }
-  );
-  const deleteMutation = usePillarMutation<DeleteEntityInput, unknown>(
-    'core',
-    ['entities', 'delete'],
-    {
-      onSuccess: () => {
-        toast.success('Entity deleted');
-        void utils.invalidate(['entities', 'list']);
-        deps.setDeletingId(null);
-      },
-      onError: (err) => toast.error(err.message),
-    }
-  );
+  const queryClient = useQueryClient();
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: ENTITIES_KEY });
+
+  const createMutation = useMutation({
+    mutationFn: async (input: CreateEntityInput) => unwrap(await entitiesCreate({ body: input })),
+    onSuccess: () => {
+      toast.success('Entity created');
+      deps.setIsDialogOpen(false);
+    },
+    onError: (err: Error) => toast.error(err.message),
+    onSettled: invalidate,
+  });
+  const updateMutation = useMutation({
+    mutationFn: async (input: UpdateEntityInput) =>
+      unwrap(await entitiesUpdate({ path: { id: input.id }, body: input.data })),
+    onSuccess: () => {
+      toast.success('Entity updated');
+      deps.setIsDialogOpen(false);
+      deps.setEditingEntity(null);
+    },
+    onError: (err: Error) => toast.error(err.message),
+    onSettled: invalidate,
+  });
+  const deleteMutation = useMutation({
+    mutationFn: async (input: DeleteEntityInput) =>
+      unwrap(await entitiesDelete({ path: { id: input.id } })),
+    onSuccess: () => {
+      toast.success('Entity deleted');
+      deps.setDeletingId(null);
+    },
+    onError: (err: Error) => toast.error(err.message),
+    onSettled: invalidate,
+  });
   return { createMutation, updateMutation, deleteMutation };
 }
 
@@ -111,9 +101,12 @@ export function useEntitiesPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [showOrphanedOnly, setShowOrphanedOnly] = useState(false);
 
-  const query = usePillarQuery<EntitiesListResult>('core', ['entities', 'list'], {
-    limit: 100,
-    orphanedOnly: showOrphanedOnly || undefined,
+  // The list (with per-entity transactionCount + the orphaned filter) is the
+  // finance-owned usage rollup; core's plain entities CRUD carries neither.
+  const listQuery = { limit: 100, orphanedOnly: showOrphanedOnly ? 'true' : undefined } as const;
+  const query = useQuery({
+    queryKey: [...ENTITIES_KEY, 'list', listQuery],
+    queryFn: async () => unwrapFinance(await entityUsageList({ query: listQuery })),
   });
   const { createMutation, updateMutation, deleteMutation } = useEntityMutations({
     setIsDialogOpen,

@@ -11,7 +11,13 @@ export default defineConfig({
       reporter: ['text', 'json-summary', 'html'],
       reportsDirectory: 'coverage',
       include: ['src/**/*.{ts,tsx}'],
-      exclude: ['**/node_modules/**', '**/dist/**', '**/*.test.{ts,tsx}', 'src/test-setup.ts'],
+      exclude: [
+        '**/node_modules/**',
+        '**/dist/**',
+        '**/*.test.{ts,tsx}',
+        'src/test-setup.ts',
+        'src/ego-api/**',
+      ],
     },
   },
 });

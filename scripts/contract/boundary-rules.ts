@@ -1,4 +1,4 @@
-import { PILLARS, type Pillar } from './pillar-list.js';
+import { getPillarLayout, PILLARS, type Pillar } from './pillar-list.js';
 
 export interface BoundaryRule {
   readonly name: string;
@@ -12,9 +12,7 @@ const PRD_PATH = 'docs/themes/13-pillar-finale/prds/156-consumer-import-discipli
 
 export function buildBoundaryRule(pillar: Pillar): BoundaryRule {
   const runtimePkg = `${pillar}-db`;
-  const apiDir = `apps/pops-${pillar}-api`;
-  const runtimeDir = `packages/${runtimePkg}`;
-  const contractScriptsDir = `packages/${pillar}-contract/scripts`;
+  const layout = getPillarLayout(pillar);
   return {
     name: `no-cross-pillar-runtime-import-${pillar}`,
     severity: 'error',
@@ -23,10 +21,10 @@ export function buildBoundaryRule(pillar: Pillar): BoundaryRule {
       `Use @pops/${pillar}-contract for types and the pillar() SDK for calls. ` +
       `See ${PRD_PATH}`,
     from: {
-      pathNot: `^(${apiDir}|${runtimeDir}|${contractScriptsDir})/`,
+      pathNot: `^(${layout.apiDir}|${layout.runtimeDir}|${layout.contractScriptsDir})/`,
     },
     to: {
-      path: `^${runtimeDir}/`,
+      path: `^${layout.runtimeDir}/`,
     },
   };
 }

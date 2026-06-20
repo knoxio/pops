@@ -2,7 +2,7 @@ import { Zap } from 'lucide-react';
 
 import { Badge, Popover, PopoverContent, PopoverTrigger } from '@pops/ui';
 
-import type { MatchedRule, ProcessedTransaction } from '@pops/api/modules/finance/imports';
+import type { MatchedRule, ProcessedTransaction } from '@pops/finance';
 
 export function HeaderBadges({ transaction }: { transaction: ProcessedTransaction }) {
   const isAutoMatched = transaction.entity?.matchType === ('auto-matched' as never);

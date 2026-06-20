@@ -1,31 +1,39 @@
-import { trpc } from '@/lib/trpc';
 /**
  * NudgeIndicator — notification bell showing pending nudge count (#2244).
  *
- * Polls the `cerebrum.nudges.list` procedure and displays a badge on the
- * bell icon when there are pending nudges. Clicking navigates to the
- * cerebrum nudges page.
+ * Polls the cerebrum pillar's `POST /nudges/search` REST endpoint (opId
+ * `nudges.list`) through the shell's `/cerebrum-api` proxy and displays a
+ * badge on the bell icon when there are pending nudges. Clicking navigates
+ * to the cerebrum nudges page.
  *
- * Routing: PRD-227 (US-02) keeps the SDK migration behind a runtime gate.
- * When a {@link PillarSdkProvider} is mounted above this component
- * (i.e. {@link usePillarSdkOptions} returns options with a `transport`
- * configured), this component uses {@link usePillarQuery} against the
- * cerebrum pillar. Otherwise — the current state of `pops-shell` on
- * `main` — it falls back to the existing tRPC query so the indicator
- * keeps working in the browser (the SDK's default registry URL points
- * at the container-network hostname, which is unreachable from a
- * browser).
+ * The proxy (vite in dev, nginx in prod) strips the `/cerebrum-api` prefix
+ * so the pillar sees `/nudges/search`. Mirrors the federated-search surface
+ * (`@pops/navigation` useSearchInputData → `/orchestrator-api/search`): a
+ * plain `fetch` + React Query, no tRPC and no pillar-sdk transport.
  */
+import { useQuery } from '@tanstack/react-query';
 import { Bell } from 'lucide-react';
 import { useNavigate } from 'react-router';
 
-import { usePillarQuery, usePillarSdkOptions } from '@pops/pillar-sdk/react';
 import { Button } from '@pops/ui';
 
 const POLL_BASE_MS = 60_000;
 const MAX_FAILURES = 5;
 
-type NudgeListResult = { total: number };
+/**
+ * Shell path the dev Vite proxy / production nginx rewrites onto the cerebrum
+ * pillar's nudges list (`POST /nudges/search`). The proxy strips the
+ * `/cerebrum-api` prefix so the pillar sees `/nudges/search`.
+ */
+const NUDGES_SEARCH_URL = '/cerebrum-api/nudges/search';
+
+/** Failure carrying the HTTP status so the bell can hide on 404 / unavailable. */
+class NudgeFetchError extends Error {
+  constructor(readonly status: number | undefined) {
+    super(`nudges fetch failed: ${status ?? 'network'}`);
+    this.name = 'NudgeFetchError';
+  }
+}
 
 /**
  * Exponential backoff for the nudges poller.
@@ -41,39 +49,40 @@ export function nudgeRefetchInterval(query: {
   return POLL_BASE_MS * 2 ** failures;
 }
 
-function useSdkPendingCount(enabled: boolean): { pendingCount: number; hidden: boolean } {
-  const { data, isUnavailable, isContractMismatch, isNotFound } = usePillarQuery<NudgeListResult>(
-    'cerebrum',
-    ['nudges', 'list'],
-    { status: 'pending', limit: 1 },
-    { retry: false, staleTime: 30_000, refetchInterval: nudgeRefetchInterval, enabled }
-  );
-
-  return {
-    pendingCount: data?.total ?? 0,
-    hidden: enabled && (isUnavailable || isContractMismatch || isNotFound),
-  };
+function parsePendingTotal(value: unknown): number {
+  if (typeof value === 'object' && value !== null) {
+    const total = (value as { total?: unknown }).total;
+    if (typeof total === 'number') return total;
+  }
+  throw new NudgeFetchError(undefined);
 }
 
-function useTrpcPendingCount(enabled: boolean): number {
-  const { data } = trpc.cerebrum.nudges.list.useQuery(
-    { status: 'pending', limit: 1 },
-    { retry: false, staleTime: 30_000, refetchInterval: nudgeRefetchInterval, enabled }
-  );
-  return data?.total ?? 0;
+async function fetchPendingCount(signal: AbortSignal): Promise<number> {
+  const response = await fetch(NUDGES_SEARCH_URL, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ status: 'pending', limit: 1 }),
+    signal,
+  });
+  if (!response.ok) throw new NudgeFetchError(response.status);
+  return parsePendingTotal(await response.json());
 }
 
 export function NudgeIndicator() {
   const navigate = useNavigate();
-  const sdkOptions = usePillarSdkOptions();
-  const sdkEnabled = sdkOptions.transport !== undefined;
+  const { data, isError } = useQuery({
+    queryKey: ['cerebrum', 'nudges', 'list', { status: 'pending', limit: 1 }],
+    queryFn: ({ signal }) => fetchPendingCount(signal),
+    retry: false,
+    staleTime: 30_000,
+    refetchInterval: nudgeRefetchInterval,
+  });
 
-  const sdk = useSdkPendingCount(sdkEnabled);
-  const trpcCount = useTrpcPendingCount(!sdkEnabled);
+  // Hide the bell when cerebrum is unreachable / not-found rather than render a
+  // broken indicator (matches the previous pillar-sdk hidden-on-unavailable UX).
+  if (isError) return null;
 
-  if (sdk.hidden) return null;
-
-  const pendingCount = sdkEnabled ? sdk.pendingCount : trpcCount;
+  const pendingCount = data ?? 0;
 
   return (
     <Button

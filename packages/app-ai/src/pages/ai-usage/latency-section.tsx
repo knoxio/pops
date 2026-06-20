@@ -1,37 +1,25 @@
-import { usePillarQuery } from '@pops/pillar-sdk/react';
+import { useQuery } from '@tanstack/react-query';
+
 import { Skeleton } from '@pops/ui';
 
+import { unwrap } from '../../core-api-helpers.js';
+import { aiObservabilityGetLatencyStats } from '../../core-api/index.js';
 import { LatencyPercentileGrid } from './latency-percentile-grid';
 import { SlowQueriesCard } from './slow-queries-card';
 
-interface SlowQuery {
-  id: number;
-  model: string;
-  operation: string;
-  latencyMs: number;
-  createdAt: string;
-  contextId: string | null;
-}
+import type { AiObservabilityGetLatencyStatsData } from '../../core-api/types.gen.js';
 
-interface LatencyStats {
-  p50: number;
-  p75: number;
-  p95: number;
-  p99: number;
-  avg: number;
-  slowQueries: SlowQuery[];
-}
+type ObservabilityFilters = NonNullable<AiObservabilityGetLatencyStatsData['query']>;
 
 export function LatencySection({ startDate, endDate }: { startDate: string; endDate: string }) {
-  const filters = {
+  const filters: ObservabilityFilters = {
     ...(startDate ? { startDate } : {}),
     ...(endDate ? { endDate } : {}),
   };
-  const { data: latency, isLoading } = usePillarQuery<LatencyStats>(
-    'core',
-    ['aiObservability', 'getLatencyStats'],
-    filters
-  );
+  const { data: latency, isLoading } = useQuery({
+    queryKey: ['core', 'aiObservability', 'getLatencyStats', filters],
+    queryFn: async () => unwrap(await aiObservabilityGetLatencyStats({ query: filters })),
+  });
 
   if (isLoading) return <Skeleton className="h-40" />;
   if (!latency) return null;

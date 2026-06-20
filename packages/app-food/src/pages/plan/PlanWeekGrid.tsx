@@ -16,7 +16,7 @@ import { usePlanDndHandlers, usePlanDndSensors } from './usePlanDnd.js';
 
 import type { ReactElement } from 'react';
 
-import type { WirePlanEntryRow, WirePlanSlotRow } from '@pops/app-food-db';
+import type { WirePlanEntryRow, WirePlanSlotRow } from './plan-wire-types.js';
 
 export interface PlanWeekGridProps {
   weekStart: string;

@@ -4,7 +4,9 @@ import { useNavigate } from 'react-router';
 import { AppContextCtx } from './context.js';
 import { resolveUri } from './uri-resolver.js';
 
-import type { AppContext, AppContextEntity, AppName } from './types.js';
+import type { PillarId } from '@pops/pillar-sdk';
+
+import type { AppContext, AppContextEntity } from './types.js';
 
 /**
  * Returns the current AppContext.
@@ -49,7 +51,7 @@ export function useSetPageContext(options: SetPageContextOptions): void {
 }
 
 /** Returns the active app identifier, or null at root / unmatched paths. */
-export function useCurrentApp(): AppName | null {
+export function useCurrentApp(): PillarId | null {
   return useAppContext().app;
 }
 

@@ -8,7 +8,7 @@ import { transactionMatchesSignal } from './normalization';
 import type { LocalOp } from '../correction-proposal/types';
 
 /**
- * Server-side cap on `transactions` in `core.corrections.previewChangeSet`
+ * Server-side cap on `transactions` in `corrections.previewChangeSet`
  * (enforced by a zod `.max(2000)`). We mirror it here so the dialog never
  * ships a request that will be rejected.
  */

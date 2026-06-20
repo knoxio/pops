@@ -5,7 +5,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@pops/
 
 import { extractLocationDetails } from '../../lib/transaction-utils';
 
-import type { ProcessedTransaction } from '@pops/api/modules/finance/imports';
+import type { ProcessedTransaction } from '@pops/finance';
 
 interface LocationFieldProps {
   transaction: ProcessedTransaction;

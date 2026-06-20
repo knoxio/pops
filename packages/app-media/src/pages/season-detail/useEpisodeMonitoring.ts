@@ -1,7 +1,9 @@
+import { useMutation } from '@tanstack/react-query';
 import { useCallback, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
-import { usePillarMutation } from '@pops/pillar-sdk/react';
+import { unwrap } from '../../media-api-helpers.js';
+import { arrUpdateEpisodeMonitoring } from '../../media-api/index.js';
 
 interface SonarrEpisode {
   id: number;
@@ -44,34 +46,32 @@ function useMonitorMutation(
   setOptimisticEpMonitoring: React.Dispatch<React.SetStateAction<Map<number, boolean>>>,
   setPendingEpMonitoring: React.Dispatch<React.SetStateAction<Set<number>>>
 ) {
-  return usePillarMutation<UpdateEpisodeMonitoringInput, unknown>(
-    'media',
-    ['arr', 'updateEpisodeMonitoring'],
-    {
-      onError: (err, variables) => {
-        setOptimisticEpMonitoring((prev) => {
-          const next = new Map(prev);
-          const affectedIds = new Set(variables.episodeIds);
-          for (const ep of sonarrEpisodes) {
-            if (affectedIds.has(ep.id)) next.set(ep.episodeNumber, !variables.monitored);
-          }
-          return next;
-        });
-        toast.error(`Failed to update monitoring: ${err.message}`);
-      },
-      onSettled: (_data, _err, variables) => {
-        if (!variables) return;
-        setPendingEpMonitoring((prev) => {
-          const next = new Set(prev);
-          const affectedIds = new Set(variables.episodeIds);
-          for (const ep of sonarrEpisodes) {
-            if (affectedIds.has(ep.id)) next.delete(ep.episodeNumber);
-          }
-          return next;
-        });
-      },
-    }
-  );
+  return useMutation({
+    mutationFn: async (variables: UpdateEpisodeMonitoringInput) =>
+      unwrap(await arrUpdateEpisodeMonitoring({ body: variables })),
+    onError: (err: Error, variables) => {
+      setOptimisticEpMonitoring((prev) => {
+        const next = new Map(prev);
+        const affectedIds = new Set(variables.episodeIds);
+        for (const ep of sonarrEpisodes) {
+          if (affectedIds.has(ep.id)) next.set(ep.episodeNumber, !variables.monitored);
+        }
+        return next;
+      });
+      toast.error(`Failed to update monitoring: ${err.message}`);
+    },
+    onSettled: (_data, _err, variables) => {
+      if (!variables) return;
+      setPendingEpMonitoring((prev) => {
+        const next = new Set(prev);
+        const affectedIds = new Set(variables.episodeIds);
+        for (const ep of sonarrEpisodes) {
+          if (affectedIds.has(ep.id)) next.delete(ep.episodeNumber);
+        }
+        return next;
+      });
+    },
+  });
 }
 
 export function useEpisodeMonitoring(sonarrEpisodes: SonarrEpisode[]) {

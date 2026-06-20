@@ -5,6 +5,7 @@ import {
 } from './errors.js';
 import {
   RegistryTransportError,
+  type CapabilityStatuses,
   type RegistrationResult,
   type RegistryTransport,
 } from './transport.js';
@@ -16,6 +17,7 @@ export interface RegisterWithRetryArgs {
   transport: RegistryTransport;
   manifest: ManifestPayload;
   baseUrl: string;
+  capabilities?: CapabilityStatuses;
   logger: BootstrapLogger;
   maxAttempts: number;
   initialBackoffMs: number;
@@ -34,6 +36,7 @@ export async function registerWithRetry(args: RegisterWithRetryArgs): Promise<Re
         pillarId: args.manifest.pillar,
         baseUrl: args.baseUrl,
         manifest: args.manifest,
+        ...(args.capabilities ? { capabilities: args.capabilities } : {}),
       });
       args.logger.info('[pillar-sdk] registered with registry', {
         pillar: result.pillarId,

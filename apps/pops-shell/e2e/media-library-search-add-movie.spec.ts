@@ -4,7 +4,7 @@
  * Tier 2 flow covering the add-to-library path that starts from /media:
  *   1. Navigate to /media, follow the header "Search" link to /media/search.
  *   2. Type a query; the mocked TMDB search returns a single, deterministic
- *      movie result that is NOT present in the seeded e2e library.
+ *      movie result that is NOT present in the mocked library.
  *   3. Click "Add to Library" on the result card.
  *   4. Assert the success toast surfaces and the card flips to the
  *      "In Library" badge (optimistic session state on the search page).
@@ -12,47 +12,37 @@
  *      library grid — the MediaCard link exposes `${title} (Movie)` as its
  *      accessible name.
  *
- * Real vs mock decision — MOCKED for three procedures; everything else
- * falls through to the real seeded e2e API.
+ * The page reads its data via the generated media Hey API client
+ * (`@pops/app-media`, baseUrl `/media-api`; the shell strips the prefix).
+ * The pillar backends are not started for e2e, so EVERY route the library
+ * and search pages touch is mocked here — an unmocked `/media-api/*` request
+ * would hit a dead proxy target and (via the queryFn throw) trip the
+ * zero-console-error assertion.
  *
- *   `media.search.movies`   — canonical "mocked TMDB" entry point: the
- *                             server-side procedure wraps TMDB, so mocking
- *                             the tRPC response is equivalent to mocking
- *                             TMDB itself from the browser's perspective.
- *   `media.library.addMovie` — the real implementation hits TMDB server-side
- *                             for full movie detail, and the e2e/CI API is
- *                             not configured with a live TMDB key. We mock
- *                             the mutation to return a deterministic Movie
- *                             row so the UI transitions exactly as it would
- *                             against a real TMDB-backed add.
- *   `media.library.list`    — mocked so the newly added movie appears in
- *                             the /media grid on navigation. The seeded
- *                             list is still returned verbatim plus the new
- *                             entry, so the page behaves identically to a
- *                             successful real add.
+ * Routes mocked:
+ *   GET  /media-api/library                    — { data: LibraryItem[], pagination }
+ *   GET  /media-api/library/genres             — { data: string[] }
+ *   GET  /media-api/arr/config                 — { data: { radarrConfigured:false, sonarrConfigured:false } }
+ *   GET  /media-api/rotation/scheduler/leaving — { data: [] }
+ *   GET  /media-api/movies                      — { data: [], pagination } (in-library lookup)
+ *   GET  /media-api/tv-shows                    — { data: [], pagination } (in-library lookup)
+ *   GET  /media-api/search/movies               — bare { results, totalResults, totalPages, page }
+ *   GET  /media-api/search/tv-shows             — bare { results }
+ *   POST /media-api/library/movies              — { data: Movie, created, message } (add mutation)
  *
- * Everything else (session, dev auth, library.genres, movies.list for the
- * in-library lookup, arr config, etc.) routes to the real API via
- * `useRealApi()`. Registration order matters: useRealApi FIRST, the mock
- * LAST, so the mock handler's `route.fallback()` can defer to the real API
- * for any procedure it doesn't recognise.
+ * `arr/config` reports nothing configured so `arr/queue` never fires.
  *
- * Idempotency — the test uses a unique movie title/tmdbId NOT present in
- * the seeded DB. No real DB writes occur (addMovie is mocked), so repeated
- * runs leave the seeded env untouched. No cleanup required.
+ * Idempotency — the test uses a unique movie title/tmdbId NOT present in the
+ * mocked library. No real DB writes occur. No cleanup required.
  *
  * Crash detection is wired into beforeEach/afterEach (pageerror + console
  * errors) so every test in this suite verifies no uncaught JS error occurs.
  */
 import { expect, test, type Page } from '@playwright/test';
 
-import { useRealApi } from './helpers/use-real-api';
-
 // ---------------------------------------------------------------------------
-// Fixture — a movie NOT in the seeded library. Inception (tmdbId 27205)
-// satisfies the precondition: the seeded rows are The Godfather, Dark Knight,
-// Pulp Fiction, Forrest Gump, Fight Club, Interstellar, Matrix. Inception
-// is absent, so the card starts in the "Add to Library" state.
+// Fixture — a movie NOT in the mocked library. Inception (tmdbId 27205)
+// starts the card in the "Add to Library" state.
 // ---------------------------------------------------------------------------
 const MOVIE_TMDB_ID = 27205;
 const MOVIE_TITLE = 'Inception';
@@ -62,7 +52,7 @@ const MOVIE_OVERVIEW =
 const MOVIE_POSTER_PATH = '/e2e-inception-poster.jpg';
 const MOVIE_BACKDROP_PATH = '/e2e-inception-backdrop.jpg';
 const SEARCH_QUERY = 'inception';
-/** Local DB id returned by the mocked addMovie. Kept out of the seeded range. */
+/** Local DB id returned by the mocked add. Kept out of the seeded range. */
 const LOCAL_MOVIE_ID = 999_001;
 const NOW_ISO = '2026-04-24T00:00:00.000Z';
 
@@ -208,172 +198,120 @@ function buildLibraryItem(): LibraryListItem {
   };
 }
 
-// ---------------------------------------------------------------------------
-// tRPC route helpers — httpBatchLink combines procedures with "," in the path
-// (e.g. /trpc/media.library.list,media.library.genres?batch=1&input=...).
-// Mixed batches (known + unknown procedures) are split: known procedures are
-// answered from the mock state, unknown ones are forwarded to the real e2e API
-// in a separate request, and the two sets of responses are merged in the
-// original procedure order before fulfilling the route.
-// ---------------------------------------------------------------------------
+const EMPTY_PAGINATION = { total: 0, limit: 1000, offset: 0, hasMore: false };
 
-const E2E_ENV = 'e2e';
-
-function parseProcedures(url: string): string[] {
-  const match = /\/trpc\/([^?]+)/.exec(url);
-  if (!match) return [];
-  return decodeURIComponent(match[1] ?? '').split(',');
+function buildLibraryListBody(items: LibraryListItem[]) {
+  return {
+    data: items,
+    pagination: {
+      page: 1,
+      pageSize: 24,
+      total: items.length,
+      totalPages: items.length > 0 ? 1 : 0,
+      hasMore: false,
+    },
+  };
 }
 
+// ---------------------------------------------------------------------------
+// REST mocks
+// ---------------------------------------------------------------------------
+
 type MockState = {
-  /** Flips true after addMovie fires so library.list includes the new row. */
+  /** Flips true after the add mutation fires so library.list includes the new row. */
   movieAdded: boolean;
 };
 
-function resolveProcedureData(name: string, state: MockState): unknown {
-  if (name === 'media.search.movies') {
-    return buildSearchResponse();
-  }
-  if (name === 'media.library.addMovie') {
-    state.movieAdded = true;
-    return {
-      data: buildAddedMovie(),
-      created: true,
-      message: 'Movie added to library',
-    };
-  }
-  if (name === 'media.library.list') {
-    const added: LibraryListItem[] = state.movieAdded ? [buildLibraryItem()] : [];
-    return {
-      data: added,
-      pagination: {
-        page: 1,
-        pageSize: 24,
-        total: added.length,
-        totalPages: added.length > 0 ? 1 : 0,
-        hasMore: false,
-      },
-    };
-  }
-  // Defensive — caller only invokes this for known procedures.
-  return null;
-}
-
-/**
- * Shape of a single tRPC response envelope. The success branch carries
- * `result.data`; the error branch carries `error`. We preserve the full
- * envelope verbatim when forwarding unknown procedures to the real API.
- */
-type TrpcEnvelope = Record<string, unknown>;
-
-/**
- * Rewrites the batched GET URL to contain ONLY the procedures at the given
- * indexes, reindexing `input.N` so positions are 0..len-1 in the subset.
- */
-function buildSubsetUrl(originalUrl: URL, procedures: string[], indexes: number[]): URL {
-  const subsetProcedures = indexes.map((i) => procedures[i] ?? '').filter((n) => n.length > 0);
-  const subsetUrl = new URL(originalUrl.toString());
-  subsetUrl.pathname = `/trpc/${subsetProcedures.join(',')}`;
-
-  const rawInput = originalUrl.searchParams.get('input');
-  if (rawInput !== null) {
-    const parsed: unknown = JSON.parse(rawInput);
-    if (typeof parsed === 'object' && parsed !== null) {
-      const record = parsed as Record<string, unknown>;
-      const reindexed: Record<string, unknown> = {};
-      indexes.forEach((origIndex, newIndex) => {
-        const value = record[String(origIndex)];
-        if (value !== undefined) reindexed[String(newIndex)] = value;
-      });
-      subsetUrl.searchParams.set('input', JSON.stringify(reindexed));
-    }
-  }
-  subsetUrl.searchParams.set('env', E2E_ENV);
-  return subsetUrl;
-}
-
 async function installMediaMocks(page: Page): Promise<MockState> {
   const state: MockState = { movieAdded: false };
-  const knownProcedures = new Set([
-    'media.search.movies',
-    'media.library.addMovie',
-    'media.library.list',
-  ]);
 
-  await page.route('/trpc/**', async (route) => {
-    const request = route.request();
-    const url = new URL(request.url());
-    const procedures = parseProcedures(request.url());
-
-    // No procedure names → defer to the next handler (real API).
-    if (procedures.length === 0) {
-      await route.fallback();
-      return;
-    }
-
-    const knownIndexes: number[] = [];
-    const unknownIndexes: number[] = [];
-    procedures.forEach((name, i) => {
-      if (knownProcedures.has(name)) knownIndexes.push(i);
-      else unknownIndexes.push(i);
-    });
-
-    // Fully unknown batch → defer to useRealApi.
-    if (knownIndexes.length === 0) {
-      await route.fallback();
-      return;
-    }
-
-    const isBatch = url.searchParams.has('batch');
-    const merged: (TrpcEnvelope | undefined)[] = Array.from<TrpcEnvelope | undefined>({
-      length: procedures.length,
-    });
-
-    for (const i of knownIndexes) {
-      const name = procedures[i] ?? '';
-      merged[i] = { result: { data: resolveProcedureData(name, state) } };
-    }
-
-    // Mutations (POST) are never mixed with unrelated procedures in this
-    // test — the addMovie click fires a single-procedure batch. Only GET
-    // queries need the subset-fetch merge path.
-    if (unknownIndexes.length > 0) {
-      if (request.method() !== 'GET') {
-        throw new Error(
-          `Mixed known/unknown procedures in a non-GET batch is not supported: ${procedures.join(',')}`
-        );
-      }
-      const subsetUrl = buildSubsetUrl(url, procedures, unknownIndexes);
-      const realResponse = await route.fetch({ url: subsetUrl.toString() });
-      const body: unknown = await realResponse.json();
-      if (!Array.isArray(body)) {
-        throw new Error(`Expected tRPC batch array response, got: ${typeof body}`);
-      }
-      const envelopes: TrpcEnvelope[] = body.map((entry): TrpcEnvelope => {
-        if (typeof entry !== 'object' || entry === null) {
-          throw new Error(`Expected tRPC envelope object, got: ${typeof entry}`);
-        }
-        return entry as TrpcEnvelope;
-      });
-      envelopes.forEach((env, j) => {
-        const origIndex = unknownIndexes[j];
-        if (origIndex !== undefined) merged[origIndex] = env;
-      });
-    }
-
-    // Every slot must be filled — either by the mock state or by the real-API
-    // subset fetch. A missing slot indicates a bug in the merge logic.
-    const finalEnvelopes: TrpcEnvelope[] = merged.map((env, i) => {
-      if (env === undefined) {
-        throw new Error(`Missing tRPC envelope for procedure ${procedures[i] ?? '?'}`);
-      }
-      return env;
-    });
-
+  // /library and its sub-paths (/library/genres, /library/movies) share a
+  // prefix. Playwright matches the most-recently-added route first, so the
+  // bare list route is registered FIRST and the more specific sub-paths LAST
+  // so they take precedence for their URLs.
+  await page.route('**/media-api/library?**', async (route) => {
+    const items: LibraryListItem[] = state.movieAdded ? [buildLibraryItem()] : [];
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify(isBatch ? finalEnvelopes : finalEnvelopes[0]),
+      body: JSON.stringify(buildLibraryListBody(items)),
+    });
+  });
+
+  await page.route('**/media-api/library/genres', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ data: ['Action', 'Science Fiction', 'Drama'] }),
+    });
+  });
+
+  await page.route('**/media-api/library/movies', async (route) => {
+    if (route.request().method() !== 'POST') {
+      await route.fallback();
+      return;
+    }
+    state.movieAdded = true;
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        data: buildAddedMovie(),
+        created: true,
+        message: 'Movie added to library',
+      }),
+    });
+  });
+
+  // arr/config reports nothing configured so the polling arr/queue never fires.
+  await page.route('**/media-api/arr/config', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ data: { radarrConfigured: false, sonarrConfigured: false } }),
+    });
+  });
+
+  await page.route('**/media-api/rotation/scheduler/leaving', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ data: [] }),
+    });
+  });
+
+  // In-library lookup lists (search page) and watchlist maps. Empty so the
+  // searched movie starts in the "Add to Library" state.
+  await page.route('**/media-api/movies?**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ data: [], pagination: EMPTY_PAGINATION }),
+    });
+  });
+
+  await page.route('**/media-api/tv-shows?**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ data: [], pagination: EMPTY_PAGINATION }),
+    });
+  });
+
+  // TMDB search — bare top-level `results` (NOT wrapped in `data`).
+  await page.route('**/media-api/search/movies?**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(buildSearchResponse()),
+    });
+  });
+
+  await page.route('**/media-api/search/tv-shows?**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ results: [] }),
     });
   });
 
@@ -385,7 +323,7 @@ async function installMediaMocks(page: Page): Promise<MockState> {
 // ---------------------------------------------------------------------------
 
 test.describe('Media — library: search TMDB and add a movie', () => {
-  // State is mutated across steps (addMovie → library.list), so serialise the
+  // State is mutated across steps (add → library.list), so serialise the
   // suite to avoid parallel tests stepping on the same page-scoped mock.
   test.describe.configure({ mode: 'serial' });
 
@@ -402,10 +340,6 @@ test.describe('Media — library: search TMDB and add a movie', () => {
       if (msg.type() === 'error') consoleErrors.push(msg.text());
     });
 
-    // Order matters: useRealApi registers FIRST so the mock (registered
-    // last, matched first in LIFO order) can call route.fallback() to hand
-    // off non-mocked procedures to the real e2e API handler.
-    await useRealApi(page);
     await installMediaMocks(page);
   });
 

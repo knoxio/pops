@@ -68,11 +68,6 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@pops/cerebrum-contract": "workspace:*",
-    "@pops/core-contract": "workspace:*",
-    "@pops/finance-contract": "workspace:*",
-    "@pops/inventory-contract": "workspace:*",
-    "@pops/media-contract": "workspace:*",
     "zod": "^4.4.3"
   },
   "devDependencies": {

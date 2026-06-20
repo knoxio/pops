@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 
 import { buildIngredientTree } from '../buildIngredientTree';
 
-import type { IngredientRow } from '@pops/app-food-db';
+import type { IngredientRow } from '../ingredient-wire-types.js';
 
 function row(overrides: Partial<IngredientRow> & { id: number; slug: string }): IngredientRow {
   return {

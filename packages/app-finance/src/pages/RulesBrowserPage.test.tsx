@@ -1,85 +1,35 @@
-import { act, render, screen } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const mockListQuery = vi.fn();
-const mockDeleteMutate = vi.fn();
-const mockAdjustMutate = vi.fn();
-const mockInvalidate = vi.fn();
+import type { ReactNode } from 'react';
 
-const mockCreateMutate = vi.fn();
-const mockUpdateMutate = vi.fn();
-const mockPreviewQuery = vi.fn((..._args: unknown[]) => ({
-  data: undefined,
-  isFetching: false,
-  error: null,
-  refetch: vi.fn(),
+const correctionsList = vi.fn();
+const correctionsDelete = vi.fn();
+const correctionsAdjustConfidence = vi.fn();
+const correctionsCreateOrUpdate = vi.fn();
+const correctionsUpdate = vi.fn();
+const correctionsPreviewMatches = vi.fn();
+
+vi.mock('../finance-api/index.js', () => ({
+  correctionsList: (...a: unknown[]) => correctionsList(...a),
+  correctionsDelete: (...a: unknown[]) => correctionsDelete(...a),
+  correctionsAdjustConfidence: (...a: unknown[]) => correctionsAdjustConfidence(...a),
+  correctionsCreateOrUpdate: (...a: unknown[]) => correctionsCreateOrUpdate(...a),
+  correctionsUpdate: (...a: unknown[]) => correctionsUpdate(...a),
+  correctionsPreviewMatches: (...a: unknown[]) => correctionsPreviewMatches(...a),
 }));
 
-vi.mock('@pops/pillar-sdk/react', () => ({
-  usePillarQuery: (_pillarId: string, path: readonly string[], ...args: unknown[]) => {
-    const key = path.join('.');
-    if (key === 'entities.list') {
-      return {
-        data: { data: [], pagination: { total: 0, limit: 500, offset: 0 } },
-        isLoading: false,
-      };
-    }
-    if (key === 'corrections.list') return mockListQuery(...args);
-    if (key === 'corrections.previewMatches') return mockPreviewQuery(...args);
-    return { data: undefined, isLoading: false };
-  },
-  usePillarMutation: (
-    _pillarId: string,
-    path: readonly string[],
-    opts?: { onSuccess?: () => void; onError?: (e: Error) => void }
-  ) => {
-    const key = path.join('.');
-    if (key === 'corrections.delete') {
-      return {
-        mutate: (...args: unknown[]) => {
-          mockDeleteMutate(...args);
-          opts?.onSuccess?.();
-        },
-        isPending: false,
-      };
-    }
-    if (key === 'corrections.adjustConfidence') {
-      return {
-        mutate: (...args: unknown[]) => {
-          mockAdjustMutate(...args);
-          const callOpts = args[1] as { onSuccess?: () => void } | undefined;
-          callOpts?.onSuccess?.();
-          opts?.onSuccess?.();
-        },
-        isPending: false,
-      };
-    }
-    if (key === 'corrections.createOrUpdate') {
-      return {
-        mutate: (...args: unknown[]) => {
-          mockCreateMutate(...args);
-          opts?.onSuccess?.();
-        },
-        isPending: false,
-      };
-    }
-    if (key === 'corrections.update') {
-      return {
-        mutate: (...args: unknown[]) => {
-          mockUpdateMutate(...args);
-          opts?.onSuccess?.();
-        },
-        isPending: false,
-      };
-    }
-    return { mutate: vi.fn(), isPending: false };
-  },
-  usePillarUtils: () => ({
-    invalidate: mockInvalidate,
-    setData: vi.fn(),
-    fetchQuery: vi.fn(),
-  }),
+// The manual rule-form's entity picker reads `entities.list` over the
+// generated core REST client; corrections themselves are now finance REST
+// (mocked above). The mock resolves the Hey API `{ data, error }` envelope.
+vi.mock('../core-api/index.js', () => ({
+  entitiesList: () =>
+    Promise.resolve({
+      data: { data: [], pagination: { total: 0, limit: 500, offset: 0, hasMore: false } },
+      error: undefined,
+    }),
 }));
 
 vi.mock('@pops/ui', async () => {
@@ -391,111 +341,111 @@ const mockRules = [
   },
 ];
 
+const ok = (data: unknown) => ({ data });
+
 function renderPage() {
-  return render(<RulesBrowserPage />);
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  });
+  return render(<RulesBrowserPage />, {
+    wrapper: ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    ),
+  });
 }
 
 beforeEach(() => {
   vi.clearAllMocks();
-  mockListQuery.mockReturnValue({
-    data: {
-      data: mockRules,
-      pagination: { total: 3, limit: 50, offset: 0 },
-    },
-    isLoading: false,
-    isError: false,
-    refetch: vi.fn(),
-  });
+  correctionsList.mockResolvedValue(
+    ok({ data: mockRules, pagination: { total: 3, limit: 50, offset: 0 } })
+  );
+  correctionsDelete.mockResolvedValue(ok({ message: 'deleted' }));
+  correctionsAdjustConfidence.mockResolvedValue(ok({ message: 'adjusted' }));
 });
 
 describe('RulesBrowserPage', () => {
-  it('renders page title', () => {
+  it('renders page title', async () => {
     renderPage();
-    expect(screen.getByText('Categorisation Rules')).toBeInTheDocument();
+    expect(await screen.findByText('Categorisation Rules')).toBeInTheDocument();
   });
 
-  it('renders subtitle', () => {
+  it('renders subtitle', async () => {
     renderPage();
-    expect(screen.getByText('Browse and manage AI categorisation rules')).toBeInTheDocument();
+    expect(
+      await screen.findByText('Browse and manage AI categorisation rules')
+    ).toBeInTheDocument();
   });
 
-  it('renders rule patterns in table', () => {
+  it('renders rule patterns in table', async () => {
     renderPage();
-    expect(screen.getByText('WOOLWORTHS*')).toBeInTheDocument();
+    expect(await screen.findByText('WOOLWORTHS*')).toBeInTheDocument();
     expect(screen.getByText('NETFLIX.COM')).toBeInTheDocument();
     expect(screen.getByText('^UBER.*EATS')).toBeInTheDocument();
   });
 
-  it('renders entity names', () => {
+  it('renders entity names', async () => {
     renderPage();
-    expect(screen.getByText('Woolworths')).toBeInTheDocument();
+    expect(await screen.findByText('Woolworths')).toBeInTheDocument();
     expect(screen.getByText('Uber Eats')).toBeInTheDocument();
   });
 
-  it('renders match type badges', () => {
+  it('renders match type badges', async () => {
     renderPage();
-    expect(screen.getByText('contains')).toBeInTheDocument();
+    expect(await screen.findByText('contains')).toBeInTheDocument();
     expect(screen.getByText('exact')).toBeInTheDocument();
     expect(screen.getByText('regex')).toBeInTheDocument();
   });
 
-  it('renders confidence sliders', () => {
+  it('renders confidence sliders', async () => {
     renderPage();
+    await screen.findByText('WOOLWORTHS*');
     const sliders = document.querySelectorAll('input[type="range"]');
     expect(sliders.length).toBe(3);
   });
 
-  it('renders times applied', () => {
+  it('renders times applied', async () => {
     renderPage();
-    expect(screen.getByText('42')).toBeInTheDocument();
+    expect(await screen.findByText('42')).toBeInTheDocument();
     expect(screen.getByText('8')).toBeInTheDocument();
   });
 
-  it('shows dash for null entity', () => {
+  it('shows dash for null entity', async () => {
     renderPage();
+    await screen.findByText('WOOLWORTHS*');
     const dashes = screen.getAllByText('—');
     expect(dashes.length).toBeGreaterThan(0);
   });
 
-  it('shows Never for null lastUsedAt', () => {
+  it('shows Never for null lastUsedAt', async () => {
     renderPage();
-    expect(screen.getByText('Never')).toBeInTheDocument();
+    expect(await screen.findByText('Never')).toBeInTheDocument();
   });
 
   it('shows loading skeleton', () => {
-    mockListQuery.mockReturnValue({
-      data: null,
-      isLoading: true,
-      isError: false,
-      refetch: vi.fn(),
-    });
+    correctionsList.mockReturnValue(new Promise(() => undefined));
     renderPage();
     expect(document.querySelector('.animate-pulse')).toBeInTheDocument();
   });
 
-  it('shows error state with retry', () => {
-    const refetch = vi.fn();
-    mockListQuery.mockReturnValue({ data: null, isLoading: false, isError: true, refetch });
+  it('shows error state with retry', async () => {
+    correctionsList.mockRejectedValue(new Error('boom'));
     renderPage();
-    expect(screen.getByText('Failed to load rules')).toBeInTheDocument();
+    expect(await screen.findByText('Failed to load rules')).toBeInTheDocument();
     expect(screen.getByText('Retry')).toBeInTheDocument();
   });
 
-  it('shows empty state when no rules', () => {
-    mockListQuery.mockReturnValue({
-      data: { data: [], pagination: { total: 0, limit: 50, offset: 0 } },
-      isLoading: false,
-      isError: false,
-      refetch: vi.fn(),
-    });
+  it('shows empty state when no rules', async () => {
+    correctionsList.mockResolvedValue(
+      ok({ data: [], pagination: { total: 0, limit: 50, offset: 0 } })
+    );
     renderPage();
-    expect(screen.getByText('No categorisation rules found.')).toBeInTheDocument();
+    expect(await screen.findByText('No categorisation rules found.')).toBeInTheDocument();
   });
 
   it('opens delete confirmation dialog', async () => {
     const user = userEvent.setup();
     renderPage();
-    const deleteButtons = screen.getAllByRole('button', { name: /delete rule/i });
+    const deleteButtons = await screen.findAllByRole('button', { name: /delete rule/i });
     await user.click(deleteButtons[0]!);
     expect(screen.getByText('Delete Rule')).toBeInTheDocument();
     expect(screen.getByText(/cannot be undone/)).toBeInTheDocument();
@@ -504,7 +454,7 @@ describe('RulesBrowserPage', () => {
   it('cancels delete dialog', async () => {
     const user = userEvent.setup();
     renderPage();
-    const deleteButtons = screen.getAllByRole('button', { name: /delete rule/i });
+    const deleteButtons = await screen.findAllByRole('button', { name: /delete rule/i });
     await user.click(deleteButtons[0]!);
     await user.click(screen.getByText('Cancel'));
     expect(screen.queryByText('Delete Rule')).not.toBeInTheDocument();
@@ -513,25 +463,28 @@ describe('RulesBrowserPage', () => {
   it('confirms delete calls mutation', async () => {
     const user = userEvent.setup();
     renderPage();
-    const deleteButtons = screen.getAllByRole('button', { name: /delete rule/i });
+    const deleteButtons = await screen.findAllByRole('button', { name: /delete rule/i });
     await user.click(deleteButtons[0]!);
     await user.click(screen.getByText('Delete'));
-    expect(mockDeleteMutate).toHaveBeenCalledWith({ id: 'rule-1' });
+    await waitFor(() => expect(correctionsDelete).toHaveBeenCalledWith({ path: { id: 'rule-1' } }));
   });
 
   it('passes matchType to server query when filter selected', async () => {
     const user = userEvent.setup();
     renderPage();
+    await screen.findByText('WOOLWORTHS*');
     const select = screen.getByRole('combobox');
     await user.selectOptions(select, 'exact');
-    // Verify the query was called with matchType param (server-side filter)
-    const lastCall = mockListQuery.mock.calls.at(-1);
-    expect(lastCall![0]).toMatchObject({ matchType: 'exact' });
+    await waitFor(() => {
+      const lastCall = correctionsList.mock.calls.at(-1);
+      expect(lastCall![0]).toMatchObject({ query: { matchType: 'exact' } });
+    });
   });
 
   it('renders clear filters button when filter active', async () => {
     const user = userEvent.setup();
     renderPage();
+    await screen.findByText('WOOLWORTHS*');
     expect(screen.queryByText('Clear filters')).not.toBeInTheDocument();
     const select = screen.getByRole('combobox');
     await user.selectOptions(select, 'exact');
@@ -539,11 +492,9 @@ describe('RulesBrowserPage', () => {
   });
 
   it('calls adjustConfidence mutation on slider change', async () => {
-    vi.useFakeTimers({ shouldAdvanceTime: true });
     renderPage();
-    const sliders = document.querySelectorAll<HTMLInputElement>('input[type="range"]');
-    const slider = sliders[0]!;
-    // Simulate changing the slider value
+    await screen.findByText('WOOLWORTHS*');
+    const slider = document.querySelectorAll<HTMLInputElement>('input[type="range"]')[0]!;
     await act(() => {
       Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')?.set?.call(
         slider,
@@ -551,14 +502,11 @@ describe('RulesBrowserPage', () => {
       );
       slider.dispatchEvent(new Event('change', { bubbles: true }));
     });
-    // Advance past debounce timer
-    await act(() => {
-      vi.advanceTimersByTime(500);
-    });
-    expect(mockAdjustMutate).toHaveBeenCalledWith(
-      { id: 'rule-1', delta: expect.closeTo(0.5 - 0.95, 2) },
-      expect.objectContaining({ onSuccess: expect.any(Function) })
+    await waitFor(() =>
+      expect(correctionsAdjustConfidence).toHaveBeenCalledWith({
+        path: { id: 'rule-1' },
+        body: { delta: expect.closeTo(0.5 - 0.95, 2) },
+      })
     );
-    vi.useRealTimers();
   });
 });

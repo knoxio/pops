@@ -11,7 +11,6 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
-  setBulkMutate: vi.fn(),
   manifests: [
     { id: 'finance', title: 'Finance', order: 0, groups: [] },
     { id: 'media.plex', title: 'Plex', order: 1, groups: [] },
@@ -22,18 +21,6 @@ const mocks = vi.hoisted(() => ({
 vi.mock('@pops/module-registry', () => ({
   MODULES: [{ id: 'mock', settings: mocks.manifests }],
   INSTALLED_MODULES: ['mock'],
-}));
-
-vi.mock('@/lib/trpc', () => ({
-  trpc: {
-    useUtils: () => ({}),
-    core: {
-      settings: {
-        getBulk: { useQuery: () => ({ data: { settings: {} }, isLoading: false }) },
-        setBulk: { useMutation: () => ({ mutate: mocks.setBulkMutate }) },
-      },
-    },
-  },
 }));
 
 vi.mock('react-i18next', () => ({

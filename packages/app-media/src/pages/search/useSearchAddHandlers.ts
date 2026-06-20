@@ -1,9 +1,15 @@
 import { useCallback } from 'react';
 import { toast } from 'sonner';
 
-import type { UsePillarMutationResult } from '@pops/pillar-sdk/react';
+import type { UseMutationResult } from '@tanstack/react-query';
 
 import type { SearchResultType } from '../../components/SearchResultCard';
+import type {
+  LibraryAddMovieResponse,
+  LibraryAddTvShowResponse,
+  WatchHistoryLogResponse,
+  WatchlistAddResponse,
+} from '../../media-api/index.js';
 import type { useSearchAddState } from './useSearchAddState';
 
 export const makeKey = (type: SearchResultType, id: number) => `${type}:${id}`;
@@ -12,20 +18,8 @@ interface AddMovieInput {
   tmdbId: number;
 }
 
-interface AddMovieResponse {
-  data: { id: number; title: string };
-  created: boolean;
-  message?: string;
-}
-
 interface AddTvShowInput {
   tvdbId: number;
-}
-
-interface AddTvShowResponse {
-  data: { show: { id: number; name: string } };
-  created: boolean;
-  message?: string;
 }
 
 interface WatchlistAddInput {
@@ -40,10 +34,10 @@ interface WatchHistoryLogInput {
 
 interface HandlerArgs {
   state: ReturnType<typeof useSearchAddState>;
-  addMovieMutation: UsePillarMutationResult<AddMovieInput, AddMovieResponse>;
-  addTvShowMutation: UsePillarMutationResult<AddTvShowInput, AddTvShowResponse>;
-  watchlistAddMutation: UsePillarMutationResult<WatchlistAddInput, unknown>;
-  watchHistoryLogMutation: UsePillarMutationResult<WatchHistoryLogInput, unknown>;
+  addMovieMutation: UseMutationResult<LibraryAddMovieResponse, Error, AddMovieInput>;
+  addTvShowMutation: UseMutationResult<LibraryAddTvShowResponse, Error, AddTvShowInput>;
+  watchlistAddMutation: UseMutationResult<WatchlistAddResponse, Error, WatchlistAddInput>;
+  watchHistoryLogMutation: UseMutationResult<WatchHistoryLogResponse, Error, WatchHistoryLogInput>;
 }
 
 export function useAddMovieHandler({ state, addMovieMutation }: HandlerArgs) {

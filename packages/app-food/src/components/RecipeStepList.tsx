@@ -3,7 +3,11 @@ import { useTranslation } from 'react-i18next';
 import { RecipeStepBody } from './RecipeStepBody';
 import { TempBadge } from './TempBadge';
 
-import type { RecipeLineWithResolved, RecipeStepRow, ResolvedStepBody } from '@pops/app-food-db';
+import type {
+  RecipeLineWithResolved,
+  RecipeStepRow,
+  ResolvedStepBody,
+} from './recipe-render-types.js';
 
 /**
  * Each step row's `body_resolved_json` is parsed into a `ResolvedStepBody`

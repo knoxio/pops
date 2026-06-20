@@ -10,17 +10,16 @@
  * the modal session — the cook mutation re-validates the chosen edge at
  * submit time and returns `SubstitutionEdgeInvalid` if it's gone.
  */
+import { useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
 
-import { usePillarQuery } from '@pops/pillar-sdk/react';
-
+import { unwrap } from '../../food-api-helpers.js';
+import { substitutionsResolveForLine } from '../../food-api/index.js';
 import { rankSubstitutionCandidates, type RankableCandidate } from './substitution-ranking.js';
 
-import type { inferRouterOutputs } from '@trpc/server';
+import type { SubstitutionsResolveForLineResponses } from '../../food-api/types.gen.js';
 
-import type { AppRouter } from '@pops/api';
-
-type SubResolution = inferRouterOutputs<AppRouter>['food']['substitutions']['resolveForLine'];
+type SubResolution = SubstitutionsResolveForLineResponses[200];
 
 export type SubCandidate = SubResolution['candidates'][number];
 export type SubCandidateBatch = SubCandidate['batches'][number];
@@ -42,12 +41,12 @@ export interface UseSubstitutionResolutionResult {
 export function useSubstitutionResolution(
   args: UseSubstitutionResolutionArgs
 ): UseSubstitutionResolutionResult {
-  const query = usePillarQuery<SubResolution>(
-    'food',
-    ['substitutions', 'resolveForLine'],
-    { recipeVersionId: args.recipeVersionId, lineIndex: args.lineIndex },
-    { enabled: args.enabled }
-  );
+  const resolveInput = { recipeVersionId: args.recipeVersionId, lineIndex: args.lineIndex };
+  const query = useQuery({
+    queryKey: ['food', 'substitutions', 'resolveForLine', resolveInput],
+    queryFn: async () => unwrap(await substitutionsResolveForLine({ query: resolveInput })),
+    enabled: args.enabled,
+  });
   const resolution = query.data;
   // Stable JSON key for the contextTags array so useMemo's dep array
   // doesn't see a fresh reference on every render (callers often spread

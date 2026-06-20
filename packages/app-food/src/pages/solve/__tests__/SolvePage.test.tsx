@@ -12,6 +12,7 @@
  *     resulting empty state surfaces a "Clear filters" affordance
  *   - bare-pantry empty state surfaces the Open-fridge link
  */
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createInstance } from 'i18next';
@@ -22,7 +23,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import enAUFood from '../../../../../../apps/pops-shell/src/i18n/locales/en-AU/food.json';
 
-const lastInput = vi.fn();
+const solverCanICookMock = vi.hoisted(() => vi.fn());
+
+vi.mock('../../../food-api/index.js', () => ({
+  solverCanICook: solverCanICookMock,
+}));
+
+import { SolvePage } from '../SolvePage.js';
 
 interface SolveSubBreakdown {
   lineIndex: number;
@@ -51,23 +58,6 @@ interface SolveResult {
   recipes: SolveRecipeRow[];
 }
 
-let nextResult: SolveResult | undefined = undefined;
-let nextLoading = false;
-let nextError: Error | null = null;
-
-vi.mock('@pops/pillar-sdk/react', () => ({
-  usePillarQuery: (_pillarId: string, path: readonly string[], input: unknown) => {
-    const key = path.join('.');
-    if (key === 'solver.canICook') {
-      lastInput(input);
-      return { data: nextResult, isLoading: nextLoading, error: nextError };
-    }
-    throw new Error(`Unexpected pillar query: ${key}`);
-  },
-}));
-
-import { SolvePage } from '../SolvePage.js';
-
 function Wrapper({ children }: { children: ReactElement }): ReactElement {
   const i18n = useMemo(() => {
     const instance = createInstance();
@@ -81,10 +71,19 @@ function Wrapper({ children }: { children: ReactElement }): ReactElement {
     });
     return instance;
   }, []);
+  const client = useMemo(
+    () =>
+      new QueryClient({
+        defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+      }),
+    []
+  );
   return (
-    <I18nextProvider i18n={i18n}>
-      <MemoryRouter>{children}</MemoryRouter>
-    </I18nextProvider>
+    <QueryClientProvider client={client}>
+      <I18nextProvider i18n={i18n}>
+        <MemoryRouter>{children}</MemoryRouter>
+      </I18nextProvider>
+    </QueryClientProvider>
   );
 }
 
@@ -103,6 +102,10 @@ function row(partial: Partial<SolveRecipeRow> & { recipeId: number }): SolveReci
   };
 }
 
+function resolveWith(result: SolveResult): void {
+  solverCanICookMock.mockResolvedValue({ data: result });
+}
+
 function render150(): void {
   render(
     <Wrapper>
@@ -113,21 +116,18 @@ function render150(): void {
 
 describe('SolvePage — PRD-150', () => {
   beforeEach(() => {
-    nextResult = undefined;
-    nextLoading = false;
-    nextError = null;
-    lastInput.mockClear();
+    vi.clearAllMocks();
   });
 
   it('renders the title and the loading state initially', () => {
-    nextLoading = true;
+    solverCanICookMock.mockReturnValue(new Promise(() => {}));
     render150();
     expect(screen.getByRole('heading', { name: 'What can I cook?' })).toBeInTheDocument();
     expect(screen.getByRole('status')).toHaveTextContent(/Working out/i);
   });
 
-  it('renders the count caption and a cookable card list', () => {
-    nextResult = {
+  it('renders the count caption and a cookable card list', async () => {
+    resolveWith({
       totalCandidates: 5,
       cookableCount: 2,
       recipes: [
@@ -147,9 +147,9 @@ describe('SolvePage — PRD-150', () => {
           ],
         }),
       ],
-    };
+    });
     render150();
-    expect(screen.getByText('2 of 5 recipes cookable')).toBeInTheDocument();
+    expect(await screen.findByText('2 of 5 recipes cookable')).toBeInTheDocument();
     const articles = screen.getAllByRole('article');
     expect(articles).toHaveLength(2);
     expect(articles[0]).toHaveTextContent('Tomato Soup');
@@ -159,7 +159,7 @@ describe('SolvePage — PRD-150', () => {
   });
 
   it('hides multi-sub breakdown behind a toggle', async () => {
-    nextResult = {
+    resolveWith({
       totalCandidates: 1,
       cookableCount: 1,
       recipes: [
@@ -185,21 +185,23 @@ describe('SolvePage — PRD-150', () => {
           ],
         }),
       ],
-    };
+    });
     render150();
+    expect(await screen.findByRole('button', { name: /show subs/i })).toBeInTheDocument();
     expect(screen.queryByText('bacon')).not.toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: /show subs/i }));
     expect(screen.getByText(/pancetta → bacon/)).toBeInTheDocument();
     expect(screen.getByText(/pecorino → parmesan/)).toBeInTheDocument();
   });
 
-  it('navigates to /food/recipes/:slug when Cook this is clicked', () => {
-    nextResult = {
+  it('navigates to /food/recipes/:slug when Cook this is clicked', async () => {
+    resolveWith({
       totalCandidates: 1,
       cookableCount: 1,
       recipes: [row({ recipeId: 1, title: 'Tomato Soup', recipeSlug: 'tomato-soup' })],
-    };
+    });
     render150();
+    await screen.findByText('Tomato Soup');
     const cookLink = screen
       .getAllByRole('link')
       .find((el) => el.getAttribute('href') === '/food/recipes/tomato-soup');
@@ -207,17 +209,19 @@ describe('SolvePage — PRD-150', () => {
   });
 
   it('threads excludeSubs into the query and shows Clear filters on empty result', async () => {
-    nextResult = { totalCandidates: 3, cookableCount: 0, recipes: [] };
+    resolveWith({ totalCandidates: 3, cookableCount: 0, recipes: [] });
     render150();
     await userEvent.click(screen.getByLabelText('No substitutions'));
-    expect(lastInput).toHaveBeenLastCalledWith(expect.objectContaining({ excludeSubs: true }));
-    expect(screen.getByRole('button', { name: /clear filters/i })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: /clear filters/i })).toBeInTheDocument();
+    expect(solverCanICookMock).toHaveBeenLastCalledWith(
+      expect.objectContaining({ body: expect.objectContaining({ excludeSubs: true }) })
+    );
   });
 
-  it('shows the Open fridge link on the bare-pantry empty state', () => {
-    nextResult = { totalCandidates: 0, cookableCount: 0, recipes: [] };
+  it('shows the Open fridge link on the bare-pantry empty state', async () => {
+    resolveWith({ totalCandidates: 0, cookableCount: 0, recipes: [] });
     render150();
-    expect(screen.getByText(/Pantry’s bare/i)).toBeInTheDocument();
+    expect(await screen.findByText(/Pantry’s bare/i)).toBeInTheDocument();
     const link = screen.getByRole('link', { name: /open fridge/i });
     expect(link).toHaveAttribute('href', '/food/fridge');
   });

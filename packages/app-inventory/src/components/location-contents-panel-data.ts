@@ -1,14 +1,12 @@
-import { useQueries } from '@tanstack/react-query';
+import { useQueries, useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
 
-import { pillar, PillarCallError } from '@pops/pillar-sdk/client';
-import { pillarQueryKey, usePillarQuery, usePillarSdkOptions } from '@pops/pillar-sdk/react';
+import { unwrap } from '../inventory-api-helpers.js';
+import { itemsList } from '../inventory-api/index.js';
 
-import type { InventoryItem } from '@pops/api/modules/inventory/items/types';
+import type { ItemsListResponse } from '../inventory-api/index.js';
 
-export interface ItemsListResult {
-  data: InventoryItem[];
-}
+export type InventoryItem = ItemsListResponse['data'][number];
 
 export interface LocationTreeNode {
   id: string;
@@ -33,12 +31,11 @@ export function useLocationItems(
   includeSubLocations: boolean
 ) {
   const hasSubLocations = descendantIds.length > 0;
-  const sdkOptions = usePillarSdkOptions();
-  const { data: directData, isLoading: directLoading } = usePillarQuery<ItemsListResult>(
-    'inventory',
-    ['items', 'list'],
-    { locationId, limit: 200 }
-  );
+  const directInput = { locationId, limit: 200 };
+  const { data: directData, isLoading: directLoading } = useQuery({
+    queryKey: ['inventory', 'items', 'list', directInput],
+    queryFn: async () => unwrap(await itemsList({ query: directInput })),
+  });
 
   const subLocationQueries = useQueries({
     queries:
@@ -46,15 +43,8 @@ export function useLocationItems(
         ? descendantIds.map((id) => {
             const input = { locationId: id, limit: 200 };
             return {
-              queryKey: pillarQueryKey('inventory', ['items', 'list'], input),
-              queryFn: async (): Promise<ItemsListResult> => {
-                const handle = pillar<{
-                  items: { list: (i: unknown) => Promise<unknown> };
-                }>('inventory', sdkOptions);
-                const result = await handle.items.list(input);
-                if (result.kind === 'ok') return result.value as ItemsListResult;
-                throw new PillarCallError('inventory', result);
-              },
+              queryKey: ['inventory', 'items', 'list', input],
+              queryFn: async () => unwrap(await itemsList({ query: input })),
             };
           })
         : [],

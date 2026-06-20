@@ -2,7 +2,7 @@ import { ChevronRight, Sparkles } from 'lucide-react';
 
 import { Badge, Button, CollapsibleTrigger } from '@pops/ui';
 
-import type { ProcessedTransaction } from '@pops/api/modules/finance/imports';
+import type { ProcessedTransaction } from '@pops/finance';
 
 import type { TransactionGroup as TransactionGroupType } from '../../../lib/transaction-utils';
 

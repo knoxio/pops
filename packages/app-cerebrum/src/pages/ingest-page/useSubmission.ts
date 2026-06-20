@@ -8,11 +8,12 @@
  *   sequentially (US-08 bulk paste).
  * - When Advanced has been touched, calls `cerebrum.ingest.submit` (single).
  */
+import { useMutation } from '@tanstack/react-query';
 import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
 
-import { usePillarMutation } from '@pops/pillar-sdk/react';
-
+import { ingestQuickCapture, ingestSubmit } from '../../cerebrum-api';
+import { unwrap } from '../../cerebrum-api-helpers';
 import {
   asResult,
   buildQuickCapturePayload,
@@ -24,11 +25,9 @@ import {
 import type {
   QuickCaptureMutation,
   QuickCapturePayload,
-  QuickCaptureResponse,
   SetBulkResults,
   SubmitMutation,
   SubmitPayload,
-  SubmitResponse,
 } from './submission-types';
 import type { BulkSegmentOutcome, IngestFormValues, SubmitResult } from './types';
 import type { useFormState } from './useFormState';
@@ -49,21 +48,16 @@ function buildSubmitPayload(form: IngestFormValues): SubmitPayload {
 }
 
 function useIngestMutations(setSubmitResult: (next: SubmitResult | null) => void) {
-  const submitMutation = usePillarMutation<SubmitPayload, SubmitResponse>(
-    'cerebrum',
-    ['ingest', 'submit'],
-    {
-      onSuccess: (result) => setSubmitResult(asResult(toQuickCaptureShape(result))),
-      onError: (error) => toast.error('Submit Engram failed', { description: error.message }),
-    }
-  );
-  const quickCaptureMutation = usePillarMutation<QuickCapturePayload, QuickCaptureResponse>(
-    'cerebrum',
-    ['ingest', 'quickCapture'],
-    {
-      onError: (error) => toast.error('Capture failed', { description: error.message }),
-    }
-  );
+  const submitMutation = useMutation({
+    mutationFn: async (payload: SubmitPayload) => unwrap(await ingestSubmit({ body: payload })),
+    onSuccess: (result) => setSubmitResult(asResult(toQuickCaptureShape(result))),
+    onError: (error: Error) => toast.error('Submit Engram failed', { description: error.message }),
+  });
+  const quickCaptureMutation = useMutation({
+    mutationFn: async (payload: QuickCapturePayload) =>
+      unwrap(await ingestQuickCapture({ body: payload })),
+    onError: (error: Error) => toast.error('Capture failed', { description: error.message }),
+  });
   return { submitMutation, quickCaptureMutation };
 }
 

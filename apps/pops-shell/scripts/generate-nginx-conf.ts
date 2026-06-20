@@ -10,9 +10,10 @@
  *     test guards this output.
  *
  *   - **Dynamic** (`--dynamic`) — PRD-232, Wave 6 BE-lego. Reads the
- *     live `pillar_registry` via `core.registry.list` (HTTP tRPC GET)
- *     and emits one `/trpc-<pillar>/` block per registered pillar. Used
- *     at boot-time inside the cluster: an init container (or a future
+ *     live `pillar_registry` via the SDK's `HttpDiscoveryTransport`
+ *     (`GET /core.registry.list`) and emits one `/<pillar>-api/` REST
+ *     block per registered pillar.
+ *     Used at boot-time inside the cluster: an init container (or a future
  *     subscription-bus watcher, PRD-163) runs the script with
  *     `--dynamic` so newly-registered external pillars (PRD-228) pick
  *     up routing without a fresh shell image.
@@ -42,16 +43,17 @@
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { PILLARS, type KnownPillarId } from '@pops/pillar-sdk';
+import { PILLARS, isKnownPillarId, type KnownPillarId, type PillarId } from '@pops/pillar-sdk';
+import {
+  HttpDiscoveryTransport,
+  type DiscoveredPillar,
+  type DiscoveryTransport,
+} from '@pops/pillar-sdk/client';
 
 import { parseCliArgs, type CliOptions } from './nginx-cli-args.ts';
 import { assertDynamicNotCheck, runDynamic, runStatic } from './nginx-cli-main.ts';
-import { NGINX_CONF_HEAD, NGINX_CONF_TAIL } from './nginx-conf-template.ts';
-import {
-  fetchRegistryViaTrpc,
-  type RegistryFetcher,
-  type RegistryListEntry,
-} from './nginx-registry-client.ts';
+import { NGINX_CONF_ORCHESTRATOR } from './nginx-conf-orchestrator.ts';
+import { NGINX_CONF_HEAD, NGINX_CONF_REST_INTRO, NGINX_CONF_TAIL } from './nginx-conf-template.ts';
 
 /**
  * Internal port assignment for each pillar's API container. Matches every
@@ -61,7 +63,7 @@ import {
  * (in `@pops/pillar-sdk`) to ship a port here; missing entries fail
  * typecheck.
  */
-const PILLAR_UPSTREAMS: Record<KnownPillarId, { host: string; port: number }> = {
+export const PILLAR_UPSTREAMS: Record<KnownPillarId, { host: string; port: number }> = {
   core: { host: 'core-api', port: 3001 },
   inventory: { host: 'inventory-api', port: 3002 },
   media: { host: 'media-api', port: 3003 },
@@ -72,11 +74,11 @@ const PILLAR_UPSTREAMS: Record<KnownPillarId, { host: string; port: number }> = 
 };
 
 /**
- * Stable ordering for the rendered `/trpc-<id>/` blocks. Matches the
+ * Stable ordering for the rendered `/<id>-api/` blocks. Matches the
  * order PRD-190 shipped in the hand-written conf so the generator's
  * first run produces a byte-identical (modulo header comment) file.
  */
-const PILLAR_RENDER_ORDER: readonly KnownPillarId[] = [
+export const PILLAR_RENDER_ORDER: readonly KnownPillarId[] = [
   'core',
   'inventory',
   'media',
@@ -86,15 +88,15 @@ const PILLAR_RENDER_ORDER: readonly KnownPillarId[] = [
   'cerebrum',
 ];
 
-const DEFAULT_REGISTRY_URL = 'http://core-api:3001';
+export const DEFAULT_REGISTRY_URL = 'http://core-api:3001';
 
 export interface PillarUpstream {
-  readonly pillarId: string;
+  readonly pillarId: PillarId;
   readonly host: string;
   readonly port: number;
 }
 
-function assertRenderOrderCoversAllPillars(): void {
+export function assertRenderOrderCoversAllPillars(): void {
   const ordered = new Set<KnownPillarId>(PILLAR_RENDER_ORDER);
   const missing = PILLARS.filter((id) => !ordered.has(id));
   if (missing.length > 0) {
@@ -113,29 +115,35 @@ function assertRenderOrderCoversAllPillars(): void {
   }
 }
 
-function isKnownPillarId(id: string): id is KnownPillarId {
-  return (PILLARS as readonly string[]).includes(id);
-}
-
-function nginxVarName(pillarId: string): string {
+function nginxVarName(pillarId: PillarId): string {
   return pillarId.replace(/-/g, '_');
 }
 
-function renderPillarBlockFromUpstream(upstream: PillarUpstream): string {
+function upstreamForId(id: KnownPillarId): PillarUpstream {
+  const upstream = PILLAR_UPSTREAMS[id];
+  return { pillarId: id, host: upstream.host, port: upstream.port };
+}
+
+/**
+ * REST surface dispatcher (`/<pillar>-api/`) for one pillar. Mirrors the
+ * media block byte-for-byte: strip the `/<pillar>-api` prefix down to
+ * `/` so the pillar's own router sees its natural paths, then proxy to
+ * the variable-form upstream and inherit the shared proxy directives.
+ */
+function renderPillarRestBlockFromUpstream(upstream: PillarUpstream): string {
   const varName = nginxVarName(upstream.pillarId);
   return [
-    `    location /trpc-${upstream.pillarId}/ {`,
-    `        rewrite ^/trpc-${upstream.pillarId}/(.*)$ /trpc/$1 break;`,
-    `        set $trpc_${varName}_upstream http://${upstream.host}:${upstream.port};`,
-    `        proxy_pass $trpc_${varName}_upstream;`,
+    `    location /${upstream.pillarId}-api/ {`,
+    `        rewrite ^/${upstream.pillarId}-api/(.*)$ /$1 break;`,
+    `        set $${varName}_api_upstream http://${upstream.host}:${upstream.port};`,
+    `        proxy_pass $${varName}_api_upstream;`,
     `        include /etc/nginx/snippets/_pillar-proxy.conf;`,
     `    }`,
   ].join('\n');
 }
 
-function renderPillarBlock(id: KnownPillarId): string {
-  const upstream = PILLAR_UPSTREAMS[id];
-  return renderPillarBlockFromUpstream({ pillarId: id, host: upstream.host, port: upstream.port });
+function renderPillarRestBlock(id: KnownPillarId): string {
+  return renderPillarRestBlockFromUpstream(upstreamForId(id));
 }
 
 /**
@@ -144,22 +152,22 @@ function renderPillarBlock(id: KnownPillarId): string {
  * call it without touching the filesystem.
  */
 export function renderNginxConf(order: readonly KnownPillarId[] = PILLAR_RENDER_ORDER): string {
-  const pillarBlocks = order.map(renderPillarBlock).join('\n\n');
-  return `${NGINX_CONF_HEAD}\n${pillarBlocks}\n\n${NGINX_CONF_TAIL}`;
+  const restBlocks = order.map(renderPillarRestBlock).join('\n\n');
+  return `${NGINX_CONF_HEAD}\n${NGINX_CONF_REST_INTRO}\n${restBlocks}\n\n${NGINX_CONF_ORCHESTRATOR}\n${NGINX_CONF_TAIL}`;
 }
 
 /**
  * Pure renderer (dynamic mode). Takes an explicit list of upstreams in
  * the order they should appear in the output. Empty input is valid and
- * produces a config with zero `/trpc-<pillar>/` dispatchers (the legacy
- * `/trpc` catch-all in the tail still routes to pops-api).
+ * produces a config with zero per-pillar `/<pillar>-api/` REST blocks (the
+ * monolith catch-all was removed in the 02 decommission).
  */
 export function renderNginxConfFromUpstreams(upstreams: readonly PillarUpstream[]): string {
   if (upstreams.length === 0) {
-    return `${NGINX_CONF_HEAD}\n${NGINX_CONF_TAIL}`;
+    return `${NGINX_CONF_HEAD}\n${NGINX_CONF_ORCHESTRATOR}\n${NGINX_CONF_TAIL}`;
   }
-  const pillarBlocks = upstreams.map(renderPillarBlockFromUpstream).join('\n\n');
-  return `${NGINX_CONF_HEAD}\n${pillarBlocks}\n\n${NGINX_CONF_TAIL}`;
+  const restBlocks = upstreams.map(renderPillarRestBlockFromUpstream).join('\n\n');
+  return `${NGINX_CONF_HEAD}\n${NGINX_CONF_REST_INTRO}\n${restBlocks}\n\n${NGINX_CONF_ORCHESTRATOR}\n${NGINX_CONF_TAIL}`;
 }
 
 /**
@@ -170,7 +178,9 @@ export function renderNginxConfFromUpstreams(upstreams: readonly PillarUpstream[
  * development must not break docker-network routing. Unknown pillars
  * fall back to parsing the registry's `baseUrl`.
  */
-export function resolveUpstreamForEntry(entry: RegistryListEntry): PillarUpstream {
+export function resolveUpstreamForEntry(
+  entry: Pick<DiscoveredPillar, 'pillarId' | 'baseUrl'>
+): PillarUpstream {
   if (isKnownPillarId(entry.pillarId)) {
     const known = PILLAR_UPSTREAMS[entry.pillarId];
     return { pillarId: entry.pillarId, host: known.host, port: known.port };
@@ -205,7 +215,7 @@ export function resolveUpstreamForEntry(entry: RegistryListEntry): PillarUpstrea
  * in ascending alphabetical order by pillarId.
  */
 export function orderUpstreams(upstreams: readonly PillarUpstream[]): readonly PillarUpstream[] {
-  const indexOf = new Map<string, number>();
+  const indexOf = new Map<PillarId, number>();
   PILLAR_RENDER_ORDER.forEach((id, i) => indexOf.set(id, i));
   return upstreams.toSorted((a, b) => {
     const ia = indexOf.get(a.pillarId);
@@ -219,10 +229,10 @@ export function orderUpstreams(upstreams: readonly PillarUpstream[]): readonly P
 
 export async function renderNginxConfDynamic(
   registryUrl: string,
-  fetcher: RegistryFetcher = fetchRegistryViaTrpc
+  transport: DiscoveryTransport = new HttpDiscoveryTransport({ registryUrl })
 ): Promise<string> {
-  const response = await fetcher(registryUrl);
-  const upstreams = response.pillars.map(resolveUpstreamForEntry);
+  const pillars = await transport.fetchSnapshot();
+  const upstreams = pillars.map(resolveUpstreamForEntry);
   const ordered = orderUpstreams(upstreams);
   return renderNginxConfFromUpstreams(ordered);
 }
@@ -271,10 +281,3 @@ if (invokedAsScript) {
     process.exit(1);
   });
 }
-
-export {
-  PILLAR_UPSTREAMS,
-  PILLAR_RENDER_ORDER,
-  DEFAULT_REGISTRY_URL,
-  assertRenderOrderCoversAllPillars,
-};

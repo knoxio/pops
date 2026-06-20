@@ -1,6 +1,8 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { withQueryClient } from '../test-utils';
 
 // ── Streaming chat mock ─────────────────────────────────────────────
 
@@ -16,75 +18,15 @@ vi.mock('../chat-hooks/useStreamingChat', () => ({
   }),
 }));
 
-// ── tRPC mock ────────────────────────────────────────────────────────
+// ── ego SDK mock ─────────────────────────────────────────────────────
 
-const mockConversationsListQuery = vi.fn();
-const mockConversationsGetQuery = vi.fn();
-const mockChatMutate = vi.fn();
-const mockDeleteMutate = vi.fn();
-const mockInvalidateList = vi.fn();
-const mockInvalidateGet = vi.fn();
-
-vi.mock('@pops/api-client', () => ({
-  trpc: {
-    useUtils: () => ({
-      ego: {
-        conversations: {
-          list: { invalidate: mockInvalidateList },
-          get: { invalidate: mockInvalidateGet },
-        },
-      },
-    }),
-    ego: {
-      conversations: {
-        list: {
-          useQuery: (...args: unknown[]) => mockConversationsListQuery(...args),
-        },
-        get: {
-          useQuery: (...args: unknown[]) => mockConversationsGetQuery(...args),
-        },
-        delete: {
-          useMutation: (opts: {
-            onSuccess?: (data: { success: boolean }, variables: { id: string }) => void;
-          }) => ({
-            mutate: (input: { id: string }) => {
-              mockDeleteMutate(input);
-              opts.onSuccess?.({ success: true }, input);
-            },
-            isPending: false,
-          }),
-        },
-      },
-      chat: {
-        useMutation: (opts: {
-          onSuccess?: (data: {
-            conversationId: string;
-            response: unknown;
-            retrievedEngrams: Array<{ engramId: string; relevanceScore: number }>;
-          }) => void;
-        }) => ({
-          mutate: (input: { conversationId?: string; message: string }) => {
-            mockChatMutate(input);
-            opts.onSuccess?.({
-              conversationId: 'conv_1',
-              response: {
-                id: 'msg_2',
-                conversationId: 'conv_1',
-                role: 'assistant',
-                content: 'Hello! How can I help?',
-                citations: ['eng_test_001'],
-                createdAt: '2026-04-27T12:01:00Z',
-              },
-              retrievedEngrams: [{ engramId: 'eng_test_001', relevanceScore: 0.92 }],
-            });
-          },
-          isPending: false,
-          error: null,
-        }),
-      },
-    },
-  },
+const sdk = vi.hoisted(() => ({
+  egoListConversations: vi.fn(),
+  egoGetConversation: vi.fn(),
+  egoDeleteConversation: vi.fn(),
 }));
+
+vi.mock('../ego-api', () => sdk);
 
 // ── react-markdown mock ──────────────────────────────────────────────
 
@@ -94,12 +36,13 @@ vi.mock('react-markdown', () => ({
 
 // ── react-router mock ────────────────────────────────────────────────
 
-vi.mock('react-router', () => ({
-  Link: ({ children, to }: { children: React.ReactNode; to: string }) => {
-    const React = require('react');
-    return React.createElement('a', { href: to }, children);
-  },
-}));
+vi.mock('react-router', async () => {
+  const React = await import('react');
+  return {
+    Link: ({ children, to }: { children: React.ReactNode; to: string }) =>
+      React.createElement('a', { href: to }, children),
+  };
+});
 
 // ── UI mock ──────────────────────────────────────────────────────────
 
@@ -258,6 +201,10 @@ function ChatHarness() {
   return <ChatPanel model={model} />;
 }
 
+function renderHarness() {
+  return render(withQueryClient(<ChatHarness />));
+}
+
 // ── Mock data ────────────────────────────────────────────────────────
 
 const mockConversations = [
@@ -307,35 +254,23 @@ const mockMessages = [
 ];
 
 function setupDefaultMocks() {
-  mockConversationsListQuery.mockReturnValue({
+  sdk.egoListConversations.mockResolvedValue({
     data: { conversations: mockConversations, total: 2 },
-    isLoading: false,
   });
-  mockConversationsGetQuery.mockReturnValue({
-    data: null,
-    isLoading: false,
-  });
+  sdk.egoGetConversation.mockResolvedValue({ data: { conversation: null, messages: [] } });
+  sdk.egoDeleteConversation.mockResolvedValue({ data: { success: true } });
 }
 
 function setupWithSelectedConversation() {
-  mockConversationsListQuery.mockReturnValue({
+  sdk.egoListConversations.mockResolvedValue({
     data: { conversations: mockConversations, total: 2 },
-    isLoading: false,
   });
-  mockConversationsGetQuery.mockImplementation(
-    (input: { id: string }, opts: { enabled: boolean }) => {
-      if (!opts.enabled || input.id !== 'conv_1') {
-        return { data: null, isLoading: false };
-      }
-      return {
-        data: {
-          conversation: mockConversations[0],
-          messages: mockMessages,
-        },
-        isLoading: false,
-      };
+  sdk.egoGetConversation.mockImplementation(async ({ path }: { path: { id: string } }) => {
+    if (path.id !== 'conv_1') {
+      return { data: { conversation: null, messages: [] } };
     }
-  );
+    return { data: { conversation: mockConversations[0], messages: mockMessages } };
+  });
 }
 
 // ── Tests ────────────────────────────────────────────────────────────
@@ -346,14 +281,14 @@ beforeEach(() => {
 });
 
 describe('ChatPanel (overlay-ego)', () => {
-  it('renders conversation list with items', () => {
-    render(<ChatHarness />);
-    expect(screen.getByText('Budget discussion')).toBeInTheDocument();
+  it('renders conversation list with items', async () => {
+    renderHarness();
+    expect(await screen.findByText('Budget discussion')).toBeInTheDocument();
     expect(screen.getByText('Movie recommendations')).toBeInTheDocument();
   });
 
   it('shows empty state when no conversation is selected', () => {
-    render(<ChatHarness />);
+    renderHarness();
     expect(screen.getByTestId('empty-state')).toBeInTheDocument();
     expect(screen.getByText('Start a conversation')).toBeInTheDocument();
   });
@@ -361,26 +296,25 @@ describe('ChatPanel (overlay-ego)', () => {
   it('displays messages when a conversation is selected', async () => {
     setupWithSelectedConversation();
     const user = userEvent.setup();
-    render(<ChatHarness />);
+    renderHarness();
 
-    await user.click(screen.getByText('Budget discussion'));
-    expect(screen.getByText('What is my budget?')).toBeInTheDocument();
+    await user.click(await screen.findByText('Budget discussion'));
+    expect(await screen.findByText('What is my budget?')).toBeInTheDocument();
   });
 
   it('renders citation links in assistant messages', async () => {
     setupWithSelectedConversation();
     const user = userEvent.setup();
-    render(<ChatHarness />);
+    renderHarness();
 
-    await user.click(screen.getByText('Budget discussion'));
-    const citationLink = screen.getByText('eng_finance_001');
-    expect(citationLink).toBeInTheDocument();
+    await user.click(await screen.findByText('Budget discussion'));
+    const citationLink = await screen.findByText('eng_finance_001');
     expect(citationLink.closest('a')).toHaveAttribute('href', '/cerebrum/eng_finance_001');
   });
 
   it('sends a message via the chat input', async () => {
     const user = userEvent.setup();
-    render(<ChatHarness />);
+    renderHarness();
 
     const textarea = screen.getByLabelText('Message input');
     await user.type(textarea, 'Hello Ego');
@@ -396,7 +330,7 @@ describe('ChatPanel (overlay-ego)', () => {
 
   it('Enter key sends message, Shift+Enter inserts newline', async () => {
     const user = userEvent.setup();
-    render(<ChatHarness />);
+    renderHarness();
 
     const textarea = screen.getByLabelText('Message input');
     await user.type(textarea, 'Line one');
@@ -410,7 +344,7 @@ describe('ChatPanel (overlay-ego)', () => {
   });
 
   it('send button is disabled when input is empty', () => {
-    render(<ChatHarness />);
+    renderHarness();
     const sendButton = screen.getByLabelText('Send message');
     expect(sendButton).toBeDisabled();
   });
@@ -418,9 +352,9 @@ describe('ChatPanel (overlay-ego)', () => {
   it('new conversation button resets selection', async () => {
     setupWithSelectedConversation();
     const user = userEvent.setup();
-    render(<ChatHarness />);
+    renderHarness();
 
-    await user.click(screen.getByText('Budget discussion'));
+    await user.click(await screen.findByText('Budget discussion'));
 
     const newButton = screen.getByLabelText('New conversation');
     await user.click(newButton);
@@ -430,9 +364,11 @@ describe('ChatPanel (overlay-ego)', () => {
 
   it('shows delete confirmation dialog and calls delete', async () => {
     const user = userEvent.setup();
-    render(<ChatHarness />);
+    renderHarness();
 
-    const firstDeleteButton = screen.getByLabelText('Delete conversation: Budget discussion');
+    const firstDeleteButton = await screen.findByLabelText(
+      'Delete conversation: Budget discussion'
+    );
     await user.click(firstDeleteButton);
 
     expect(screen.getByText('Delete conversation?')).toBeInTheDocument();
@@ -440,44 +376,41 @@ describe('ChatPanel (overlay-ego)', () => {
     const confirmButton = screen.getByText('Delete');
     await user.click(confirmButton);
 
-    expect(mockDeleteMutate).toHaveBeenCalledWith({ id: 'conv_1' });
+    await waitFor(() =>
+      expect(sdk.egoDeleteConversation).toHaveBeenCalledWith({ path: { id: 'conv_1' } })
+    );
   });
 
   it('search input filters conversations', async () => {
     const user = userEvent.setup();
-    render(<ChatHarness />);
+    renderHarness();
 
     const searchInput = screen.getByLabelText('Search conversations');
     await user.type(searchInput, 'budget');
 
-    expect(mockConversationsListQuery).toHaveBeenCalledWith(
-      expect.objectContaining({ search: 'budget' }),
-      expect.anything()
+    await waitFor(() =>
+      expect(sdk.egoListConversations).toHaveBeenCalledWith({
+        body: expect.objectContaining({ search: 'budget' }),
+      })
     );
   });
 
   it('shows loading skeletons when conversations are loading', () => {
-    mockConversationsListQuery.mockReturnValue({
-      data: undefined,
-      isLoading: true,
-    });
-    render(<ChatHarness />);
+    sdk.egoListConversations.mockReturnValue(new Promise(() => undefined));
+    renderHarness();
     const skeletons = screen.getAllByTestId('skeleton');
     expect(skeletons.length).toBeGreaterThan(0);
   });
 
   it('renders the chat panel layout', () => {
-    render(<ChatHarness />);
+    renderHarness();
 
     expect(screen.getByLabelText('Message input')).toBeInTheDocument();
   });
 
-  it('shows empty search message when no conversations match', () => {
-    mockConversationsListQuery.mockReturnValue({
-      data: { conversations: [], total: 0 },
-      isLoading: false,
-    });
-    render(<ChatHarness />);
-    expect(screen.getByText('No conversations yet')).toBeInTheDocument();
+  it('shows empty search message when no conversations match', async () => {
+    sdk.egoListConversations.mockResolvedValue({ data: { conversations: [], total: 0 } });
+    renderHarness();
+    expect(await screen.findByText('No conversations yet')).toBeInTheDocument();
   });
 });

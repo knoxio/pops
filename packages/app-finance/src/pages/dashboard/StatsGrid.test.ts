@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 
 import { computeStats, signedColor } from './StatsGrid';
 
-import type { Transaction } from '@pops/api/modules/finance/transactions/types';
+import type { TransactionsListResponse } from '../../finance-api/types.gen.js';
+
+type Transaction = NonNullable<TransactionsListResponse['data']>[number];
 
 function makeTx(amount: number, overrides: Partial<Transaction> = {}): Transaction {
   return {

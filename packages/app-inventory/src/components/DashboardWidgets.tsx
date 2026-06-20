@@ -1,8 +1,8 @@
+import { useQuery } from '@tanstack/react-query';
 import { Clock, Shield } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
 
-import { usePillarQuery } from '@pops/pillar-sdk/react';
 import {
   Card,
   CardContent,
@@ -13,6 +13,8 @@ import {
   TypeBadge,
 } from '@pops/ui';
 
+import { isUnavailableError, unwrap } from '../inventory-api-helpers.js';
+import { reportsDashboard } from '../inventory-api/index.js';
 import { ValueByLocationCard, ValueByTypeCard } from './ValueBreakdown';
 
 function DashboardSkeleton() {
@@ -56,16 +58,6 @@ interface RecentItem {
   type: string | null;
   assetId: string | null;
   lastEditedTime: string;
-}
-
-interface DashboardResult {
-  data: {
-    itemCount: number;
-    totalReplacementValue: number;
-    totalResaleValue: number;
-    warrantiesExpiringSoon: number;
-    recentlyAdded: RecentItem[];
-  };
 }
 
 function RecentItemRow({ item, onOpen }: { item: RecentItem; onOpen: (id: string) => void }) {
@@ -125,14 +117,13 @@ function RecentlyAddedCard({
 export function DashboardWidgets() {
   const { t } = useTranslation('inventory');
   const navigate = useNavigate();
-  const { data, isLoading, isUnavailable, isContractMismatch } = usePillarQuery<DashboardResult>(
-    'inventory',
-    ['reports', 'dashboard'],
-    undefined
-  );
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['inventory', 'reports', 'dashboard'],
+    queryFn: async () => unwrap(await reportsDashboard()),
+  });
 
   if (isLoading) return <DashboardSkeleton />;
-  if (isUnavailable || isContractMismatch || !data?.data) return null;
+  if (isUnavailableError(error) || !data?.data) return null;
 
   const {
     itemCount,
