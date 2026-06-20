@@ -178,6 +178,24 @@ describe('generate-nginx-conf', () => {
       expect(rendered).toContain('set $core_api_upstream http://core-api:3001;');
     });
 
+    it('emits `set $<pillar>_api_upstream` BEFORE `rewrite ... break` in every pillar block', () => {
+      // `rewrite ... break` halts the ngx_http_rewrite_module phase, so a `set`
+      // placed after it never runs — the upstream variable stays uninitialised
+      // and `proxy_pass $var` 500s with "invalid URL prefix". The `set` must
+      // precede the `rewrite` in each `/<pillar>-api/` block.
+      for (const id of Object.keys(PILLAR_UPSTREAMS)) {
+        const block = rendered.match(
+          new RegExp(`location /${id}-api/ \\{([\\s\\S]*?)\\n    \\}`)
+        )?.[1];
+        expect(block, `missing /${id}-api/ block`).toBeDefined();
+        const setIdx = block!.indexOf(`set $`);
+        const rewriteIdx = block!.indexOf('rewrite ');
+        expect(setIdx).toBeGreaterThanOrEqual(0);
+        expect(rewriteIdx).toBeGreaterThanOrEqual(0);
+        expect(setIdx, `set must precede rewrite in /${id}-api/`).toBeLessThan(rewriteIdx);
+      }
+    });
+
     it('routes the core /registry/subscribe SSE stream to the core pillar with buffering off', () => {
       expect(rendered).toContain('location ~ ^/registry/subscribe/?$ {');
       expect(rendered).toContain('set $registry_subscribe_upstream http://core-api:3001;');
