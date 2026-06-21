@@ -1,3 +1,12 @@
+/**
+ * Local copy of the core-owned `ai_inference_log` table.
+ *
+ * The AI inference surface is canonically owned by core, but food services
+ * persist their own inference results in the food SQLite (separate DB file,
+ * no shared data, no cross-pillar FK). This definition must stay
+ * byte-compatible with core's `ai_inference_log` so the two physical schemas
+ * agree.
+ */
 import { index, integer, real, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 
 export const aiInferenceLog = sqliteTable(

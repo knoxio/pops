@@ -1,4 +1,24 @@
+/**
+ * Local copy of the core-owned `entities` table.
+ *
+ * The `entities` table is canonically owned by core, but finance persists
+ * its own physical copy in the finance SQLite (separate DB file, no shared
+ * data, no cross-pillar FK) for the entity-usage rollup that joins finance
+ * `transactions`. This definition must stay byte-compatible with core's
+ * `entities` so the two physical schemas agree.
+ */
 import { index, sqliteTable, text } from 'drizzle-orm/sqlite-core';
+
+export const ENTITY_TYPES = [
+  'company',
+  'person',
+  'government',
+  'bank',
+  'place',
+  'brand',
+  'organisation',
+] as const;
+export type EntityType = (typeof ENTITY_TYPES)[number];
 
 export const entities = sqliteTable(
   'entities',
