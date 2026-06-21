@@ -163,10 +163,11 @@ export class AnthropicEgoLlm implements EgoLlm {
     }
 
     const client = new Anthropic({ apiKey, maxRetries: 0 });
+    const model = this.model();
     let messageStream: MessageStream;
     try {
       messageStream = client.messages.stream({
-        model: this.model(),
+        model,
         max_tokens: CHAT_MAX_TOKENS,
         temperature: CHAT_TEMPERATURE,
         system: systemPrompt,
@@ -183,7 +184,7 @@ export class AnthropicEgoLlm implements EgoLlm {
     yield* callWithLoggingStream(
       {
         provider: ANTHROPIC_PROVIDER,
-        model: this.model(),
+        model,
         operation: 'ego.stream',
         domain: CEREBRUM_DOMAIN,
         stream: () => egoStreamEvents(messageStream),
