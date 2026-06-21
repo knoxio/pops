@@ -2,7 +2,7 @@
 
 > Epic: [Central registry](../../epics/02-central-registry.md)
 >
-> Status: Not started
+> Status: Partial — US-01/02/03 done (boot-render + watcher wired into the prod image); US-04 (deployed-topology CI e2e) remaining
 
 ## Overview
 
@@ -82,12 +82,12 @@ The only client change: the nginx render path reads the snapshot through `@pops/
 
 ## User Stories
 
-| #   | Story                                                                           | Summary                                                                                                                                                | Parallelisable           |
-| --- | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------ |
-| 01  | [us-01-repoint-registry-fetch-to-rest](us-01-repoint-registry-fetch-to-rest.md) | Delete the hand-rolled tRPC client; render path reads `GET /core.registry.list` via the SDK `HttpDiscoveryTransport`. Fixes the broken dynamic render. | Yes — foundational       |
-| 02  | [us-02-boot-render-entrypoint](us-02-boot-render-entrypoint.md)                 | Image entrypoint renders the conf from the registry at start; falls back to the committed static conf on any failure so nginx always boots.            | Blocked by us-01         |
-| 03  | [us-03-watcher-process-and-compose](us-03-watcher-process-and-compose.md)       | Run `watch-registry-and-reload` as a managed process alongside nginx in the prod image; wire `POPS_REGISTRY_URL` / health port in compose.             | Blocked by us-01         |
-| 04  | [us-04-e2e-self-register-routes](us-04-e2e-self-register-routes.md)             | E2E: boot the shell against a registry, self-register a synthetic pillar, assert it routes with no rebuild; registry-down → static fallback boots.     | Blocked by us-02 + us-03 |
+| #   | Story                                                                           | Summary                                                                                                                                                | Status      |
+| --- | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------- |
+| 01  | [us-01-repoint-registry-fetch-to-rest](us-01-repoint-registry-fetch-to-rest.md) | Delete the hand-rolled tRPC client; render path reads `GET /core.registry.list` via the SDK `HttpDiscoveryTransport`. Fixes the broken dynamic render. | Done        |
+| 02  | [us-02-boot-render-entrypoint](us-02-boot-render-entrypoint.md)                 | Image entrypoint renders the conf from the registry at start; falls back to the committed static conf on any failure so nginx always boots.            | Done        |
+| 03  | [us-03-watcher-process-and-compose](us-03-watcher-process-and-compose.md)       | Run `watch-registry-and-reload` as a managed process alongside nginx in the prod image; wire `POPS_REGISTRY_URL` / health port in compose.             | Done        |
+| 04  | [us-04-e2e-self-register-routes](us-04-e2e-self-register-routes.md)             | E2E: boot the shell against a registry, self-register a synthetic pillar, assert it routes with no rebuild; registry-down → static fallback boots.     | Not started |
 
 ## Out of Scope
 

@@ -136,12 +136,12 @@ trust/auth. Tracked as the north-star; gated on P1–P4.
 
 This work traces to **Theme 13 (pillar-finale)**. Mapping:
 
-| Phase                                | Ticket                                                                                                                         | Status      |
-| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------ | ----------- |
-| P1 — dynamic nginx fix + prod wiring | **[PRD-255](../themes/13-pillar-finale/prds/255-prod-registry-driven-nginx/README.md)** (epic 02-central-registry; 4 US)       | Not started |
-| P2 — two-tier pillar id              | **[PRD-256](../themes/13-pillar-finale/prds/256-two-tier-pillar-id/README.md)** (epic 01-pillar-sdk; 3 US)                     | Not started |
-| P3 — FE surfacing                    | **[PRD-243](../themes/13-pillar-finale/prds/243-registry-driven-shell-ui/README.md)** (existing; US-05 = external bundle stub) | Not started |
-| P4 — discovery protocol + toggle     | **[ADR-038](../architecture/adr-038-pillar-discovery-protocol.md)**                                                            | Accepted    |
+| Phase                                | Ticket                                                                                                                         | Status                                                                                               |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------- |
+| P1 — dynamic nginx fix + prod wiring | **[PRD-255](../themes/13-pillar-finale/prds/255-prod-registry-driven-nginx/README.md)** (epic 02-central-registry; 4 US)       | Partial — US-01/02/03 done (boot-render + watcher wired into the prod image); US-04 CI e2e remaining |
+| P2 — two-tier pillar id              | **[PRD-256](../themes/13-pillar-finale/prds/256-two-tier-pillar-id/README.md)** (epic 01-pillar-sdk; 3 US)                     | Not started                                                                                          |
+| P3 — FE surfacing                    | **[PRD-243](../themes/13-pillar-finale/prds/243-registry-driven-shell-ui/README.md)** (existing; US-05 = external bundle stub) | Not started                                                                                          |
+| P4 — discovery protocol + toggle     | **[ADR-038](../architecture/adr-038-pillar-discovery-protocol.md)**                                                            | Accepted                                                                                             |
 
 Substrate already specced/built: PRD-159/161 (`core.registry.list` / discovery), PRD-163 (SSE subscribe),
 PRD-164 (reconciliation), PRD-228 (external register/heartbeat/deregister + the watcher, US-03 done),
