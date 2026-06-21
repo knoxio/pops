@@ -52,7 +52,18 @@ async fn health_returns_the_ok_envelope() {
     assert_eq!(body["status"], "ok");
     assert_eq!(body["pillar"], "contacts");
     assert_eq!(body["version"], "1.2.3-test");
-    assert_eq!(body["contract"]["package"], "@pops/contacts");
+
+    let ts = body["ts"].as_str().expect("ts is a string");
+    assert!(
+        ts.ends_with('Z'),
+        "ts mirrors TS `new Date().toISOString()` (UTC Zulu): {ts}"
+    );
+
+    assert!(
+        body.get("contract").is_none(),
+        "the TS health envelope has no `contract` field; the registry probe \
+         parses {{ ok, status, pillar, version, ts }}"
+    );
 }
 
 #[tokio::test]

@@ -21,7 +21,7 @@
 use serde_json::{Map, Value};
 use utoipa::OpenApi;
 
-use crate::health::{HealthContract, HealthResponse};
+use crate::health::HealthResponse;
 
 /// The contacts OpenAPI surface. N0 documents `/health` and the stub root;
 /// the entities/search/settings paths join in later nodes.
@@ -36,7 +36,7 @@ use crate::health::{HealthContract, HealthResponse};
         description = "Contacts pillar — authoritative entities store (first Rust pillar)."
     ),
     paths(crate::health::health, crate::health::root),
-    components(schemas(HealthResponse, HealthContract))
+    components(schemas(HealthResponse))
 )]
 pub struct ApiDoc;
 

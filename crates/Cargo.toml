@@ -1,9 +1,11 @@
 # POPS Cargo workspace root.
 #
-# Owned by the `contacts` extraction plan (the first Rust pillar). Future
-# Rust crates (`pops-ai`, `pops-settings`) join `[workspace].members` here;
-# they do NOT create a second workspace. One lockfile, one shared dependency
-# set, one Rust CI lane.
+# Owned by the `contacts` extraction plan (the first Rust pillar) — see
+# `docs/plans/01-contacts-pillar-rust.md` and the sequencing overview in
+# `docs/plans/00-overview-and-sequencing.md` (both on `main`). Future Rust
+# crates (`pops-ai`, `pops-settings`) join `[workspace].members` here; they
+# do NOT create a second workspace. One lockfile, one shared dependency set,
+# one Rust CI lane.
 #
 # The pillar crate lives under `pillars/contacts` (colocated with its TS
 # frontend, mirroring the PRD-253 pillar layout) and is referenced as a

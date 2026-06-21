@@ -75,9 +75,26 @@ jobs:
       - name: OpenAPI spec is current (3.0 emission drift gate)
         working-directory: crates
         run: |
+          spec="../pillars/contacts/openapi/contacts.openapi.json"
+
+          # A missing or untracked spec must FAIL, not pass vacuously. `git
+          # diff` alone ignores untracked files, so a never-committed spec
+          # would slip through silently. Assert the file is tracked first.
+          if ! git ls-files --error-unmatch "$spec" >/dev/null 2>&1; then
+            echo "::error::$spec is not committed. Run 'cargo run -p contacts --bin emit-openapi' and commit the result."
+            exit 1
+          fi
+
           cargo run -p contacts --bin emit-openapi
-          if ! git diff --exit-code -- ../pillars/contacts/openapi; then
-            echo "::error::pillars/contacts/openapi/contacts.openapi.json is out of date."
+
+          if [ ! -s "$spec" ]; then
+            echo "::error::$spec is empty after emission — the generator produced no document."
+            exit 1
+          fi
+
+          # Drift gate: the freshly emitted spec must equal the committed one.
+          if ! git diff --exit-code -- "$spec"; then
+            echo "::error::$spec is out of date."
             echo "Run 'cargo run -p contacts --bin emit-openapi' and commit the result."
             exit 1
           fi
