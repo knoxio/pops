@@ -73,6 +73,7 @@ describe('PILLARS', () => {
       'food',
       'lists',
       'contacts',
+      'ai',
     ]);
   });
 

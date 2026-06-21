@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { assertModuleManifest } from '@pops/types';
 
-import { aiManifest, coreManifest } from '../manifest.js';
+import { coreManifest } from '../manifest.js';
 
 describe('core-contract /manifest — ModuleManifest exports (PRD-241 US-01)', () => {
   it('coreManifest passes assertModuleManifest with id=core', () => {
@@ -12,16 +12,11 @@ describe('core-contract /manifest — ModuleManifest exports (PRD-241 US-01)', (
     expect(coreManifest.surfaces).toEqual(['app']);
   });
 
+  // Core still carries the `ai.config` settings section during the
+  // settings-federation S1 wire-compat window (PRD-055); the `ai` MODULE
+  // manifest itself now lives in the extracted ai pillar.
   it('coreManifest contributes the core settings sections', () => {
     const sectionIds = (coreManifest.settings ?? []).map((s) => s.id);
     expect(sectionIds).toEqual(['ai.config', 'core.operational']);
-  });
-
-  it('aiManifest passes assertModuleManifest with id=ai', () => {
-    expect(() => assertModuleManifest(aiManifest, 'modules.ai')).not.toThrow();
-    expect(aiManifest.id).toBe('ai');
-    expect(aiManifest.name).toBe('AI Ops');
-    expect(aiManifest.surfaces).toEqual(['app']);
-    expect(aiManifest.settings).toBeUndefined();
   });
 });

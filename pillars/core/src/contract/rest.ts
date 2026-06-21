@@ -13,10 +13,6 @@
  */
 import { initContract } from '@ts-rest/core';
 
-import { coreAiAlertsContract } from './rest-ai-alerts.js';
-import { coreAiBudgetsContract } from './rest-ai-budgets.js';
-import { coreAiObservabilityContract } from './rest-ai-observability.js';
-import { coreAiProvidersContract } from './rest-ai-providers.js';
 import { coreAiUsageContract } from './rest-ai-usage.js';
 import { coreEntitiesContract } from './rest-entities.js';
 import { coreFeaturesContract } from './rest-features.js';
@@ -30,10 +26,6 @@ const c = initContract();
 
 export const coreContract = c.router(
   {
-    aiAlerts: coreAiAlertsContract,
-    aiBudgets: coreAiBudgetsContract,
-    aiObservability: coreAiObservabilityContract,
-    aiProviders: coreAiProvidersContract,
     aiUsage: coreAiUsageContract,
     entities: coreEntitiesContract,
     features: coreFeaturesContract,

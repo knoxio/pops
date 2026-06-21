@@ -2,11 +2,11 @@
  * Integration tests for the `ai-usage.*` REST surface (`core.aiUsage.*`),
  * driven through the real Express app via supertest.
  *
- * Mirrors the legacy tRPC coverage on the REST transport: stats aggregation
- * (zeros, single entry, cache-hit-rate), date-range history filtering, and
- * the cache-maintenance endpoints (stats / prune / clear-all). The on-disk
- * cache is isolated per-test via `AI_CACHE_PATH` and reset with `clearCache`,
- * so the prune/clear assertions don't bleed across runs.
+ * Only the finance-categorizer cache maintenance endpoints live in core (the
+ * stats/history analytics moved to the `ai` pillar). Covers cache stats,
+ * stale-prune (explicit + default window), and clear-all. The on-disk cache
+ * is isolated per-test via `AI_CACHE_PATH` and reset with `clearCache`, so
+ * the prune/clear assertions don't bleed across runs.
  *
  * Auth gating is intentionally NOT asserted: REST runs under docker-net trust
  * (non-identity domain), so there is no `ctx.user` to bounce on.
@@ -17,7 +17,7 @@ import { join } from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { aiUsageService, openCoreDb, type OpenedCoreDb } from '../../db/index.js';
+import { openCoreDb, type OpenedCoreDb } from '../../db/index.js';
 import { createCoreApiApp } from '../app.js';
 import { clearCache, setCachedEntry } from '../modules/ai-usage/cache.js';
 import { makeClient } from './test-utils.js';
@@ -48,111 +48,13 @@ function client() {
   );
 }
 
-function seedUsage(overrides: {
-  inputTokens?: number;
-  outputTokens?: number;
-  costUsd?: number;
-  cached?: number;
-  createdAt?: string;
-}): void {
-  aiUsageService.createInferenceLog(coreDb.db, {
-    provider: 'claude',
-    model: 'claude-haiku-4-5-20251001',
-    operation: 'entity-match',
-    domain: 'finance',
-    inputTokens: overrides.inputTokens ?? 100,
-    outputTokens: overrides.outputTokens ?? 20,
-    costUsd: overrides.costUsd ?? 0.001,
-    latencyMs: 0,
-    status: 'success',
-    cached: overrides.cached ?? 0,
-    createdAt: overrides.createdAt ?? new Date().toISOString(),
-  });
-}
-
-describe('ai-usage — getStats', () => {
-  it('returns zeros when no usage data exists', async () => {
-    const result = await client().aiUsage.getStats();
-    expect(result.totalCost).toBe(0);
-    expect(result.totalApiCalls).toBe(0);
-    expect(result.totalCacheHits).toBe(0);
-    expect(result.cacheHitRate).toBe(0);
-    expect(result.avgCostPerCall).toBe(0);
-    expect(result.totalInputTokens).toBe(0);
-    expect(result.totalOutputTokens).toBe(0);
-    expect(result.last30Days).toBeUndefined();
-  });
-
-  it('returns correct stats for a single entry', async () => {
-    seedUsage({ inputTokens: 150, outputTokens: 25, costUsd: 0.003, cached: 0 });
-
-    const result = await client().aiUsage.getStats();
-    expect(result.totalCost).toBeCloseTo(0.003);
-    expect(result.totalApiCalls).toBe(1);
-    expect(result.totalInputTokens).toBe(150);
-    expect(result.totalOutputTokens).toBe(25);
-    expect(result.last30Days).toBeDefined();
-    expect(result.last30Days!.apiCalls).toBe(1);
-  });
-
-  it('calculates cache hit rate correctly', async () => {
-    seedUsage({ cached: 0, costUsd: 0.002 });
-    seedUsage({ cached: 0, costUsd: 0.003 });
-    seedUsage({ cached: 1, costUsd: 0.0001 });
-
-    const result = await client().aiUsage.getStats();
-    expect(result.totalApiCalls).toBe(2);
-    expect(result.totalCacheHits).toBe(1);
-    expect(result.cacheHitRate).toBeCloseTo(1 / 3);
-    expect(result.totalCost).toBeCloseTo(0.005);
-    expect(result.avgCostPerCall).toBeCloseTo(0.0025);
-  });
-});
-
-describe('ai-usage — getHistory', () => {
-  it('returns empty records when no data exists', async () => {
-    const result = await client().aiUsage.getHistory();
-    expect(result.records).toEqual([]);
-    expect(result.summary).toMatchObject({ totalCost: 0, totalApiCalls: 0, totalCacheHits: 0 });
-  });
-
-  it('returns correct shape for a single entry', async () => {
-    seedUsage({
-      inputTokens: 200,
-      outputTokens: 30,
-      costUsd: 0.005,
-      createdAt: '2026-03-15T10:00:00.000Z',
-    });
-
-    const result = await client().aiUsage.getHistory();
-    expect(result.records).toHaveLength(1);
-    expect(result.records[0]).toMatchObject({
-      date: '2026-03-15',
-      apiCalls: 1,
-      cacheHits: 0,
-      inputTokens: 200,
-      outputTokens: 30,
-      cost: 0.005,
-    });
-    expect(result.summary.totalCost).toBeCloseTo(0.005);
-  });
-
-  it('filters by inclusive date range', async () => {
-    seedUsage({ costUsd: 0.001, createdAt: '2026-03-01T10:00:00.000Z' });
-    seedUsage({ costUsd: 0.002, createdAt: '2026-03-10T10:00:00.000Z' });
-    seedUsage({ costUsd: 0.003, createdAt: '2026-03-20T10:00:00.000Z' });
-
-    const result = await client().aiUsage.getHistory({
-      startDate: '2026-03-05',
-      endDate: '2026-03-15',
-    });
-    expect(result.records).toHaveLength(1);
-    expect(result.records[0]!.date).toBe('2026-03-10');
-    expect(result.summary.totalCost).toBeCloseTo(0.002);
-  });
-});
-
 describe('ai-usage — cache maintenance', () => {
+  it('reports zero entries on an empty cache', async () => {
+    const stats = await client().aiUsage.cacheStats();
+    expect(stats.totalEntries).toBe(0);
+    expect(stats.diskSizeBytes).toBe(0);
+  });
+
   it('reports cache stats including disk size', async () => {
     setCachedEntry('SUPERMARKET CO', {
       description: 'Supermarket Co',
@@ -199,6 +101,12 @@ describe('ai-usage — cache maintenance', () => {
 
     const pruned = await client().aiUsage.clearStaleCache();
     expect(pruned.removed).toBe(1);
+  });
+
+  it('rejects a non-positive maxAgeDays with a 400', async () => {
+    await expect(client().aiUsage.clearStaleCache({ maxAgeDays: 0 })).rejects.toMatchObject({
+      status: 400,
+    });
   });
 
   it('clears the entire cache and returns the removed count', async () => {

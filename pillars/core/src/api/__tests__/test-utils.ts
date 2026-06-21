@@ -13,21 +13,6 @@ import type { Express } from 'express';
 
 import type { FeatureManifest, FeatureStatus } from '@pops/types';
 
-import type { RunEvaluationResult } from '../modules/ai-alerts/evaluator.js';
-import type { AlertRule, FiredAlert } from '../modules/ai-alerts/types.js';
-import type { Budget, BudgetStatus } from '../modules/ai-budgets/service.js';
-import type {
-  HistoryOutput as ObsHistory,
-  LatencyStats as ObsLatency,
-  ObservabilityFilters as ObsFilters,
-  QualityMetrics as ObsQuality,
-  StatsOutput as ObsStats,
-} from '../modules/ai-observability/types.js';
-import type { ProviderWithModels } from '../modules/ai-providers/service.js';
-import type {
-  AiUsageHistoryOutput as AiUsageHistory,
-  AiUsageStatsOutput as AiUsageStats,
-} from '../modules/ai-usage/types.js';
 import type { Entity } from '../modules/entities/types.js';
 import type { CreatedServiceAccount, ServiceAccount } from '../modules/service-accounts/types.js';
 
@@ -86,16 +71,6 @@ export interface EntityQuery {
   offset?: number;
 }
 
-export interface AlertListQuery {
-  acknowledged?: 'true' | 'false';
-  type?: string;
-  severity?: 'warning' | 'critical';
-  startDate?: string;
-  endDate?: string;
-  limit?: number;
-  offset?: number;
-}
-
 export function makeClient(app: Express, headers?: ClientHeaders) {
   const base = supertest(app);
   const r = {
@@ -142,62 +117,6 @@ export function makeClient(app: Express, headers?: ClientHeaders) {
     shell: {
       manifest: () => send<{ apps: string[]; overlays: string[] }>(r.get('/shell/manifest')),
     },
-    aiUsage: {
-      getStats: () => send<AiUsageStats>(r.get('/ai-usage/stats')),
-      getHistory: (query: { startDate?: string; endDate?: string } = {}) =>
-        send<AiUsageHistory>(r.get('/ai-usage/history').query(query)),
-      cacheStats: () =>
-        send<{ totalEntries: number; diskSizeBytes: number }>(r.get('/ai-usage/cache')),
-      clearStaleCache: (body: { maxAgeDays?: number } = {}) =>
-        send<{ removed: number }>(r.post('/ai-usage/cache/prune').send(body)),
-      clearAllCache: () => send<{ removed: number }>(r.delete('/ai-usage/cache')),
-    },
-    aiBudgets: {
-      list: () => send<Budget[]>(r.get('/ai-budgets')),
-      getBudgetStatus: () => send<BudgetStatus[]>(r.get('/ai-budgets/status')),
-      upsert: (body: Record<string, unknown>) => send<Budget>(r.post('/ai-budgets').send(body)),
-    },
-    aiProviders: {
-      list: () => send<ProviderWithModels[]>(r.get('/ai-providers')),
-      get: (providerId: string) =>
-        send<ProviderWithModels | null>(r.get(`/ai-providers/${providerId}`)),
-      upsert: (body: Record<string, unknown>) =>
-        send<ProviderWithModels>(r.post('/ai-providers').send(body)),
-      healthCheck: (providerId: string) =>
-        send<{ status: 'active' | 'error'; latencyMs: number; error?: string }>(
-          r.post(`/ai-providers/${providerId}/health-check`).send({})
-        ),
-    },
-    aiObservability: {
-      getStats: (query: ObsFilters = {}) =>
-        send<ObsStats>(r.get('/ai-observability/stats').query(query)),
-      getHistory: (query: ObsFilters = {}) =>
-        send<ObsHistory>(r.get('/ai-observability/history').query(query)),
-      getLatencyStats: (query: ObsFilters = {}) =>
-        send<ObsLatency>(r.get('/ai-observability/latency').query(query)),
-      getQualityMetrics: (query: ObsFilters = {}) =>
-        send<ObsQuality>(r.get('/ai-observability/quality').query(query)),
-    },
-    aiAlerts: {
-      rules: {
-        list: () => send<AlertRule[]>(r.get('/ai-alerts/rules')),
-        get: (id: number) => send<AlertRule>(r.get(`/ai-alerts/rules/${id}`)),
-        create: (body: Record<string, unknown>) =>
-          send<AlertRule>(r.post('/ai-alerts/rules').send(body)),
-        update: (id: number, body: Record<string, unknown>) =>
-          send<AlertRule>(r.patch(`/ai-alerts/rules/${id}`).send(body)),
-        setEnabled: (id: number, enabled: boolean) =>
-          send<AlertRule>(r.patch(`/ai-alerts/rules/${id}/enabled`).send({ enabled })),
-        delete: (id: number) => send<{ success: boolean }>(r.delete(`/ai-alerts/rules/${id}`)),
-        seedDefaults: () =>
-          send<{ created: number }>(r.post('/ai-alerts/rules/seed-defaults').send({})),
-      },
-      list: (query: AlertListQuery = {}) =>
-        send<{ alerts: FiredAlert[]; total: number }>(r.get('/ai-alerts').query(query)),
-      acknowledge: (id: number) =>
-        send<FiredAlert>(r.post(`/ai-alerts/${id}/acknowledge`).send({})),
-      runNow: () => send<RunEvaluationResult>(r.post('/ai-alerts/run').send({})),
-    },
     settings: {
       list: () => send<{ data: Array<{ key: string; value: string }> }>(r.get('/settings')),
       get: (key: string) =>
@@ -233,6 +152,13 @@ export function makeClient(app: Express, headers?: ClientHeaders) {
         send<CreatedServiceAccount>(r.post('/service-accounts').send(body)),
       revoke: (id: string) =>
         send<{ ok: true }>(r.post(`/service-accounts/${encodeURIComponent(id)}/revoke`).send({})),
+    },
+    aiUsage: {
+      cacheStats: () =>
+        send<{ totalEntries: number; diskSizeBytes: number }>(r.get('/ai-usage/cache')),
+      clearStaleCache: (body: { maxAgeDays?: number } = {}) =>
+        send<{ removed: number }>(r.post('/ai-usage/cache/prune').send(body)),
+      clearAllCache: () => send<{ removed: number }>(r.delete('/ai-usage/cache')),
     },
   };
 }

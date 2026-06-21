@@ -14,16 +14,7 @@ import type { InferInsertModel, InferSelectModel } from 'drizzle-orm';
 
 export { ENTITY_TYPES, type EntityType } from './schema/entity-types.js';
 
-import type {
-  aiAlertRules,
-  aiAlerts,
-  aiProviders,
-  aiModelPricing,
-  aiUsage,
-  entities,
-  environments,
-  userSettings,
-} from './schema.js';
+import type { aiUsage, entities, environments, userSettings } from './schema.js';
 
 export type EntityRow = InferSelectModel<typeof entities>;
 export type EntityInsert = InferInsertModel<typeof entities>;
@@ -36,15 +27,3 @@ export type UserSettingInsert = InferInsertModel<typeof userSettings>;
 
 export type AiUsageRow = InferSelectModel<typeof aiUsage>;
 export type AiUsageInsert = InferInsertModel<typeof aiUsage>;
-
-export type AiProviderRow = InferSelectModel<typeof aiProviders>;
-export type AiProviderInsert = InferInsertModel<typeof aiProviders>;
-
-export type AiModelPricingRow = InferSelectModel<typeof aiModelPricing>;
-export type AiModelPricingInsert = InferInsertModel<typeof aiModelPricing>;
-
-export type AiAlertRuleRow = InferSelectModel<typeof aiAlertRules>;
-export type AiAlertRuleInsert = InferInsertModel<typeof aiAlertRules>;
-
-export type AiAlertRow = InferSelectModel<typeof aiAlerts>;
-export type AiAlertInsert = InferInsertModel<typeof aiAlerts>;

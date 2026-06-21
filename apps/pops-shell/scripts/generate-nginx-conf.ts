@@ -74,6 +74,7 @@ export const PILLAR_UPSTREAMS: Record<KnownPillarId, { host: string; port: numbe
   food: { host: 'food-api', port: 3005 },
   lists: { host: 'lists-api', port: 3006 },
   cerebrum: { host: 'cerebrum-api', port: 3007 },
+  ai: { host: 'ai-api', port: 3008 },
   contacts: { host: 'contacts-api', port: 3010 },
 };
 
@@ -90,6 +91,7 @@ export const PILLAR_RENDER_ORDER: readonly KnownPillarId[] = [
   'food',
   'lists',
   'cerebrum',
+  'ai',
   'contacts',
 ];
 

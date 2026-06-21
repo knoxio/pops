@@ -5,14 +5,15 @@
  * This file remains the stable import path (`@pops/core-contract/manifest`)
  * so downstream consumers don't move with the generator output.
  *
- * PRD-241 US-01 adds the runtime `ModuleManifest` values for `core` and `ai`
- * here. The values mirror the entries currently inlined in
+ * PRD-241 US-01 adds the runtime `ModuleManifest` value for `core` here.
+ * The value mirrors the entry currently inlined in
  * `packages/module-registry/scripts/known-modules.ts`'s `MANIFEST_SOURCES`.
  * PRD-241 US-02 will replace that literal with a workspace discovery walk
- * that consumes these exports.
+ * that consumes this export.
  *
- * `ai` is co-located here because its settings already nest under core
- * (PRD-239); the pillar does not have its own contract package.
+ * Core still serves the `ai.*` settings keys during the settings-federation
+ * S1 wire-compat window (`aiConfigManifest`), but the `ai` MODULE manifest
+ * itself now lives in the extracted `ai` pillar (PRD-055).
  */
 import { aiConfigManifest, coreOperationalManifest } from './settings/index.js';
 
@@ -25,15 +26,6 @@ export const coreManifest: ModuleManifest = {
   name: 'Core',
   version: '0.1.0',
   surfaces: ['app'],
-  description:
-    'Cross-cutting platform services: entities, AI usage/providers, settings, features, search.',
+  description: 'Cross-cutting platform services: entities, settings, features, search.',
   settings: [aiConfigManifest, coreOperationalManifest],
-};
-
-export const aiManifest: ModuleManifest = {
-  id: 'ai',
-  name: 'AI Ops',
-  version: '0.1.0',
-  surfaces: ['app'],
-  description: 'AI usage, providers, model config, prompts, and rules browser.',
 };

@@ -24,6 +24,7 @@
     "@pops/types": "workspace:*"
   },
   "devDependencies": {
+    "@pops/ai": "workspace:*",
     "@pops/cerebrum": "workspace:*",
     "@pops/core": "workspace:*",
     "@pops/finance": "workspace:*",

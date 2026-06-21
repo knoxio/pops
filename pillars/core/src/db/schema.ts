@@ -3,17 +3,12 @@
  *
  * Canonical definitions for core-owned tables (entities, environments,
  * pillar registry, service accounts, settings, user settings, plus the
- * `ai_*` observability slice) live in this package per PRD-245 US-07
- * (audit H6/H7).
+ * finance-categorizer `ai_usage` table) live in this package per
+ * PRD-245 US-07 (audit H6/H7). The AI-ops observability slice
+ * (`ai_inference_log`/`ai_inference_daily`/budgets/alerts/providers/
+ * pricing) extracted out to the `ai` pillar (PRD-055).
  *
  */
-export { aiAlertRules } from './schema/ai-alert-rules.js';
-export { aiAlerts } from './schema/ai-alerts.js';
-export { aiBudgets } from './schema/ai-budgets.js';
-export { aiInferenceDaily } from './schema/ai-inference-daily.js';
-export { aiInferenceLog } from './schema/ai-inference-log.js';
-export { aiModelPricing } from './schema/ai-model-pricing.js';
-export { aiProviders } from './schema/ai-providers.js';
 export { aiUsage } from './schema/ai-usage.js';
 export { entities } from './schema/entities.js';
 export { environments } from './schema/environments.js';
