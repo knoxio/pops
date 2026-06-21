@@ -40,17 +40,17 @@
     "generate:api-types": "tsx scripts/generate-api-types.ts"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.104.1",
+    "@anthropic-ai/sdk": "^0.105.0",
     "@pops/ai-telemetry": "workspace:*",
     "@pops/pillar-sdk": "workspace:*",
     "@pops/types": "workspace:*",
     "@ts-rest/core": "3.53.0-rc.1",
     "@ts-rest/express": "3.53.0-rc.1",
     "@ts-rest/open-api": "3.53.0-rc.1",
-    "better-sqlite3": "^12.10.0",
-    "bullmq": "^5.78.0",
+    "better-sqlite3": "^12.11.1",
+    "bullmq": "^5.79.0",
     "chokidar": "^5.0.0",
-    "cron-parser": "^5.5.0",
+    "cron-parser": "^5.6.0",
     "drizzle-orm": "^0.45.2",
     "drizzle-zod": "^0.8.3",
     "express": "^5.1.0",
@@ -67,11 +67,11 @@
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^25.9.3",
     "@types/supertest": "^6.0.3",
-    "@vitest/coverage-v8": "^4.1.8",
+    "@vitest/coverage-v8": "^4.1.9",
     "openapi-typescript": "^7.13.0",
     "supertest": "^7.1.4",
     "tsx": "^4.22.4",
     "typescript": "^6.0.3",
-    "vitest": "^4.1.8"
+    "vitest": "^4.1.9"
   }
 }
