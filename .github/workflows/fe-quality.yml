@@ -6,12 +6,10 @@ on:
     paths:
       - "apps/pops-shell/**"
       - "packages/app-*/**"
-      - "pillars/core/openapi/**"
-      - "pillars/inventory/openapi/**"
-      - "pillars/finance/openapi/**"
-      - "pillars/food/openapi/**"
-      - "pillars/cerebrum/openapi/**"
-      - "pillars/media/openapi/**"
+      # Every pillar's OpenAPI projection feeds the generated FE client.
+      # Globbed from disk so a new pillar (or `lists`, previously omitted)
+      # is covered without editing this list.
+      - "pillars/*/openapi/**"
       - "packages/db-types/**"
       - "packages/navigation/**"
       - "packages/pillar-sdk/**"
@@ -22,12 +20,7 @@ on:
     paths:
       - "apps/pops-shell/**"
       - "packages/app-*/**"
-      - "pillars/core/openapi/**"
-      - "pillars/inventory/openapi/**"
-      - "pillars/finance/openapi/**"
-      - "pillars/food/openapi/**"
-      - "pillars/cerebrum/openapi/**"
-      - "pillars/media/openapi/**"
+      - "pillars/*/openapi/**"
       - "packages/db-types/**"
       - "packages/navigation/**"
       - "packages/pillar-sdk/**"
@@ -52,11 +45,10 @@ jobs:
               - 'apps/pops-shell/**'
               - 'packages/app-*/**'
               - 'packages/db-types/**'
-              - 'pillars/core/openapi/**'
-              - 'pillars/finance/openapi/**'
-              - 'pillars/food/openapi/**'
-              - 'pillars/cerebrum/openapi/**'
-              - 'pillars/media/openapi/**'
+              # Glob every pillar's OpenAPI projection so the filter can't
+              # drift from the trigger paths (previously omitted inventory
+              # + lists, silently skipping FE quality on those changes).
+              - 'pillars/*/openapi/**'
               - 'packages/navigation/**'
               - 'packages/pillar-sdk/**'
               - 'packages/types/**'

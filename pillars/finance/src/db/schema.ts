@@ -5,12 +5,11 @@
  * tag rules, budgets, corrections, tag vocabulary, wishlist, tier overrides)
  * live in this package per PRD-245 US-03 (audit H6/H7).
  *
- *
- * `entities` is re-exported from `@pops/shared-schema` — the canonical
- * cross-pillar owner per PRD-245 US-07. The shared defs now live in
- * `@pops/shared-schema`, so finance depends only on that package.
+ * `entities` is canonically owned by core; finance keeps a byte-compatible
+ * local copy (`./schema/entities.ts`) of the table for its entity-usage
+ * rollup, so the pillar is self-contained with no cross-pillar dependency.
  */
-export { entities, ENTITY_TYPES } from '@pops/shared-schema';
+export { entities, ENTITY_TYPES } from './schema/entities.js';
 
 export { budgets } from './schema/budgets.js';
 export { transactionCorrections } from './schema/corrections.js';

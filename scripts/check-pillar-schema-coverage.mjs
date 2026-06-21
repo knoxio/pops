@@ -7,10 +7,11 @@
  * `pillars/<x>/src/db/schema/**`, its services under
  * `pillars/<x>/src/db/services/**`, its migrations journal under
  * `pillars/<x>/migrations/`, and exposes an `open<Pillar>Db()` opener from
- * its built `dist/db/index.js`. Cross-pillar tables (e.g. `entities`,
- * `aiInferenceLog`) live in `@pops/shared-schema`
- * (`packages/shared-schema/src/**`) and are re-exported through each
- * pillar's `src/db/schema.ts` barrel.
+ * its built `dist/db/index.js`. Tables that more than one pillar persists
+ * (e.g. `entities`, `aiInferenceLog`) are no longer shared via a package —
+ * each pillar owns a byte-compatible local copy under
+ * `pillars/<x>/src/db/schema/**` and surfaces it through its
+ * `src/db/schema.ts` barrel.
  *
  * For each discovered pillar:
  *   1. Open a fresh SQLite DB (temp file — `:memory:` is incompatible
@@ -21,8 +22,7 @@
  *      the pillar's schema barrel (`.../schema.js`) or a specific schema
  *      module (`.../schema/<name>.js`).
  *   4. Map each symbol to its physical table name + expected index list
- *      (parsed from the pillar's own `src/db/schema/**` plus the shared
- *      `packages/shared-schema/src/**`).
+ *      (parsed from the pillar's own `src/db/schema/**`).
  *   5. Assert every expected table exists in `sqlite_master`. Assert every
  *      expected index exists.
  *   6. Exit non-zero with a precise diff if anything is missing.
@@ -51,8 +51,6 @@ import { fileURLToPath } from 'node:url';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(here, '..');
-
-const SHARED_SCHEMA_DIR = join(repoRoot, 'packages', 'shared-schema', 'src');
 
 /**
  * @typedef {object} Pillar
@@ -251,10 +249,9 @@ function parseTableEntriesInFile(src, file) {
 
 /**
  * Build a symbol→table map for one pillar by parsing every drizzle table
- * definition the pillar can legitimately reference: its own
- * `src/db/schema/**\/*.ts` plus the shared cross-pillar definitions in
- * `packages/shared-schema/src/**\/*.ts` (e.g. `entities`, `aiInferenceLog`),
- * which pillars consume via the `@pops/shared-schema` re-export.
+ * definition the pillar owns under `src/db/schema/**\/*.ts` — including its
+ * local copies of tables that other pillars also persist (e.g. `entities`,
+ * `aiInferenceLog`).
  *
  * The map is built per pillar (not globally) so same-named symbols owned
  * by different pillars — e.g. `tierOverrides` in both finance and media,
@@ -273,10 +270,9 @@ function buildSymbolToTableMap(pillar) {
   /** @type {Map<string, { tableName: string; indexNames: string[]; sourceFile: string }>} */
   const map = new Map();
 
-  const schemaDirs = [join(repoRoot, pillar.pkgDir, 'src', 'db', 'schema'), SHARED_SCHEMA_DIR];
+  const schemaDir = join(repoRoot, pillar.pkgDir, 'src', 'db', 'schema');
 
-  for (const schemaDir of schemaDirs) {
-    if (!existsSync(schemaDir)) continue;
+  if (existsSync(schemaDir)) {
     for (const file of walkTsFiles(schemaDir)) {
       if (file.endsWith('-row-schemas.ts')) continue;
       const src = readFileSync(file, 'utf8');
@@ -347,11 +343,10 @@ function parseImports(src) {
 
 /**
  * Inspect a `<pillar>/src/db/schema.ts` barrel and return the set of
- * symbol names it re-exports — both the pillar-local table modules
- * (`export { x } from './schema/x.js'`) and the shared cross-pillar
- * definitions (`export { entities } from '@pops/shared-schema'`). These
- * are the tables the pillar legitimately surfaces — used as the fallback
- * for `import * as schema` style imports.
+ * symbol names it re-exports from its local table modules
+ * (`export { x } from './schema/x.js'`). These are the tables the pillar
+ * legitimately surfaces — used as the fallback for `import * as schema`
+ * style imports.
  *
  * @param {string} schemaFile
  * @returns {Set<string>}
@@ -539,9 +534,9 @@ function diff(raw, usedSymbols, symbolToTable) {
  * Run the coverage check for one pillar. Returns true on full coverage,
  * false otherwise. Logs a human-readable report either way.
  *
- * The symbol→table map is built per pillar (its own `src/db/schema/**`
- * plus the shared `@pops/shared-schema` defs) so same-named symbols owned
- * by distinct pillars never collide.
+ * The symbol→table map is built per pillar (from its own `src/db/schema/**`,
+ * including its local copies of multi-pillar tables) so same-named symbols
+ * owned by distinct pillars never collide.
  *
  * @param {Pillar} pillar
  * @param {{ ignoreAllowlist?: boolean; injectFakeTables?: string[] }} [options]

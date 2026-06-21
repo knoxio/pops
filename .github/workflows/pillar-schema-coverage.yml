@@ -6,14 +6,12 @@ on:
     paths:
       - "pillars/*/src/db/**"
       - "pillars/*/migrations/**"
-      - "packages/shared-schema/**"
       - "scripts/check-pillar-schema-coverage.mjs"
       - ".github/workflows/pillar-schema-coverage.yml"
   pull_request:
     paths:
       - "pillars/*/src/db/**"
       - "pillars/*/migrations/**"
-      - "packages/shared-schema/**"
       - "scripts/check-pillar-schema-coverage.mjs"
       - ".github/workflows/pillar-schema-coverage.yml"
 
@@ -70,8 +68,8 @@ jobs:
       - name: Build ${{ matrix.pillar }} pillar (with deps)
         # The script imports the pillar's built dist/db/index.js opener to
         # apply its migrations journal against a fresh SQLite DB. `...`
-        # pulls in the pillar's workspace dependencies (@pops/shared-schema,
-        # @pops/types, @pops/pillar-sdk, …) which the opener needs at import.
+        # pulls in the pillar's workspace dependencies (@pops/types,
+        # @pops/pillar-sdk, …) which the opener needs at import.
         run: pnpm --filter "@pops/${{ matrix.pillar }}..." build
       - name: Run schema-coverage check for ${{ matrix.pillar }}
         run: node scripts/check-pillar-schema-coverage.mjs --pillar ${{ matrix.pillar }}

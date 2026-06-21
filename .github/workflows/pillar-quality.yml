@@ -1,0 +1,169 @@
+name: Pillar Quality
+
+# Single matrix gate that replaces the seven hand-written per-pillar
+# `<id>-quality.yml` files. Pillars are discovered from disk
+# (`pillars/<x>/`) rather than a static list, so adding or removing a
+# pillar needs no workflow edit (mirrors publish-images' discover job +
+# pillar-schema-coverage's matrix shape).
+#
+# Per pillar this runs the same checks the individual files did:
+# typecheck, test, lint, format, build (deps + pillar), a contract
+# codegen drift check, and a Docker image build. The codegen check runs
+# every `generate:*` script the pillar's package.json defines and then
+# `git diff --exit-code`s the pillar tree, so it covers whichever of
+# openapi / api-types / manifest that pillar actually generates — no
+# per-pillar artifact list to drift.
+#
+# Bubble-of-happiness rule: this workflow is the one that MUST stay green
+# for each pillar. Other workflows may be red while the rest of the
+# codebase still imports dead legacy package names — that's deliberate
+# and resolves as each consumer migrates to `@pops/<pillar>`.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "pillars/**"
+      - "packages/pillar-sdk/**"
+      - "packages/types/**"
+      - "packages/db-types/**"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "tsconfig.base.json"
+      - ".oxfmtrc.json"
+      - ".github/workflows/pillar-quality.yml"
+  pull_request:
+    paths:
+      - "pillars/**"
+      - "packages/pillar-sdk/**"
+      - "packages/types/**"
+      - "packages/db-types/**"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "tsconfig.base.json"
+      - ".oxfmtrc.json"
+      - ".github/workflows/pillar-quality.yml"
+
+concurrency:
+  group: pillar-quality-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  discover:
+    name: Discover pillars
+    runs-on: ubuntu-latest
+    outputs:
+      pillars: ${{ steps.list.outputs.pillars }}
+      count: ${{ steps.list.outputs.count }}
+    steps:
+      - uses: actions/checkout@v6
+      - id: list
+        name: Enumerate pillars from disk
+        # A pillar is any `pillars/<x>` carrying a package.json. Derived
+        # from disk so adding or removing a pillar needs no workflow edit.
+        run: |
+          set -euo pipefail
+          json=$(find pillars -mindepth 1 -maxdepth 1 -type d 2>/dev/null \
+            | sort \
+            | while read -r dir; do
+                if [ -f "$dir/package.json" ]; then basename "$dir"; fi
+              done \
+            | jq -R -s -c 'split("\n") | map(select(length > 0))')
+          count=$(echo "$json" | jq 'length')
+          echo "pillars=$json" >> "$GITHUB_OUTPUT"
+          echo "count=$count" >> "$GITHUB_OUTPUT"
+          echo "Discovered $count pillar(s):"
+          echo "$json" | jq .
+
+  quality:
+    name: ${{ matrix.pillar }} pillar — typecheck + test + lint + format + build
+    needs: [discover]
+    if: needs.discover.outputs.count != '0'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        pillar: ${{ fromJson(needs.discover.outputs.pillars) }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: pnpm/action-setup@v5
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: pnpm
+
+      - name: Install (subgraph only)
+        run: pnpm install --frozen-lockfile --filter "@pops/${{ matrix.pillar }}..."
+
+      - name: Format check
+        run: pnpm exec oxfmt --check pillars/${{ matrix.pillar }}/
+
+      - name: Lint
+        run: pnpm exec oxlint pillars/${{ matrix.pillar }}/src
+
+      - name: Build transitive deps
+        run: pnpm --filter "@pops/${{ matrix.pillar }}^..." build
+
+      - name: Typecheck
+        run: pnpm --filter @pops/${{ matrix.pillar }} typecheck
+
+      - name: Build pillar
+        run: pnpm --filter @pops/${{ matrix.pillar }} build
+
+      - name: Verify generated contract artifacts are up to date
+        # Run every codegen script the pillar defines (openapi / api-types
+        # / manifest — whichever exist) then fail on any diff. Replaces the
+        # per-pillar hand-listed `generate:* + git diff` steps so the set of
+        # verified artifacts can't drift from what the pillar actually
+        # generates.
+        run: |
+          set -euo pipefail
+          scripts=$(node -e "const s=require('./pillars/${{ matrix.pillar }}/package.json').scripts||{}; process.stdout.write(Object.keys(s).filter(k=>k.startsWith('generate:')).join('\n'))")
+          if [ -z "$scripts" ]; then
+            echo "No generate:* scripts for ${{ matrix.pillar }} — skipping codegen drift check."
+          else
+            while IFS= read -r script; do
+              [ -z "$script" ] && continue
+              echo "::group::pnpm --filter @pops/${{ matrix.pillar }} $script"
+              pnpm --filter @pops/${{ matrix.pillar }} "$script"
+              echo "::endgroup::"
+            done <<< "$scripts"
+            git diff --exit-code pillars/${{ matrix.pillar }}/
+          fi
+
+      - name: Test
+        run: pnpm --filter @pops/${{ matrix.pillar }} test
+
+  docker:
+    name: ${{ matrix.pillar }} pillar — Docker image builds
+    needs: [discover]
+    if: needs.discover.outputs.count != '0'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        pillar: ${{ fromJson(needs.discover.outputs.pillars) }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build pillar image (builder stage only — fast feedback)
+        if: github.event_name == 'pull_request'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: pillars/${{ matrix.pillar }}/Dockerfile
+          target: builder
+          push: false
+
+      - name: Build pillar image (full)
+        if: github.event_name == 'push'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: pillars/${{ matrix.pillar }}/Dockerfile
+          push: false
+          tags: pops-${{ matrix.pillar }}:${{ github.sha }}

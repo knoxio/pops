@@ -75,7 +75,8 @@ export function createCoreApiApp(deps: CoreApiDeps): Express {
 
   // Cross-pillar URI dispatcher (ADR-026 P2). Raw HTTP: pillars POST
   // `{ uri }` here and core resolves in-process or proxies to the owning
-  // pillar via `POPS_PILLARS`. Never throws — every error path is a typed
+  // pillar. The remote leg routes off the live DB registry, falling back to
+  // the `POPS_PILLARS` seed. Never throws — every error path is a typed
   // `UriResolverResult`.
   app.post('/uri/resolve', (req: Request, res: Response, next: NextFunction) => {
     const body: unknown = req.body;
@@ -109,8 +110,9 @@ export function createCoreApiApp(deps: CoreApiDeps): Express {
 
   // DB-backed registry snapshot — the discovery surface the pillar SDK's
   // `HttpDiscoveryTransport` reads. Raw HTTP (not ts-rest / not tRPC); returns
-  // the bare `{ pillars, fetchedAt }` shape. Distinct from `GET /pillars`,
-  // which reflects the static `POPS_PILLARS` env, not the DB registry table.
+  // the bare `{ pillars, fetchedAt }` shape. `GET /pillars` is the same DB
+  // registry projected onto the `{ id, baseUrl }` shape (registry-first, with
+  // the `POPS_PILLARS` env as a boot seed / fallback).
   app.get('/core.registry.list', createRegistrySnapshotHandler(deps.coreDb.db));
 
   app.post('/core.registry.register', createExternalRegisterHandler({ coreDb: deps.coreDb.db }));

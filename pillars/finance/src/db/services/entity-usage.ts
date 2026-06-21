@@ -2,8 +2,8 @@
  * Entity-usage rollup — entities enriched with their per-entity
  * `transactionCount` via a LEFT JOIN onto finance `transactions`.
  *
- * The `entities` table is core-owned (re-exported from `@pops/shared-schema`),
- * but this join is finance-domain: only the finance pillar can count
+ * The `entities` table is core-owned (finance keeps a byte-compatible local
+ * copy), but this join is finance-domain: only the finance pillar can count
  * `finance.transactions` per entity. Ported from the monolith
  * `core/entities/service.ts` `fetchEntitiesPage`/`countEntities`, rewritten to
  * take a `FinanceDb` handle (core's REST `entities` contract deliberately omits

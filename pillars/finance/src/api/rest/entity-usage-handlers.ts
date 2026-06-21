@@ -1,6 +1,6 @@
 /**
  * Handler for the `entityUsage.*` sub-router — the entities + `transactionCount`
- * rollup over the finance-owned join. Projects the shared-schema entity row to
+ * rollup over the finance-owned join. Projects the entity row to
  * core's `EntitySchema` shape (aliases comma-split, defaultTags JSON-parsed),
  * plus the joined `transactionCount`.
  */

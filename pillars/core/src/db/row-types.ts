@@ -8,11 +8,11 @@
  * Service-owned types (`SettingRow`, `AiBudgetRow`, `AiInferenceLogRow`,
  * etc.) live in their respective service modules and are re-exported
  * via `./index.ts`. This file hosts the remaining inferred row aliases
- * plus the `ENTITY_TYPES` constant relocated from `@pops/db-types`.
+ * plus the `ENTITY_TYPES` discriminator set co-located with the table.
  */
 import type { InferInsertModel, InferSelectModel } from 'drizzle-orm';
 
-export { ENTITY_TYPES, type EntityType } from '@pops/shared-schema';
+export { ENTITY_TYPES, type EntityType } from './schema/entity-types.js';
 
 import type {
   aiAlertRules,
