@@ -8,19 +8,31 @@
  * manifest by name and reduced the registry intersection through the
  * `KNOWN_FRONTEND_MANIFESTS` literal. The registry walk replaces both:
  * every installed pillar id resolves through `lookupBundleEntry()`,
- * which fronts the workspace bundle map. External pillars (PRD-228)
- * that the registry advertises via `assetsBaseUrl` but the bundle map
- * has not bound to a workspace bundle fall through the "external UI
- * loading not implemented" branch — gated on PRD-243 US-05.
+ * which fronts the workspace bundle map.
  *
- * See `docs/themes/13-pillar-finale/prds/243-registry-driven-shell-ui/us-03-shell-registry-walk.md`.
+ * External pillars (PRD-228) that the registry advertises via
+ * `assetsBaseUrl` are absent from the workspace bundle map by design
+ * (ADR-002 keeps the in-repo FE a single static SPA). For those the walk
+ * takes the runtime path (PRD-243 US-05, Option A): it lazily `import()`s
+ * the pillar's ESM bundle from the advertised URL and mounts it like an
+ * in-repo module. A failed remote load degrades to skipping the pillar's
+ * UI, never crashing the shell.
+ *
+ * See `docs/themes/13-pillar-finale/prds/243-registry-driven-shell-ui/us-03-shell-registry-walk.md`
+ * and `us-05-external-pillar-ui-loading.md`.
  */
 import { INSTALLED_MODULES, MODULES } from '@pops/module-registry';
 
 import { WORKSPACE_BUNDLE_MAP, type BundleEntry } from './bundle-map';
+import {
+  synthesizeExternalBundleEntry,
+  type RemoteModuleImporter,
+  type RemoteUiDescriptor,
+} from './external-ui';
 
 import type { RouteObject } from 'react-router';
 
+import type { NavConfigDescriptor, PageDescriptor } from '@pops/pillar-sdk';
 import type { ModuleManifest } from '@pops/types';
 
 /**
@@ -41,21 +53,25 @@ export function hasRoutes(
 }
 
 /**
- * Thrown when the registry advertises a pillar via `assetsBaseUrl` (i.e.
- * the pillar expects to be UI-mounted via the external loading
- * mechanism) but PRD-243 US-05 has not yet landed the resolver. Caught
- * in `walkRegistry()` so the shell logs once and skips the pillar
- * instead of crashing the boot.
+ * Raised when synthesizing the UI surface for an external pillar fails at
+ * walk time (e.g. the registry advertised an `assetsBaseUrl` but the
+ * descriptor is structurally unusable). Caught in `walkRegistry()` so the
+ * shell logs once and skips that pillar's UI instead of crashing the boot.
+ *
+ * Failures that happen *later* — when the remote bundle is actually
+ * imported on first navigation — are contained by the per-route
+ * `<ErrorBoundary>` the external loader wraps each page in, not by this
+ * error. This type covers only the synchronous synthesis step.
  */
-export class ExternalUiLoadingNotImplementedError extends Error {
-  override readonly name = 'ExternalUiLoadingNotImplementedError';
+export class ExternalUiLoadError extends Error {
+  override readonly name = 'ExternalUiLoadError';
   readonly pillarId: string;
   readonly assetsBaseUrl: string;
 
-  constructor(pillarId: string, assetsBaseUrl: string) {
-    super(
-      `external UI loading not implemented (pillarId=${pillarId}, assetsBaseUrl=${assetsBaseUrl})`
-    );
+  constructor(pillarId: string, assetsBaseUrl: string, cause?: unknown) {
+    super(`external UI load failed (pillarId=${pillarId}, assetsBaseUrl=${assetsBaseUrl})`, {
+      cause,
+    });
     this.pillarId = pillarId;
     this.assetsBaseUrl = assetsBaseUrl;
   }
@@ -64,17 +80,21 @@ export class ExternalUiLoadingNotImplementedError extends Error {
 /**
  * Minimal "registry entry" shape the shell walks. Mirrors the
  * `PillarSnapshot` projection `discoverSettings()` reads (PRD-240) but
- * carries only the fields PRD-243 US-03 needs to decide which UI surface
- * to mount: the pillar id and (for external pillars) the `assetsBaseUrl`
- * the US-05 follow-up will consume.
+ * carries only the fields PRD-243 needs to decide which UI surface to
+ * mount: the pillar id, and — for external pillars (PRD-228) absent from
+ * the workspace bundle map — the `assetsBaseUrl` plus the wire-shaped
+ * `nav` / `pages` descriptors the runtime loader (US-05) consumes.
  *
- * Backed by `MODULES` + `INSTALLED_MODULES` today; PRD-228 wires the
- * runtime registry behind the same shape so external pillars flow
- * through the same walk.
+ * In-repo pillars carry only `pillarId`: their UI surface comes from the
+ * static bundle map, never the wire. Backed by `MODULES` +
+ * `INSTALLED_MODULES` today; PRD-228 wires the runtime registry behind
+ * the same shape so external pillars flow through the same walk.
  */
 export interface RegistryEntry {
   readonly pillarId: string;
   readonly assetsBaseUrl?: string;
+  readonly nav?: NavConfigDescriptor;
+  readonly pages?: readonly PageDescriptor[];
 }
 
 /**
@@ -92,20 +112,61 @@ function defaultRegistryEntries(): readonly RegistryEntry[] {
 }
 
 /**
+ * Resolve an external pillar's UI surface into a frontend manifest, or
+ * `null` to skip it. Wraps `synthesizeExternalBundleEntry` so any
+ * synchronous failure is logged once and contained — the shell never
+ * crashes because an external pillar shipped a bad descriptor.
+ *
+ * `importer` defaults (inside the synthesizer) to a dynamic `import()` of
+ * the advertised URL; tests inject a fake to exercise the path offline.
+ */
+function resolveExternalManifest(
+  entry: RegistryEntry & { assetsBaseUrl: string },
+  importer?: RemoteModuleImporter
+): FrontendManifest | null {
+  const descriptor: RemoteUiDescriptor = {
+    pillarId: entry.pillarId,
+    assetsBaseUrl: entry.assetsBaseUrl,
+    nav: entry.nav,
+    pages: entry.pages,
+  };
+  try {
+    const synthesized = synthesizeExternalBundleEntry(descriptor, importer);
+    if (synthesized === null) {
+      // Advertised an asset URL but no `nav` / `pages` — nothing to mount.
+      // Treated like a backend-only pillar.
+      return null;
+    }
+    return synthesized.manifest;
+  } catch (cause) {
+    const err = new ExternalUiLoadError(entry.pillarId, entry.assetsBaseUrl, cause);
+    console.warn(`[installed-modules] ${err.message}`, cause);
+    return null;
+  }
+}
+
+/**
  * Walk a registry entry list against a workspace bundle map, returning
  * the frontend manifests the shell should mount. Resolution per id:
  *
- *   - Bundle map hit → emit the workspace manifest.
- *   - Bundle map miss + `assetsBaseUrl` set → log the structured
- *     `ExternalUiLoadingNotImplementedError` message (PRD-243 US-05
- *     deferred) and skip.
+ *   - Bundle map hit → emit the in-repo workspace manifest (ADR-002:
+ *     statically bundled, unchanged).
+ *   - Bundle map miss + `assetsBaseUrl` set → external pillar (PRD-228).
+ *     Synthesize a manifest whose routes lazy-`import()` the remote bundle
+ *     (PRD-243 US-05, Option A). A bad descriptor is logged and skipped;
+ *     a remote bundle that fails to load later is contained by the
+ *     per-route error boundary, not here.
  *   - Bundle map miss + no `assetsBaseUrl` → backend-only pillar, drop
  *     silently. Mirrors the pre-PRD-243 behaviour where backend-only
  *     ids simply weren't in `KNOWN_FRONTEND_MANIFESTS`.
+ *
+ * `importer` is injectable for tests; production omits it so the external
+ * loader uses the real dynamic `import()`.
  */
 export function walkRegistry(
   entries: readonly RegistryEntry[],
-  bundleMap: Readonly<Record<string, BundleEntry>>
+  bundleMap: Readonly<Record<string, BundleEntry>>,
+  importer?: RemoteModuleImporter
 ): readonly FrontendManifest[] {
   const out: FrontendManifest[] = [];
   for (const entry of entries) {
@@ -115,8 +176,11 @@ export function walkRegistry(
       continue;
     }
     if (entry.assetsBaseUrl !== undefined) {
-      const err = new ExternalUiLoadingNotImplementedError(entry.pillarId, entry.assetsBaseUrl);
-      console.warn(`[installed-modules] ${err.message}`);
+      const manifest = resolveExternalManifest(
+        { ...entry, assetsBaseUrl: entry.assetsBaseUrl },
+        importer
+      );
+      if (manifest !== null) out.push(manifest);
       continue;
     }
     // Backend-only pillars (e.g. `core`) sit in `MODULES` but contribute
