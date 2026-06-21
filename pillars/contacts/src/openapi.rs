@@ -21,22 +21,62 @@
 use serde_json::{Map, Value};
 use utoipa::OpenApi;
 
+use crate::api::{ErrorBody, PaginationMeta};
+use crate::entities::model::{CreateEntityBody, Entity, EntityLookup, UpdateEntityBody};
+use crate::entities::routes::{
+    EntityListResponse, EntityMutation, EntityResponse, LookupBody, LookupResponse, MessageResponse,
+};
 use crate::health::HealthResponse;
+use crate::search::routes::{
+    MatchType, SearchHit, SearchHitData, SearchQuery, SearchRequest, SearchResponse,
+};
 
-/// The contacts OpenAPI surface. N0 documents `/health` and the stub root;
-/// the entities/search/settings paths join in later nodes.
+/// The contacts OpenAPI surface. Documents `/health`, the stub root, the
+/// entities CRUD + bulk-lookup routes (DOTTED `entities.*` operationIds), and
+/// the search slice (`search.search`). The registry/uri/settings paths join in
+/// later nodes.
 ///
 /// Path handlers are referenced fully-qualified so the `OpenApi` derive
-/// resolves the `__path_*` items `#[utoipa::path]` generates in their
-/// defining module (`crate::health`).
+/// resolves the `__path_*` items `#[utoipa::path]` generates in their defining
+/// module.
 #[derive(OpenApi)]
 #[openapi(
     info(
         title = "POPS Contacts",
         description = "Contacts pillar — authoritative entities store (first Rust pillar)."
     ),
-    paths(crate::health::health, crate::health::root),
-    components(schemas(HealthResponse))
+    paths(
+        crate::health::health,
+        crate::health::root,
+        crate::entities::routes::list,
+        crate::entities::routes::get_one,
+        crate::entities::routes::create,
+        crate::entities::routes::update,
+        crate::entities::routes::delete_one,
+        crate::entities::routes::lookup,
+        crate::search::routes::search,
+    ),
+    components(schemas(
+        HealthResponse,
+        Entity,
+        EntityLookup,
+        CreateEntityBody,
+        UpdateEntityBody,
+        EntityListResponse,
+        EntityResponse,
+        EntityMutation,
+        MessageResponse,
+        LookupBody,
+        LookupResponse,
+        PaginationMeta,
+        ErrorBody,
+        SearchRequest,
+        SearchQuery,
+        SearchResponse,
+        SearchHit,
+        SearchHitData,
+        MatchType,
+    ))
 )]
 pub struct ApiDoc;
 

@@ -61,3 +61,74 @@ export function createPathResolver(primary: string, fallback: string): RegistryP
     },
   };
 }
+
+/**
+ * A {@link RegistryPathResolver} bundled with the cross-call "is a winner
+ * cached?" flag that {@link resolveWithFallback} needs to self-heal. Create one
+ * per logical operation (register / heartbeat / snapshot …) and reuse it across
+ * calls so the winning path is cached between requests.
+ */
+export interface ResolverLeg {
+  readonly resolver: RegistryPathResolver;
+  hadHint: boolean;
+}
+
+/** Build a fresh {@link ResolverLeg} for the `primary`/`fallback` pair. */
+export function createResolverLeg(primary: string, fallback: string): ResolverLeg {
+  return { resolver: createPathResolver(primary, fallback), hadHint: false };
+}
+
+/** A request against ONE registry path that resolves on 2xx or rejects. */
+export type PathRequest<T> = (path: string) => Promise<T>;
+
+/**
+ * Run one logical registry operation across the leg's candidate paths with the
+ * self-healing slash-first / legacy-fallback policy (the single implementation
+ * shared by the transport and both discovery readers).
+ *
+ * Order of behavior per candidate, in `leg.resolver.candidates()` order:
+ *  - 2xx → {@link RegistryPathResolver.remember} the winner, set the hint, return.
+ *  - 404 against the FIRST candidate when a winner was cached on a prior call →
+ *    {@link RegistryPathResolver.invalidate} the hint (so the cycle self-heals
+ *    after a core rollback) and fall through to the next candidate IN THIS call.
+ *  - 404 against a later candidate → fall through to the next candidate.
+ *  - 404 from the LAST candidate → rethrow (caller surfaces the normal error).
+ *  - any non-404 error (5xx / network) → rethrow IMMEDIATELY without trying the
+ *    next candidate ("up but broken" is not "path unknown").
+ *
+ * @param leg - the resolver + cross-call hint flag for this operation
+ * @param isNotFound - predicate identifying a 404 from the rejection `send` threw
+ * @param send - issues the request against a single path
+ */
+export async function resolveWithFallback<T>(
+  leg: ResolverLeg,
+  isNotFound: (err: unknown) => boolean,
+  send: PathRequest<T>
+): Promise<T> {
+  const candidates = leg.resolver.candidates();
+  const lastIndex = candidates.length - 1;
+  let firstError: unknown;
+  let firstSet = false;
+  let index = 0;
+  for (const path of candidates) {
+    const isLast = index === lastIndex;
+    try {
+      const value = await send(path);
+      leg.resolver.remember(path);
+      leg.hadHint = true;
+      return value;
+    } catch (err) {
+      if (!isNotFound(err) || isLast) throw err;
+      if (index === 0 && leg.hadHint) {
+        leg.resolver.invalidate();
+        leg.hadHint = false;
+      }
+      if (!firstSet) {
+        firstError = err;
+        firstSet = true;
+      }
+    }
+    index += 1;
+  }
+  throw firstError ?? new Error('registry path resolver had no candidates');
+}

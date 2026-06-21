@@ -1,13 +1,25 @@
+import {
+  createResolverLeg,
+  resolveWithFallback,
+  type ResolverLeg,
+} from '../registry-path-resolver.js';
+import { LEGACY_REGISTRY_PATHS, REGISTRY_PATHS } from '../registry-paths.js';
 import { PillarSdkError } from './errors.js';
 
 import type { CapabilityStatuses } from '../bootstrap/transport.js';
 import type { ManifestPayload } from '../manifest-schema/index.js';
 
+const HTTP_NOT_FOUND = 404;
+
+function isSnapshotNotFound(err: unknown): boolean {
+  return err instanceof PillarSdkError && err.status === HTTP_NOT_FOUND;
+}
+
 /**
  * The shape returned by the registry discovery snapshot (PRD-161 / PRD-159).
- * Currently served at `GET /core.registry.list`; the canonical slash form
- * `GET /registry/pillars` is introduced in a later phase and is not live yet.
- * One entry per registered pillar.
+ * Served at the canonical `GET /registry/pillars` ({@link REGISTRY_PATHS}.snapshot)
+ * with a 404 fallback to the legacy `GET /core.registry.list` during the
+ * rolling-deploy window. One entry per registered pillar.
  */
 export type DiscoveredPillar = {
   pillarId: string;
@@ -26,12 +38,12 @@ export type DiscoveredPillar = {
 
 /**
  * The transport the client uses to fetch the registry snapshot. The
- * default HTTP impl reads the discovery snapshot from `/core.registry.list`
- * (the canonical slash form `/registry/pillars` is introduced in a later
- * phase, not live yet); tests inject a fake. Decoupling the transport keeps
- * the client unit-testable without a live registry and lets future
- * deployments swap to an SSE / file / in-process variant without touching
- * `pillar()`.
+ * default HTTP impl reads the discovery snapshot slash-first from
+ * `/registry/pillars`, falling back to the legacy `/core.registry.list` on a
+ * 404 during the rolling-deploy window; tests inject a fake. Decoupling the
+ * transport keeps the client unit-testable without a live registry and lets
+ * future deployments swap to an SSE / file / in-process variant without
+ * touching `pillar()`.
  */
 export interface DiscoveryTransport {
   fetchSnapshot(): Promise<readonly DiscoveredPillar[]>;
@@ -53,28 +65,37 @@ const DEFAULT_FETCH_TIMEOUT_MS = 5_000;
  * the raw HTTP wire and reshapes the response into `DiscoveredPillar[]`.
  *
  * Wire shape (raw — no tRPC):
- *   GET /core.registry.list   (the route core mounts today; the canonical
- *                              GET /registry/pillars lands in a later phase)
+ *   GET /registry/pillars     (canonical; on 404 falls back to the legacy
+ *                              GET /core.registry.list during the rollout)
  *   → { pillars: [...], fetchedAt: ... }
  *
- * The body parser still tolerates a `{ result: { data } }` envelope so a
- * mixed deployment (legacy tRPC registry + collapsed pillar) reads either.
+ * The transport is long-lived, so it caches the winning path as a HINT and
+ * re-expands to both candidates on a 404 against the cached path (a core
+ * rollback / lagging replica) — self-healing, never hard-evicting. A 5xx
+ * surfaces immediately without falling back. The body parser still tolerates a
+ * `{ result: { data } }` envelope so a mixed deployment reads either.
  */
 export class HttpDiscoveryTransport implements DiscoveryTransport {
   private readonly registryUrl: string;
   private readonly fetchImpl: typeof fetch;
   private readonly timeoutMs: number;
   private readonly headers: Record<string, string>;
+  private readonly leg: ResolverLeg;
 
   constructor(options: HttpDiscoveryTransportOptions = {}) {
     this.registryUrl = options.registryUrl ?? DEFAULT_REGISTRY_URL;
     this.fetchImpl = options.fetchImpl ?? fetch;
     this.timeoutMs = options.timeoutMs ?? DEFAULT_FETCH_TIMEOUT_MS;
     this.headers = options.headers ?? {};
+    this.leg = createResolverLeg(REGISTRY_PATHS.snapshot, LEGACY_REGISTRY_PATHS.snapshot);
   }
 
   async fetchSnapshot(): Promise<readonly DiscoveredPillar[]> {
-    const url = `${this.registryUrl.replace(/\/$/, '')}/core.registry.list`;
+    return resolveWithFallback(this.leg, isSnapshotNotFound, (path) => this.fetchFromPath(path));
+  }
+
+  private async fetchFromPath(path: string): Promise<readonly DiscoveredPillar[]> {
+    const url = `${this.registryUrl.replace(/\/$/, '')}${path}`;
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), this.timeoutMs);
 
@@ -92,7 +113,9 @@ export class HttpDiscoveryTransport implements DiscoveryTransport {
     }
 
     if (!response.ok) {
-      throw new PillarSdkError(`registry returned HTTP ${response.status} ${response.statusText}`);
+      throw new PillarSdkError(`registry returned HTTP ${response.status} ${response.statusText}`, {
+        status: response.status,
+      });
     }
 
     let body: unknown;

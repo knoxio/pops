@@ -22,13 +22,17 @@ async fn openapi_document() -> impl IntoResponse {
     ([(CONTENT_TYPE, "application/json")], openapi_30_json())
 }
 
-/// Build the contacts router. N0 mounts the root banner, `/health`, and
-/// `/openapi`; entities/search/settings routers mount here in later nodes.
+/// Build the contacts router. Mounts the root banner, `/health`, `/openapi`,
+/// the entities CRUD + bulk-lookup surface (N1), and the search slice (N1);
+/// the registry lifecycle, URI resolve, and settings routers join in later
+/// nodes.
 pub fn build_router(state: AppState) -> Router {
     Router::new()
         .route("/", get(root))
         .route("/health", get(health))
         .route("/openapi", get(openapi_document))
+        .merge(crate::entities::router())
+        .merge(crate::search::router())
         .with_state(state)
 }
 

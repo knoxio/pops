@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { fetchRegistrySnapshot } from '../fetcher.js';
+import { createSnapshotResolverLeg, fetchRegistrySnapshot } from '../fetcher.js';
 import { jsonResponse, pillar, wirePayload } from './fixtures.js';
 
 describe('fetchRegistrySnapshot', () => {
@@ -15,7 +15,7 @@ describe('fetchRegistrySnapshot', () => {
     });
 
     expect(fetchImpl).toHaveBeenCalledWith(
-      'http://core-api:3001/core.registry.list',
+      'http://core-api:3001/registry/pillars',
       expect.objectContaining({ method: 'GET' })
     );
     expect(result.pillars).toHaveLength(2);
@@ -90,7 +90,7 @@ describe('fetchRegistrySnapshot', () => {
       fetchImpl,
     });
     expect(fetchImpl).toHaveBeenCalledWith(
-      'http://core-api:3001/core.registry.list',
+      'http://core-api:3001/registry/pillars',
       expect.anything()
     );
   });
@@ -175,5 +175,90 @@ describe('fetchRegistrySnapshot', () => {
       fetchImpl,
     });
     expect(result.pillars[0]!.registered).toBe(false);
+  });
+
+  describe('slash-first path resolution with legacy fallback', () => {
+    function routedFetch(routes: Record<string, () => Response>): {
+      fetchImpl: ReturnType<typeof vi.fn>;
+      paths: string[];
+    } {
+      const paths: string[] = [];
+      const fetchImpl = vi.fn((url: string) => {
+        const path = new URL(url).pathname;
+        paths.push(path);
+        const make = routes[path];
+        if (!make) throw new Error(`unrouted path ${path}`);
+        return Promise.resolve(make());
+      });
+      return { fetchImpl, paths };
+    }
+
+    it('falls back to /core.registry.list on a 404 and parses the body identically', async () => {
+      const fin = pillar('finance', 'http://finance-api:3004');
+      const { fetchImpl, paths } = routedFetch({
+        '/registry/pillars': () => new Response('', { status: 404 }),
+        '/core.registry.list': () => jsonResponse(wirePayload(fin)),
+      });
+
+      const result = await fetchRegistrySnapshot({
+        registryUrl: 'http://core-api:3001',
+        fetchImpl,
+      });
+      expect(result.pillars[0]!.pillarId).toBe('finance');
+      expect(paths).toEqual(['/registry/pillars', '/core.registry.list']);
+    });
+
+    it('surfaces a 5xx WITHOUT falling back to the legacy path', async () => {
+      const fin = pillar('finance', 'http://finance-api:3004');
+      const { fetchImpl, paths } = routedFetch({
+        '/registry/pillars': () => new Response('boom', { status: 503, statusText: 'Down' }),
+        '/core.registry.list': () => jsonResponse(wirePayload(fin)),
+      });
+
+      await expect(
+        fetchRegistrySnapshot({ registryUrl: 'http://core-api:3001', fetchImpl })
+      ).rejects.toThrow(/HTTP 503/);
+      expect(paths).toEqual(['/registry/pillars']);
+    });
+
+    it('caches the winning path across calls when a resolver is shared, self-healing on 404', async () => {
+      const fin = pillar('finance', 'http://finance-api:3004');
+      let live = new Set(['/registry/pillars', '/core.registry.list']);
+      const paths: string[] = [];
+      const fetchImpl = vi.fn((url: string) => {
+        const path = new URL(url).pathname;
+        paths.push(path);
+        return Promise.resolve(
+          live.has(path) ? jsonResponse(wirePayload(fin)) : new Response('', { status: 404 })
+        );
+      });
+      const leg = createSnapshotResolverLeg();
+
+      await fetchRegistrySnapshot({ registryUrl: 'http://core-api:3001', fetchImpl, leg });
+      // Second poll reuses the cached slash winner — single request.
+      await fetchRegistrySnapshot({ registryUrl: 'http://core-api:3001', fetchImpl, leg });
+      expect(paths).toEqual(['/registry/pillars', '/registry/pillars']);
+
+      // Core rolled back: cached slash 404s → in-call fallback to legacy + invalidate.
+      live = new Set(['/core.registry.list']);
+      await fetchRegistrySnapshot({ registryUrl: 'http://core-api:3001', fetchImpl, leg });
+      expect(paths).toEqual([
+        '/registry/pillars',
+        '/registry/pillars',
+        '/registry/pillars',
+        '/core.registry.list',
+      ]);
+
+      // Legacy cached; steady single request, no thrash back to slash.
+      paths.length = 0;
+      await fetchRegistrySnapshot({ registryUrl: 'http://core-api:3001', fetchImpl, leg });
+      expect(paths).toEqual(['/core.registry.list']);
+
+      // Phase-3 roll-forward: legacy removed → cached legacy 404s → re-resolve to slash.
+      live = new Set(['/registry/pillars']);
+      paths.length = 0;
+      await fetchRegistrySnapshot({ registryUrl: 'http://core-api:3001', fetchImpl, leg });
+      expect(paths).toEqual(['/core.registry.list', '/registry/pillars']);
+    });
   });
 });

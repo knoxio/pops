@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import { createPathResolver, type RegistryPathResolver } from './registry-path-resolver.js';
+import {
+  createPathResolver,
+  createResolverLeg,
+  resolveWithFallback,
+  type RegistryPathResolver,
+} from './registry-path-resolver.js';
 
 const NEW = '/registry/register';
 const OLD = '/core.registry.register';
@@ -157,5 +162,64 @@ describe('createPathResolver', () => {
     await expect(resolveOnce(resolver, serves(), freshTracker())).rejects.toThrow(
       /all candidates 404/
     );
+  });
+});
+
+class NotFound extends Error {}
+const isNotFound = (err: unknown): boolean => err instanceof NotFound;
+
+describe('resolveWithFallback', () => {
+  it('never sends a request to an empty or undefined path', async () => {
+    const leg = createResolverLeg(NEW, OLD);
+    const seen: string[] = [];
+    const send = (path: string): Promise<string> => {
+      seen.push(path);
+      return path === OLD ? Promise.resolve('ok') : Promise.reject(new NotFound());
+    };
+
+    const result = await resolveWithFallback(leg, isNotFound, send);
+
+    expect(result).toBe('ok');
+    expect(seen).toEqual([NEW, OLD]);
+    for (const path of seen) {
+      expect(path).toBeTruthy();
+      expect(path).not.toBe('');
+    }
+  });
+
+  it('returns the first 2xx and stops (single request in the happy path)', async () => {
+    const leg = createResolverLeg(NEW, OLD);
+    const seen: string[] = [];
+    const result = await resolveWithFallback(leg, isNotFound, (path) => {
+      seen.push(path);
+      return Promise.resolve(path);
+    });
+    expect(result).toBe(NEW);
+    expect(seen).toEqual([NEW]);
+  });
+
+  it('rethrows a non-404 error immediately without trying the next candidate', async () => {
+    const leg = createResolverLeg(NEW, OLD);
+    const seen: string[] = [];
+    const boom = new Error('5xx up-but-broken');
+    await expect(
+      resolveWithFallback(leg, isNotFound, (path) => {
+        seen.push(path);
+        return Promise.reject(boom);
+      })
+    ).rejects.toBe(boom);
+    expect(seen).toEqual([NEW]);
+  });
+
+  it('rethrows the 404 when the LAST candidate 404s', async () => {
+    const leg = createResolverLeg(NEW, OLD);
+    const seen: string[] = [];
+    await expect(
+      resolveWithFallback(leg, isNotFound, (path) => {
+        seen.push(path);
+        return Promise.reject(new NotFound());
+      })
+    ).rejects.toBeInstanceOf(NotFound);
+    expect(seen).toEqual([NEW, OLD]);
   });
 });
