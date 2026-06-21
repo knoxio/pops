@@ -5,9 +5,18 @@
  * `createExpressEndpoints`) plus the handful of raw HTTP/SSE routes the
  * registry needs and ts-rest cannot model — `GET /pillars`, `GET /pillars/health`,
  * `POST /uri/resolve`, the SSE `GET /registry/subscribe`, the DB-backed
- * discovery snapshot `GET /core.registry.list`, and the raw
- * `POST /core.registry.{register,heartbeat,deregister}` mutations. The pillar
- * serves no tRPC.
+ * discovery snapshot, and the raw register/heartbeat/deregister mutations. The
+ * pillar serves no tRPC.
+ *
+ * Registry handshake/discovery paths are DUAL-SERVED during the dot-routes →
+ * slash rolling-deploy window: each operation is mounted on its canonical slash
+ * path (`GET /registry/pillars`, `POST /registry/{register,heartbeat,
+ * deregister}` — {@link REGISTRY_PATHS}) AND on the legacy dotted path
+ * (`GET /core.registry.list`, `POST /core.registry.{register,heartbeat,
+ * deregister}` — {@link LEGACY_REGISTRY_PATHS}), both pointing at the SAME
+ * handler instance. The legacy aliases let an old-SDK pillar keep registering
+ * against a new core; they are removed in a later release once the
+ * legacy-path-hit metric reads zero everywhere.
  *
  * Kept as a factory so the test suite can spin up an in-process `supertest`
  * instance without binding a real port.
@@ -19,15 +28,20 @@ import { fileURLToPath } from 'node:url';
 import { createExpressEndpoints } from '@ts-rest/express';
 import express, { type Express, type NextFunction, type Request, type Response } from 'express';
 
+import { LEGACY_REGISTRY_PATHS, REGISTRY_PATHS } from '@pops/pillar-sdk';
+
 import { coreContract } from '../contract/rest.js';
 import { type CoreApiDeps, makeRequestHandler } from './handlers.js';
 import { createIdentityMiddleware } from './middleware/identity.js';
 import { createExternalDeregisterHandler } from './modules/external-registry/deregister.js';
 import { createExternalHeartbeatHandler } from './modules/external-registry/heartbeat.js';
 import { createExternalRegisterHandler } from './modules/external-registry/register.js';
+import { makeLegacyPathMetric } from './modules/registry/legacy-path-metric.js';
 import { createRegistrySnapshotHandler } from './modules/registry/snapshot.js';
 import { createRegistrySubscribeHandler } from './modules/registry/subscribe.js';
 import { makeCoreRestHandlers } from './rest/handlers.js';
+
+import type { CoreDb } from '../db/index.js';
 
 /**
  * The committed OpenAPI projection (`pillars/core/openapi/core.openapi.json`),
@@ -49,6 +63,33 @@ const openapiDocument: unknown = JSON.parse(
     'utf8'
   )
 );
+
+/**
+ * Mount the registry handshake/discovery routes, DUAL-SERVED on the canonical
+ * slash path and the legacy dotted alias during the rolling-deploy window.
+ *
+ * Each handler is created once and shared by both paths (no logic duplication);
+ * `legacyHit` is a pass-through metric mounted in front of both that fires only
+ * on the dotted alias. Raw HTTP (not ts-rest / not tRPC): the snapshot returns
+ * the bare `{ pillars, fetchedAt }` shape the pillar SDK's
+ * `HttpDiscoveryTransport` reads.
+ */
+function mountRegistryRoutes(app: Express, db: CoreDb): void {
+  const snapshotHandler = createRegistrySnapshotHandler(db);
+  const registerHandler = createExternalRegisterHandler({ coreDb: db });
+  const heartbeatHandler = createExternalHeartbeatHandler({ coreDb: db });
+  const deregisterHandler = createExternalDeregisterHandler({ coreDb: db });
+  const legacyHit = makeLegacyPathMetric();
+
+  for (const path of [REGISTRY_PATHS.snapshot, LEGACY_REGISTRY_PATHS.snapshot])
+    app.get(path, legacyHit, snapshotHandler);
+  for (const path of [REGISTRY_PATHS.register, LEGACY_REGISTRY_PATHS.register])
+    app.post(path, legacyHit, registerHandler);
+  for (const path of [REGISTRY_PATHS.heartbeat, LEGACY_REGISTRY_PATHS.heartbeat])
+    app.post(path, legacyHit, heartbeatHandler);
+  for (const path of [REGISTRY_PATHS.deregister, LEGACY_REGISTRY_PATHS.deregister])
+    app.post(path, legacyHit, deregisterHandler);
+}
 
 export function createCoreApiApp(deps: CoreApiDeps): Express {
   const app = express();
@@ -108,21 +149,7 @@ export function createCoreApiApp(deps: CoreApiDeps): Express {
 
   app.get('/registry/subscribe', createRegistrySubscribeHandler(deps.coreDb.db));
 
-  // DB-backed registry snapshot — the discovery surface the pillar SDK's
-  // `HttpDiscoveryTransport` reads. Raw HTTP (not ts-rest / not tRPC); returns
-  // the bare `{ pillars, fetchedAt }` shape. `GET /pillars` is the same DB
-  // registry projected onto the `{ id, baseUrl }` shape (registry-first, with
-  // the `POPS_PILLARS` env as a boot seed / fallback).
-  app.get('/core.registry.list', createRegistrySnapshotHandler(deps.coreDb.db));
-
-  app.post('/core.registry.register', createExternalRegisterHandler({ coreDb: deps.coreDb.db }));
-
-  app.post('/core.registry.heartbeat', createExternalHeartbeatHandler({ coreDb: deps.coreDb.db }));
-
-  app.post(
-    '/core.registry.deregister',
-    createExternalDeregisterHandler({ coreDb: deps.coreDb.db })
-  );
+  mountRegistryRoutes(app, deps.coreDb.db);
 
   // Identity middleware (REST surface). Resolves the per-request principal
   // (`x-pops-user` from the dispatcher / `x-api-key` service accounts) and

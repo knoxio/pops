@@ -1,4 +1,8 @@
-import { fetchRegistrySnapshot, type RegistryFetchResult } from './fetcher.js';
+import {
+  createSnapshotResolverLeg,
+  fetchRegistrySnapshot,
+  type RegistryFetchResult,
+} from './fetcher.js';
 
 import type { RegistrySnapshot } from './types.js';
 
@@ -61,8 +65,15 @@ export type CacheState = {
   seeded: boolean;
 };
 
-export function defaultFetcher(registryUrl: string): Promise<RegistryFetchResult> {
-  return fetchRegistrySnapshot({ registryUrl });
+/**
+ * Build a fetcher backed by ONE long-lived slash-first path resolver so the
+ * cache's repeated polls cache the winning registry-snapshot path between calls
+ * and self-heal on a later 404. Each cache instance gets its own resolver.
+ */
+export function createDefaultFetcher(): RegistryFetcher {
+  const leg = createSnapshotResolverLeg();
+  return (registryUrl: string): Promise<RegistryFetchResult> =>
+    fetchRegistrySnapshot({ registryUrl, leg });
 }
 
 export class NodeTimerHandle {
@@ -117,7 +128,7 @@ export function createInitialState(overrides: CacheConfig): CacheState {
     config: {
       registryUrl: overrides.registryUrl ?? DEFAULT_REGISTRY_URL,
       ttlMs: clampTtl(overrides.ttlMs ?? DEFAULT_CACHE_TTL_MS, onWarn),
-      fetcher: overrides.fetcher ?? defaultFetcher,
+      fetcher: overrides.fetcher ?? createDefaultFetcher(),
       now: overrides.now ?? Date.now,
       setTimeoutImpl: overrides.setTimeoutImpl ?? defaultSetTimer,
       clearTimeoutImpl: overrides.clearTimeoutImpl ?? defaultClearTimer,
