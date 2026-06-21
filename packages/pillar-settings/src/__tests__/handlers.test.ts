@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
+import { UnknownSettingKeyError } from '../errors.js';
 import { makeSettingsHandlers, type SettingsGate } from '../handlers.js';
 import { REDACTED } from '../redact.js';
 import { getOrNull } from '../service.js';
@@ -106,6 +107,36 @@ describe('makeSettingsHandlers — update + read', () => {
     expect(handlers.getMany(ALLOW, ['plex_url', 'media.retention', 'missing'])).toEqual({
       settings: { plex_url: 'u', 'media.retention': '7' },
     });
+  });
+});
+
+describe('makeSettingsHandlers — declared-key enforcement (no backdoor create)', () => {
+  it('set rejects an undeclared key', () => {
+    const { db, handlers } = setup();
+    expect(() => handlers.set(ALLOW, 'totally.unknown', 'x')).toThrow(UnknownSettingKeyError);
+    expect(getOrNull(db, 'totally.unknown')).toBeNull();
+  });
+
+  it('setMany rejects the whole batch when any key is undeclared and writes nothing', () => {
+    const { db, handlers } = setup();
+    expect(() =>
+      handlers.setMany(ALLOW, [
+        { key: 'plex_url', value: 'u' },
+        { key: 'rogue.key', value: 'v' },
+      ])
+    ).toThrow(UnknownSettingKeyError);
+    // validation runs before the transactional write — the declared key is untouched too
+    expect(getOrNull(db, 'plex_url')).toBeNull();
+  });
+
+  it('resetKey rejects an undeclared key', () => {
+    const { handlers } = setup();
+    expect(() => handlers.resetKey(ALLOW, 'nope')).toThrow(UnknownSettingKeyError);
+  });
+
+  it('read paths stay lenient — getMany omits undeclared keys instead of throwing', () => {
+    const { handlers } = setup();
+    expect(handlers.getMany(ALLOW, ['plex_url', 'undeclared']).settings).toEqual({});
   });
 });
 

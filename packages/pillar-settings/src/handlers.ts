@@ -1,3 +1,4 @@
+import { UnknownSettingKeyError } from './errors.js';
 import { redactSensitive, redactSensitiveMap } from './redact.js';
 import {
   ensure,
@@ -42,7 +43,10 @@ export interface SettingsHandlerDeps<Principal> {
  * these in its ts-rest adapter (principal extraction + error mapping).
  *
  * There is no create or delete handler — only read, update, reset, and
- * the internal-only `ensure` seed.
+ * the internal-only `ensure` seed. WRITE/RESET paths reject keys outside
+ * the declared set (`UnknownSettingKeyError`) so a batch write can never
+ * become a backdoor create; READ paths stay lenient (an undeclared key is
+ * simply absent), letting an aggregator query a superset without error.
  */
 export interface SettingsHandlers<Principal> {
   list(principal: Principal): { data: SettingRow[] };
@@ -68,7 +72,12 @@ export function makeSettingsHandlers<Principal>(
 ): SettingsHandlers<Principal> {
   const { db, scopePrefix, keyDefaults, gate } = deps;
   const sensitive = new Set(keyDefaults.sensitive);
+  const declared = new Set(keyDefaults.keys);
   const scope = (proc: string): string => `${scopePrefix}.${proc}`;
+  const assertDeclared = (keys: readonly string[]): void => {
+    const unknown = keys.filter((key) => !declared.has(key));
+    if (unknown.length > 0) throw new UnknownSettingKeyError(unknown);
+  };
 
   return {
     list(principal) {
@@ -91,16 +100,19 @@ export function makeSettingsHandlers<Principal>(
 
     set(principal, key, value) {
       gate(principal, scope('set'));
+      assertDeclared([key]);
       return { data: setRaw(db, key, value), message: 'Setting saved' };
     },
 
     setMany(principal, entries) {
       gate(principal, scope('setMany'));
+      assertDeclared(entries.map((entry) => entry.key));
       return { settings: setBulk(db, entries) };
     },
 
     resetKey(principal, key) {
       gate(principal, scope('resetKey'));
+      assertDeclared([key]);
       return { data: resetSetting(db, key, keyDefaults), message: 'Setting reset to default' };
     },
 
