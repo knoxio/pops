@@ -1,0 +1,55 @@
+{
+  "name": "@pops/ai-telemetry",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./types": {
+      "types": "./dist/types.d.ts",
+      "default": "./dist/types.js"
+    },
+    "./record-schema": {
+      "types": "./dist/record-schema.d.ts",
+      "default": "./dist/record-schema.js"
+    },
+    "./call-with-logging": {
+      "types": "./dist/call-with-logging.d.ts",
+      "default": "./dist/call-with-logging.js"
+    },
+    "./call-with-logging-stream": {
+      "types": "./dist/call-with-logging-stream.d.ts",
+      "default": "./dist/call-with-logging-stream.js"
+    },
+    "./report-sink": {
+      "types": "./dist/report-sink.d.ts",
+      "default": "./dist/report-sink.js"
+    },
+    "./pricing-http": {
+      "types": "./dist/pricing-http.d.ts",
+      "default": "./dist/pricing-http.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.3",
+    "@vitest/coverage-v8": "^4.1.8",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.8"
+  }
+}
