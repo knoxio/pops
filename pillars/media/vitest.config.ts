@@ -1,9 +1,10 @@
 /// <reference types="vitest/config" />
-import { defineConfig } from 'vitest/config';
+import { defineConfig, configDefaults } from 'vitest/config';
 
 export default defineConfig({
   test: {
     environment: 'node',
+    exclude: [...configDefaults.exclude, 'app/**', 'overlay-ego/**'],
     // Reliability: the many client suites stub `globalThis.fetch` via
     // `vi.stubGlobal`. Auto-restore stubbed globals/mocks after every test,
     // and run test files sequentially, so a fetch stub from one suite can
