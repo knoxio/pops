@@ -83,16 +83,25 @@ main() {
   nginx -g 'daemon off;' &
   nginx_pid=$!
 
-  # The watcher writes each re-render to $SERVED_CONF, validates, then
-  # reloads the running master. Its default config-test is
-  # `nginx -t -c <output>`, which would treat the server-block fragment as
-  # a whole config and fail; override it to a plain `nginx -t` so the test
-  # loads the real /etc/nginx/nginx.conf that `include`s the served conf —
-  # matching this entrypoint's own validation.
+  # The watcher writes each re-render straight to $SERVED_CONF, then runs the
+  # config test below. The default test is `nginx -t -c <output>`, which would
+  # treat the server-block fragment as a whole config and fail; override it so
+  # the test loads the real /etc/nginx/nginx.conf that `include`s the served
+  # conf.
+  #
+  # The override also keeps the on-disk served conf always-valid: because the
+  # render lands on $SERVED_CONF BEFORE validation, a render that fails
+  # `nginx -t` would otherwise sit on disk and break the next restart/reload.
+  # So promote the served conf to last-known-good on success, and restore it on
+  # failure. The running nginx is already safe — the watcher skips the reload
+  # when this command exits non-zero (the previous conf stays live).
+  LAST_GOOD_CONF="/tmp/pops-shell-last-good.conf"
+  cp "$SERVED_CONF" "$LAST_GOOD_CONF"
+
   log "starting registry watcher (registry=$REGISTRY_URL)"
   POPS_REGISTRY_URL="$REGISTRY_URL" \
   POPS_NGINX_OUTPUT="$SERVED_CONF" \
-  POPS_NGINX_CONFIG_TEST_CMD="nginx -t" \
+  POPS_NGINX_CONFIG_TEST_CMD="if nginx -t; then cp \"$SERVED_CONF\" \"$LAST_GOOD_CONF\"; else cp \"$LAST_GOOD_CONF\" \"$SERVED_CONF\"; exit 1; fi" \
   POPS_NGINX_RELOAD_CMD="nginx -s reload" \
     node "$WATCH_BUNDLE" &
   watch_pid=$!
@@ -101,7 +110,12 @@ main() {
     trap - TERM INT
     kill "$nginx_pid" "$watch_pid" 2>/dev/null || true
   }
-  trap terminate TERM INT
+  # A signal-driven shutdown (docker stop / Watchtower update) is a CLEAN exit:
+  # tear the children down and exit 0 so the orchestrator doesn't record the
+  # stop as a crash. A child dying on its own (the supervise loop below) is the
+  # real failure path and still exits non-zero. Inlined (not a function) so the
+  # trap-only handler isn't flagged unused by shellcheck.
+  trap 'log "received shutdown signal; stopping nginx + registry watcher"; terminate; exit 0' TERM INT
 
   # Supervise both children with a portable poll (strict POSIX — no
   # `wait -n`). If EITHER nginx or the watcher dies, bring the other down

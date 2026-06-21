@@ -48,9 +48,23 @@ describe('docker-entrypoint.sh', () => {
     expect(src).toMatch(/kill -0 "\$watch_pid"/);
   });
 
-  it('overrides the watcher config-test to a plain `nginx -t` (the served conf is a fragment)', async () => {
+  it('validates re-renders with `nginx -t` and rolls the served conf back to last-known-good on failure', async () => {
     const src = await readFile(ENTRYPOINT, 'utf8');
-    expect(src).toMatch(/POPS_NGINX_CONFIG_TEST_CMD="nginx -t"/);
+    // The watcher writes each render straight to $SERVED_CONF before testing,
+    // so the override must (a) validate via plain `nginx -t` (the served conf
+    // is an include fragment) and (b) restore the last-known-good copy when the
+    // render is invalid, so a bad render never sits on disk.
+    expect(src).toContain('POPS_NGINX_CONFIG_TEST_CMD="if nginx -t;');
+    expect(src).toContain('cp \\"$SERVED_CONF\\" \\"$LAST_GOOD_CONF\\"');
+    expect(src).toContain('cp \\"$LAST_GOOD_CONF\\" \\"$SERVED_CONF\\"; exit 1');
+  });
+
+  it('exits 0 on a signal-driven shutdown (docker stop / Watchtower) but non-zero when a child dies', async () => {
+    const src = await readFile(ENTRYPOINT, 'utf8');
+    // A clean stop must not look like a crash to the orchestrator.
+    expect(src).toMatch(/trap '.*terminate; exit 0' TERM INT/);
+    // A child dying on its own is still the failure path.
+    expect(src).toMatch(/terminate\n {2}exit 1/);
   });
 
   it('passes shellcheck in POSIX sh mode when shellcheck is available', async () => {
