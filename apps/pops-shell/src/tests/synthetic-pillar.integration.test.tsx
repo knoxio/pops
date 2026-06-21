@@ -160,23 +160,38 @@ describe('PRD-243 US-04 — synthetic pillar mounts via registry (audit M7)', ()
     expect(manifests.map((m) => m.id)).not.toContain(SYNTHETIC_ID);
   });
 
-  it('synthetic registry entry without a bundle slot logs the US-05 stub and skips (no crash)', () => {
-    const warnings: string[] = [];
-    const originalWarn = console.warn;
-    console.warn = (message: unknown) => {
-      warnings.push(String(message));
-    };
-    try {
-      const entries: RegistryEntry[] = [
-        { pillarId: SYNTHETIC_ID, assetsBaseUrl: 'https://cdn.example.com/synthetic-foo/' },
-      ];
-      const manifests = walkRegistry(entries, {});
+  it('an external registry entry (no bundle map entry) mounts via the runtime loader (US-05)', () => {
+    const entries: RegistryEntry[] = [
+      {
+        pillarId: SYNTHETIC_ID,
+        assetsBaseUrl: 'https://cdn.example.com/synthetic-foo/index.js',
+        nav: {
+          id: SYNTHETIC_ID,
+          label: 'Synthetic Foo',
+          labelKey: SYNTHETIC_ID,
+          icon: 'Compass',
+          basePath: SYNTHETIC_BASE_PATH,
+          order: SYNTHETIC_NAV_ORDER,
+          items: [{ path: '', label: 'Home', labelKey: `${SYNTHETIC_ID}.home`, icon: 'Compass' }],
+        },
+        pages: [{ path: '', index: true, bundleSlot: 'home' }],
+      },
+    ];
 
-      expect(manifests).toHaveLength(0);
-      expect(warnings.some((m) => m.includes('external UI loading not implemented'))).toBe(true);
-      expect(warnings.some((m) => m.includes(SYNTHETIC_ID))).toBe(true);
-    } finally {
-      console.warn = originalWarn;
-    }
+    // No bundle map entry at all — the synthetic pillar is external. The
+    // importer never runs during the walk (lazy on first route render).
+    const manifests = walkRegistry(entries, {}, () =>
+      Promise.reject(new Error('importer must not run during synthesis'))
+    );
+
+    expect(manifests).toHaveLength(1);
+    const mounted = manifests[0];
+    expect(mounted?.id).toBe(SYNTHETIC_ID);
+    expect(mounted !== undefined && hasRoutes(mounted)).toBe(true);
+
+    const navIds = buildRegisteredAppsFromBundleMap({
+      [SYNTHETIC_ID]: { manifest: mounted as FrontendManifest, navOrder: SYNTHETIC_NAV_ORDER },
+    }).map((app) => app.id);
+    expect(navIds).toContain(SYNTHETIC_ID);
   });
 });

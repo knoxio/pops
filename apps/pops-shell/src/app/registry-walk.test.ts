@@ -1,5 +1,5 @@
 /**
- * PRD-243 US-03 — registry-walk unit tests.
+ * PRD-243 US-03 + US-05 — registry-walk unit tests.
  *
  * Exercises the bundle-map-driven discovery path with synthetic data
  * instead of the live `WORKSPACE_BUNDLE_MAP` / `MODULES` constants. The
@@ -9,20 +9,25 @@
  *   - Two synthetic pillars produce two nav configs.
  *   - Frontend manifests joined through the walk preserve `frontend.routes`.
  *   - Pillars omitting both `nav` and `pages` are skipped from the rail.
- *   - Pillars advertising an `assetsBaseUrl` without a bundle entry log
- *     once and are skipped (the US-05 stub branch).
+ *   - An external pillar (absent from the bundle map) that advertises an
+ *     `assetsBaseUrl` plus `nav` / `pages` is loaded via the runtime path
+ *     (US-05, Option A) and contributes a mounted manifest.
+ *   - A structurally broken external descriptor is logged once and skipped
+ *     (no crash).
  *   - Sort order respects `navOrder` ascending with a lexicographic
  *     tiebreak on the nav id.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
-  ExternalUiLoadingNotImplementedError,
+  hasRoutes,
   walkRegistry,
   type FrontendManifest,
   type RegistryEntry,
 } from './installed-modules';
 import { buildRegisteredAppsFromBundleMap } from './nav/registry';
+
+import type { NavConfigDescriptor, PageDescriptor } from '@pops/pillar-sdk';
 
 import type { BundleEntry } from './bundle-map';
 import type { AppNavConfig } from './nav/types';
@@ -119,29 +124,59 @@ describe('walkRegistry', () => {
     expect(apps.map((a) => a.id)).toEqual(['finance']);
   });
 
-  it('logs and skips a registry entry that advertises assetsBaseUrl without a bundle map entry (US-05 stub branch)', () => {
-    const bundleMap: Record<string, BundleEntry> = {};
+  it('mounts an external pillar (no bundle map entry) via the runtime loader (US-05 Option A)', () => {
+    const externalNav: NavConfigDescriptor = {
+      id: 'external-pillar',
+      label: 'External Pillar',
+      labelKey: 'externalPillar',
+      icon: 'Compass',
+      basePath: '/external-pillar',
+      order: 35,
+      items: [{ path: '', label: 'Home', labelKey: 'externalPillar.home', icon: 'Compass' }],
+    };
+    const externalPages: PageDescriptor[] = [{ path: '', index: true, bundleSlot: 'home' }];
     const entries: RegistryEntry[] = [
-      { pillarId: 'external-pillar', assetsBaseUrl: 'https://cdn.example.com/external/' },
+      {
+        pillarId: 'external-pillar',
+        assetsBaseUrl: 'https://cdn.example.com/external/index.js',
+        nav: externalNav,
+        pages: externalPages,
+      },
     ];
 
-    const out = walkRegistry(entries, bundleMap);
+    // Importer is never invoked here: synthesis is synchronous; the remote
+    // bundle is fetched lazily only when the route actually renders.
+    const out = walkRegistry(entries, {}, () =>
+      Promise.reject(new Error('importer must not run during synthesis'))
+    );
 
-    expect(out).toHaveLength(0);
-    expect(warnSpy).toHaveBeenCalledTimes(1);
-    const message = String(warnSpy.mock.calls[0]?.[0] ?? '');
-    expect(message).toContain('external UI loading not implemented');
-    expect(message).toContain('external-pillar');
-    expect(message).toContain('https://cdn.example.com/external/');
+    expect(out).toHaveLength(1);
+    const manifest = out[0];
+    expect(manifest?.id).toBe('external-pillar');
+    expect(manifest?.surfaces).toContain('app');
+    expect(manifest !== undefined && hasRoutes(manifest)).toBe(true);
+    if (manifest !== undefined && hasRoutes(manifest)) {
+      expect(manifest.frontend.routes).toHaveLength(1);
+    }
+    const navIds = buildRegisteredAppsFromBundleMap({
+      'external-pillar': {
+        manifest: manifest as FrontendManifest,
+        navOrder: externalNav.order,
+      },
+    }).map((app) => app.id);
+    expect(navIds).toContain('external-pillar');
+    expect(warnSpy).not.toHaveBeenCalled();
   });
 
-  it('exposes the US-05 stub failure as a structured error type callers can detect', () => {
-    const err = new ExternalUiLoadingNotImplementedError('foo', 'https://x/');
+  it('skips an external pillar that advertises an asset URL but no nav/pages (nothing to mount)', () => {
+    const entries: RegistryEntry[] = [
+      { pillarId: 'external-headless', assetsBaseUrl: 'https://cdn.example.com/headless.js' },
+    ];
 
-    expect(err).toBeInstanceOf(Error);
-    expect(err.name).toBe('ExternalUiLoadingNotImplementedError');
-    expect(err.pillarId).toBe('foo');
-    expect(err.assetsBaseUrl).toBe('https://x/');
+    const out = walkRegistry(entries, {});
+
+    expect(out).toHaveLength(0);
+    expect(warnSpy).not.toHaveBeenCalled();
   });
 
   it('sorts registeredApps by navOrder ascending with a lexicographic tiebreak on id', () => {
