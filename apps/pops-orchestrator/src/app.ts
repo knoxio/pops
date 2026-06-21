@@ -3,14 +3,15 @@
  *
  * Precursor C2 (ADR-029, epics 06+07) stands up the foundation: the
  * minimal `/health` liveness probe plus the federated `/pillars` view
- * derived from `POPS_PILLARS`. The cross-pillar aggregators — federated
- * search (epic 06), the AI-tool registry (epic 07), and possibly the
- * cross-pillar embeddings pipeline — mount here in follow-up increments.
+ * (registry-first via the SDK discovery client, `POPS_PILLARS` seed
+ * fallback). The cross-pillar aggregators — federated search (epic 06), the
+ * AI-tool registry (epic 07), and possibly the cross-pillar embeddings
+ * pipeline — mount here in follow-up increments.
  *
  * Kept as a factory so the test suite can spin up an in-process
  * `supertest` instance without binding a real port.
  */
-import express, { type Express, type Request, type Response } from 'express';
+import express, { type Express, type NextFunction, type Request, type Response } from 'express';
 import { z } from 'zod';
 
 import { type BuildToolList, createAiToolsHandler } from './ai-tools/index.js';
@@ -76,8 +77,11 @@ export function createOrchestratorApp(
     res.json(handlers.health());
   });
 
-  app.get('/pillars', (_req: Request, res: Response) => {
-    res.json(handlers.pillars());
+  app.get('/pillars', (_req: Request, res: Response, next: NextFunction) => {
+    void handlers
+      .pillars()
+      .then((payload) => res.json(payload))
+      .catch(next);
   });
 
   app.post('/search', (req: Request, res: Response) => {

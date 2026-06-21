@@ -6,7 +6,11 @@
  * DB, so `health` is a pure liveness shape rather than a DB round-trip
  * (contrast the pillars, which touch SQLite to surface a dead handle).
  */
-import { getPillarRegistry, ORCHESTRATOR_PILLAR_ID } from './pillars/registry.js';
+import {
+  ORCHESTRATOR_PILLAR_ID,
+  resolvePillarRegistry,
+  type RegistrySnapshotReader,
+} from './pillars/registry.js';
 
 import type { PillarRegistryEntry } from '@pops/types';
 
@@ -19,6 +23,13 @@ export interface OrchestratorDeps {
    * have to special-case the federating service.
    */
   selfBaseUrl: string;
+  /**
+   * Live registry snapshot reader for `GET /pillars`. Production omits this so
+   * the handler reads the DB registry via the SDK discovery client; tests
+   * inject a stub to assert the registry-first / seed-fallback projection
+   * without a network round-trip.
+   */
+  snapshotReader?: RegistrySnapshotReader;
 }
 
 export interface HealthResponse {
@@ -35,7 +46,7 @@ export interface PillarsResponse {
 
 export function makeRequestHandler(deps: OrchestratorDeps): {
   health(): HealthResponse;
-  pillars(): PillarsResponse;
+  pillars(): Promise<PillarsResponse>;
 } {
   return {
     health(): HealthResponse {
@@ -47,8 +58,12 @@ export function makeRequestHandler(deps: OrchestratorDeps): {
         ts: new Date().toISOString(),
       };
     },
-    pillars(): PillarsResponse {
-      return { pillars: getPillarRegistry({ selfBaseUrl: deps.selfBaseUrl }) };
+    async pillars(): Promise<PillarsResponse> {
+      const pillars = await resolvePillarRegistry(
+        { selfBaseUrl: deps.selfBaseUrl },
+        deps.snapshotReader
+      );
+      return { pillars };
     },
   };
 }

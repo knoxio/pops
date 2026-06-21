@@ -8,13 +8,14 @@
  * remote pillar can't be reached, return `pillar-unavailable` so the caller
  * renders a placeholder rather than surfacing a network error.
  *
- * With no `POPS_PILLARS` set, every dispatch falls through to the in-process
- * resolver. As pillars split off, deployers add entries to `POPS_PILLARS`
- * and the dispatcher routes accordingly.
+ * The owning-pillar lookup is registry-first: the production wiring routes off
+ * the live DB registry and falls back to the `POPS_PILLARS` seed. When neither
+ * knows the owning pillar, the dispatch falls through to the in-process
+ * resolver.
  */
 import { parseUri } from '../modules/uri/parse.js';
 import { resolveUri, type ResolveUriOptions } from '../modules/uri/resolver.js';
-import { getRemotePillarEntry } from './registry.js';
+import { seedPillarEntry } from './registry.js';
 
 import type { PillarRegistryEntry, UriResolverResult } from '@pops/types';
 
@@ -43,8 +44,10 @@ export interface DispatchUriOptions extends ResolveUriOptions {
    */
   readonly selfPillarId?: string;
   /**
-   * Remote-pillar lookup. Defaults to the live `getRemotePillarEntry`; tests
-   * inject a stub so they don't depend on `process.env.POPS_PILLARS`.
+   * Remote-pillar lookup. The production wiring (`handlers.ts`) injects a
+   * registry-first resolver (live DB registry, `POPS_PILLARS` seed fallback).
+   * When omitted, the dispatcher defaults to the env-seed-only `seedPillarEntry`
+   * so a DB-less caller (or a unit test) still routes off `POPS_PILLARS`.
    */
   readonly lookupPillar?: (id: string) => PillarRegistryEntry | undefined;
 }
@@ -77,8 +80,9 @@ function isKnownKind(kind: string): kind is UriResolverResult['kind'] {
  *   1. Parse the URI — malformed input returns `malformed` without touching
  *      the registry.
  *   2. If the URI is owned by `selfPillarId`, ALWAYS resolve in-process.
- *   3. Look up the owning pillar in `POPS_PILLARS`. Hit ⇒ remote leg.
- *      Miss ⇒ fall through to in-process `resolveUri`.
+ *   3. Look up the owning pillar via `lookupPillar` (registry-first; seed
+ *      fallback). Hit ⇒ remote leg. Miss ⇒ fall through to in-process
+ *      `resolveUri`.
  *   4. Remote leg: POST to `${baseUrl}/uri/resolve` with `{uri}`. Bound by
  *      `remoteTimeoutMs`. Any throw becomes `pillar-unavailable`.
  */
@@ -96,8 +100,16 @@ export async function dispatchUri(
     return resolveUri(uri, options);
   }
 
-  const lookup = options.lookupPillar ?? getRemotePillarEntry;
-  const entry = lookup(parsed.parsed.moduleId);
+  const lookup = options.lookupPillar ?? seedPillarEntry;
+  // A registry-first lookup reads the DB; a DB error must NOT turn /uri/resolve
+  // into a 500. Treat any lookup failure as a cache miss and fall through to
+  // in-process resolution, preserving the "never throws" dispatch contract.
+  let entry: PillarRegistryEntry | undefined;
+  try {
+    entry = lookup(parsed.parsed.moduleId);
+  } catch {
+    return resolveUri(uri, options);
+  }
   if (!entry) {
     return resolveUri(uri, options);
   }
