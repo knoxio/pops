@@ -15,7 +15,7 @@ import { resolve } from 'node:path';
 /** PRD-124 base64 size cap reused for screenshot input. */
 export const SCREENSHOT_MAX_BYTES = 8 * 1024 * 1024;
 
-/** Mirror of `packages/app-food/src/storage/ingest-paths.ts` — duplicated to keep pops-api off the app-food package graph (cycle via @pops/api-client). */
+/** Mirror of `pillars/food/app/src/storage/ingest-paths.ts` — duplicated to keep pops-api off the app-food package graph (cycle via @pops/api-client). */
 const DEFAULT_FOOD_INGEST_DIR = './data/food/ingest';
 
 function ingestRootDir(): string {

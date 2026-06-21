@@ -566,7 +566,7 @@
   "data.substitutions.graph.viewMode.backToGlobal": "Back to global view",
   "prompts.title": "Prompt templates",
   "prompts.description": "Read-only view of the AI prompts the food ingest pipeline uses.",
-  "prompts.editingHint": "Prompts are defined in code and cannot be edited here. To change one, edit the matching constant under packages/app-food/src/prompts/, bump the version, then redeploy.",
+  "prompts.editingHint": "Prompts are defined in code and cannot be edited here. To change one, edit the matching constant under pillars/food/app/src/prompts/, bump the version, then redeploy.",
   "prompts.fields.model": "Model:",
   "prompts.fields.version": "Version:",
   "inbox.ingestKind.url-web": "Web URL",

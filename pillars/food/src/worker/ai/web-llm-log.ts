@@ -1,7 +1,7 @@
 /**
  * PRD-128 — local shim for PRD-133's `callClaudeWithLogging`.
  *
- * PRD-133 lives in `packages/app-food/src/ai/log-inference.ts` which
+ * PRD-133 lives in `pillars/food/app/src/ai/log-inference.ts` which
  * has a React dependency tree the worker doesn't want to pull in. This
  * shim records the same telemetry shape and emits a pino line; the
  * post-merge follow-up (recorded in the roadmap claim) extracts the

@@ -9,7 +9,7 @@ export const FOOD_PILLAR_ID = 'food' as const;
 /**
  * Wire-format nav contribution for the food pillar (PRD-243 US-02).
  *
- * Mirrors `@pops/app-food`'s `navConfig` (`packages/app-food/src/routes.tsx`)
+ * Mirrors `@pops/app-food`'s `navConfig` (`pillars/food/app/src/routes.tsx`)
  * field-for-field; Lucide names are rewritten as kebab-case identifiers
  * per the wire schema from PR #3230. `order: 40` matches today's
  * position in `apps/pops-shell/src/app/nav/registry.ts`

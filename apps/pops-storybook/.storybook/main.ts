@@ -12,6 +12,7 @@ const config: StorybookConfig = {
     '../../../packages/ui/src/**/*.mdx',
     '../../../packages/ui/src/**/*.stories.@(js|jsx|mjs|ts|tsx)',
     '../../../packages/*/src/**/*.stories.@(js|jsx|mjs|ts|tsx)',
+    '../../../pillars/*/*/src/**/*.stories.@(js|jsx|mjs|ts|tsx)',
   ],
   addons: ['@storybook/addon-a11y', '@chromatic-com/storybook'],
   framework: {
@@ -34,31 +35,31 @@ const config: StorybookConfig = {
           { find: '@pops/ui', replacement: path.resolve(__dirname, '../../../packages/ui/src') },
           {
             find: '@pops/app-ai',
-            replacement: path.resolve(__dirname, '../../../packages/app-ai/src'),
+            replacement: path.resolve(__dirname, '../../../pillars/core/app/src'),
           },
           {
             find: '@pops/app-cerebrum',
-            replacement: path.resolve(__dirname, '../../../packages/app-cerebrum/src'),
+            replacement: path.resolve(__dirname, '../../../pillars/cerebrum/app/src'),
           },
           {
             find: '@pops/app-finance',
-            replacement: path.resolve(__dirname, '../../../packages/app-finance/src'),
+            replacement: path.resolve(__dirname, '../../../pillars/finance/app/src'),
           },
           {
             find: '@pops/app-food',
-            replacement: path.resolve(__dirname, '../../../packages/app-food/src'),
+            replacement: path.resolve(__dirname, '../../../pillars/food/app/src'),
           },
           {
             find: '@pops/app-inventory',
-            replacement: path.resolve(__dirname, '../../../packages/app-inventory/src'),
+            replacement: path.resolve(__dirname, '../../../pillars/inventory/app/src'),
           },
           {
             find: '@pops/app-lists',
-            replacement: path.resolve(__dirname, '../../../packages/app-lists/src'),
+            replacement: path.resolve(__dirname, '../../../pillars/lists/app/src'),
           },
           {
             find: '@pops/app-media',
-            replacement: path.resolve(__dirname, '../../../packages/app-media/src'),
+            replacement: path.resolve(__dirname, '../../../pillars/media/app/src'),
           },
         ],
       },

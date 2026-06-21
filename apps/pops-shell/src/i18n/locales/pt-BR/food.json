@@ -501,7 +501,7 @@
   "hero.removeSuccess": "Imagem principal removida.",
   "prompts.title": "Templates de prompt",
   "prompts.description": "Visualização somente leitura dos prompts de IA usados no pipeline de ingestão de receitas.",
-  "prompts.editingHint": "Os prompts são definidos em código e não podem ser editados aqui. Para alterar um, edite a constante correspondente em packages/app-food/src/prompts/, atualize a versão e faça um novo deploy.",
+  "prompts.editingHint": "Os prompts são definidos em código e não podem ser editados aqui. Para alterar um, edite a constante correspondente em pillars/food/app/src/prompts/, atualize a versão e faça um novo deploy.",
   "prompts.fields.model": "Modelo:",
   "prompts.fields.version": "Versão:",
   "inbox.ingestKind.url-web": "URL Web",

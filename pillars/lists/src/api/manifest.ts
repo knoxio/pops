@@ -9,7 +9,7 @@ export const LISTS_PILLAR_ID = 'lists' as const;
 /**
  * Wire-format nav contribution for the lists pillar (PRD-243 US-02).
  *
- * Mirrors `@pops/app-lists`'s `navConfig` (`packages/app-lists/src/routes.tsx`)
+ * Mirrors `@pops/app-lists`'s `navConfig` (`pillars/lists/app/src/routes.tsx`)
  * field-for-field; Lucide names are rewritten as kebab-case identifiers
  * per the wire schema from PR #3230. `order: 50` matches today's
  * position in `apps/pops-shell/src/app/nav/registry.ts`

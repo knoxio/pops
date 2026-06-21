@@ -17,7 +17,7 @@ import { enqueueIngestJob, type EnqueueResult } from './ingest-enqueue.js';
 
 import type { IngestJobData } from '../../../contract/queue/index.js';
 
-/** Mirror of `packages/app-food/src/storage/ingest-paths.ts`. */
+/** Mirror of `pillars/food/app/src/storage/ingest-paths.ts`. */
 const DEFAULT_FOOD_INGEST_DIR = './data/food/ingest';
 const MIME_BY_EXT: Record<string, 'image/jpeg' | 'image/png' | 'image/webp'> = {
   jpg: 'image/jpeg',

@@ -216,8 +216,8 @@
       "files": [
         "apps/pops-shell/src/**/*.{ts,tsx}",
         "packages/ui/src/**/*.{ts,tsx}",
-        "packages/app-*/src/**/*.{ts,tsx}",
-        "packages/overlay-*/src/**/*.{ts,tsx}",
+        "pillars/*/app/src/**/*.{ts,tsx}",
+        "pillars/*/overlay-*/src/**/*.{ts,tsx}",
         "packages/navigation/src/**/*.{ts,tsx}"
       ],
       "rules": {
@@ -228,8 +228,8 @@
       "files": [
         "apps/pops-shell/src/**/*.{ts,tsx}",
         "packages/ui/src/**/*.{ts,tsx}",
-        "packages/app-*/src/**/*.{ts,tsx}",
-        "packages/overlay-*/src/**/*.{ts,tsx}",
+        "pillars/*/app/src/**/*.{ts,tsx}",
+        "pillars/*/overlay-*/src/**/*.{ts,tsx}",
         "packages/navigation/src/**/*.{ts,tsx}"
       ],
       "rules": {
@@ -286,7 +286,7 @@
     {
       "files": [
         "apps/pops-shell/e2e/**/*.ts",
-        "packages/app-*/scripts/**/*.ts",
+        "pillars/*/app/scripts/**/*.ts",
         "services/*/src/scripts/**/*.ts",
         "scripts/**/*.{ts,mjs}"
       ],
@@ -322,10 +322,10 @@
     },
     {
       "files": [
-        "packages/app-*/src/**/*.gen.ts",
-        "packages/app-*/src/*-api/**/*.{ts,tsx}",
-        "packages/overlay-*/src/**/*.gen.ts",
-        "packages/overlay-*/src/*-api/**/*.{ts,tsx}",
+        "pillars/*/app/src/**/*.gen.ts",
+        "pillars/*/app/src/*-api/**/*.{ts,tsx}",
+        "pillars/*/overlay-*/src/**/*.gen.ts",
+        "pillars/*/overlay-*/src/*-api/**/*.{ts,tsx}",
         "apps/pops-shell/src/**/*.gen.ts",
         "apps/pops-shell/src/*-api/**/*.{ts,tsx}"
       ],

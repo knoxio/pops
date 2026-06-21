@@ -7,7 +7,7 @@ import type { AnthropicMessage } from './anthropic.js';
  * the log payload through `opts.onLog` (caller-injected so tests don't
  * need to mock the network), and returns the Anthropic response
  * unchanged. The PRD-133 canonical wrapper at
- * `packages/app-food/src/ai/log-inference.ts` is React-coupled (lives in
+ * `pillars/food/app/src/ai/log-inference.ts` is React-coupled (lives in
  * `@pops/app-food`); follow-up tracked in PRD-133 will extract it to a
  * backend-only package, at which point this module's `onLog` plugs into
  * the shared `LogFoodInferenceFn` instead of pino. Operation names here
