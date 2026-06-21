@@ -1,0 +1,77 @@
+name: Rust Quality
+
+# Self-contained Rust CI lane for the `crates/` cargo workspace and the Rust
+# pillars it builds (currently `pillars/contacts`, the first Rust pillar).
+#
+# ADDITIVE by design: it is path-filtered to the Rust tree and is NOT part of
+# the TS `pillar-quality` / `_pkg-check` matrices. Rust pillars carry no
+# `package.json`, so the turbo/pnpm pillar discovery never sees them — this
+# workflow is their only gate. Adding a Rust crate to `crates/Cargo.toml`
+# (e.g. `pops-ai`, `pops-settings`) is covered here with no workflow edit
+# because every step operates on the whole workspace.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "crates/**"
+      - "pillars/contacts/**"
+      - ".github/workflows/rust-quality.yml"
+  pull_request:
+    paths:
+      - "crates/**"
+      - "pillars/contacts/**"
+      - ".github/workflows/rust-quality.yml"
+
+concurrency:
+  group: rust-quality-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # The cargo workspace root. `pillars/contacts` is a member referenced by
+  # relative path from here.
+  WORKSPACE_DIR: crates
+
+jobs:
+  quality:
+    name: fmt + clippy + build + test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install Rust toolchain (stable + rustfmt + clippy)
+        run: |
+          rustup toolchain install stable --profile minimal --component rustfmt --component clippy
+          rustup default stable
+          rustc --version
+          cargo --version
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: ${{ env.WORKSPACE_DIR }}
+
+      - name: Format check
+        working-directory: ${{ env.WORKSPACE_DIR }}
+        run: cargo fmt --all --check
+
+      - name: Clippy (deny warnings)
+        working-directory: ${{ env.WORKSPACE_DIR }}
+        run: cargo clippy --all-targets --all-features -- -D warnings
+
+      - name: Build
+        working-directory: ${{ env.WORKSPACE_DIR }}
+        run: cargo build --all-targets
+
+      - name: Test
+        working-directory: ${{ env.WORKSPACE_DIR }}
+        run: cargo test --all
+
+      - name: OpenAPI spec is current (3.0 emission drift gate)
+        working-directory: ${{ env.WORKSPACE_DIR }}
+        run: |
+          cargo run -p contacts --bin emit-openapi
+          if ! git diff --exit-code -- ../pillars/contacts/openapi; then
+            echo "::error::pillars/contacts/openapi/contacts.openapi.json is out of date."
+            echo "Run 'cargo run -p contacts --bin emit-openapi' and commit the result."
+            exit 1
+          fi

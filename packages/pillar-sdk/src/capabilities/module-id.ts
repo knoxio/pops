@@ -26,6 +26,7 @@ import { PILLARS, type KnownPillarId } from './known-pillar-id.js';
 export const ALL_MODULE_IDS = [
   'ai',
   'cerebrum',
+  'contacts',
   'core',
   'ego',
   'finance',
@@ -68,6 +69,7 @@ export function isModuleId(id: string): id is ModuleId {
 export const MODULE_PARENT_PILLAR: Record<ModuleId, KnownPillarId> = {
   ai: 'core',
   cerebrum: 'cerebrum',
+  contacts: 'contacts',
   core: 'core',
   ego: 'cerebrum',
   finance: 'finance',

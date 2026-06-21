@@ -1,0 +1,38 @@
+[package]
+name = "contacts"
+version = "0.1.0"
+# The workspace root lives at `crates/`, a sibling of `pillars/`. The crate is
+# colocated with its TS frontend under `pillars/contacts`, so it points back
+# at the workspace explicitly rather than relying on directory ancestry.
+workspace = "../../crates"
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "POPS contacts pillar — first Rust pillar; authoritative entities store (N0 scaffold)."
+
+[lib]
+name = "contacts"
+path = "src/lib.rs"
+
+[[bin]]
+name = "contacts"
+path = "src/main.rs"
+
+[[bin]]
+name = "emit-openapi"
+path = "src/bin/emit_openapi.rs"
+
+[dependencies]
+axum = { workspace = true }
+tokio = { workspace = true }
+sqlx = { workspace = true }
+utoipa = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["rt-multi-thread", "macros", "signal", "test-util"] }
+tower = { version = "0.5", features = ["util"] }
+http-body-util = "0.1"
