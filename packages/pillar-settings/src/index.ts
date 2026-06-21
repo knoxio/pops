@@ -18,6 +18,7 @@ export { settingsTable, type SettingRow, type SettingsDb } from './schema.js';
 
 export {
   deriveKeySet,
+  keyValuesFor,
   type DeclaredSettingsField,
   type DeclaredSettingsGroup,
   type DeclaredSettingsManifest,

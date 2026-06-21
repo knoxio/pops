@@ -40,6 +40,7 @@
   },
   "dependencies": {
     "@pops/pillar-sdk": "workspace:*",
+    "@pops/pillar-settings": "workspace:*",
     "@pops/types": "workspace:*",
     "@ts-rest/core": "3.53.0-rc.1",
     "@ts-rest/express": "3.53.0-rc.1",

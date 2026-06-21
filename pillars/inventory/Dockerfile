@@ -17,6 +17,7 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json .oxfmtrc
 # in this image's build context.
 COPY pillars/inventory/package.json ./pillars/inventory/
 COPY packages/pillar-sdk/package.json ./packages/pillar-sdk/
+COPY packages/pillar-settings/package.json ./packages/pillar-settings/
 COPY packages/types/package.json ./packages/types/
 
 # Install pnpm + only the deps of the @pops/inventory subgraph.
@@ -27,6 +28,9 @@ RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
 # @pops/pillar-sdk
 COPY packages/pillar-sdk/src ./packages/pillar-sdk/src
 COPY packages/pillar-sdk/tsconfig.json ./packages/pillar-sdk/tsconfig.json
+# @pops/pillar-settings
+COPY packages/pillar-settings/src ./packages/pillar-settings/src
+COPY packages/pillar-settings/tsconfig.json ./packages/pillar-settings/tsconfig.json
 # @pops/types
 COPY packages/types/src ./packages/types/src
 COPY packages/types/tsconfig.json ./packages/types/tsconfig.json

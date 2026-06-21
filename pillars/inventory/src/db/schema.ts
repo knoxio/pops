@@ -15,3 +15,4 @@ export { itemFixtureConnections } from './schema/item-fixture-connections.js';
 export { itemPhotos } from './schema/item-photos.js';
 export { itemUploadedFiles } from './schema/item-uploaded-files.js';
 export { locations } from './schema/locations.js';
+export { settings } from './schema/settings.js';

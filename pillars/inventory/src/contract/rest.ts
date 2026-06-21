@@ -22,6 +22,7 @@ import { inventoryPaperlessContract } from './rest-paperless.js';
 import { inventoryPhotosContract } from './rest-photos.js';
 import { inventoryReportsContract } from './rest-reports.js';
 import { inventorySearchContract } from './rest-search.js';
+import { inventorySettingsContract } from './rest-settings.js';
 
 const c = initContract();
 
@@ -37,6 +38,7 @@ export const inventoryContract = c.router(
     reports: inventoryReportsContract,
     paperless: inventoryPaperlessContract,
     search: inventorySearchContract,
+    settings: inventorySettingsContract,
   },
   {
     pathPrefix: '',
