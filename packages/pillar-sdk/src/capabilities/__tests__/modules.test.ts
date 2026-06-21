@@ -10,13 +10,18 @@ import {
 } from '../module-id.js';
 
 describe('ALL_MODULE_IDS', () => {
-  it('is a 9-element superset of PILLARS plus ai + ego', () => {
-    expect(ALL_MODULE_IDS).toHaveLength(9);
+  it('is a superset of PILLARS plus the transitional ai + ego ids', () => {
+    expect(ALL_MODULE_IDS).toHaveLength(PILLARS.length + 2);
     for (const pillar of PILLARS) {
       expect(ALL_MODULE_IDS).toContain(pillar);
     }
     expect(ALL_MODULE_IDS).toContain('ai');
     expect(ALL_MODULE_IDS).toContain('ego');
+  });
+
+  it('includes contacts (the first Rust pillar)', () => {
+    expect(ALL_MODULE_IDS).toContain('contacts');
+    expect(MODULE_PARENT_PILLAR.contacts).toBe('contacts');
   });
 
   it('contains no duplicates', () => {

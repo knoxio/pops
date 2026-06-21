@@ -19,13 +19,22 @@
 import { PILLARS, type KnownPillarId } from './known-pillar-id.js';
 
 /**
- * Canonical superset of routable module ids. Matches the order and
- * contents of `@pops/module-registry`'s `KNOWN_MODULES` — kept in lock-step
- * by the test in `__tests__/modules.test.ts`.
+ * Canonical superset of routable module ids: every `KnownPillarId` (the
+ * `PILLARS` set, including `contacts`) plus the two transitional sub-module
+ * ids (`ai`, `ego`). The test in `__tests__/modules.test.ts` pins this to
+ * `PILLARS + {ai, ego}`.
+ *
+ * This is deliberately NOT in lock-step with `@pops/module-registry`'s
+ * build-time `KNOWN_MODULES`. That registry is manifest-driven — it only
+ * lists pillars that ship a JS/TS contract with a `./manifest` export.
+ * `contacts` is a Rust pillar with no such manifest yet, so it is a routable
+ * pillar id here but absent from `KNOWN_MODULES` until it gains a TS manifest
+ * in N1+.
  */
 export const ALL_MODULE_IDS = [
   'ai',
   'cerebrum',
+  'contacts',
   'core',
   'ego',
   'finance',
@@ -68,6 +77,7 @@ export function isModuleId(id: string): id is ModuleId {
 export const MODULE_PARENT_PILLAR: Record<ModuleId, KnownPillarId> = {
   ai: 'core',
   cerebrum: 'cerebrum',
+  contacts: 'contacts',
   core: 'core',
   ego: 'cerebrum',
   finance: 'finance',

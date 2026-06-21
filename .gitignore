@@ -7,6 +7,10 @@ dist/
 # Bundled nginx render + watcher CLIs (apps/pops-shell, built in-image)
 dist-scripts/
 
+# Rust build output (crates/ cargo workspace + pillars/<id> Rust pillars).
+# Cargo.lock IS committed for the workspace (reproducible bin builds).
+target/
+
 # Environment and secrets
 .env
 .env.*

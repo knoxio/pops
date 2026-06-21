@@ -405,7 +405,7 @@ describe('generate-nginx-conf', () => {
     it('emits zero pillar REST blocks for an empty registry but keeps the orchestrator block', () => {
       const rendered = renderNginxConfFromUpstreams([]);
       expect(rendered).not.toMatch(
-        /location \/(?:core|inventory|media|finance|food|lists|cerebrum)-api\/ \{/
+        /location \/(?:core|inventory|media|finance|food|lists|cerebrum|contacts)-api\/ \{/
       );
       expect(rendered).toContain('location /orchestrator-api/ {');
     });
