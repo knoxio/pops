@@ -29,7 +29,7 @@ import type { IngestJobResult } from '../../../contract/queue/index.js';
 
 const INGEST_RECIPE_SLUG_PREFIX = 'ingest-source-';
 /** Lightweight match against `@recipe(... title="...")` — the DSL grammar in
- *  `packages/app-food/src/dsl/parse-recipe.ts` declares `title` as a named
+ *  `pillars/food/app/src/dsl/parse-recipe.ts` declares `title` as a named
  *  arg inside `@recipe(...)`. We deliberately don't call the full parser to
  *  avoid depending on `@pops/app-food` (which would close the cycle through
  *  @pops/api-client); the regex is permissive enough for any author-written

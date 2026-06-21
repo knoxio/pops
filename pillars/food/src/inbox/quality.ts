@@ -9,7 +9,7 @@
  * truth — pinned by `quality.test.ts` so adding or tweaking a signal
  * requires updating both the code and the test in the same commit.
  *
- * **Architecture note** — PRD-137 originally specified `packages/app-food/src/inbox/quality.ts`
+ * **Architecture note** — PRD-137 originally specified `pillars/food/app/src/inbox/quality.ts`
  * as the home, but PRD-119-API's lessons captured (line 690 of the
  * food-app roadmap) moved every backend-shaped helper into
  * `@pops/app-food-db` to break the `pops-api → @pops/app-food →

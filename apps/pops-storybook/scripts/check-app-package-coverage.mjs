@@ -5,8 +5,11 @@
  * `.storybook/main.ts`.
  *
  * A package is considered a frontend surface (and therefore eligible for
- * Storybook) if it has `src/routes.tsx`. Server-only siblings such as
- * `@pops/app-food-db` / `@pops/app-lists-db` are excluded by that filter.
+ * Storybook) if its name is `@pops/app-*` and it has `src/routes.tsx`.
+ * Server-only siblings and the overlay package are excluded by that filter.
+ *
+ * Frontend app packages are colocated inside their owning pillar at
+ * `pillars/<pillar>/app/` (PRD-253); discovery walks those pillar app dirs.
  *
  * Fails (exit 1) on any missing dep or alias so future drift surfaces in CI
  * instead of waiting for someone to file a story and find the dep missing
@@ -19,23 +22,24 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(__dirname, '../../..');
-const PACKAGES_DIR = resolve(REPO_ROOT, 'packages');
+const PILLARS_DIR = resolve(REPO_ROOT, 'pillars');
 const STORYBOOK_PKG = resolve(__dirname, '../package.json');
 const STORYBOOK_MAIN = resolve(__dirname, '../.storybook/main.ts');
 
 function listFrontendAppPackages() {
-  return readdirSync(PACKAGES_DIR)
-    .filter((name) => name.startsWith('app-'))
-    .filter((name) => {
-      const pkgDir = resolve(PACKAGES_DIR, name);
+  return readdirSync(PILLARS_DIR, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => resolve(PILLARS_DIR, entry.name, 'app'))
+    .filter((appDir) => {
       try {
-        statSync(resolve(pkgDir, 'src/routes.tsx'));
+        statSync(resolve(appDir, 'src/routes.tsx'));
         return true;
       } catch {
         return false;
       }
     })
-    .map((name) => `@pops/${name}`)
+    .map((appDir) => JSON.parse(readFileSync(resolve(appDir, 'package.json'), 'utf8')).name)
+    .filter((name) => typeof name === 'string' && name.startsWith('@pops/app-'))
     .toSorted();
 }
 

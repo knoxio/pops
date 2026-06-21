@@ -60,7 +60,7 @@ describe('buildBoundaryRule', () => {
     it('from.pathNot does not exclude non-owning callers', () => {
       expect(fromNotRegex.test('apps/pops-api/src/modules/foo.ts')).toBe(false);
       expect(fromNotRegex.test('apps/pops-worker/src/index.ts')).toBe(false);
-      expect(fromNotRegex.test('packages/app-finance/src/index.ts')).toBe(false);
+      expect(fromNotRegex.test('pillars/finance/app/src/index.ts')).toBe(false);
     });
 
     it('from.pathNot does not exclude sibling pillars', () => {
