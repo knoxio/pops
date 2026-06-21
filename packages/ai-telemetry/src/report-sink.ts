@@ -13,6 +13,8 @@ export interface ReportSinkConfig {
   token?: string;
   /** Injectable for tests. Defaults to the global `fetch`. */
   fetchImpl?: typeof fetch;
+  /** Opt-in diagnostics for a swallowed transport failure. */
+  onError?: (error: unknown) => void;
 }
 
 const RECORD_PATH = '/ai-usage/record';
@@ -36,11 +38,17 @@ export function createEnvReportSink(config: ReportSinkConfig = {}): ReportInfere
     const headers: Record<string, string> = { 'content-type': 'application/json' };
     if (token) headers['x-pops-internal-token'] = token;
     const base = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
-    await fetchImpl(`${base}${RECORD_PATH}`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(record),
-    });
+    try {
+      await fetchImpl(`${base}${RECORD_PATH}`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(record),
+      });
+    } catch (error) {
+      // Best-effort by contract: a transport failure must never propagate into
+      // a caller. Surfaced only through the opt-in diagnostics hook.
+      config.onError?.(error);
+    }
   };
 }
 

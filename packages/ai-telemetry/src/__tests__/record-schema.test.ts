@@ -49,6 +49,11 @@ describe('InferenceRecordSchema', () => {
     expect(InferenceRecordSchema.safeParse({ ...valid, status: 'weird' }).success).toBe(false);
   });
 
+  it('rejects a non-finite costUsd', () => {
+    expect(InferenceRecordSchema.safeParse({ ...valid, costUsd: Infinity }).success).toBe(false);
+    expect(InferenceRecordSchema.safeParse({ ...valid, costUsd: Number.NaN }).success).toBe(false);
+  });
+
   it('accepts every widened status value', () => {
     for (const status of ['success', 'error', 'timeout', 'budget-blocked'] as const) {
       expect(InferenceRecordSchema.safeParse({ ...valid, status }).success).toBe(true);

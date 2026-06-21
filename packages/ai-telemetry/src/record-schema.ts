@@ -18,7 +18,7 @@ export const InferenceRecordSchema = z.object({
   domain: z.string().min(1),
   inputTokens: z.number().int().nonnegative(),
   outputTokens: z.number().int().nonnegative(),
-  costUsd: z.number().nonnegative(),
+  costUsd: z.number().nonnegative().finite(),
   latencyMs: z.number().int().nonnegative(),
   status: z.enum(['success', 'error', 'timeout', 'budget-blocked']),
   /** Stored as 0|1 server-side. */

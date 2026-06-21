@@ -51,6 +51,17 @@ describe('createEnvReportSink', () => {
     expect(fetchImpl).not.toHaveBeenCalled();
   });
 
+  it('never throws when the transport rejects (best-effort contract)', async () => {
+    const onError = vi.fn();
+    const fetchImpl = vi.fn((_input: RequestInfo | URL, _init?: RequestInit) =>
+      Promise.reject(new Error('ECONNREFUSED'))
+    );
+    await expect(
+      createEnvReportSink({ baseUrl: 'http://ai-api:3008', fetchImpl, onError })(record)
+    ).resolves.toBeUndefined();
+    expect(onError).toHaveBeenCalledOnce();
+  });
+
   it('prefers AI_API_URL over a self-pointing POPS_API_URL', async () => {
     process.env['AI_API_URL'] = 'http://ai-api:3008';
     process.env['POPS_API_URL'] = 'http://food-api:3005';
