@@ -20,24 +20,26 @@ import { aiConfigManifest } from './ai-manifest.js';
 const manifestKeySet = deriveKeySet([aiConfigManifest]);
 
 /**
- * The `ai.*` setting keys the ai pillar owns, derived from
- * {@link aiConfigManifest}. A non-`readonly` tuple (`[string, ...string[]]`)
- * so `makeSettingsContract`'s `:key` enum accepts it directly while staying
- * statically typed.
+ * The `ai.*` setting keys the ai pillar owns — derived from
+ * {@link aiConfigManifest} (NOT hand-listed) so the `makeSettingsContract` enum,
+ * the reset defaults, and the sensitive set can never drift from the manifest.
+ *
+ * `deriveKeySet().keys` is `readonly string[]` (not provably non-empty), but
+ * `makeSettingsContract` requires a non-empty `[string, ...string[]]` tuple, so
+ * we assert non-empty at module load — an empty manifest is a programmer error
+ * that should fail boot loudly rather than serve an empty settings surface.
  */
-export const AI_SETTINGS_KEYS: [string, ...string[]] = [
-  'ai.model',
-  'ai.modelOverrides.query',
-  'ai.modelOverrides.emit',
-  'ai.modelOverrides.classifier',
-  'ai.modelOverrides.entityExtractor',
-  'ai.modelOverrides.scopeInference',
-  'ai.modelOverrides.auditorContradiction',
-  'ai.modelOverrides.patternContradiction',
-  'ai.monthlyTokenBudget',
-  'ai.budgetExceededFallback',
-  'ai.logRetentionDays',
-];
+function asNonEmptyKeys(keys: readonly string[]): [string, ...string[]] {
+  const [first, ...rest] = keys;
+  if (first === undefined) {
+    throw new Error(
+      'aiConfigManifest declares no settings keys — cannot build the ai settings surface'
+    );
+  }
+  return [first, ...rest];
+}
+
+export const AI_SETTINGS_KEYS: [string, ...string[]] = asNonEmptyKeys(manifestKeySet.keys);
 
 /** The ai pillar's effective {@link KeyDefaults} — manifest-derived end to end. */
 export const aiKeyDefaults: KeyDefaults = {

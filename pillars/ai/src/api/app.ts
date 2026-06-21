@@ -36,7 +36,11 @@ function requireInternalToken(req: Request, res: Response, next: NextFunction): 
     return;
   }
   const expected = process.env['POPS_API_INTERNAL_TOKEN'];
-  if (expected === undefined || req.headers['x-pops-internal-token'] !== expected) {
+  // `req.get` normalises a possibly-repeated header to a single string so a
+  // client sending the token more than once (→ `string[]`) is not spuriously
+  // rejected.
+  const presented = req.get('x-pops-internal-token');
+  if (expected === undefined || presented !== expected) {
     res.status(403).json({ message: 'Forbidden' });
     return;
   }

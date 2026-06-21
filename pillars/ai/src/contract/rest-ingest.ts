@@ -27,7 +27,14 @@ export const aiIngestContract = c.router({
     method: 'POST',
     path: '/ai-usage/record',
     body: InferenceRecordSchema,
-    responses: { 200: z.object({ ok: z.literal(true) }), 400: ErrorBodySchema },
+    // 403: the internal-token gate (api/app.ts) rejects callers without a
+    // matching `x-pops-internal-token` before the handler runs. Declared so the
+    // OpenAPI projection is truthful for cross-pillar callers.
+    responses: {
+      200: z.object({ ok: z.literal(true) }),
+      400: ErrorBodySchema,
+      403: z.object({ message: z.string() }),
+    },
     summary: 'Record one AI inference (internal; cross-pillar telemetry sink)',
   },
 });

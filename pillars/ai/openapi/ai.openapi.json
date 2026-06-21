@@ -2910,6 +2910,23 @@
               }
             },
             "description": "400"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "403"
           }
         },
         "summary": "Record one AI inference (internal; cross-pillar telemetry sink)",

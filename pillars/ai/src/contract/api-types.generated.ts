@@ -1730,6 +1730,17 @@ export interface operations {
           };
         };
       };
+      /** @description 403 */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            message: string;
+          };
+        };
+      };
     };
   };
   'aiUsage.getStats': {
