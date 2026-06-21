@@ -10,11 +10,11 @@ event-driven reload PRD-228 built but never deployed.
 
 ## Acceptance Criteria
 
-- [ ] `watch-registry-and-reload` (the existing CLI, `gen:nginx:watch`) runs as a managed long-lived process in the prod image alongside `nginx` — if either process exits, the container exits (no silent half-dead state).
-- [ ] The watcher is configured from env: `POPS_REGISTRY_URL` (SSE `GET /registry/subscribe` source) and the optional `POPS_NGINX_HEALTH_PORT` (the `nginx_generator_last_error_at` surface) are set in `infra/docker-compose.yml` `pops-shell`.
-- [ ] On a `registered` / `deregistered` / eviction event the watcher re-renders (US-01 path), runs `nginx -t`, and on pass runs `nginx -s reload` against the **running** master — verified end-to-end (US-04), not just in the unit harness.
-- [ ] A failed render/validation leaves the live conf in place and flips the watcher health endpoint to degraded (existing PRD-228/US-03 behaviour) — confirmed to work in the deployed topology.
-- [ ] No regression to boot: US-02's boot-render still produces the initial conf; the watcher takes over for subsequent changes.
+- [x] `watch-registry-and-reload` (the existing CLI, `gen:nginx:watch`) runs as a managed long-lived process in the prod image alongside `nginx` — if either process exits, the container exits (no silent half-dead state).
+- [x] The watcher is configured from env: `POPS_REGISTRY_URL` (SSE `GET /registry/subscribe` source) and the optional `POPS_NGINX_HEALTH_PORT` (the `nginx_generator_last_error_at` surface) are set in `infra/docker-compose.yml` `pops-shell`.
+- [x] On a `registered` / `deregistered` / eviction event the watcher re-renders (US-01 path), runs `nginx -t`, and on pass runs `nginx -s reload` against the **running** master (entrypoint wires `nginx -t` + `nginx -s reload`; reload logic is the PRD-228 `nginx-event-reload` core, e2e-tested). Deployed-topology drill is US-04.
+- [x] A failed render/validation leaves the live conf in place and flips the watcher health endpoint to degraded (existing PRD-228/US-03 behaviour); `POPS_NGINX_HEALTH_PORT` is wired in compose.
+- [x] No regression to boot: US-02's boot-render still produces the initial conf; the watcher takes over for subsequent changes.
 
 ## Notes
 

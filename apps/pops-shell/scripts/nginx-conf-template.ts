@@ -19,12 +19,10 @@ export const NGINX_CONF_HEAD = `server {
     # Resolver for variable-form \`proxy_pass\`. Upstreams held in an
     # nginx variable defer DNS resolution to request time (vs. config-
     # load time for literal \`proxy_pass <name>\`), letting nginx boot
-    # even when an optional pillar container is missing. The per-pillar
-    # \`/<pillar>-api/\` REST blocks below and the \`/pillars\` proxy use
-    # the variable form; any remaining literal \`proxy_pass\` (e.g. the
-    # \`/media/images/\` byte route) still hard-fails the boot if its host is
-    # unreachable, so new optional upstreams must adopt the variable
-    # form to inherit the boot-resilience.
+    # even when an optional pillar container is missing. Every \`proxy_pass\`
+    # in this file uses the variable form so the shell always boots — a
+    # registry-driven boot-render (PRD-255) must never hard-fail on an
+    # absent pillar — and new upstreams must adopt the same form.
     resolver 127.0.0.11 valid=30s ipv6=off;
 
     # Gzip compression
@@ -79,8 +77,16 @@ export const NGINX_CONF_TAIL = `    # Relocated raw routes (02): Up Bank webhook
     # Proxy media images (posters, backdrops) served by the media pillar
     # On-demand downloads from TMDB/TVDB may take a few seconds on first request
     # Cache headers are set by the API — don't override with expires/add_header
+    #
+    # Variable-form \`proxy_pass\` (like every other upstream here) so the
+    # shell boots even when media-api is unreachable — a registry-driven
+    # boot-render must never hard-fail the image on an absent pillar
+    # (PRD-255). The location prefix matches the upstream path, so the bare
+    # host:port variable plus the unchanged \`$request_uri\` reproduces the
+    # previous literal \`http://media-api:3003/media/images/\` target.
     location /media/images/ {
-        proxy_pass http://media-api:3003/media/images/;
+        set $media_images_upstream http://media-api:3003;
+        proxy_pass $media_images_upstream;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
         proxy_connect_timeout 10s;

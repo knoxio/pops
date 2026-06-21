@@ -10,9 +10,10 @@
  * on failure the reload is skipped and `nginx_generator_last_error_at`
  * flips on the optional health endpoint until the next clean cycle.
  *
- * Env: CORE_REGISTRY_URL, POPS_NGINX_OUTPUT, POPS_NGINX_RELOAD_CMD,
- * POPS_NGINX_CONFIG_TEST_CMD (default `nginx -t -c <output>`; empty
- * string disables the gate), POPS_NGINX_DEBOUNCE_MS, POPS_NGINX_BACKOFF_MS,
+ * Env: POPS_REGISTRY_URL (or legacy CORE_REGISTRY_URL), POPS_NGINX_OUTPUT,
+ * POPS_NGINX_RELOAD_CMD, POPS_NGINX_CONFIG_TEST_CMD (default
+ * `nginx -t -c <output>`; empty string disables the gate),
+ * POPS_NGINX_DEBOUNCE_MS, POPS_NGINX_BACKOFF_MS,
  * POPS_NGINX_HEALTH_PORT / _HOST / _PATH.
  */
 import { spawn } from 'node:child_process';
@@ -20,7 +21,7 @@ import { writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { DEFAULT_REGISTRY_URL, renderNginxConfDynamic } from './generate-nginx-conf.ts';
+import { renderNginxConfDynamic } from './generate-nginx-conf.ts';
 import {
   createReloadHandler,
   isWatchedEvent,
@@ -29,6 +30,7 @@ import {
 } from './nginx-event-reload.ts';
 import { type NginxGeneratorHealth } from './nginx-generator-health.ts';
 import { consumeSse } from './registry-sse-client.ts';
+import { resolveRegistryUrl } from './registry-url-env.ts';
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 const DEFAULT_OUTPUT_PATH = resolve(SCRIPT_DIR, '..', 'nginx.conf');
@@ -72,7 +74,7 @@ function readConfig(env: NodeJS.ProcessEnv): WatcherConfig {
   const outputPath = env['POPS_NGINX_OUTPUT'] ?? DEFAULT_OUTPUT_PATH;
   const rawConfigTestCmd = env['POPS_NGINX_CONFIG_TEST_CMD'];
   return {
-    registryUrl: env['CORE_REGISTRY_URL'] ?? DEFAULT_REGISTRY_URL,
+    registryUrl: resolveRegistryUrl(env),
     outputPath,
     reloadCmd: env['POPS_NGINX_RELOAD_CMD'] ?? DEFAULT_RELOAD_CMD,
     configTestCmd: rawConfigTestCmd ?? defaultConfigTestCmd(outputPath),

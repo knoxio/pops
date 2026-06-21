@@ -4,6 +4,8 @@ package-lock.json
 
 # Build output
 dist/
+# Bundled nginx render + watcher CLIs (apps/pops-shell, built in-image)
+dist-scripts/
 
 # Environment and secrets
 .env

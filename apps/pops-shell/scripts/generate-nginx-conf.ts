@@ -54,6 +54,7 @@ import { parseCliArgs, type CliOptions } from './nginx-cli-args.ts';
 import { assertDynamicNotCheck, runDynamic, runStatic } from './nginx-cli-main.ts';
 import { NGINX_CONF_ORCHESTRATOR } from './nginx-conf-orchestrator.ts';
 import { NGINX_CONF_HEAD, NGINX_CONF_REST_INTRO, NGINX_CONF_TAIL } from './nginx-conf-template.ts';
+import { DEFAULT_REGISTRY_URL, resolveRegistryUrl } from './registry-url-env.ts';
 
 /**
  * Internal port assignment for each pillar's API container. Matches every
@@ -88,7 +89,7 @@ export const PILLAR_RENDER_ORDER: readonly KnownPillarId[] = [
   'cerebrum',
 ];
 
-export const DEFAULT_REGISTRY_URL = 'http://core-api:3001';
+export { DEFAULT_REGISTRY_URL };
 
 export interface PillarUpstream {
   readonly pillarId: PillarId;
@@ -243,7 +244,7 @@ const DEFAULT_OUTPUT_PATH = resolve(SCRIPT_DIR, '..', 'nginx.conf');
 function cliDefaults(): { outputPath: string; registryUrl: string } {
   return {
     outputPath: DEFAULT_OUTPUT_PATH,
-    registryUrl: process.env['CORE_REGISTRY_URL'] ?? DEFAULT_REGISTRY_URL,
+    registryUrl: resolveRegistryUrl(process.env),
   };
 }
 

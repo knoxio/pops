@@ -90,6 +90,13 @@ jobs:
         if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
         run: cd apps/pops-shell && pnpm typecheck
 
+      # The committed nginx.conf is the prod BOOT FALLBACK (PRD-255). Gate it
+      # for drift here, not only via the Vitest snapshot, so a stale fallback
+      # fails the build.
+      - name: nginx fallback conf drift gate
+        if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
+        run: cd apps/pops-shell && pnpm gen:nginx:check
+
       - name: Test
         if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
         run: cd apps/pops-shell && pnpm test

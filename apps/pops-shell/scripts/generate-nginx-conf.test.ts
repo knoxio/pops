@@ -7,7 +7,6 @@ import { describe, expect, it } from 'vitest';
 import { PILLARS } from '@pops/pillar-sdk';
 
 import {
-  DEFAULT_REGISTRY_URL,
   PILLAR_RENDER_ORDER,
   PILLAR_UPSTREAMS,
   assertRenderOrderCoversAllPillars,
@@ -19,6 +18,7 @@ import {
   resolveUpstreamForEntry,
   type PillarUpstream,
 } from './generate-nginx-conf.ts';
+import { resolveRegistryUrl } from './registry-url-env.ts';
 
 import type { DiscoveredPillar, DiscoveryTransport } from '@pops/pillar-sdk/client';
 import type { ManifestPayload } from '@pops/pillar-sdk/manifest-schema';
@@ -483,7 +483,7 @@ describe('generate-nginx-conf', () => {
       const opts = parseCliArgsForGenerator([]);
       expect(opts.dynamic).toBe(false);
       expect(opts.check).toBe(false);
-      expect(opts.registryUrl).toBe(process.env['CORE_REGISTRY_URL'] ?? DEFAULT_REGISTRY_URL);
+      expect(opts.registryUrl).toBe(resolveRegistryUrl(process.env));
     });
 
     it('parses --dynamic', () => {

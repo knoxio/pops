@@ -1,0 +1,19 @@
+/**
+ * Resolve the core registry base URL from the environment for the nginx
+ * render + watcher paths (Theme 13 PRD-255).
+ *
+ * `POPS_REGISTRY_URL` is the repo-wide convention (orchestrator, mcp,
+ * the SDK bootstrap, and the shell's self-registration all read it), so
+ * it wins. `CORE_REGISTRY_URL` is kept as a fallback for the existing
+ * watcher test harness and any compose file that still sets the older
+ * name; remove it once nothing references it.
+ */
+export const DEFAULT_REGISTRY_URL = 'http://core-api:3001';
+
+export function resolveRegistryUrl(env: NodeJS.ProcessEnv): string {
+  const pops = env['POPS_REGISTRY_URL'];
+  if (pops !== undefined && pops.length > 0) return pops;
+  const core = env['CORE_REGISTRY_URL'];
+  if (core !== undefined && core.length > 0) return core;
+  return DEFAULT_REGISTRY_URL;
+}

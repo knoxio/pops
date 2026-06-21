@@ -485,6 +485,15 @@ services:
       com.centurylinklabs.watchtower.enable: 'true'
     networks:
       - frontend
+    environment:
+      # Registry-driven nginx (PRD-255). The entrypoint boot-renders the
+      # conf from this URL and the watcher subscribes to its SSE feed; on a
+      # registry outage the image falls back to the committed static conf.
+      # core-api shares the frontend network, so the in-cluster host wins.
+      POPS_REGISTRY_URL: ${POPS_REGISTRY_URL:-http://core-api:3001}
+      # Surfaces the watcher's `nginx_generator_last_error_at` health state
+      # (degraded on a failed re-render). Internal-only; not in `expose`.
+      POPS_NGINX_HEALTH_PORT: '9090'
     expose:
       - '80'
     healthcheck:
