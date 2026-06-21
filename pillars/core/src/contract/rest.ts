@@ -13,6 +13,7 @@
  */
 import { initContract } from '@ts-rest/core';
 
+import { coreAiUsageContract } from './rest-ai-usage.js';
 import { coreEntitiesContract } from './rest-entities.js';
 import { coreFeaturesContract } from './rest-features.js';
 import { coreSearchContract } from './rest-search.js';
@@ -25,6 +26,7 @@ const c = initContract();
 
 export const coreContract = c.router(
   {
+    aiUsage: coreAiUsageContract,
     entities: coreEntitiesContract,
     features: coreFeaturesContract,
     search: coreSearchContract,

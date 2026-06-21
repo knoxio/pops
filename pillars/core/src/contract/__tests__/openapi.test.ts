@@ -80,6 +80,26 @@ describe('@pops/core REST openapi projection', () => {
     expect(op?.operationId).toBe(operationId);
   });
 
+  it.each([
+    ['GET', '/ai-usage/cache', 'aiUsage.cacheStats'],
+    ['POST', '/ai-usage/cache/prune', 'aiUsage.clearStaleCache'],
+    ['DELETE', '/ai-usage/cache', 'aiUsage.clearAllCache'],
+  ])('describes the %s %s endpoint with operationId %s', (method, path, operationId) => {
+    const op = openapi.paths[path]?.[method.toLowerCase()];
+    expect(op, `${method} ${path} should be documented`).toBeDefined();
+    expect(op?.operationId).toBe(operationId);
+  });
+
+  it('keeps only the cache surface under /ai-usage (stats/history moved to the ai pillar)', () => {
+    const aiPaths = Object.keys(openapi.paths).filter((p) => p.startsWith('/ai-usage'));
+    expect(aiPaths.toSorted()).toEqual(['/ai-usage/cache', '/ai-usage/cache/prune']);
+    expect(
+      Object.keys(openapi.paths).some(
+        (p) => p.startsWith('/ai-') && !p.startsWith('/ai-usage/cache')
+      )
+    ).toBe(false);
+  });
+
   it('documents only the migrated REST domains, not the tRPC surface', () => {
     // The set of tRPC slices converted to ts-rest so far. Grows one domain at
     // a time as the core REST migration proceeds; every documented path must
@@ -92,6 +112,7 @@ describe('@pops/core REST openapi projection', () => {
       '/service-accounts',
       '/search',
       '/features',
+      '/ai-usage',
     ];
     const paths = Object.keys(openapi.paths);
     for (const p of paths) {
