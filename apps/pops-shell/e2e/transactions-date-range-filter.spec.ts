@@ -5,7 +5,7 @@
  * API seeded with 16 transactions (see `apps/pops-api/src/db/seeder.ts`).
  *
  * Filter mechanism:
- *   `TRANSACTION_TABLE_FILTERS` (packages/app-finance/src/pages/transactions/columns.tsx)
+ *   `TRANSACTION_TABLE_FILTERS` (pillars/finance/app/src/pages/transactions/columns.tsx)
  *   registers a DataTable `daterange` filter on the `date` column. The filter
  *   renders two `<input type="date">` controls (placeholders "From" / "To"),
  *   wired to the shared `dateRangeFilter` fn from `@pops/ui`.

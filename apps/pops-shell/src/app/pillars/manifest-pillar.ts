@@ -8,7 +8,7 @@
  * start observing its health.
  *
  * **`ai` is a permanent exception** — it folded into core during Phase γ
- * (Track I, 2026-06-10). `packages/app-ai/` is a UI shell whose backend
+ * (Track I, 2026-06-10). `pillars/core/app/` is a UI shell whose backend
  * lives in `apps/pops-api/src/modules/core/{ai-*}`. `pillarIdForModule('ai')`
  * therefore returns `'core'` and stays that way; there will never be an
  * `ai` pillar to map to.

@@ -14,7 +14,7 @@
  *   Yearly  (1): Holiday Fund
  *
  * Filter mechanism:
- *   `BUDGET_TABLE_FILTERS` (packages/app-finance/src/pages/budgets/columns.tsx)
+ *   `BUDGET_TABLE_FILTERS` (pillars/finance/app/src/pages/budgets/columns.tsx)
  *   registers a DataTable `select` filter with options All/Monthly/Yearly. The
  *   underlying `<label>` has no `htmlFor`, so the select is located via a
  *   non-numeric option value (same technique as the Tier 1 test).

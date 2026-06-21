@@ -5,7 +5,7 @@
  * central registry on boot (opt-in via `POPS_REGISTRY_ENABLED`). The `nav`
  * + `pages` UI dimensions let the shell derive the finance app-rail entry
  * and route surface from the registry walk. Source values match
- * `packages/app-finance/src/routes.tsx` (icons in the kebab-case wire form
+ * `pillars/finance/app/src/routes.tsx` (icons in the kebab-case wire form
  * required by `NavConfigDescriptorSchema`).
  */
 import { financeManifest } from '../contract/settings/index.js';

@@ -6,7 +6,7 @@
  * (PRD-240 US-03) and, per PRD-243 US-02, the `nav` + `pages` UI
  * dimensions so the shell can mount the inventory app-rail entry and
  * routes from the registry walk. The `nav` and `pages` values mirror
- * `packages/app-inventory/src/routes.tsx` verbatim (icons translated to
+ * `pillars/inventory/app/src/routes.tsx` verbatim (icons translated to
  * the kebab-case wire form required by `NavConfigDescriptorSchema`).
  */
 import { inventoryManifest } from '../contract/settings/index.js';

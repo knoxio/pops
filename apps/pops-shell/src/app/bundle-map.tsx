@@ -6,10 +6,11 @@ import { useEffect } from 'react';
  *
  * The shell discovers each in-repo pillar's UI surface (nav + pages +
  * capture overlay) by walking this map. For external pillars (PRD-228)
- * the registry will advertise an `assetsBaseUrl`; the lazy-load mechanism
- * is gated on US-05 landing — until then any external-only pillar id
- * falls through the `external UI loading not implemented` skip path in
- * `installed-modules.ts`.
+ * the registry advertises an `assetsBaseUrl` and the wire-shaped `nav` /
+ * `pages` descriptors; those never appear in this map (ADR-002 keeps the
+ * in-repo FE a single static SPA). They reach the shell through the
+ * runtime loader in `external-ui.tsx`, which lazy-`import()`s the remote
+ * bundle (PRD-243 US-05, Option A).
  *
  * Each entry carries:
  *
@@ -40,12 +41,14 @@ import { useEffect } from 'react';
  *                               component to mount. Cerebrum binds
  *                               `'ingest-form'` to its `IngestForm` +
  *                               `useIngestPageModel`.
- *   - `assetsBaseUrl?`        — reserved for external pillars (US-05).
- *                               Always `undefined` for in-repo entries.
+ *   - `assetsBaseUrl?`        — set only for synthesized external-pillar
+ *                               entries (`external-ui.tsx`); echoed for
+ *                               diagnostics. Always `undefined` for the
+ *                               in-repo entries declared in this file.
  *
  * Adding a new in-repo pillar = adding one entry here. External pillars
  * never appear in this map; they reach the shell via the registry walk and
- * (once US-05 lands) the asset-URL loading path.
+ * the asset-URL loading path in `external-ui.tsx` (PRD-243 US-05).
  */
 import { manifest as aiManifest } from '@pops/app-ai';
 import { IngestForm, manifest as cerebrumManifest, useIngestPageModel } from '@pops/app-cerebrum';
