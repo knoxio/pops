@@ -1,0 +1,67 @@
+/**
+ * Hand-rolled ai pillar manifest payload (PRD-055 US-01).
+ *
+ * Lives in its own module (not inline in `server.ts`) so tests can import the
+ * builder without triggering `server.ts`'s boot side-effects (`openAiDb`,
+ * `app.listen`, signal handlers).
+ *
+ * The ai pillar is backend-serving; its UI (`@pops/app-ai`, the moved AI usage
+ * dashboard) is loaded by the shell via the in-repo `WORKSPACE_BUNDLE_MAP`, so
+ * — like core — this manifest omits the optional `nav`/`pages` dimensions.
+ *
+ * `contract.package` MUST be `@pops/ai` — the collapsed-pillar form the manifest
+ * validator requires for pillar id `ai`, matching the npm package name.
+ */
+import { aiConfigManifest } from '../contract/settings/ai-manifest.js';
+
+import type { ManifestPayload } from '@pops/pillar-sdk/manifest-schema';
+
+export function buildAiManifest(version: string): ManifestPayload {
+  return {
+    pillar: 'ai',
+    version,
+    contract: {
+      package: '@pops/ai',
+      version,
+      tag: `contract-ai@v${version}`,
+    },
+    routes: {
+      queries: [
+        'ai.usage.getStats',
+        'ai.usage.getHistory',
+        'ai.observability.getStats',
+        'ai.observability.getHistory',
+        'ai.observability.getLatencyStats',
+        'ai.observability.getQualityMetrics',
+        'ai.providers.list',
+        'ai.providers.get',
+        'ai.providers.healthCheck',
+        'ai.budgets.list',
+        'ai.budgets.getBudgetStatus',
+        'ai.alerts.listRules',
+        'ai.alerts.getRule',
+        'ai.alerts.list',
+        'ai.pricing.lookup',
+      ],
+      mutations: [
+        'ai.ingest.record',
+        'ai.providers.upsert',
+        'ai.budgets.upsert',
+        'ai.alerts.createRule',
+        'ai.alerts.updateRule',
+        'ai.alerts.deleteRule',
+        'ai.alerts.setRuleEnabled',
+        'ai.alerts.seedDefaultRules',
+        'ai.alerts.acknowledge',
+        'ai.alerts.runNow',
+      ],
+      subscriptions: [],
+    },
+    search: { adapters: [] },
+    ai: { tools: [] },
+    uri: { types: [] },
+    consumedSettings: { keys: [] },
+    settings: { manifests: [aiConfigManifest] },
+    healthcheck: { path: '/health' },
+  };
+}

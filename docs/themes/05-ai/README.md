@@ -15,12 +15,12 @@ Build three layers of AI capability: categorisation (automated data entry and ma
 
 ## Epics
 
-| #   | Epic                                               | Summary                                                                                   | Status      |
-| --- | -------------------------------------------------- | ----------------------------------------------------------------------------------------- | ----------- |
-| 0   | [AI Operations App](epics/00-ai-operations-app.md) | `@pops/app-ai` — usage tracking, cost visualisation, model config, categorisation rules   | Partial     |
-| 1   | [AI Overlay](epics/01-ai-overlay.md)               | Superseded by Cerebrum Epic 05 (Ego)                                                      | Superseded  |
-| 2   | [AI Inference](epics/02-ai-inference.md)           | Proactive monitoring, anomaly detection, Moltbot alerts, scheduled analysis               | Not started |
-| 3   | [AI Observability](epics/03-ai-observability.md)   | Multi-provider inference tracking, budget enforcement, latency/quality metrics, dashboard | Not started |
+| #   | Epic                                               | Summary                                                                                                   | Status      |
+| --- | -------------------------------------------------- | --------------------------------------------------------------------------------------------------------- | ----------- |
+| 0   | [AI Operations App](epics/00-ai-operations-app.md) | `@pops/app-ai` — usage tracking, cost visualisation, model config, categorisation rules                   | Partial     |
+| 1   | [AI Overlay](epics/01-ai-overlay.md)               | Superseded by Cerebrum Epic 05 (Ego)                                                                      | Superseded  |
+| 2   | [AI Inference](epics/02-ai-inference.md)           | AI-ops pillar extraction + telemetry ingest; then proactive monitoring, anomaly detection, Moltbot alerts | In progress |
+| 3   | [AI Observability](epics/03-ai-observability.md)   | Multi-provider inference tracking, budget enforcement, latency/quality metrics, dashboard                 | Not started |
 
 Epic 0 is Phase 2. Epics 2-3 are Phase 3 — they need multiple domains with real data to be useful. Epic 1 is superseded by Cerebrum Ego (PRD-087).
 

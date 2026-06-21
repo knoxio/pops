@@ -1,0 +1,4127 @@
+{
+  "components": {
+    "schemas": {}
+  },
+  "info": {
+    "description": "OpenAPI projection of the ai pillar's REST contract. Authored as a ts-rest contract (src/contract/rest.ts); consumed directly by polyglot clients and via openapi-typescript by TS consumers.",
+    "title": "@pops/ai",
+    "version": "0.1.0"
+  },
+  "openapi": "3.0.2",
+  "paths": {
+    "/ai-alerts": {
+      "get": {
+        "operationId": "aiAlerts.list",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "acknowledged",
+            "schema": {
+              "enum": ["true", "false"],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "type",
+            "schema": {
+              "enum": ["budget-threshold", "error-spike", "latency-degradation"],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "severity",
+            "schema": {
+              "enum": ["warning", "critical"],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "startDate",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "endDate",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "exclusiveMinimum": true,
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "schema": {
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "alerts": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "acknowledged": {
+                            "type": "boolean"
+                          },
+                          "acknowledgedAt": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          },
+                          "id": {
+                            "type": "number"
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "metricValue": {
+                            "type": "number"
+                          },
+                          "ruleId": {
+                            "nullable": true,
+                            "type": "number"
+                          },
+                          "scopeDetail": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "severity": {
+                            "enum": ["warning", "critical"],
+                            "type": "string"
+                          },
+                          "thresholdValue": {
+                            "type": "number"
+                          },
+                          "type": {
+                            "enum": ["budget-threshold", "error-spike", "latency-degradation"],
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "ruleId",
+                          "type",
+                          "message",
+                          "severity",
+                          "scopeDetail",
+                          "metricValue",
+                          "thresholdValue",
+                          "acknowledged",
+                          "acknowledgedAt",
+                          "createdAt"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "total": {
+                      "type": "number"
+                    }
+                  },
+                  "required": ["alerts", "total"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "List fired alerts with optional filters and pagination",
+        "tags": ["aiAlerts"]
+      }
+    },
+    "/ai-alerts/rules": {
+      "get": {
+        "operationId": "aiAlerts.listRules",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "createdAt": {
+                        "type": "string"
+                      },
+                      "enabled": {
+                        "type": "boolean"
+                      },
+                      "id": {
+                        "type": "number"
+                      },
+                      "scopeModel": {
+                        "nullable": true,
+                        "type": "string"
+                      },
+                      "scopeProvider": {
+                        "nullable": true,
+                        "type": "string"
+                      },
+                      "thresholdValue": {
+                        "type": "number"
+                      },
+                      "type": {
+                        "enum": ["budget-threshold", "error-spike", "latency-degradation"],
+                        "type": "string"
+                      },
+                      "updatedAt": {
+                        "type": "string"
+                      },
+                      "windowMinutes": {
+                        "nullable": true,
+                        "type": "number"
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "type",
+                      "scopeProvider",
+                      "scopeModel",
+                      "thresholdValue",
+                      "windowMinutes",
+                      "enabled",
+                      "createdAt",
+                      "updatedAt"
+                    ],
+                    "type": "object"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "List AI alert rules",
+        "tags": ["aiAlerts"]
+      },
+      "post": {
+        "operationId": "aiAlerts.createRule",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "enabled": {
+                    "type": "boolean"
+                  },
+                  "scopeModel": {
+                    "minLength": 1,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "scopeProvider": {
+                    "minLength": 1,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "thresholdValue": {
+                    "exclusiveMinimum": true,
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  "type": {
+                    "enum": ["budget-threshold", "error-spike", "latency-degradation"],
+                    "type": "string"
+                  },
+                  "windowMinutes": {
+                    "exclusiveMinimum": true,
+                    "maximum": 9007199254740991,
+                    "minimum": 0,
+                    "nullable": true,
+                    "type": "integer"
+                  }
+                },
+                "required": ["type", "thresholdValue"],
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "createdAt": {
+                      "type": "string"
+                    },
+                    "enabled": {
+                      "type": "boolean"
+                    },
+                    "id": {
+                      "type": "number"
+                    },
+                    "scopeModel": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "scopeProvider": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "thresholdValue": {
+                      "type": "number"
+                    },
+                    "type": {
+                      "enum": ["budget-threshold", "error-spike", "latency-degradation"],
+                      "type": "string"
+                    },
+                    "updatedAt": {
+                      "type": "string"
+                    },
+                    "windowMinutes": {
+                      "nullable": true,
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "type",
+                    "scopeProvider",
+                    "scopeModel",
+                    "thresholdValue",
+                    "windowMinutes",
+                    "enabled",
+                    "createdAt",
+                    "updatedAt"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "404"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "409"
+          }
+        },
+        "summary": "Create an AI alert rule",
+        "tags": ["aiAlerts"]
+      }
+    },
+    "/ai-alerts/rules/seed-defaults": {
+      "post": {
+        "operationId": "aiAlerts.seedDefaultRules",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {},
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "created": {
+                      "type": "number"
+                    }
+                  },
+                  "required": ["created"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "Idempotently seed the default AI alert rules",
+        "tags": ["aiAlerts"]
+      }
+    },
+    "/ai-alerts/rules/{id}": {
+      "delete": {
+        "operationId": "aiAlerts.deleteRule",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": true,
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {},
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": ["success"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "404"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "409"
+          }
+        },
+        "summary": "Delete an AI alert rule",
+        "tags": ["aiAlerts"]
+      },
+      "get": {
+        "operationId": "aiAlerts.getRule",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": true,
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "createdAt": {
+                      "type": "string"
+                    },
+                    "enabled": {
+                      "type": "boolean"
+                    },
+                    "id": {
+                      "type": "number"
+                    },
+                    "scopeModel": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "scopeProvider": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "thresholdValue": {
+                      "type": "number"
+                    },
+                    "type": {
+                      "enum": ["budget-threshold", "error-spike", "latency-degradation"],
+                      "type": "string"
+                    },
+                    "updatedAt": {
+                      "type": "string"
+                    },
+                    "windowMinutes": {
+                      "nullable": true,
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "type",
+                    "scopeProvider",
+                    "scopeModel",
+                    "thresholdValue",
+                    "windowMinutes",
+                    "enabled",
+                    "createdAt",
+                    "updatedAt"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "404"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "409"
+          }
+        },
+        "summary": "Get a single AI alert rule",
+        "tags": ["aiAlerts"]
+      },
+      "patch": {
+        "operationId": "aiAlerts.updateRule",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": true,
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "enabled": {
+                    "type": "boolean"
+                  },
+                  "scopeModel": {
+                    "minLength": 1,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "scopeProvider": {
+                    "minLength": 1,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "thresholdValue": {
+                    "exclusiveMinimum": true,
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  "type": {
+                    "enum": ["budget-threshold", "error-spike", "latency-degradation"],
+                    "type": "string"
+                  },
+                  "windowMinutes": {
+                    "exclusiveMinimum": true,
+                    "maximum": 9007199254740991,
+                    "minimum": 0,
+                    "nullable": true,
+                    "type": "integer"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "createdAt": {
+                      "type": "string"
+                    },
+                    "enabled": {
+                      "type": "boolean"
+                    },
+                    "id": {
+                      "type": "number"
+                    },
+                    "scopeModel": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "scopeProvider": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "thresholdValue": {
+                      "type": "number"
+                    },
+                    "type": {
+                      "enum": ["budget-threshold", "error-spike", "latency-degradation"],
+                      "type": "string"
+                    },
+                    "updatedAt": {
+                      "type": "string"
+                    },
+                    "windowMinutes": {
+                      "nullable": true,
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "type",
+                    "scopeProvider",
+                    "scopeModel",
+                    "thresholdValue",
+                    "windowMinutes",
+                    "enabled",
+                    "createdAt",
+                    "updatedAt"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "404"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "409"
+          }
+        },
+        "summary": "Update an AI alert rule",
+        "tags": ["aiAlerts"]
+      }
+    },
+    "/ai-alerts/rules/{id}/enabled": {
+      "patch": {
+        "operationId": "aiAlerts.setRuleEnabled",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": true,
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "enabled": {
+                    "type": "boolean"
+                  }
+                },
+                "required": ["enabled"],
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "createdAt": {
+                      "type": "string"
+                    },
+                    "enabled": {
+                      "type": "boolean"
+                    },
+                    "id": {
+                      "type": "number"
+                    },
+                    "scopeModel": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "scopeProvider": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "thresholdValue": {
+                      "type": "number"
+                    },
+                    "type": {
+                      "enum": ["budget-threshold", "error-spike", "latency-degradation"],
+                      "type": "string"
+                    },
+                    "updatedAt": {
+                      "type": "string"
+                    },
+                    "windowMinutes": {
+                      "nullable": true,
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "type",
+                    "scopeProvider",
+                    "scopeModel",
+                    "thresholdValue",
+                    "windowMinutes",
+                    "enabled",
+                    "createdAt",
+                    "updatedAt"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "404"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "409"
+          }
+        },
+        "summary": "Enable or disable an AI alert rule",
+        "tags": ["aiAlerts"]
+      }
+    },
+    "/ai-alerts/run": {
+      "post": {
+        "operationId": "aiAlerts.runNow",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {},
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "alerts": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "acknowledged": {
+                            "type": "boolean"
+                          },
+                          "acknowledgedAt": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "channels": {
+                            "items": {
+                              "enum": ["telegram", "nudge"],
+                              "type": "string"
+                            },
+                            "type": "array"
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          },
+                          "id": {
+                            "type": "number"
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "metricValue": {
+                            "type": "number"
+                          },
+                          "ruleId": {
+                            "nullable": true,
+                            "type": "number"
+                          },
+                          "scopeDetail": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "severity": {
+                            "enum": ["warning", "critical"],
+                            "type": "string"
+                          },
+                          "thresholdValue": {
+                            "type": "number"
+                          },
+                          "type": {
+                            "enum": ["budget-threshold", "error-spike", "latency-degradation"],
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "ruleId",
+                          "type",
+                          "message",
+                          "severity",
+                          "scopeDetail",
+                          "metricValue",
+                          "thresholdValue",
+                          "acknowledged",
+                          "acknowledgedAt",
+                          "createdAt",
+                          "channels"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "candidates": {
+                      "type": "number"
+                    },
+                    "deduped": {
+                      "type": "number"
+                    },
+                    "rulesEvaluated": {
+                      "type": "number"
+                    }
+                  },
+                  "required": ["rulesEvaluated", "candidates", "deduped", "alerts"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "Run the AI alert evaluation cycle now",
+        "tags": ["aiAlerts"]
+      }
+    },
+    "/ai-alerts/{id}/acknowledge": {
+      "post": {
+        "operationId": "aiAlerts.acknowledge",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": true,
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {},
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "acknowledged": {
+                      "type": "boolean"
+                    },
+                    "acknowledgedAt": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "createdAt": {
+                      "type": "string"
+                    },
+                    "id": {
+                      "type": "number"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "metricValue": {
+                      "type": "number"
+                    },
+                    "ruleId": {
+                      "nullable": true,
+                      "type": "number"
+                    },
+                    "scopeDetail": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "severity": {
+                      "enum": ["warning", "critical"],
+                      "type": "string"
+                    },
+                    "thresholdValue": {
+                      "type": "number"
+                    },
+                    "type": {
+                      "enum": ["budget-threshold", "error-spike", "latency-degradation"],
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "ruleId",
+                    "type",
+                    "message",
+                    "severity",
+                    "scopeDetail",
+                    "metricValue",
+                    "thresholdValue",
+                    "acknowledged",
+                    "acknowledgedAt",
+                    "createdAt"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "404"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "409"
+          }
+        },
+        "summary": "Acknowledge a fired alert",
+        "tags": ["aiAlerts"]
+      }
+    },
+    "/ai-budgets": {
+      "get": {
+        "operationId": "aiBudgets.list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "action": {
+                        "type": "string"
+                      },
+                      "createdAt": {
+                        "type": "string"
+                      },
+                      "id": {
+                        "type": "string"
+                      },
+                      "monthlyCostLimit": {
+                        "nullable": true,
+                        "type": "number"
+                      },
+                      "monthlyTokenLimit": {
+                        "nullable": true,
+                        "type": "number"
+                      },
+                      "scopeType": {
+                        "type": "string"
+                      },
+                      "scopeValue": {
+                        "nullable": true,
+                        "type": "string"
+                      },
+                      "updatedAt": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "scopeType",
+                      "scopeValue",
+                      "monthlyTokenLimit",
+                      "monthlyCostLimit",
+                      "action",
+                      "createdAt",
+                      "updatedAt"
+                    ],
+                    "type": "object"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "List configured AI budgets",
+        "tags": ["aiBudgets"]
+      },
+      "post": {
+        "operationId": "aiBudgets.upsert",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "action": {
+                    "enum": ["block", "warn", "fallback"],
+                    "type": "string"
+                  },
+                  "id": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "monthlyCostLimit": {
+                    "exclusiveMinimum": true,
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  "monthlyTokenLimit": {
+                    "exclusiveMinimum": true,
+                    "maximum": 9007199254740991,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "scopeType": {
+                    "enum": ["global", "provider", "operation"],
+                    "type": "string"
+                  },
+                  "scopeValue": {
+                    "type": "string"
+                  }
+                },
+                "required": ["id", "scopeType"],
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "action": {
+                      "type": "string"
+                    },
+                    "createdAt": {
+                      "type": "string"
+                    },
+                    "id": {
+                      "type": "string"
+                    },
+                    "monthlyCostLimit": {
+                      "nullable": true,
+                      "type": "number"
+                    },
+                    "monthlyTokenLimit": {
+                      "nullable": true,
+                      "type": "number"
+                    },
+                    "scopeType": {
+                      "type": "string"
+                    },
+                    "scopeValue": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "updatedAt": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "scopeType",
+                    "scopeValue",
+                    "monthlyTokenLimit",
+                    "monthlyCostLimit",
+                    "action",
+                    "createdAt",
+                    "updatedAt"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "404"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "409"
+          }
+        },
+        "summary": "Create or update an AI budget (keyed by id)",
+        "tags": ["aiBudgets"]
+      }
+    },
+    "/ai-budgets/status": {
+      "get": {
+        "operationId": "aiBudgets.getBudgetStatus",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "action": {
+                        "type": "string"
+                      },
+                      "createdAt": {
+                        "type": "string"
+                      },
+                      "currentCostUsage": {
+                        "type": "number"
+                      },
+                      "currentTokenUsage": {
+                        "type": "number"
+                      },
+                      "id": {
+                        "type": "string"
+                      },
+                      "monthlyCostLimit": {
+                        "nullable": true,
+                        "type": "number"
+                      },
+                      "monthlyTokenLimit": {
+                        "nullable": true,
+                        "type": "number"
+                      },
+                      "percentageUsed": {
+                        "nullable": true,
+                        "type": "number"
+                      },
+                      "projectedExhaustionDate": {
+                        "nullable": true,
+                        "type": "string"
+                      },
+                      "scopeType": {
+                        "type": "string"
+                      },
+                      "scopeValue": {
+                        "nullable": true,
+                        "type": "string"
+                      },
+                      "updatedAt": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "scopeType",
+                      "scopeValue",
+                      "monthlyTokenLimit",
+                      "monthlyCostLimit",
+                      "action",
+                      "createdAt",
+                      "updatedAt",
+                      "currentTokenUsage",
+                      "currentCostUsage",
+                      "percentageUsed",
+                      "projectedExhaustionDate"
+                    ],
+                    "type": "object"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "List AI budgets with live month-to-date usage and projected exhaustion",
+        "tags": ["aiBudgets"]
+      }
+    },
+    "/ai-observability/history": {
+      "get": {
+        "operationId": "aiObservability.getHistory",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "provider",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "model",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "domain",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "operation",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "startDate",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "endDate",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "records": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "cacheHits": {
+                            "type": "number"
+                          },
+                          "calls": {
+                            "type": "number"
+                          },
+                          "costUsd": {
+                            "type": "number"
+                          },
+                          "date": {
+                            "type": "string"
+                          },
+                          "errors": {
+                            "type": "number"
+                          },
+                          "inputTokens": {
+                            "type": "number"
+                          },
+                          "outputTokens": {
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "date",
+                          "calls",
+                          "inputTokens",
+                          "outputTokens",
+                          "costUsd",
+                          "cacheHits",
+                          "errors"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "summary": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "totalCacheHits": {
+                          "type": "number"
+                        },
+                        "totalCalls": {
+                          "type": "number"
+                        },
+                        "totalCostUsd": {
+                          "type": "number"
+                        }
+                      },
+                      "required": ["totalCostUsd", "totalCalls", "totalCacheHits"],
+                      "type": "object"
+                    }
+                  },
+                  "required": ["records", "summary"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "Get AI observability history grouped by date",
+        "tags": ["aiObservability"]
+      }
+    },
+    "/ai-observability/latency": {
+      "get": {
+        "operationId": "aiObservability.getLatencyStats",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "provider",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "model",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "domain",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "operation",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "startDate",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "endDate",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "avg": {
+                      "type": "number"
+                    },
+                    "p50": {
+                      "type": "number"
+                    },
+                    "p75": {
+                      "type": "number"
+                    },
+                    "p95": {
+                      "type": "number"
+                    },
+                    "p99": {
+                      "type": "number"
+                    },
+                    "slowQueries": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "contextId": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          },
+                          "id": {
+                            "type": "number"
+                          },
+                          "latencyMs": {
+                            "type": "number"
+                          },
+                          "model": {
+                            "type": "string"
+                          },
+                          "operation": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "model",
+                          "operation",
+                          "latencyMs",
+                          "createdAt",
+                          "contextId"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": ["p50", "p75", "p95", "p99", "avg", "slowQueries"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "Get AI latency percentiles (p50/p75/p95/p99/avg) and the slowest queries",
+        "tags": ["aiObservability"]
+      }
+    },
+    "/ai-observability/quality": {
+      "get": {
+        "operationId": "aiObservability.getQualityMetrics",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "provider",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "model",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "domain",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "operation",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "startDate",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "endDate",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "byModel": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "averageLatencyMs": {
+                            "type": "number"
+                          },
+                          "budgetBlockRate": {
+                            "type": "number"
+                          },
+                          "cacheHitRate": {
+                            "type": "number"
+                          },
+                          "errorRate": {
+                            "type": "number"
+                          },
+                          "model": {
+                            "type": "string"
+                          },
+                          "provider": {
+                            "type": "string"
+                          },
+                          "timeoutRate": {
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "model",
+                          "provider",
+                          "cacheHitRate",
+                          "errorRate",
+                          "timeoutRate",
+                          "budgetBlockRate",
+                          "averageLatencyMs"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": ["byModel"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "Get per-model AI quality metrics (cache/error/timeout/budget-block rates)",
+        "tags": ["aiObservability"]
+      }
+    },
+    "/ai-observability/stats": {
+      "get": {
+        "operationId": "aiObservability.getStats",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "provider",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "model",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "domain",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "operation",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "startDate",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "endDate",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "byDomain": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "calls": {
+                            "type": "number"
+                          },
+                          "costUsd": {
+                            "type": "number"
+                          },
+                          "inputTokens": {
+                            "type": "number"
+                          },
+                          "key": {
+                            "type": "string"
+                          },
+                          "outputTokens": {
+                            "type": "number"
+                          }
+                        },
+                        "required": ["key", "calls", "inputTokens", "outputTokens", "costUsd"],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "byModel": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "calls": {
+                            "type": "number"
+                          },
+                          "costUsd": {
+                            "type": "number"
+                          },
+                          "inputTokens": {
+                            "type": "number"
+                          },
+                          "key": {
+                            "type": "string"
+                          },
+                          "outputTokens": {
+                            "type": "number"
+                          }
+                        },
+                        "required": ["key", "calls", "inputTokens", "outputTokens", "costUsd"],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "byOperation": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "calls": {
+                            "type": "number"
+                          },
+                          "costUsd": {
+                            "type": "number"
+                          },
+                          "inputTokens": {
+                            "type": "number"
+                          },
+                          "key": {
+                            "type": "string"
+                          },
+                          "outputTokens": {
+                            "type": "number"
+                          }
+                        },
+                        "required": ["key", "calls", "inputTokens", "outputTokens", "costUsd"],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "byProvider": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "calls": {
+                            "type": "number"
+                          },
+                          "costUsd": {
+                            "type": "number"
+                          },
+                          "inputTokens": {
+                            "type": "number"
+                          },
+                          "key": {
+                            "type": "string"
+                          },
+                          "outputTokens": {
+                            "type": "number"
+                          }
+                        },
+                        "required": ["key", "calls", "inputTokens", "outputTokens", "costUsd"],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "cacheHitRate": {
+                      "type": "number"
+                    },
+                    "errorRate": {
+                      "type": "number"
+                    },
+                    "totalCalls": {
+                      "type": "number"
+                    },
+                    "totalCostUsd": {
+                      "type": "number"
+                    },
+                    "totalInputTokens": {
+                      "type": "number"
+                    },
+                    "totalOutputTokens": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "totalCalls",
+                    "totalInputTokens",
+                    "totalOutputTokens",
+                    "totalCostUsd",
+                    "cacheHitRate",
+                    "errorRate",
+                    "byProvider",
+                    "byModel",
+                    "byDomain",
+                    "byOperation"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "Get AI observability stats (totals + per-provider/model/domain/operation breakdowns)",
+        "tags": ["aiObservability"]
+      }
+    },
+    "/ai-pricing/{provider}/{model}": {
+      "get": {
+        "operationId": "aiPricing.lookup",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "provider",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "model",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "input": {
+                      "type": "number"
+                    },
+                    "output": {
+                      "type": "number"
+                    }
+                  },
+                  "required": ["input", "output"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "Resolve per-Mtok USD pricing { input, output } for a provider/model",
+        "tags": ["aiPricing"]
+      }
+    },
+    "/ai-providers": {
+      "get": {
+        "operationId": "aiProviders.list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "apiKeyRef": {
+                        "nullable": true,
+                        "type": "string"
+                      },
+                      "baseUrl": {
+                        "nullable": true,
+                        "type": "string"
+                      },
+                      "createdAt": {
+                        "type": "string"
+                      },
+                      "id": {
+                        "type": "string"
+                      },
+                      "lastHealthCheck": {
+                        "nullable": true,
+                        "type": "string"
+                      },
+                      "lastLatencyMs": {
+                        "nullable": true,
+                        "type": "number"
+                      },
+                      "models": {
+                        "items": {
+                          "additionalProperties": false,
+                          "properties": {
+                            "contextWindow": {
+                              "nullable": true,
+                              "type": "number"
+                            },
+                            "displayName": {
+                              "nullable": true,
+                              "type": "string"
+                            },
+                            "id": {
+                              "type": "number"
+                            },
+                            "inputCostPerMtok": {
+                              "type": "number"
+                            },
+                            "isDefault": {
+                              "type": "boolean"
+                            },
+                            "modelId": {
+                              "type": "string"
+                            },
+                            "outputCostPerMtok": {
+                              "type": "number"
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "modelId",
+                            "displayName",
+                            "inputCostPerMtok",
+                            "outputCostPerMtok",
+                            "contextWindow",
+                            "isDefault"
+                          ],
+                          "type": "object"
+                        },
+                        "type": "array"
+                      },
+                      "name": {
+                        "type": "string"
+                      },
+                      "status": {
+                        "type": "string"
+                      },
+                      "type": {
+                        "type": "string"
+                      },
+                      "updatedAt": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "name",
+                      "type",
+                      "baseUrl",
+                      "apiKeyRef",
+                      "status",
+                      "lastHealthCheck",
+                      "lastLatencyMs",
+                      "createdAt",
+                      "updatedAt",
+                      "models"
+                    ],
+                    "type": "object"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "List AI providers with their configured model pricing",
+        "tags": ["aiProviders"]
+      },
+      "post": {
+        "operationId": "aiProviders.upsert",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "apiKeyRef": {
+                    "type": "string"
+                  },
+                  "baseUrl": {
+                    "format": "uri",
+                    "type": "string"
+                  },
+                  "id": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "models": {
+                    "items": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "contextWindow": {
+                          "exclusiveMinimum": true,
+                          "maximum": 9007199254740991,
+                          "minimum": 0,
+                          "type": "integer"
+                        },
+                        "displayName": {
+                          "type": "string"
+                        },
+                        "inputCostPerMtok": {
+                          "minimum": 0,
+                          "type": "number"
+                        },
+                        "isDefault": {
+                          "type": "boolean"
+                        },
+                        "modelId": {
+                          "minLength": 1,
+                          "type": "string"
+                        },
+                        "outputCostPerMtok": {
+                          "minimum": 0,
+                          "type": "number"
+                        }
+                      },
+                      "required": ["modelId"],
+                      "type": "object"
+                    },
+                    "type": "array"
+                  },
+                  "name": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "type": {
+                    "enum": ["cloud", "local"],
+                    "type": "string"
+                  }
+                },
+                "required": ["id", "name", "type"],
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "apiKeyRef": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "baseUrl": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "createdAt": {
+                      "type": "string"
+                    },
+                    "id": {
+                      "type": "string"
+                    },
+                    "lastHealthCheck": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "lastLatencyMs": {
+                      "nullable": true,
+                      "type": "number"
+                    },
+                    "models": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "contextWindow": {
+                            "nullable": true,
+                            "type": "number"
+                          },
+                          "displayName": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "id": {
+                            "type": "number"
+                          },
+                          "inputCostPerMtok": {
+                            "type": "number"
+                          },
+                          "isDefault": {
+                            "type": "boolean"
+                          },
+                          "modelId": {
+                            "type": "string"
+                          },
+                          "outputCostPerMtok": {
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "modelId",
+                          "displayName",
+                          "inputCostPerMtok",
+                          "outputCostPerMtok",
+                          "contextWindow",
+                          "isDefault"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "string"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "updatedAt": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "name",
+                    "type",
+                    "baseUrl",
+                    "apiKeyRef",
+                    "status",
+                    "lastHealthCheck",
+                    "lastLatencyMs",
+                    "createdAt",
+                    "updatedAt",
+                    "models"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "404"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "409"
+          }
+        },
+        "summary": "Create or update an AI provider and its model pricing (keyed by id)",
+        "tags": ["aiProviders"]
+      }
+    },
+    "/ai-providers/{providerId}": {
+      "get": {
+        "operationId": "aiProviders.get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "providerId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "nullable": true,
+                  "properties": {
+                    "apiKeyRef": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "baseUrl": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "createdAt": {
+                      "type": "string"
+                    },
+                    "id": {
+                      "type": "string"
+                    },
+                    "lastHealthCheck": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "lastLatencyMs": {
+                      "nullable": true,
+                      "type": "number"
+                    },
+                    "models": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "contextWindow": {
+                            "nullable": true,
+                            "type": "number"
+                          },
+                          "displayName": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "id": {
+                            "type": "number"
+                          },
+                          "inputCostPerMtok": {
+                            "type": "number"
+                          },
+                          "isDefault": {
+                            "type": "boolean"
+                          },
+                          "modelId": {
+                            "type": "string"
+                          },
+                          "outputCostPerMtok": {
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "modelId",
+                          "displayName",
+                          "inputCostPerMtok",
+                          "outputCostPerMtok",
+                          "contextWindow",
+                          "isDefault"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "string"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "updatedAt": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "name",
+                    "type",
+                    "baseUrl",
+                    "apiKeyRef",
+                    "status",
+                    "lastHealthCheck",
+                    "lastLatencyMs",
+                    "createdAt",
+                    "updatedAt",
+                    "models"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "Get a single AI provider with its models (null if unknown)",
+        "tags": ["aiProviders"]
+      }
+    },
+    "/ai-providers/{providerId}/health-check": {
+      "post": {
+        "operationId": "aiProviders.healthCheck",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "providerId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {},
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "latencyMs": {
+                      "type": "number"
+                    },
+                    "status": {
+                      "enum": ["active", "error"],
+                      "type": "string"
+                    }
+                  },
+                  "required": ["status", "latencyMs"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "Run a live health check against an AI provider and persist the result",
+        "tags": ["aiProviders"]
+      }
+    },
+    "/ai-usage/history": {
+      "get": {
+        "operationId": "aiUsage.getHistory",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "startDate",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "endDate",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "records": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "apiCalls": {
+                            "type": "number"
+                          },
+                          "cacheHits": {
+                            "type": "number"
+                          },
+                          "cost": {
+                            "type": "number"
+                          },
+                          "date": {
+                            "type": "string"
+                          },
+                          "inputTokens": {
+                            "type": "number"
+                          },
+                          "outputTokens": {
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "date",
+                          "apiCalls",
+                          "cacheHits",
+                          "inputTokens",
+                          "outputTokens",
+                          "cost"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "summary": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "totalApiCalls": {
+                          "type": "number"
+                        },
+                        "totalCacheHits": {
+                          "type": "number"
+                        },
+                        "totalCost": {
+                          "type": "number"
+                        }
+                      },
+                      "required": ["totalCost", "totalApiCalls", "totalCacheHits"],
+                      "type": "object"
+                    }
+                  },
+                  "required": ["records", "summary"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "Get AI usage history grouped by UTC date over an optional inclusive range",
+        "tags": ["aiUsage"]
+      }
+    },
+    "/ai-usage/record": {
+      "post": {
+        "operationId": "aiIngest.record",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "cached": {
+                    "type": "boolean"
+                  },
+                  "contextId": {
+                    "maxLength": 128,
+                    "pattern": "^\\S+$",
+                    "type": "string"
+                  },
+                  "costUsd": {
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  "domain": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "errorMessage": {
+                    "maxLength": 1000,
+                    "type": "string"
+                  },
+                  "inputTokens": {
+                    "maximum": 9007199254740991,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "latencyMs": {
+                    "maximum": 9007199254740991,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "metadata": {
+                    "additionalProperties": {},
+                    "type": "object"
+                  },
+                  "model": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "operation": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "outputTokens": {
+                    "maximum": 9007199254740991,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "promptVersion": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "provider": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "status": {
+                    "enum": ["success", "error", "timeout", "budget-blocked"],
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "provider",
+                  "model",
+                  "operation",
+                  "domain",
+                  "inputTokens",
+                  "outputTokens",
+                  "costUsd",
+                  "latencyMs",
+                  "status",
+                  "cached"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "ok": {
+                      "enum": [true],
+                      "type": "boolean"
+                    }
+                  },
+                  "required": ["ok"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
+          }
+        },
+        "summary": "Record one AI inference (internal; cross-pillar telemetry sink)",
+        "tags": ["aiIngest"]
+      }
+    },
+    "/ai-usage/stats": {
+      "get": {
+        "operationId": "aiUsage.getStats",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "avgCostPerCall": {
+                      "type": "number"
+                    },
+                    "cacheHitRate": {
+                      "type": "number"
+                    },
+                    "last30Days": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "apiCalls": {
+                          "type": "number"
+                        },
+                        "cacheHits": {
+                          "type": "number"
+                        },
+                        "cost": {
+                          "type": "number"
+                        },
+                        "inputTokens": {
+                          "type": "number"
+                        },
+                        "outputTokens": {
+                          "type": "number"
+                        }
+                      },
+                      "required": ["cost", "apiCalls", "cacheHits", "inputTokens", "outputTokens"],
+                      "type": "object"
+                    },
+                    "totalApiCalls": {
+                      "type": "number"
+                    },
+                    "totalCacheHits": {
+                      "type": "number"
+                    },
+                    "totalCost": {
+                      "type": "number"
+                    },
+                    "totalInputTokens": {
+                      "type": "number"
+                    },
+                    "totalOutputTokens": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "totalCost",
+                    "totalApiCalls",
+                    "totalCacheHits",
+                    "cacheHitRate",
+                    "avgCostPerCall",
+                    "totalInputTokens",
+                    "totalOutputTokens"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "Get overall AI usage statistics (cost, calls, cache hit rate, 30-day roll-up)",
+        "tags": ["aiUsage"]
+      }
+    },
+    "/settings": {
+      "get": {
+        "operationId": "settings.list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "key": {
+                            "type": "string"
+                          },
+                          "value": {
+                            "type": "string"
+                          }
+                        },
+                        "required": ["key", "value"],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": ["data"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "401"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "404"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "409"
+          }
+        },
+        "summary": "List effective values for every declared key (sensitive redacted)",
+        "tags": ["settings"]
+      }
+    },
+    "/settings/get-many": {
+      "post": {
+        "operationId": "settings.getMany",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "keys": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  }
+                },
+                "required": ["keys"],
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "settings": {
+                      "additionalProperties": {
+                        "type": "string"
+                      },
+                      "type": "object"
+                    }
+                  },
+                  "required": ["settings"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "401"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "404"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "409"
+          }
+        },
+        "summary": "Batch-read settings by key (missing omitted; sensitive redacted)",
+        "tags": ["settings"]
+      }
+    },
+    "/settings/reset": {
+      "post": {
+        "operationId": "settings.reset",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "keys": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "reset": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "settings": {
+                      "additionalProperties": {
+                        "type": "string"
+                      },
+                      "type": "object"
+                    }
+                  },
+                  "required": ["reset", "settings"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "401"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "404"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "409"
+          }
+        },
+        "summary": "Reset declared keys to defaults (omit keys ⇒ reset all)",
+        "tags": ["settings"]
+      }
+    },
+    "/settings/set-many": {
+      "post": {
+        "operationId": "settings.setMany",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "entries": {
+                    "items": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "key": {
+                          "type": "string"
+                        },
+                        "value": {
+                          "type": "string"
+                        }
+                      },
+                      "required": ["key", "value"],
+                      "type": "object"
+                    },
+                    "type": "array"
+                  }
+                },
+                "required": ["entries"],
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "settings": {
+                      "additionalProperties": {
+                        "type": "string"
+                      },
+                      "type": "object"
+                    }
+                  },
+                  "required": ["settings"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "401"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "404"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "409"
+          }
+        },
+        "summary": "Transactional batch write (all-or-nothing); returns the written mirror",
+        "tags": ["settings"]
+      }
+    },
+    "/settings/{key}": {
+      "get": {
+        "operationId": "settings.get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "key",
+            "required": true,
+            "schema": {
+              "enum": [
+                "ai.model",
+                "ai.modelOverrides.query",
+                "ai.modelOverrides.emit",
+                "ai.modelOverrides.classifier",
+                "ai.modelOverrides.entityExtractor",
+                "ai.modelOverrides.scopeInference",
+                "ai.modelOverrides.auditorContradiction",
+                "ai.modelOverrides.patternContradiction",
+                "ai.monthlyTokenBudget",
+                "ai.budgetExceededFallback",
+                "ai.logRetentionDays"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "additionalProperties": false,
+                      "nullable": true,
+                      "properties": {
+                        "key": {
+                          "type": "string"
+                        },
+                        "value": {
+                          "type": "string"
+                        }
+                      },
+                      "required": ["key", "value"],
+                      "type": "object"
+                    }
+                  },
+                  "required": ["data"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "401"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "404"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "409"
+          }
+        },
+        "summary": "Read a single setting (null on unset; sensitive redacted)",
+        "tags": ["settings"]
+      },
+      "put": {
+        "operationId": "settings.set",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "key",
+            "required": true,
+            "schema": {
+              "enum": [
+                "ai.model",
+                "ai.modelOverrides.query",
+                "ai.modelOverrides.emit",
+                "ai.modelOverrides.classifier",
+                "ai.modelOverrides.entityExtractor",
+                "ai.modelOverrides.scopeInference",
+                "ai.modelOverrides.auditorContradiction",
+                "ai.modelOverrides.patternContradiction",
+                "ai.monthlyTokenBudget",
+                "ai.budgetExceededFallback",
+                "ai.logRetentionDays"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "value": {
+                    "type": "string"
+                  }
+                },
+                "required": ["value"],
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "key": {
+                          "type": "string"
+                        },
+                        "value": {
+                          "type": "string"
+                        }
+                      },
+                      "required": ["key", "value"],
+                      "type": "object"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["data", "message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "401"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "404"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "409"
+          }
+        },
+        "summary": "Upsert a single declared setting",
+        "tags": ["settings"]
+      }
+    },
+    "/settings/{key}/ensure": {
+      "post": {
+        "operationId": "settings.ensure",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "key",
+            "required": true,
+            "schema": {
+              "enum": [
+                "ai.model",
+                "ai.modelOverrides.query",
+                "ai.modelOverrides.emit",
+                "ai.modelOverrides.classifier",
+                "ai.modelOverrides.entityExtractor",
+                "ai.modelOverrides.scopeInference",
+                "ai.modelOverrides.auditorContradiction",
+                "ai.modelOverrides.patternContradiction",
+                "ai.monthlyTokenBudget",
+                "ai.budgetExceededFallback",
+                "ai.logRetentionDays"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "value": {
+                    "type": "string"
+                  }
+                },
+                "required": ["value"],
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "key": {
+                          "type": "string"
+                        },
+                        "value": {
+                          "type": "string"
+                        }
+                      },
+                      "required": ["key", "value"],
+                      "type": "object"
+                    }
+                  },
+                  "required": ["data"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "401"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "404"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "409"
+          }
+        },
+        "summary": "Internal-only write-once seed (encryption seed / client id)",
+        "tags": ["settings"]
+      }
+    },
+    "/settings/{key}/reset": {
+      "post": {
+        "operationId": "settings.resetKey",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "key",
+            "required": true,
+            "schema": {
+              "enum": [
+                "ai.model",
+                "ai.modelOverrides.query",
+                "ai.modelOverrides.emit",
+                "ai.modelOverrides.classifier",
+                "ai.modelOverrides.entityExtractor",
+                "ai.modelOverrides.scopeInference",
+                "ai.modelOverrides.auditorContradiction",
+                "ai.modelOverrides.patternContradiction",
+                "ai.monthlyTokenBudget",
+                "ai.budgetExceededFallback",
+                "ai.logRetentionDays"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {},
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "key": {
+                          "type": "string"
+                        },
+                        "value": {
+                          "type": "string"
+                        }
+                      },
+                      "required": ["key", "value"],
+                      "type": "object"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["data", "message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "401"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "404"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "409"
+          }
+        },
+        "summary": "Reset a single setting to its manifest default",
+        "tags": ["settings"]
+      }
+    }
+  }
+}

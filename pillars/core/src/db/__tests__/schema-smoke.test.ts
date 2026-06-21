@@ -12,13 +12,6 @@ import { getTableName } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 
 import {
-  aiAlertRules,
-  aiAlerts,
-  aiBudgets,
-  aiInferenceDaily,
-  aiInferenceLog,
-  aiModelPricing,
-  aiProviders,
   aiUsage,
   entities,
   environments,
@@ -29,6 +22,9 @@ import {
 } from '../schema.js';
 
 describe('PRD-245 US-07 core schema relocation', () => {
+  // The AI-ops observability tables (ai_inference_log/daily, budgets,
+  // alerts, providers, pricing) relocated to the `ai` pillar (PRD-055);
+  // only the finance-categorizer `ai_usage` table remains core-owned.
   it.each([
     [entities, 'entities'],
     [environments, 'environments'],
@@ -36,13 +32,6 @@ describe('PRD-245 US-07 core schema relocation', () => {
     [serviceAccounts, 'service_accounts'],
     [settings, 'settings'],
     [userSettings, 'user_settings'],
-    [aiAlertRules, 'ai_alert_rules'],
-    [aiAlerts, 'ai_alerts'],
-    [aiBudgets, 'ai_budgets'],
-    [aiInferenceDaily, 'ai_inference_daily'],
-    [aiInferenceLog, 'ai_inference_log'],
-    [aiModelPricing, 'ai_model_pricing'],
-    [aiProviders, 'ai_providers'],
     [aiUsage, 'ai_usage'],
   ])('resolves %#: %s', (table, expectedName) => {
     expect(getTableName(table)).toBe(expectedName);

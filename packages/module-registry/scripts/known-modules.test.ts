@@ -99,7 +99,9 @@ describe('discoverManifestSources', () => {
     });
     const ids = result.map((m) => m.id);
     expect(ids).not.toContain('core');
-    expect(ids).not.toContain('ai');
+    // `ai` is no longer carried by `@pops/core` — it is a first-class pillar
+    // (PRD-055) discovered from `@pops/ai`, so mocking core's manifest
+    // empty no longer suppresses it.
     expect(messages.some((m) => m.includes('@pops/core'))).toBe(true);
   });
 

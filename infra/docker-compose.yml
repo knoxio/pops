@@ -134,6 +134,11 @@ services:
       PORT: '3004'
       FINANCE_SQLITE_PATH: /data/sqlite/finance.db
       FINANCE_SELF_BASE_URL: http://finance-api:3004
+      # AI telemetry sink — the @pops/ai-telemetry wrapper POSTs usage to
+      # `${AI_API_URL}/ai-usage/record` (internal-token gated). Read FIRST so
+      # it never collides with a self-pointing POPS_API_URL.
+      AI_API_URL: http://ai-api:3008
+      POPS_API_INTERNAL_TOKEN: ${POPS_API_INTERNAL_TOKEN:-}
       POPS_PILLARS: ${POPS_PILLARS:-core:http://core-api:3001,inventory:http://inventory-api:3002,media:http://media-api:3003,finance:http://finance-api:3004,food:http://food-api:3005,lists:http://lists-api:3006}
     expose:
       - '3004'
@@ -220,6 +225,10 @@ services:
       PORT: '3005'
       FOOD_SQLITE_PATH: /data/sqlite/food.db
       FOOD_SELF_BASE_URL: http://food-api:3005
+      # AI telemetry sink — read FIRST so it never collides with a
+      # self-pointing POPS_API_URL (see @pops/ai-telemetry report-sink).
+      AI_API_URL: http://ai-api:3008
+      POPS_API_INTERNAL_TOKEN: ${POPS_API_INTERNAL_TOKEN:-}
       POPS_PILLARS: ${POPS_PILLARS:-core:http://core-api:3001,inventory:http://inventory-api:3002,media:http://media-api:3003,finance:http://finance-api:3004,food:http://food-api:3005,lists:http://lists-api:3006}
     expose:
       - '3005'
@@ -281,6 +290,54 @@ services:
       timeout: 5s
       retries: 3
 
+  # AI Ops pillar API (PRD-055). Hosts ai.db reads/writes for the AI-ops
+  # telemetry slice — observability, providers, model pricing, budgets,
+  # alerts — and the cross-pillar ingest `POST /ai-usage/record`
+  # (internal-token gated; the first production writer to
+  # `ai_inference_log`). nginx routes /ai-api/ here on port 3008. Built
+  # from the hand-written pillar Dockerfile.
+  ai-api:
+    build:
+      context: ..
+      dockerfile: pillars/ai/Dockerfile
+      args:
+        BUILD_VERSION: ${BUILD_VERSION:-dev}
+    image: ghcr.io/knoxio/pops-ai:${POPS_IMAGE_TAG:-main}
+    container_name: pops-ai
+    restart: unless-stopped
+    labels:
+      com.centurylinklabs.watchtower.enable: 'true'
+    networks:
+      - frontend
+      - backend
+    volumes:
+      - sqlite-data:/data/sqlite
+    environment:
+      NODE_ENV: production
+      PORT: '3008'
+      AI_SQLITE_PATH: /data/sqlite/ai.db
+      AI_SELF_BASE_URL: http://ai-api:3008
+      # Validates `x-pops-internal-token` on `POST /ai-usage/record`. The
+      # reporting pillars (finance/food/cerebrum) carry the same token.
+      POPS_API_INTERNAL_TOKEN: ${POPS_API_INTERNAL_TOKEN:-}
+      POPS_PILLARS: ${POPS_PILLARS:-core:http://core-api:3001,inventory:http://inventory-api:3002,media:http://media-api:3003,finance:http://finance-api:3004,food:http://food-api:3005,lists:http://lists-api:3006}
+    expose:
+      - '3008'
+    depends_on:
+      core-api:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://localhost:3008/health').then(r=>{if(!r.ok)process.exit(1)})",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
   # ── FOOD INGEST WORKER ───────────────────────────────────────────
   # PRD-126 — consumes the `food.ingest` BullMQ queue produced by
   # pops-api (PRD-125) and runs the per-kind ingest pipelines (PRDs
@@ -319,6 +376,10 @@ services:
       # (internal-token gated). The worker image's client must speak REST, not
       # tRPC — tracked as a follow-up gap (worker source lives out-of-repo).
       POPS_API_URL: http://food-api:3005
+      # AI telemetry sink — the worker's @pops/ai-telemetry wrapper POSTs usage
+      # to `${AI_API_URL}/ai-usage/record`. Read FIRST so it never collides with
+      # the self-pointing POPS_API_URL above.
+      AI_API_URL: http://ai-api:3008
       # POPS_API_INTERNAL_TOKEN + ANTHROPIC_API_KEY come from
       # /run/secrets/<lowercased-name> via the internal-token convention.
       # Worker pool & rate limiting (PRD-125 contract).
@@ -375,6 +436,10 @@ services:
       CEREBRUM_SQLITE_PATH: /data/sqlite/cerebrum.db
       CEREBRUM_ENGRAMS_DIR: /data/cerebrum/engrams
       CEREBRUM_SELF_BASE_URL: http://cerebrum-api:3007
+      # AI telemetry sink — read FIRST so it never collides with the
+      # self-pointing POPS_API_URL cerebrum sets elsewhere.
+      AI_API_URL: http://ai-api:3008
+      POPS_API_INTERNAL_TOKEN: ${POPS_API_INTERNAL_TOKEN:-}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       EMBEDDING_API_URL: ${EMBEDDING_API_URL:-}
       EMBEDDING_API_KEY: ${EMBEDDING_API_KEY:-}
@@ -426,6 +491,10 @@ services:
       REDIS_PORT: '6379'
       CEREBRUM_SQLITE_PATH: /data/sqlite/cerebrum.db
       CEREBRUM_ENGRAMS_DIR: /data/cerebrum/engrams
+      # AI telemetry sink — the worker's @pops/ai-telemetry wrapper POSTs usage
+      # to `${AI_API_URL}/ai-usage/record` (internal-token gated).
+      AI_API_URL: http://ai-api:3008
+      POPS_API_INTERNAL_TOKEN: ${POPS_API_INTERNAL_TOKEN:-}
       # The pillar LLM + embedding clients read these straight from the
       # process env (no /run/secrets convention), so surface them here.
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}

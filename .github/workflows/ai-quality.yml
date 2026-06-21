@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
     paths:
-      - "pillars/core/app/**"
+      - "pillars/ai/app/**"
       - "packages/db-types/**"
       - "packages/types/**"
       - "packages/ui/**"
@@ -12,7 +12,7 @@ on:
       - ".github/workflows/_pkg-check.yml"
   pull_request:
     paths:
-      - "pillars/core/app/**"
+      - "pillars/ai/app/**"
       - "packages/db-types/**"
       - "packages/types/**"
       - "packages/ui/**"
@@ -33,7 +33,7 @@ jobs:
         with:
           filters: |
             relevant:
-              - 'pillars/core/app/**'
+              - 'pillars/ai/app/**'
               - 'packages/db-types/**'
               - 'packages/types/**'
               - 'packages/ui/**'
@@ -45,6 +45,6 @@ jobs:
     if: always()
     uses: ./.github/workflows/_pkg-check.yml
     with:
-      package-path: pillars/core/app
+      package-path: pillars/ai/app
       needs-db-build: true
       skip: ${{ github.event_name == 'pull_request' && needs.changes.outputs.relevant != 'true' }}

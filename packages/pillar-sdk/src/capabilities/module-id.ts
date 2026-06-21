@@ -1,28 +1,26 @@
 /**
- * Module-id projections — superset of `KnownPillarId` that includes the two
- * transitional sub-module ids the shell still routes on (`ai`, `ego`).
+ * Module-id projections — superset of `KnownPillarId` that includes the one
+ * remaining transitional sub-module id the shell still routes on (`ego`).
  *
- * Per ADR-026 the platform is carved into seven pillars: `core`, `finance`,
- * `media`, `inventory`, `cerebrum`, `food`, `lists`. AI Ops (`ai`) is a
- * sub-system of `core`; Ego is a sub-system of `cerebrum`. They are NOT
- * pillars. However `@pops/module-registry`'s build-time `KNOWN_MODULES`
- * still emits them as routable ids because the shell, the settings UI, and
- * a handful of cross-pillar URI consumers have not yet folded them into
- * their parent pillars.
+ * Per ADR-026 the platform is carved into pillars: `core`, `finance`, `media`,
+ * `inventory`, `cerebrum`, `food`, `lists`, `contacts`, and `ai` (a first-class
+ * pillar as of PRD-055). Ego is a sub-system of `cerebrum` — it is NOT a pillar.
+ * `@pops/module-registry`'s build-time `KNOWN_MODULES` still emits it as a
+ * routable id because the shell, the settings UI, and a handful of cross-pillar
+ * URI consumers have not yet folded it into its parent pillar.
  *
- * The `ai` and `ego` entries here are transitional. Once the FE migration
- * tracked under PRD-218 completes and every routable surface dispatches on
- * the parent pillar, these two ids drop out of the SDK and `ModuleId`
- * collapses back into `KnownPillarId`.
+ * The `ego` entry here is transitional. Once the FE migration tracked under
+ * PRD-218 completes and every routable surface dispatches on the parent pillar,
+ * it drops out of the SDK and `ModuleId` collapses back into `KnownPillarId`.
  */
 
 import { PILLARS, type KnownPillarId } from './known-pillar-id.js';
 
 /**
  * Canonical superset of routable module ids: every `KnownPillarId` (the
- * `PILLARS` set, including `contacts`) plus the two transitional sub-module
- * ids (`ai`, `ego`). The test in `__tests__/modules.test.ts` pins this to
- * `PILLARS + {ai, ego}`.
+ * `PILLARS` set, including `contacts` and `ai`) plus the one remaining
+ * transitional sub-module id (`ego`). The test in `__tests__/modules.test.ts`
+ * pins this to `PILLARS + {ego}`.
  *
  * This is deliberately NOT in lock-step with `@pops/module-registry`'s
  * build-time `KNOWN_MODULES`. That registry is manifest-driven — it only
@@ -68,14 +66,15 @@ export function isModuleId(id: string): id is ModuleId {
 }
 
 /**
- * Maps every `ModuleId` to its owning pillar. Pillars map to themselves;
- * `ai → core` and `ego → cerebrum` per ADR-026.
+ * Maps every `ModuleId` to its owning pillar. Pillars map to themselves
+ * (`ai → ai` now that AI Ops is a first-class pillar per PRD-055);
+ * `ego → cerebrum` per ADR-026.
  *
  * Used by routers and the shell to dispatch a sub-module id onto the
  * pillar that physically owns its contract.
  */
 export const MODULE_PARENT_PILLAR: Record<ModuleId, KnownPillarId> = {
-  ai: 'core',
+  ai: 'ai',
   cerebrum: 'cerebrum',
   contacts: 'contacts',
   core: 'core',

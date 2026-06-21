@@ -128,6 +128,11 @@ services:
       PORT: '3004'
       FINANCE_SQLITE_PATH: /data/sqlite/finance.db
       FINANCE_SELF_BASE_URL: http://finance-api:3004
+      # AI telemetry sink — the @pops/ai-telemetry wrapper POSTs usage to
+      # `${AI_API_URL}/ai-usage/record` (internal-token gated). Read FIRST so it
+      # never collides with a self-pointing POPS_API_URL.
+      AI_API_URL: http://ai-api:3008
+      POPS_API_INTERNAL_TOKEN: ${POPS_API_INTERNAL_TOKEN:-}
       # Cross-pillar registry — included for parity with siblings even
       # though finance-api today only exposes /health.
       POPS_PILLARS: ${POPS_PILLARS:-core:http://core-api:3001,inventory:http://inventory-api:3002,media:http://media-api:3003,finance:http://finance-api:3004,food:http://food-api:3005,lists:http://lists-api:3006}
@@ -213,6 +218,10 @@ services:
       PORT: '3005'
       FOOD_SQLITE_PATH: /data/sqlite/food.db
       FOOD_SELF_BASE_URL: http://food-api:3005
+      # AI telemetry sink — read FIRST so it never collides with a
+      # self-pointing POPS_API_URL (see @pops/ai-telemetry report-sink).
+      AI_API_URL: http://ai-api:3008
+      POPS_API_INTERNAL_TOKEN: ${POPS_API_INTERNAL_TOKEN:-}
       # Cross-pillar registry — included for parity with siblings even
       # though food-api today only exposes /health.
       POPS_PILLARS: ${POPS_PILLARS:-core:http://core-api:3001,inventory:http://inventory-api:3002,media:http://media-api:3003,finance:http://finance-api:3004,food:http://food-api:3005,lists:http://lists-api:3006}
@@ -275,6 +284,48 @@ services:
       timeout: 5s
       retries: 3
 
+  # AI Ops pillar API (PRD-055). Hosts ai.db reads/writes for the AI-ops
+  # telemetry slice + the cross-pillar ingest `POST /ai-usage/record`
+  # (internal-token gated). nginx routes /ai-api/ here on port 3008.
+  ai-api:
+    build:
+      context: ..
+      dockerfile: pillars/ai/Dockerfile
+      args:
+        BUILD_VERSION: ${BUILD_VERSION:-dev}
+    container_name: pops-ai
+    restart: unless-stopped
+    networks:
+      - frontend
+      - backend
+    volumes:
+      - sqlite-data:/data/sqlite
+    environment:
+      NODE_ENV: production
+      PORT: '3008'
+      AI_SQLITE_PATH: /data/sqlite/ai.db
+      AI_SELF_BASE_URL: http://ai-api:3008
+      # Validates `x-pops-internal-token` on `POST /ai-usage/record`. The
+      # reporting pillars (finance/food/cerebrum) carry the same token.
+      POPS_API_INTERNAL_TOKEN: ${POPS_API_INTERNAL_TOKEN:-}
+      POPS_PILLARS: ${POPS_PILLARS:-core:http://core-api:3001,inventory:http://inventory-api:3002,media:http://media-api:3003,finance:http://finance-api:3004,food:http://food-api:3005,lists:http://lists-api:3006}
+    expose:
+      - '3008'
+    depends_on:
+      core-api:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://localhost:3008/health').then(r=>{if(!r.ok)process.exit(1)})",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
   # Cerebrum pillar API (ADR-026). Hosts the cerebrum REST surface on
   # port 3007; nginx routes /cerebrum-api/ here. Built from the pillar
   # Dockerfile (its default CMD is the API server) — same image the
@@ -301,6 +352,10 @@ services:
       CEREBRUM_SQLITE_PATH: /data/sqlite/cerebrum.db
       CEREBRUM_ENGRAMS_DIR: /data/cerebrum/engrams
       CEREBRUM_SELF_BASE_URL: http://cerebrum-api:3007
+      # AI telemetry sink — read FIRST so it never collides with the
+      # self-pointing POPS_API_URL cerebrum sets elsewhere.
+      AI_API_URL: http://ai-api:3008
+      POPS_API_INTERNAL_TOKEN: ${POPS_API_INTERNAL_TOKEN:-}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       EMBEDDING_API_URL: ${EMBEDDING_API_URL:-}
       EMBEDDING_API_KEY: ${EMBEDDING_API_KEY:-}
@@ -350,6 +405,10 @@ services:
       REDIS_PORT: '6379'
       CEREBRUM_SQLITE_PATH: /data/sqlite/cerebrum.db
       CEREBRUM_ENGRAMS_DIR: /data/cerebrum/engrams
+      # AI telemetry sink — the worker's @pops/ai-telemetry wrapper POSTs usage
+      # to `${AI_API_URL}/ai-usage/record` (internal-token gated).
+      AI_API_URL: http://ai-api:3008
+      POPS_API_INTERNAL_TOKEN: ${POPS_API_INTERNAL_TOKEN:-}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       EMBEDDING_API_URL: ${EMBEDDING_API_URL:-}
       EMBEDDING_API_KEY: ${EMBEDDING_API_KEY:-}

@@ -10,8 +10,10 @@ import {
 } from '../module-id.js';
 
 describe('ALL_MODULE_IDS', () => {
-  it('is a superset of PILLARS plus the transitional ai + ego ids', () => {
-    expect(ALL_MODULE_IDS).toHaveLength(PILLARS.length + 2);
+  it('is a superset of PILLARS plus the transitional ego id', () => {
+    // `ai` is now a first-class pillar (PRD-055), so it lives in PILLARS; only
+    // `ego` remains a transitional sub-module id beyond the pillar set.
+    expect(ALL_MODULE_IDS).toHaveLength(PILLARS.length + 1);
     for (const pillar of PILLARS) {
       expect(ALL_MODULE_IDS).toContain(pillar);
     }
@@ -41,8 +43,8 @@ describe('isKnownPillarId', () => {
     }
   });
 
-  it('returns false for the transitional sub-module ids', () => {
-    expect(isKnownPillarId('ai')).toBe(false);
+  it('returns true for ai (now a first-class pillar) and false for the transitional ego id', () => {
+    expect(isKnownPillarId('ai')).toBe(true);
     expect(isKnownPillarId('ego')).toBe(false);
   });
 
@@ -67,7 +69,7 @@ describe('isModuleId', () => {
     }
   });
 
-  it('returns true for the transitional sub-module ids', () => {
+  it('returns true for ai and the transitional ego id', () => {
     expect(isModuleId('ai')).toBe(true);
     expect(isModuleId('ego')).toBe(true);
   });
@@ -93,8 +95,8 @@ describe('MODULE_PARENT_PILLAR', () => {
     }
   });
 
-  it('maps ai to core and ego to cerebrum per ADR-026', () => {
-    expect(MODULE_PARENT_PILLAR.ai).toBe('core');
+  it('maps ai to itself (first-class pillar, PRD-055) and ego to cerebrum per ADR-026', () => {
+    expect(MODULE_PARENT_PILLAR.ai).toBe('ai');
     expect(MODULE_PARENT_PILLAR.ego).toBe('cerebrum');
   });
 

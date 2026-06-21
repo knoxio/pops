@@ -9,8 +9,9 @@
  *
  * The set started from the seven pillars ADR-026 carves the platform into;
  * `contacts` (the first Rust pillar) extends it as the canonical entities
- * store extracted out of `core`.
- * AI Ops is intentionally NOT a pillar — it lives inside `core`.
+ * store extracted out of `core`; `ai` is a first-class pillar as of PRD-055,
+ * extracting the AI-ops backend (observability, providers, budgets, alerts,
+ * the cross-pillar telemetry ingest) out of `core`.
  * Adding a new pillar = add a string here → every consumer that types a
  * pillar id against `KnownPillarId` updates at compile time.
  */
@@ -23,10 +24,11 @@ export const PILLARS = [
   'food',
   'lists',
   'contacts',
+  'ai',
 ] as const;
 
 /**
- * Closed union over the seven in-tree pillars (build-time tier).
+ * Closed union over the in-tree pillars (build-time tier).
  *
  * Use `KnownPillarId` where a missing entry *should* fail the build: the
  * nginx upstream map (`Record<KnownPillarId, …>`), `MODULE_PARENT_PILLAR`,
