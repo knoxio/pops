@@ -106,11 +106,12 @@ export async function resolveWithFallback<T>(
   send: PathRequest<T>
 ): Promise<T> {
   const candidates = leg.resolver.candidates();
+  const lastIndex = candidates.length - 1;
   let firstError: unknown;
   let firstSet = false;
-  for (let index = 0; index < candidates.length; index += 1) {
-    const path = candidates[index] ?? '';
-    const isLast = index === candidates.length - 1;
+  let index = 0;
+  for (const path of candidates) {
+    const isLast = index === lastIndex;
     try {
       const value = await send(path);
       leg.resolver.remember(path);
@@ -127,6 +128,7 @@ export async function resolveWithFallback<T>(
         firstSet = true;
       }
     }
+    index += 1;
   }
   throw firstError ?? new Error('registry path resolver had no candidates');
 }

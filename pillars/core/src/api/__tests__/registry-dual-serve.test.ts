@@ -193,8 +193,10 @@ describe('registry route dual-serve', () => {
 function runMetric(method: string, path: string): { warned: number; warnPaths: string[] } {
   const warnPaths: string[] = [];
   const middleware = makeLegacyPathMetric({
-    warn(payload) {
-      warnPaths.push(String((payload as { path?: unknown }).path));
+    sink: {
+      warn(payload) {
+        warnPaths.push(String((payload as { path?: unknown }).path));
+      },
     },
   });
   let nextCalled = false;
