@@ -15,7 +15,8 @@
  *
  * `origin = 'internal'` rows are NEVER hard-evicted regardless of
  * status — internal pillars manage their own lifecycle via the
- * in-network `core.registry.deregister` tRPC procedure.
+ * in-network deregister route, currently `/core.registry.deregister` (the
+ * canonical `/registry/deregister` lands in a later phase).
  *
  * The router's lazy-status compute (`computeStatus` from
  * `./status.js`) flips `unavailable` after 30s of missed heartbeats;

@@ -20,7 +20,11 @@ export type RegistryFetchResult = {
 export const DEFAULT_FETCH_TIMEOUT_MS = 5_000;
 
 /**
- * One-shot fetch of `core.registry.list` (PRD-161).
+ * One-shot fetch of the registry discovery snapshot (PRD-161). Currently hits
+ * `GET /core.registry.list` (see {@link buildRegistryListUrl}) — the only route
+ * core mounts today. The canonical slash form `GET /registry/pillars`
+ * (`REGISTRY_PATHS.snapshot`) is introduced in a later phase (dual-serve) and
+ * is not live yet.
  *
  * - 5s timeout via `AbortController` (configurable, but 5s is the default
  *   the PRD-159 contract calls out).

@@ -1,11 +1,13 @@
 /**
  * DB-backed registry snapshot — the discovery surface every pillar reads.
  *
- * During the migration `core.registry.list` was a tRPC query; the collapsed
- * pillar serves the same snapshot as a raw `GET /core.registry.list` Express
- * route. The registry wire is raw HTTP/SSE, not a ts-rest shape — the response
- * body is the bare `{ pillars, fetchedAt }` object (no tRPC envelope), which
- * the pillar SDK's discovery transport reads directly.
+ * During the migration this snapshot was a tRPC query; the collapsed pillar
+ * serves it as a raw Express route. Currently mounted only at
+ * `GET /core.registry.list` (see `pillars/core/src/api/app.ts`); the canonical
+ * slash form `GET /registry/pillars` is introduced in a later phase and is not
+ * mounted yet. The registry wire is raw HTTP/SSE, not a ts-rest shape — the
+ * response body is the bare `{ pillars, fetchedAt }` object (no tRPC envelope),
+ * which the pillar SDK's discovery transport reads directly.
  *
  * Status is computed live from `lastHeartbeatAt` on every read (`computeStatus`)
  * so consumers see the freshest state even if the background ticker lags. The
@@ -63,9 +65,10 @@ export function buildRegistrySnapshot(db: CoreDb, now: Date = registryNow()): Re
 }
 
 /**
- * Raw `GET /core.registry.list` handler. Returns the bare snapshot the pillar
- * SDK's `HttpDiscoveryTransport` consumes — discovery stays raw HTTP, never
- * tRPC.
+ * Raw registry-snapshot handler, currently mounted only at
+ * `GET /core.registry.list` (the canonical `GET /registry/pillars` lands in a
+ * later phase). Returns the bare snapshot the pillar SDK's
+ * `HttpDiscoveryTransport` consumes — discovery stays raw HTTP, never tRPC.
  */
 export function createRegistrySnapshotHandler(db: CoreDb): (req: Request, res: Response) => void {
   return function registrySnapshotHandler(_req: Request, res: Response): void {

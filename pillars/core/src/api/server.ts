@@ -85,9 +85,9 @@ const stopAlertsScheduler = startAlertsScheduler(coreDb.db);
 
 // The bootstrap handshake registers core with its own registry once the
 // HTTP server is accepting traffic. Done after `app.listen` because the
-// SDK transport posts to `${registryUrl}/registry/...` and the registry
-// lives in this very process — registering before listen would race the
-// HTTP server up.
+// SDK transport posts the register/heartbeat handshake back to this very
+// process (the registry lives here) — registering before listen would race
+// the HTTP server up.
 let pillarHandle: PillarBootstrapHandle | undefined;
 if (process.env['POPS_REGISTRY_ENABLED'] === 'true') {
   pillarHandle = await bootstrapPillar({

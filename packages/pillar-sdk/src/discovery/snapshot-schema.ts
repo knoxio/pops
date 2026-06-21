@@ -30,7 +30,10 @@ const RegistrySnapshotPayloadSchema = z
   .loose();
 
 /**
- * Validates the JSON body returned by `core.registry.list` (PRD-161).
+ * Validates the JSON body returned by the registry discovery snapshot
+ * (PRD-161). The SDK currently fetches `GET /core.registry.list` — the only
+ * route core mounts today; the canonical `GET /registry/pillars` is introduced
+ * in a later phase and is not live yet.
  *
  * Accepts both the bare payload shape and the tRPC-wrapped
  * `{ result: { data: ... } }` envelope so the fetcher can talk to either
