@@ -23,7 +23,7 @@
 
 **shouldFix (none rejected)** — all five were sound.
 
-**crossPlanConflicts (all resolved):** port → ai=3008 (free), contacts=3010+ (3009 is orchestrator); settings → interim local table is ratified transitional state; crates workspace → single designated owner (whichever of {ai-ops, contacts} lands first; default ai-ops creates it). See §10.
+**crossPlanConflicts (all resolved):** port → ai=3008 (free), contacts=3010 (3009 is orchestrator); settings → interim local table is ratified transitional state; crates workspace → `crates/Cargo.toml` ROOT is OWNED BY CONTACTS (plan 01); ai-ops only ADDS `pops-ai` to `[workspace].members`. See §10.
 
 ---
 
@@ -160,7 +160,7 @@ packages/ai-telemetry/                          # NEW shared TS wrapper (US-03) 
     index.ts
     __tests__/{call-with-logging,call-with-logging-stream,report-sink,record-schema,pricing-http}.test.ts
 
-crates/                                          # NEW cargo workspace (single owner — §10)
+crates/                                          # cargo workspace ROOT owned by contacts (plan 01) — §10
   Cargo.toml              # [workspace] members = ["pops-ai"]
   pops-ai/
     Cargo.toml            # serde, serde_json, reqwest, tokio, async-trait, thiserror, anyhow
@@ -318,7 +318,7 @@ export function httpLookupPricing(aiApiBaseUrl: string): LookupPricingFn;
 ### 4.5 Shared interfaces this plan CONSUMES
 
 - From the **settings plan**: the per-pillar settings RU+RESET protocol. The ai pillar mounts a `coreSettingsContract`-shaped router for its own `ai.*` keys and declares `aiConfigManifest` under `manifest.settings.manifests`. Until that plan lands, the ai pillar owns a local `settings`/`user_settings` table (mirror of core's) so its own keys resolve — NOT blocked (see §10, ratified transitional state).
-- From the **contacts/Rust plan**: the `crates/` cargo workspace scaffold + Rust CI lane. Single owner designated in §10.
+- From the **contacts/Rust plan**: the `crates/` cargo workspace ROOT scaffold + Rust CI lane (contacts owns it — §10). ai-ops only adds `pops-ai` to `[workspace].members`.
 
 ---
 
@@ -664,9 +664,9 @@ export function httpLookupPricing(aiApiBaseUrl: string): LookupPricingFn;
 
 ### Phase 4 — Rust crate `crates/pops-ai` (US-05)
 
-**Cargo workspace** (single owner — §10; create if first):
+**Cargo workspace** (ROOT owned by contacts — §10; ai-ops adds its member, does NOT create the root):
 
-- `crates/Cargo.toml`: `[workspace]\nmembers = ["pops-ai"]\nresolver = "2"`.
+- `crates/Cargo.toml` (authored by contacts/plan 01): ai-ops ADDS `"pops-ai"` to `[workspace].members` (root stays `resolver = "2"`).
 - `crates/pops-ai/Cargo.toml`: deps `serde = { features=["derive"] }`, `serde_json`, `reqwest = { features=["json"] }`, `tokio = { features=["rt","macros"] }`, `async-trait`, `thiserror`, `anyhow`.
 
 **`crates/pops-ai/src/lib.rs`** (serde camelCase to match the zod body byte-for-byte; enum kebab-case to match `z.enum`):
@@ -840,7 +840,7 @@ N11 e2e dashboard spec (cross-service ingest)             deps: N9,N10,N3    GAT
 
 **Settings plan (soft dep, RESOLVED):** the ai pillar OWNS `ai.model, ai.monthlyTokenBudget, ai.budgetExceededFallback, ai.modelOverrides.*` (7), `ai.logRetentionDays` and implements the per-pillar `/settings/:key` surface, moving `aiConfigManifest` out of core. **NOT blocked:** until the settings plan lands, the ai pillar carries a local `settings`/`user_settings` table (mirror of core's) so its keys resolve. **Both plans ratify this interim local table as acceptable transitional state**, and the settings plan OWNS deleting the 11 `ai.*` keys from `packages/types/src/settings-keys.ts` (the central enum dismantling) when it lands.
 
-**Crates workspace (CONFLICT RESOLVED — single owner):** this plan SHIPS `crates/pops-ai` and the contacts/Rust plan needs the same `crates/Cargo.toml` + Rust CI lane. **Designated owner: whichever plan lands first authors `crates/Cargo.toml` + the `ai:rust`/Rust CI lane; the other plan ONLY adds its crate to `members` and reuses the lane.** Default: ai-ops creates it (this plan ships the first crate). The two plans MUST NOT both author `crates/Cargo.toml`. The contacts plan's Rust Claude path MUST call `pops-ai` (locked decision 1) so the crate has a real consumer and is not permanently dead — the golden-fixture parity test is the cross-language guard.
+**Crates workspace (CONFLICT RESOLVED — contacts owns the root):** this plan SHIPS `crates/pops-ai` and the contacts/Rust plan needs the same `crates/Cargo.toml` + Rust CI lane. **LOCKED owner: contacts (plan 01, Stage 1d / Phase 0) authors `crates/Cargo.toml` + the Rust CI lane; ai-ops ONLY adds `pops-ai` to `[workspace].members` and reuses the lane.** ai-ops MUST NOT author `crates/Cargo.toml` — it depends on contacts' Phase 0 landing the root first. The contacts plan's Rust Claude path MUST call `pops-ai` (locked decision 1) so the crate has a real consumer and is not permanently dead — the golden-fixture parity test is the cross-language guard.
 
 **Registry-rename plan (orthogonal):** the ai pillar registers via the current `/core.registry.*` handshake; when the rename's SDK 404-fallback lands, the ai pillar (shipping the same SDK) is covered transparently. Sequence: ai extraction on current handshake FIRST.
 

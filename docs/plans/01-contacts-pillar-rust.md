@@ -86,7 +86,7 @@ PRDs live under `docs/themes/<NN-theme>/prds/<NNN-slug>/`. High `PRD-NNNN` strin
 - **Orchestrator** — `domain-app-mapping.ts` `entities → 'core'`; `federation.ts SEARCH_SECTION_META` has no `contacts`. Membership is registry-driven (auto-federate on declared adapter); only static chrome map + section meta need entries. `sdkSearchInvoker` (`federation.ts:132-133`) dials `pillar(id).search.search`.
 - **No Rust anywhere** — `find . -name Cargo.toml` empty, no `.rs`, no `crates/`. mise tasks are turbo-over-`pillars/*` assuming a pnpm `package.json` per pillar (`mise.toml:16-18,63-65,80-82,97-99`).
 - **CI publish** — `.github/workflows/publish-images.yml` `discover`: publishable iff `infra/docker-compose.yml` pins `image: ghcr.io/knoxio/pops-<x>:` AND `pillars/<x>/Dockerfile` exists. Language-agnostic.
-- **Port** — `:3008` is next-free after cerebrum `:3007`.
+- **Port** — `:3010` for contacts. `ai` takes `:3008` (next-free after cerebrum `:3007`), `:3009` is `pops-orchestrator`, so contacts takes `:3010` (program port allocation — see `00-overview-and-sequencing.md` §1.2).
 
 ## 4. Target architecture
 
@@ -100,7 +100,7 @@ PRDs live under `docs/themes/<NN-theme>/prds/<NNN-slug>/`. High `PRD-NNNN` strin
     from registry SSE)   └─────────────────────────────────────────┘
         │
         ▼
- ┌──────────────────────────── contacts-api (Rust, :3008) ───────────────────────────┐
+ ┌──────────────────────────── contacts-api (Rust, :3010) ───────────────────────────┐
  │ axum router                                                                        │
  │  GET  /health        → {ok,status,pillar,version,ts,contract}                      │
  │  GET  /pillars       → static-from-env projection (NOT a live registry view)       │
@@ -133,12 +133,12 @@ crates/                              # NEW cargo workspace root (OWNED BY THIS P
 pillars/contacts/
   Cargo.toml                         # bin crate `contacts`; axum/tokio/sqlx/utoipa/serde/reqwest/tracing/uuid
   package.json                       # THIN shim so turbo/mise discover it (scripts shell to cargo) — §5 Phase 6
-  Dockerfile                         # hand-written: rust:slim builder → debian:slim runtime, EXPOSE 3008, copy .sqlx/
+  Dockerfile                         # hand-written: rust:slim builder → debian:slim runtime, EXPOSE 3010, copy .sqlx/
   openapi/contacts.openapi.json      # utoipa-emitted, 3.0, DOTTED operationIds, committed, served at /openapi
   .sqlx/                             # committed offline query cache (cargo sqlx prepare) for offline CI/Docker builds
   migrations/                        # 0001_entities.sql, 0002_contact_settings.sql
   src/
-    main.rs                          # tokio main: build router, spawn registry lifecycle, bind :3008
+    main.rs                          # tokio main: build router, spawn registry lifecycle, bind :3010
     config.rs                        # env: CONTACTS_SQLITE_PATH, CONTACTS_SELF_BASE_URL, POPS_REGISTRY_URL, POPS_REGISTRY_ENABLED, BUILD_VERSION
     db.rs                            # sqlx SqlitePool, pragmas (WAL, foreign_keys, busy_timeout), run migrations on boot
     health.rs                        # GET /health, GET /pillars
@@ -200,7 +200,7 @@ uri = pops:contacts/contact/<id>   (canonical single-colon, contacts-namespaced)
 ranking exact1.0/prefix0.8/contains0.5, cap 20
 ```
 
-**URI resolve** (`POST /uri/resolve`): body `{ uri }` → `{ data: { uri } }` or 404; resolves `pops://contacts/contact/<id>`.
+**URI resolve** (`POST /uri/resolve`): body `{ uri }` → `{ data: { uri } }` or 404; resolves the single-colon `pops:contacts/contact/<id>` form. The ADR-012 parser (`pillars/core/src/api/modules/uri/parse.ts`) accepts ONLY the `pops:` scheme with exactly three `/`-separated segments (`pops:{moduleId}/{type}/{id}`); a double-slash `pops://…` is rejected as malformed. The `pops://contacts/contact/<id>` shape is the SEPARATE owner_uri/denorm-reconciliation family (backfill SQL strings, §4 Phase 4) and is NEVER passed to `/uri/resolve`.
 
 **Settings surface — RU + RESET ONLY (S3 / locked decision 4). NO `DELETE /settings/:key`, NO `ensure`-write-once.** Byte-identical to the shared protocol from plan `settings`:
 
@@ -248,7 +248,7 @@ NOTE the manifest `routes`/`procedurePath` use THREE-segment `<pillar>.<router>.
 
 - `crates/Cargo.toml` — `[workspace]`, `resolver = "2"`, `members = ["../pillars/contacts"]` (later gains `pops-ai`/`pops-settings`). **This plan OWNS the workspace root creation** (§10 cross-plan).
 - `pillars/contacts/Cargo.toml` — bin crate (axum 0.7, tokio 1 [rt-multi-thread,macros,signal], sqlx 0.8 [runtime-tokio,sqlite,migrate], utoipa 5 [axum_extras], serde/serde_json 1, reqwest 0.12 [json], tracing/tracing-subscriber, uuid 1 [v4]).
-- `pillars/contacts/src/{main,config,db}.rs` stubs that boot, open the pool, run migrations, bind `:3008`, serve `/health`.
+- `pillars/contacts/src/{main,config,db}.rs` stubs that boot, open the pool, run migrations, bind `:3010`, serve `/health`.
 - `pillars/contacts/package.json` thin shim (Phase 6 content).
 - File the 3 gap issues (§2): dangling core adapter, URI two-scheme, commit transactionality tradeoff.
 
@@ -258,7 +258,7 @@ NOTE the manifest `routes`/`procedurePath` use THREE-segment `<pillar>.<router>.
 2. `packages/pillar-sdk/src/capabilities/module-id.ts` — add `'contacts'` to `ALL_MODULE_IDS` AND to `MODULE_PARENT_PILLAR` (`contacts: 'contacts'`); the array must stay alphabetically aligned with `KNOWN_MODULES`.
 3. `packages/module-registry/scripts/known-modules.ts` — add the `contacts` module entry (`hasBackend:true, hasFrontend:true`, surfaces `['app']`, settings manifest slot); then `pnpm registry:build` to regenerate `packages/module-registry/src/generated.ts` (`KNOWN_MODULES`/`MODULES`). CI verifies generated.ts is current — commit it.
 4. `packages/pillar-sdk/src/capabilities/__tests__/modules.test.ts` — passes once (2) and (3) are aligned (it asserts `ALL_MODULE_IDS` == `KNOWN_MODULES`); no manual edit, but confirm green.
-5. `apps/pops-shell/scripts/generate-nginx-conf.ts` — add `contacts: { host:'contacts-api', port:3008 }` to `PILLAR_UPSTREAMS` (`Record<KnownPillarId,…>` — exhaustive) and `'contacts'` to `PILLAR_RENDER_ORDER` (`assertRenderOrderCoversAllPillars` fails otherwise).
+5. `apps/pops-shell/scripts/generate-nginx-conf.ts` — add `contacts: { host:'contacts-api', port:3010 }` to `PILLAR_UPSTREAMS` (`Record<KnownPillarId,…>` — exhaustive) and `'contacts'` to `PILLAR_RENDER_ORDER` (`assertRenderOrderCoversAllPillars` fails otherwise).
 
 **Gate G0:** `pnpm -w typecheck` passes (every closed-set Record now covers `contacts`); `pnpm registry:build && git diff --exit-code packages/module-registry/src/generated.ts` clean; `cargo build -p contacts` compiles; `cargo test -p contacts` (empty) green.
 
@@ -436,8 +436,8 @@ DELETE: `pillars/core/src/db/schema/entities.ts`, `entity-types.ts`, `entities-r
   }
   ```
   Makes `turbo run --filter='./pillars/*'` (mise `test:pillars`, `typecheck:pillars`, `openapi:generate`) pick contacts up with zero mise edits.
-- `pillars/contacts/Dockerfile` (hand-written): `rust:1-slim` builder (`cargo build --release`, copy committed `.sqlx/` for offline compile-time checks) → `debian:bookworm-slim` runtime, install `curl` for healthcheck, copy `migrations/` + binary, `EXPOSE 3008`, non-root user, `CMD ["/app/contacts"]`.
-- `infra/docker-compose.yml` — ADD `contacts-api`: `image: ghcr.io/knoxio/pops-contacts:${POPS_IMAGE_TAG:-main}`, port `3008`, env `CONTACTS_SQLITE_PATH=/data/sqlite/contacts.db`, `CONTACTS_SELF_BASE_URL=http://contacts-api:3008`, `POPS_REGISTRY_ENABLED=true`, `POPS_PILLARS` gains `contacts:http://contacts-api:3008`, `depends_on: core-api healthy`, watchtower label, healthcheck `curl -f localhost:3008/health`. Mirror in `docker-compose.dev.yml`. The `image:` ref + Dockerfile auto-enroll contacts in `publish-images.yml` discovery (no workflow edit).
+- `pillars/contacts/Dockerfile` (hand-written): `rust:1-slim` builder (`cargo build --release`, copy committed `.sqlx/` for offline compile-time checks) → `debian:bookworm-slim` runtime, install `curl` for healthcheck, copy `migrations/` + binary, `EXPOSE 3010`, non-root user, `CMD ["/app/contacts"]`.
+- `infra/docker-compose.yml` — ADD `contacts-api`: `image: ghcr.io/knoxio/pops-contacts:${POPS_IMAGE_TAG:-main}`, port `3010`, env `CONTACTS_SQLITE_PATH=/data/sqlite/contacts.db`, `CONTACTS_SELF_BASE_URL=http://contacts-api:3010`, `POPS_REGISTRY_ENABLED=true`, `POPS_PILLARS` gains `contacts:http://contacts-api:3010`, `depends_on: core-api healthy`, watchtower label, healthcheck `curl -f localhost:3010/health`. Mirror in `docker-compose.dev.yml`. The `image:` ref + Dockerfile auto-enroll contacts in `publish-images.yml` discovery (no workflow edit).
 - `infra/litestream/contacts.yml` — per-pillar replica (path `/data/sqlite/contacts.db`, `${CONTACTS_LITESTREAM_REPLICA_URL}`, 1s sync / 24h retention / 1h snapshot / 12h validation).
 - `pillars/contacts/app/` — `@pops/app-contacts`: `openapi-ts.config.ts` (input `../openapi/contacts.openapi.json`, output `src/contacts-api`), the admin page (moved from finance — OD-2), nav/pages bundle slot `contacts-list`.
 
@@ -493,7 +493,7 @@ Cross-pillar contracts touched: (a) finance→contacts SDK fetch (NEW dep), (b) 
 - Core: `pnpm --filter @pops/core build && pnpm --filter @pops/core test`.
 - Workspace: `pnpm -w typecheck`.
 - Shell e2e: `pnpm --filter pops-shell exec playwright test e2e/global-search-cross-domain.spec.ts`.
-- Compose smoke: `docker compose -f infra/docker-compose.dev.yml up -d contacts-api core-api && curl -f localhost:3008/health && curl -s localhost:3001/core.registry.list | grep contacts`.
+- Compose smoke: `docker compose -f infra/docker-compose.dev.yml up -d contacts-api core-api && curl -f localhost:3010/health && curl -s localhost:3001/core.registry.list | grep contacts`.
 
 **Tests to ADD:**
 
