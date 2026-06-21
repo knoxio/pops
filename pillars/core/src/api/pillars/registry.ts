@@ -11,7 +11,7 @@
  * Adds the synthetic `core` entry so the shell sees the host pillar in the
  * `/pillars` listing without having to special-case the call site.
  */
-import { buildRegistrySnapshot } from '../modules/registry/snapshot.js';
+import { pillarRegistryService } from '../../db/index.js';
 import { parseBareOrigin, parsePillarsEnv } from './env.js';
 
 import type { PillarRegistryEntry } from '@pops/types';
@@ -32,12 +32,18 @@ function seedEntries(): readonly PillarRegistryEntry[] {
  * keyed by id. The synthetic `core` self-entry is dropped — the caller re-adds
  * it from the live `selfBaseUrl` so the host pillar's advertised origin is
  * never stale.
+ *
+ * Reads the raw `pillar_registry` rows via the DB service rather than the full
+ * `buildRegistrySnapshot`: `{ id, baseUrl }` needs neither the per-row manifest
+ * Zod parse nor status computation, and avoiding them keeps `/pillars` + the
+ * dispatcher's registry-first lookup serving baseUrls even if a single
+ * persisted manifest row is corrupt/legacy.
  */
 function liveEntries(db: CoreDb): Map<string, PillarRegistryEntry> {
   const byId = new Map<string, PillarRegistryEntry>();
-  for (const pillar of buildRegistrySnapshot(db).pillars) {
-    if (pillar.pillarId === SELF_PILLAR_ID) continue;
-    byId.set(pillar.pillarId, { id: pillar.pillarId, baseUrl: pillar.baseUrl });
+  for (const reg of pillarRegistryService.listPillarRegistrations(db)) {
+    if (reg.pillarId === SELF_PILLAR_ID) continue;
+    byId.set(reg.pillarId, { id: reg.pillarId, baseUrl: reg.baseUrl });
   }
   return byId;
 }

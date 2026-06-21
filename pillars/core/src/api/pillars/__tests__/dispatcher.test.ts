@@ -72,6 +72,37 @@ describe('dispatchUri — in-process fallback', () => {
       data: { id: 'tx-1' },
     });
   });
+
+  it('treats a throwing lookupPillar (e.g. DB error) as a cache miss and resolves in-process', async () => {
+    const manifest: ModuleManifest = {
+      id: 'finance',
+      name: 'Finance',
+      surfaces: ['app'],
+      uriHandler: {
+        types: ['transaction'],
+        resolve: async (_type, id) => ({ kind: 'object', data: { id } }),
+      },
+    };
+    const remote = vi.fn();
+    const result = await dispatchUri('pops:finance/transaction/tx-1', {
+      registry: [manifest],
+      isInstalled: ALL_INSTALLED,
+      remoteResolve: remote,
+      lookupPillar: () => {
+        throw new Error('registry DB unavailable');
+      },
+    });
+    // Must NOT bubble the throw (no 500) and must NOT hit the remote leg —
+    // it falls through to in-process resolution.
+    expect(remote).not.toHaveBeenCalled();
+    expect(result).toEqual({
+      kind: 'object',
+      moduleId: 'finance',
+      type: 'transaction',
+      id: 'tx-1',
+      data: { id: 'tx-1' },
+    });
+  });
 });
 
 describe('dispatchUri — remote leg', () => {

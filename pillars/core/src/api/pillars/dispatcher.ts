@@ -101,7 +101,15 @@ export async function dispatchUri(
   }
 
   const lookup = options.lookupPillar ?? seedPillarEntry;
-  const entry = lookup(parsed.parsed.moduleId);
+  // A registry-first lookup reads the DB; a DB error must NOT turn /uri/resolve
+  // into a 500. Treat any lookup failure as a cache miss and fall through to
+  // in-process resolution, preserving the "never throws" dispatch contract.
+  let entry: PillarRegistryEntry | undefined;
+  try {
+    entry = lookup(parsed.parsed.moduleId);
+  } catch {
+    return resolveUri(uri, options);
+  }
   if (!entry) {
     return resolveUri(uri, options);
   }
