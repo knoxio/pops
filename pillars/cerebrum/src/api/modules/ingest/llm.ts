@@ -12,13 +12,19 @@
  *   `getAiModel('ai.modelOverrides.*')` / `getSettingValue()`. The pillar has
  *   no settings service, so models are hardcoded constants with an optional
  *   `CEREBRUM_*_MODEL` env override. No settings-DB tier.
- * - **Inference logging**: the monolith wraps every call in `trackInference()`
- *   (writes `ai_inference_log` + budget/rate-limit). The pillar has no such
- *   table; tracking is a best-effort no-op. We keep only the 429 backoff
- *   ({@link withRateLimitRetry}) — the part that affects correctness — and drop
- *   the DB logging entirely.
+ * - **Inference logging**: usage/cost/latency is reported to the ai pillar via
+ *   `@pops/ai-telemetry` (`callWithLogging`, fire-and-forget) plus the 429
+ *   backoff ({@link withRateLimitRetry}) for correctness.
  */
 import Anthropic from '@anthropic-ai/sdk';
+
+import { callWithLogging } from '@pops/ai-telemetry';
+
+import {
+  ANTHROPIC_PROVIDER,
+  CEREBRUM_DOMAIN,
+  cerebrumTelemetryDeps,
+} from '../ai-telemetry-deps.js';
 
 export const DEFAULT_CLASSIFIER_MODEL = 'claude-haiku-4-5-20251001';
 export const DEFAULT_ENTITY_EXTRACTOR_MODEL = 'claude-haiku-4-5-20251001';
@@ -107,15 +113,33 @@ export class AnthropicIngestLlm implements IngestLlm {
 
     const client = new Anthropic({ apiKey, maxRetries: 0 });
     try {
-      const response = await withRateLimitRetry(
-        () =>
-          client.messages.create({
-            model: req.model,
-            max_tokens: req.maxTokens,
-            temperature: 0,
-            messages: [{ role: 'user', content: req.prompt }],
-          }),
-        req.operation
+      const response = await callWithLogging(
+        {
+          provider: ANTHROPIC_PROVIDER,
+          model: req.model,
+          operation: req.operation,
+          domain: CEREBRUM_DOMAIN,
+          call: async () => {
+            const created = await withRateLimitRetry(
+              () =>
+                client.messages.create({
+                  model: req.model,
+                  max_tokens: req.maxTokens,
+                  temperature: 0,
+                  messages: [{ role: 'user', content: req.prompt }],
+                }),
+              req.operation
+            );
+            return {
+              response: created,
+              usage: {
+                inputTokens: created.usage.input_tokens,
+                outputTokens: created.usage.output_tokens,
+              },
+            };
+          },
+        },
+        cerebrumTelemetryDeps()
       );
       const first = response.content[0];
       return first?.type === 'text' ? first.text : '';

@@ -11,8 +11,11 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { z } from 'zod';
 
+import { callWithLogging } from '@pops/ai-telemetry';
 import { isOk } from '@pops/pillar-sdk/client';
 import { pillar } from '@pops/pillar-sdk/server';
+
+import { ANTHROPIC_PROVIDER, FINANCE_DOMAIN, financeTelemetryDeps } from '../ai-telemetry-deps.js';
 
 const DEFAULT_MODEL = 'claude-haiku-4-5-20251001';
 
@@ -37,12 +40,31 @@ const defaultCompleter: ClaudeCompleter = async (req) => {
   const apiKey = resolveApiKey();
   if (!apiKey) return null;
   const client = new Anthropic({ apiKey, maxRetries: 0 });
+  const model = resolveModel();
   try {
-    const response = await client.messages.create({
-      model: resolveModel(),
-      max_tokens: req.maxTokens,
-      messages: [{ role: 'user', content: req.prompt }],
-    });
+    const response = await callWithLogging(
+      {
+        provider: ANTHROPIC_PROVIDER,
+        model,
+        operation: req.operation,
+        domain: FINANCE_DOMAIN,
+        call: async () => {
+          const created = await client.messages.create({
+            model,
+            max_tokens: req.maxTokens,
+            messages: [{ role: 'user', content: req.prompt }],
+          });
+          return {
+            response: created,
+            usage: {
+              inputTokens: created.usage.input_tokens,
+              outputTokens: created.usage.output_tokens,
+            },
+          };
+        },
+      },
+      financeTelemetryDeps()
+    );
     const block = response.content[0];
     return block?.type === 'text' ? block.text : null;
   } catch {

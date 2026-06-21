@@ -9,17 +9,26 @@
  * Deviations from the monolith (parity with the ingest + query slices):
  * - Model overrides / settings → hardcoded `claude-sonnet-4-6` with optional
  *   `CEREBRUM_EMIT_MODEL` env override. Max-tokens is a constant.
- * - `trackInference` / `ai_inference_log` dropped; only the 429 backoff
- *   ({@link withRateLimitRetry}, reused from the ingest slice) is kept.
+ * - Usage/cost is reported to the ai pillar via `@pops/ai-telemetry`
+ *   (`callWithLogging`, fire-and-forget); the 429 backoff
+ *   ({@link withRateLimitRetry}, reused from the ingest slice) is retained.
  * - Degradation parity: a missing API key returns a placeholder string (the
  *   monolith's behaviour) rather than throwing; a transport error throws so
  *   the handler surfaces a 500.
  */
 import Anthropic from '@anthropic-ai/sdk';
 
+import { callWithLogging } from '@pops/ai-telemetry';
+
+import {
+  ANTHROPIC_PROVIDER,
+  CEREBRUM_DOMAIN,
+  cerebrumTelemetryDeps,
+} from '../ai-telemetry-deps.js';
 import { withRateLimitRetry } from '../ingest/llm.js';
 
 export const DEFAULT_EMIT_MODEL = 'claude-sonnet-4-6';
+const EMIT_OPERATION = 'emit.generate';
 const DEFAULT_MAX_TOKENS = 2048;
 const UNAVAILABLE_MSG = '(Document generation unavailable — LLM API key not configured)';
 
@@ -52,17 +61,36 @@ export class AnthropicGenerationLlm implements GenerationLlm {
     }
 
     const client = new Anthropic({ apiKey, maxRetries: 0 });
+    const model = emitModel();
     try {
-      const response = await withRateLimitRetry(
-        () =>
-          client.messages.create({
-            model: emitModel(),
-            max_tokens: DEFAULT_MAX_TOKENS,
-            temperature: 0,
-            system: systemPrompt,
-            messages: [{ role: 'user', content: userMessage }],
-          }),
-        'cerebrum.emit'
+      const response = await callWithLogging(
+        {
+          provider: ANTHROPIC_PROVIDER,
+          model,
+          operation: EMIT_OPERATION,
+          domain: CEREBRUM_DOMAIN,
+          call: async () => {
+            const created = await withRateLimitRetry(
+              () =>
+                client.messages.create({
+                  model,
+                  max_tokens: DEFAULT_MAX_TOKENS,
+                  temperature: 0,
+                  system: systemPrompt,
+                  messages: [{ role: 'user', content: userMessage }],
+                }),
+              'cerebrum.emit'
+            );
+            return {
+              response: created,
+              usage: {
+                inputTokens: created.usage.input_tokens,
+                outputTokens: created.usage.output_tokens,
+              },
+            };
+          },
+        },
+        cerebrumTelemetryDeps()
       );
       const first = response.content[0];
       return first?.type === 'text' ? first.text : '';

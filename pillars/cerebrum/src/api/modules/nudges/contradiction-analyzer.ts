@@ -11,13 +11,21 @@
  * Pillar deltas (parity with the ingest / workers slices): the model is a
  * hardcoded haiku constant with an optional
  * `CEREBRUM_PATTERN_CONTRADICTION_MODEL` env override; there is no settings
- * service and no `trackInference` — only the 429 backoff
+ * service; usage/cost is reported to the ai pillar via `@pops/ai-telemetry`
+ * (`callWithLogging`, fire-and-forget) and the 429 backoff
  * ({@link withRateLimitRetry}) is retained. A missing `ANTHROPIC_API_KEY`
  * yields `null` (no contradiction surfaced) rather than throwing.
  */
 import Anthropic from '@anthropic-ai/sdk';
 import { z } from 'zod';
 
+import { callWithLogging } from '@pops/ai-telemetry';
+
+import {
+  ANTHROPIC_PROVIDER,
+  CEREBRUM_DOMAIN,
+  cerebrumTelemetryDeps,
+} from '../ai-telemetry-deps.js';
 import { withRateLimitRetry } from '../ingest/llm.js';
 
 import type { ContradictionEvidence } from './types.js';
@@ -124,6 +132,58 @@ export function parseAnalyzerResponse(
   };
 }
 
+interface ContradictionPrompt {
+  engramA: string;
+  engramB: string;
+  userMessage: string;
+}
+
+/**
+ * Runs the contradiction prompt through the telemetry wrapper and returns the
+ * model's text. Usage/cost is reported to the ai pillar (operation
+ * {@link OPERATION}, domain `cerebrum`) fire-and-forget; the engram ids ride
+ * along as PII-free metadata. Rethrows transport errors to the caller (which
+ * degrades to `null`); the error row is scheduled inside the wrapper first.
+ */
+async function runContradictionLlm(
+  client: Anthropic,
+  prompt: ContradictionPrompt
+): Promise<string> {
+  const model = envModel();
+  const response = await callWithLogging(
+    {
+      provider: ANTHROPIC_PROVIDER,
+      model,
+      operation: OPERATION,
+      domain: CEREBRUM_DOMAIN,
+      metadata: { engramA: prompt.engramA, engramB: prompt.engramB },
+      call: async () => {
+        const created = await withRateLimitRetry(
+          () =>
+            client.messages.create({
+              model,
+              max_tokens: 500,
+              temperature: 0,
+              system: SYSTEM_PROMPT,
+              messages: [{ role: 'user', content: prompt.userMessage }],
+            }),
+          OPERATION
+        );
+        return {
+          response: created,
+          usage: {
+            inputTokens: created.usage.input_tokens,
+            outputTokens: created.usage.output_tokens,
+          },
+        };
+      },
+    },
+    cerebrumTelemetryDeps()
+  );
+  const first = response.content[0];
+  return first?.type === 'text' ? first.text : '';
+}
+
 /** Anthropic-backed contradiction analyzer that returns per-side excerpts. */
 export class AnthropicContradictionAnalyzer implements ContradictionAnalyzer {
   async analyze(
@@ -139,26 +199,13 @@ export class AnthropicContradictionAnalyzer implements ContradictionAnalyzer {
     }
 
     const client = new Anthropic({ apiKey, maxRetries: 0 });
-    const model = envModel();
     const userMessage =
       `Passage A (engram ${engramA}):\n${truncate(bodyA)}\n\n` +
       `Passage B (engram ${engramB}):\n${truncate(bodyB)}`;
 
     let text: string;
     try {
-      const response = await withRateLimitRetry(
-        () =>
-          client.messages.create({
-            model,
-            max_tokens: 500,
-            temperature: 0,
-            system: SYSTEM_PROMPT,
-            messages: [{ role: 'user', content: userMessage }],
-          }),
-        OPERATION
-      );
-      const first = response.content[0];
-      text = first?.type === 'text' ? first.text : '';
+      text = await runContradictionLlm(client, { engramA, engramB, userMessage });
     } catch (err) {
       console.warn(
         `[cerebrum-nudges] contradiction analysis failed: ${
