@@ -20,11 +20,19 @@ export class PillarCallError extends Error {
  * non-conforming shape. This is *not* used for `unavailable` / `degraded`
  * / `contract-mismatch`; those are returned as `CallResult` discriminants
  * so the caller can branch on them.
+ *
+ * When raised from an HTTP discovery read, {@link PillarSdkError.status} carries
+ * the response status so the slash-first path resolver can distinguish a 404
+ * (unknown path → fall back to the legacy path) from a 5xx (registry is up but
+ * broken → surface the error without falling back).
  */
 export class PillarSdkError extends Error {
   override readonly name = 'PillarSdkError';
-  constructor(message: string, options?: { cause?: unknown }) {
+  /** HTTP status of the failed discovery read, when the error originated from one. */
+  readonly status: number | undefined;
+  constructor(message: string, options?: { cause?: unknown; status?: number }) {
     super(message, options);
+    this.status = options?.status;
   }
 }
 

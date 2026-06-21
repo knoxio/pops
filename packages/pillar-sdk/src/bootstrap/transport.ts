@@ -1,5 +1,14 @@
+import { createResolverLeg, resolveWithFallback } from '../registry-path-resolver.js';
+import { LEGACY_REGISTRY_PATHS, REGISTRY_PATHS } from '../registry-paths.js';
+
 import type { ManifestPayload } from '../manifest-schema/schema.js';
 import type { ValidationIssue } from '../manifest-schema/validate.js';
+
+const HTTP_NOT_FOUND = 404;
+
+function isTransportNotFound(err: unknown): boolean {
+  return err instanceof RegistryTransportError && err.status === HTTP_NOT_FOUND;
+}
 
 export interface RegistrationResult {
   pillarId: string;
@@ -70,58 +79,70 @@ export class RegistryNetworkError extends Error {
   }
 }
 
+type PostConfig = { baseUrl: string; fetchImpl: typeof fetch; timeoutMs: number };
+
+async function postRegistry<T>(config: PostConfig, path: string, body: unknown): Promise<T> {
+  let response: Response;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), config.timeoutMs);
+  try {
+    response = await config.fetchImpl(`${config.baseUrl}${path}`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+  } catch (err) {
+    throw new RegistryNetworkError(`POST ${path} failed`, err);
+  } finally {
+    clearTimeout(timer);
+  }
+
+  if (response.ok) {
+    if (response.status === 204) return undefined as T;
+    return (await response.json()) as T;
+  }
+
+  const text = await response.text().catch(() => '');
+  throw new RegistryTransportError(`POST ${path} → ${response.status} ${response.statusText}`, {
+    status: response.status,
+    issues: extractIssues(text),
+    retriable: response.status >= 500,
+  });
+}
+
 export function createHttpRegistryTransport(
   options: HttpRegistryTransportOptions
 ): RegistryTransport {
-  const baseUrl = options.baseUrl.replace(/\/+$/, '');
-  const fetchImpl = options.fetchImpl ?? fetch;
-  const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+  const config: PostConfig = {
+    baseUrl: options.baseUrl.replace(/\/+$/, ''),
+    fetchImpl: options.fetchImpl ?? fetch,
+    timeoutMs: options.timeoutMs ?? DEFAULT_TIMEOUT_MS,
+  };
 
-  async function post<T>(path: string, body: unknown): Promise<T> {
-    let response: Response;
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), timeoutMs);
-    try {
-      response = await fetchImpl(`${baseUrl}${path}`, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify(body),
-        signal: controller.signal,
-      });
-    } catch (err) {
-      throw new RegistryNetworkError(`POST ${path} failed`, err);
-    } finally {
-      clearTimeout(timer);
-    }
-
-    if (response.ok) {
-      if (response.status === 204) {
-        return undefined as T;
-      }
-      return (await response.json()) as T;
-    }
-
-    const text = await response.text().catch(() => '');
-    const issues = extractIssues(text);
-    throw new RegistryTransportError(`POST ${path} → ${response.status} ${response.statusText}`, {
-      status: response.status,
-      issues,
-      retriable: response.status >= 500,
-    });
-  }
+  const registerLeg = createResolverLeg(REGISTRY_PATHS.register, LEGACY_REGISTRY_PATHS.register);
+  const heartbeatLeg = createResolverLeg(REGISTRY_PATHS.heartbeat, LEGACY_REGISTRY_PATHS.heartbeat);
+  const deregisterLeg = createResolverLeg(
+    REGISTRY_PATHS.deregister,
+    LEGACY_REGISTRY_PATHS.deregister
+  );
 
   return {
     async register(payload) {
-      return post<RegistrationResult>('/core.registry.register', payload);
+      return resolveWithFallback<RegistrationResult>(registerLeg, isTransportNotFound, (path) =>
+        postRegistry(config, path, payload)
+      );
     },
     async heartbeat(pillarId, capabilities) {
-      return post<HeartbeatResult>('/core.registry.heartbeat', {
-        pillarId,
-        ...(capabilities ? { capabilities } : {}),
-      });
+      const body = { pillarId, ...(capabilities ? { capabilities } : {}) };
+      return resolveWithFallback<HeartbeatResult>(heartbeatLeg, isTransportNotFound, (path) =>
+        postRegistry(config, path, body)
+      );
     },
     async unregister(pillarId) {
-      await post<void>('/core.registry.deregister', { pillarId });
+      await resolveWithFallback<void>(deregisterLeg, isTransportNotFound, (path) =>
+        postRegistry(config, path, { pillarId })
+      );
     },
   };
 }

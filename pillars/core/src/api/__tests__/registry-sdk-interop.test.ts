@@ -103,7 +103,7 @@ async function registerFinance(): Promise<void> {
 }
 
 describe('SDK ↔ core.registry discovery interop', () => {
-  it('HttpDiscoveryTransport hits /core.registry.list and resolves the snapshot', async () => {
+  it('HttpDiscoveryTransport hits /registry/pillars (slash-first, no fallback) and resolves the snapshot', async () => {
     await registerFinance();
 
     const seenUrls: string[] = [];
@@ -118,7 +118,9 @@ describe('SDK ↔ core.registry discovery interop', () => {
     const transport = new HttpDiscoveryTransport({ registryUrl: baseUrl, fetchImpl: tracingFetch });
     const snapshot = await transport.fetchSnapshot();
 
-    expect(seenUrls).toEqual([`${baseUrl}/core.registry.list`]);
+    // New SDK + new (dual-serving) core: the canonical slash path resolves on
+    // the first request — no 404 fallback to the legacy dotted path.
+    expect(seenUrls).toEqual([`${baseUrl}/registry/pillars`]);
     expect(lastResponse?.status).toBe(200);
 
     // Bare body — no tRPC `{ result: { data } }` envelope.
@@ -142,7 +144,7 @@ describe('SDK ↔ core.registry discovery interop', () => {
     const transport = new HttpDiscoveryTransport({ registryUrl: baseUrl, fetchImpl: tracingFetch });
     const snapshot = await transport.fetchSnapshot();
 
-    expect(seenUrls).toEqual([`${baseUrl}/core.registry.list`]);
+    expect(seenUrls).toEqual([`${baseUrl}/registry/pillars`]);
     expect(snapshot).toEqual([]);
   });
 });
