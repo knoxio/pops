@@ -20,6 +20,7 @@
  * registry sees an explicit deregister before the HTTP server shuts down.
  */
 import { bootstrapPillar, type PillarBootstrapHandle } from '@pops/pillar-sdk/bootstrap';
+import { setRegistryUrl } from '@pops/pillar-sdk/discovery';
 
 import { createOrchestratorApp } from './app.js';
 import { buildOrchestratorManifest } from './manifest.js';
@@ -55,6 +56,13 @@ function resolveSelfBaseUrl(): string {
   }
 }
 const selfBaseUrl = resolveSelfBaseUrl();
+
+// Point the SDK discovery client (the `GET /pillars` registry-first source) at
+// core's registry. When unset, the SDK keeps its `http://core-api:3001` default.
+const registryUrl = process.env['POPS_REGISTRY_URL'];
+if (registryUrl !== undefined && registryUrl !== '') {
+  setRegistryUrl(registryUrl);
+}
 
 const app = createOrchestratorApp({ version, selfBaseUrl });
 

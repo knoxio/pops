@@ -17,10 +17,30 @@ import { join } from 'node:path';
 import request from 'supertest';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { openCoreDb, type OpenedCoreDb } from '../../db/index.js';
+import { openCoreDb, pillarRegistryService, type OpenedCoreDb } from '../../db/index.js';
 import { createCoreApiApp } from '../app.js';
 import { __resetInstalledModulesCache } from '../env-modules.js';
 import { __resetPillarRegistryCache } from '../pillars/registry.js';
+
+import type { ManifestPayload } from '@pops/pillar-sdk';
+
+function manifestFor(pillarId: string): ManifestPayload {
+  return {
+    pillar: pillarId,
+    version: '0.1.0',
+    contract: {
+      package: `@pops/${pillarId}-contract`,
+      version: '0.1.0',
+      tag: `contract-${pillarId}@v0.1.0`,
+    },
+    routes: { queries: [], mutations: [], subscriptions: [] },
+    search: { adapters: [] },
+    ai: { tools: [] },
+    uri: { types: [] },
+    consumedSettings: { keys: [] },
+    healthcheck: { path: '/health' },
+  };
+}
 
 let tmpDir: string;
 let coreDb: OpenedCoreDb;
@@ -117,6 +137,96 @@ describe('POST /uri/resolve', () => {
         .post('/uri/resolve')
         .send({ uri: 'pops:food/recipe/rec-1' });
       expect(res.status).toBe(200);
+      expect(res.body).toEqual(remoteBody);
+      expect(fetchSpy).toHaveBeenCalledWith(
+        'http://food-api:3000/uri/resolve',
+        expect.objectContaining({ method: 'POST' })
+      );
+    } finally {
+      fetchSpy.mockRestore();
+    }
+  });
+});
+
+describe('POST /uri/resolve — registry-as-truth routing', () => {
+  it('routes the remote leg off a DB-registered pillar when POPS_PILLARS is unset', async () => {
+    pillarRegistryService.upsertPillarRegistration(coreDb.db, {
+      baseUrl: 'http://food-api:3000',
+      manifest: manifestFor('food'),
+    });
+    const remoteBody = {
+      kind: 'object',
+      moduleId: 'food',
+      type: 'recipe',
+      id: 'rec-1',
+      data: { title: 'Soup' },
+    };
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify(remoteBody), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      })
+    );
+    try {
+      const res = await request(makeApp())
+        .post('/uri/resolve')
+        .send({ uri: 'pops:food/recipe/rec-1' });
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual(remoteBody);
+      expect(fetchSpy).toHaveBeenCalledWith(
+        'http://food-api:3000/uri/resolve',
+        expect.objectContaining({ method: 'POST' })
+      );
+    } finally {
+      fetchSpy.mockRestore();
+    }
+  });
+
+  it('prefers the live registry baseUrl over a stale POPS_PILLARS seed', async () => {
+    process.env['POPS_PILLARS'] = 'food:http://stale-food:9999';
+    __resetPillarRegistryCache();
+    pillarRegistryService.upsertPillarRegistration(coreDb.db, {
+      baseUrl: 'http://food-api:3000',
+      manifest: manifestFor('food'),
+    });
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(
+        JSON.stringify({ kind: 'not-found', moduleId: 'food', type: 'recipe', id: 'x' }),
+        {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        }
+      )
+    );
+    try {
+      await request(makeApp()).post('/uri/resolve').send({ uri: 'pops:food/recipe/x' });
+      expect(fetchSpy).toHaveBeenCalledWith(
+        'http://food-api:3000/uri/resolve',
+        expect.objectContaining({ method: 'POST' })
+      );
+      expect(fetchSpy).not.toHaveBeenCalledWith(
+        'http://stale-food:9999/uri/resolve',
+        expect.anything()
+      );
+    } finally {
+      fetchSpy.mockRestore();
+    }
+  });
+
+  it('falls back to the POPS_PILLARS seed when the registry has no live entry', async () => {
+    process.env['POPS_PILLARS'] = 'food:http://food-api:3000';
+    __resetPillarRegistryCache();
+    const remoteBody = { kind: 'not-found', moduleId: 'food', type: 'recipe', id: 'rec-2' };
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify(remoteBody), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      })
+    );
+    try {
+      const res = await request(makeApp())
+        .post('/uri/resolve')
+        .send({ uri: 'pops:food/recipe/rec-2' });
       expect(res.body).toEqual(remoteBody);
       expect(fetchSpy).toHaveBeenCalledWith(
         'http://food-api:3000/uri/resolve',

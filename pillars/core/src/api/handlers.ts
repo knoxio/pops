@@ -10,11 +10,11 @@ import { readInstalledModules } from './env-modules.js';
 import { getUriRegistry } from './modules/uri/registry.js';
 import { dispatchUri, type DispatchUriOptions } from './pillars/dispatcher.js';
 import { type PillarHealthMap, probeAllPillars } from './pillars/health-probe.js';
-import { getPillarRegistry } from './pillars/registry.js';
+import { getPillarRegistry, getRemotePillarEntry } from './pillars/registry.js';
 
 import type { PillarRegistryEntry, UriResolverResult } from '@pops/types';
 
-import type { OpenedCoreDb } from '../db/index.js';
+import type { CoreDb, OpenedCoreDb } from '../db/index.js';
 
 export interface CoreApiDeps {
   /** Open handle to the core pillar's SQLite. */
@@ -51,13 +51,17 @@ export interface PillarsHealthResponse {
  * Factored out so tests can call `dispatchUri` directly with stub registries
  * while the HTTP route uses the live in-process module registry + install
  * set. Mirrors `apps/pops-api/src/routes/pillars.ts:buildResolveOptions`.
+ *
+ * `lookupPillar` is registry-first: it routes the remote leg off the live DB
+ * registry and falls back to the `POPS_PILLARS` seed (`getRemotePillarEntry`).
  */
-function buildResolveOptions(): DispatchUriOptions {
+function buildResolveOptions(db: CoreDb): DispatchUriOptions {
   const installed = readInstalledModules();
   const installedSet = new Set<string>(['core', ...installed.apps, ...installed.overlays]);
   return {
     registry: getUriRegistry(),
     isInstalled: (moduleId: string) => installedSet.has(moduleId),
+    lookupPillar: (id: string) => getRemotePillarEntry(db, id),
   };
 }
 
@@ -68,7 +72,7 @@ export function makeRequestHandler(deps: CoreApiDeps): {
   pillarsHealth(): Promise<PillarsHealthResponse>;
 } {
   function listPillars(): readonly PillarRegistryEntry[] {
-    return getPillarRegistry({ selfBaseUrl: deps.selfBaseUrl });
+    return getPillarRegistry({ db: deps.coreDb.db, selfBaseUrl: deps.selfBaseUrl });
   }
 
   return {
@@ -89,7 +93,7 @@ export function makeRequestHandler(deps: CoreApiDeps): {
       return { pillars: listPillars() };
     },
     resolveUri(uri: string): Promise<UriResolverResult> {
-      return dispatchUri(uri, buildResolveOptions());
+      return dispatchUri(uri, buildResolveOptions(deps.coreDb.db));
     },
     async pillarsHealth(): Promise<PillarsHealthResponse> {
       return { health: await probeAllPillars(listPillars()) };
