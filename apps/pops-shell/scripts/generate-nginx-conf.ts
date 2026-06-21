@@ -10,9 +10,11 @@
  *     test guards this output.
  *
  *   - **Dynamic** (`--dynamic`) — PRD-232, Wave 6 BE-lego. Reads the
- *     live `pillar_registry` via the SDK's `HttpDiscoveryTransport`
- *     (canonical `GET /registry/pillars`, legacy `GET /core.registry.list`)
- *     and emits one `/<pillar>-api/` REST block per registered pillar.
+ *     live `pillar_registry` via the SDK's `HttpDiscoveryTransport`,
+ *     which currently fetches `GET /core.registry.list` (the route core
+ *     mounts today; the canonical `GET /registry/pillars` is introduced
+ *     in a later phase and is not live yet), and emits one
+ *     `/<pillar>-api/` REST block per registered pillar.
  *     Used at boot-time inside the cluster: an init container (or a future
  *     subscription-bus watcher, PRD-163) runs the script with
  *     `--dynamic` so newly-registered external pillars (PRD-228) pick

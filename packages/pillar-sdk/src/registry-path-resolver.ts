@@ -1,11 +1,18 @@
 /**
  * Self-healing path resolver for the registry handshake/discovery rollout.
  *
- * Two HTTP paths serve one logical registry operation during the rolling-deploy
- * window: the new slash form ({@link REGISTRY_PATHS}) and the legacy dotted form
- * ({@link LEGACY_REGISTRY_PATHS}). A caller tries {@link RegistryPathResolver.candidates}
- * in order, calls {@link RegistryPathResolver.remember} on the first 200, and
- * calls {@link RegistryPathResolver.invalidate} on a 404 against the cached path.
+ * PREPARATORY in Phase 0: this resolver is NOT yet wired into the transport or
+ * discovery. Core still serves ONLY the legacy dotted routes
+ * ({@link LEGACY_REGISTRY_PATHS}) and the SDK still calls them directly. The
+ * resolver lands here so Phase 1/2 can flip on dual-serve + fallback without a
+ * second logic change.
+ *
+ * Once that flip happens, two HTTP paths serve one logical registry operation
+ * during the rolling-deploy window: the new slash form ({@link REGISTRY_PATHS})
+ * and the legacy dotted form. A caller will try
+ * {@link RegistryPathResolver.candidates} in order, call
+ * {@link RegistryPathResolver.remember} on the first 200, and call
+ * {@link RegistryPathResolver.invalidate} on a 404 against the cached path.
  *
  * The cache is a HINT, not a lock. `candidates()` keeps BOTH paths reachable
  * even after a winner is cached, so a 404 on the cached path falls through to
@@ -22,7 +29,11 @@ export interface RegistryPathResolver {
    * (still reachable, so a single 404 self-heals in-call).
    */
   candidates(): readonly string[];
-  /** Cache the winning path so steady state issues a single request. */
+  /**
+   * Cache the winning path so steady state issues a single request. Only the
+   * primary or fallback this resolver was created with is a valid winner; any
+   * other path is ignored and leaves the cached hint untouched.
+   */
   remember(path: string): void;
   /** Drop the cached winner so the next call re-tries both candidates. */
   invalidate(): void;
@@ -42,6 +53,7 @@ export function createPathResolver(primary: string, fallback: string): RegistryP
       return resolved === primary ? [primary, fallback] : [fallback, primary];
     },
     remember(path: string): void {
+      if (path !== primary && path !== fallback) return;
       resolved = path;
     },
     invalidate(): void {

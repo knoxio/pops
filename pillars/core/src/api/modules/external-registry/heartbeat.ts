@@ -1,11 +1,11 @@
 /**
  * HTTP-JSON heartbeat handler for external pillars (Theme 13 PRD-228 US-02).
  *
- * External pillars POST the heartbeat route (canonical `/registry/heartbeat`,
- * legacy `/core.registry.heartbeat` still served in-cluster) with their
- * `pillarId`. Trust model (ADR-027): the docker network is the boundary;
- * anything able to reach this endpoint is already inside the compose
- * network.
+ * External pillars POST the heartbeat route, currently
+ * `/core.registry.heartbeat` (the canonical `/registry/heartbeat` lands in a
+ * later phase and is not mounted yet), with their `pillarId`. Trust model
+ * (ADR-027): the docker network is the boundary; anything able to reach this
+ * endpoint is already inside the compose network.
  *
  * Soft failure (rather than 404) on missing row: PRD-228 acceptance
  * criterion is `{ ok: false, reason: 'not-registered' }` with a 200,
@@ -65,8 +65,9 @@ function applyHeartbeat(
 }
 
 /**
- * Factory for the heartbeat handler (canonical `POST /registry/heartbeat`,
- * legacy `POST /core.registry.heartbeat`).
+ * Factory for the heartbeat handler, currently mounted at
+ * `POST /core.registry.heartbeat` (the canonical `POST /registry/heartbeat`
+ * lands in a later phase).
  */
 export function createExternalHeartbeatHandler(
   deps: ExternalHeartbeatDeps

@@ -26,10 +26,10 @@ export interface BootstrapPillarOptions {
    * Must be a valid absolute URL (e.g. `http://finance-api:3004`). Persisted
    * server-side as the `PillarRegistryEntry.baseUrl` column; carried in the
    * register envelope this pillar POSTs to the registry's register route
-   * (canonical `/registry/register`, legacy `/core.registry.register` still
-   * accepted in-cluster until the dotted shape is removed). The manifest is
-   * PUSHED in that register envelope and re-served in the discovery snapshot —
-   * it is never pulled over HTTP from this base URL.
+   * (currently `/core.registry.register` — see `bootstrap/transport.ts`; the
+   * canonical `/registry/register` is introduced in a later phase and is not
+   * live yet). The manifest is PUSHED in that register envelope and re-served
+   * in the discovery snapshot — it is never pulled over HTTP from this base URL.
    */
   baseUrl: string;
   /**

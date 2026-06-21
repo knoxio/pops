@@ -3,8 +3,9 @@ import { PillarSdkError } from './errors.js';
 import type { ManifestPayload } from '../manifest-schema/index.js';
 
 /**
- * The shape returned by the registry discovery snapshot (PRD-161 / PRD-159) —
- * canonical `GET /registry/pillars`, legacy `GET /core.registry.list`.
+ * The shape returned by the registry discovery snapshot (PRD-161 / PRD-159).
+ * Currently served at `GET /core.registry.list`; the canonical slash form
+ * `GET /registry/pillars` is introduced in a later phase and is not live yet.
  * One entry per registered pillar.
  */
 export type DiscoveredPillar = {
@@ -18,11 +19,12 @@ export type DiscoveredPillar = {
 
 /**
  * The transport the client uses to fetch the registry snapshot. The
- * default HTTP impl reads the discovery snapshot (canonical
- * `/registry/pillars`, legacy `/core.registry.list`); tests inject a
- * fake. Decoupling the transport keeps the client unit-testable without
- * a live registry and lets future deployments swap to an SSE / file /
- * in-process variant without touching `pillar()`.
+ * default HTTP impl reads the discovery snapshot from `/core.registry.list`
+ * (the canonical slash form `/registry/pillars` is introduced in a later
+ * phase, not live yet); tests inject a fake. Decoupling the transport keeps
+ * the client unit-testable without a live registry and lets future
+ * deployments swap to an SSE / file / in-process variant without touching
+ * `pillar()`.
  */
 export interface DiscoveryTransport {
   fetchSnapshot(): Promise<readonly DiscoveredPillar[]>;
@@ -44,7 +46,8 @@ const DEFAULT_FETCH_TIMEOUT_MS = 5_000;
  * the raw HTTP wire and reshapes the response into `DiscoveredPillar[]`.
  *
  * Wire shape (raw — no tRPC):
- *   GET /registry/pillars   (legacy alias: GET /core.registry.list)
+ *   GET /core.registry.list   (the route core mounts today; the canonical
+ *                              GET /registry/pillars lands in a later phase)
  *   → { pillars: [...], fetchedAt: ... }
  *
  * The body parser still tolerates a `{ result: { data } }` envelope so a

@@ -1,9 +1,12 @@
 import { z } from 'zod';
 
 /**
- * Wire types for the registry handshake/discovery surface (PRD-161) — the raw
- * HTTP routes `/registry/{register,heartbeat,deregister,pillars}` (legacy
- * dotted aliases `/core.registry.*` still served in-cluster).
+ * Wire types for the registry handshake/discovery surface (PRD-161). Core
+ * currently mounts only the raw dotted routes
+ * `/core.registry.{register,heartbeat,deregister,list}` (see
+ * `pillars/core/src/api/app.ts`); the canonical slash form
+ * `/registry/{register,heartbeat,deregister,pillars}` is introduced in a later
+ * phase and is not mounted yet.
  *
  * The input/output zod schemas live here so the router stays focused on
  * the procedure plumbing and the tests can import the shapes directly.
@@ -92,9 +95,10 @@ export const ListOutputSchema = z.object({
 /**
  * Heartbeat wire shapes (Theme 13 PRD-162).
  *
- * Pillars POST the heartbeat route (canonical `/registry/heartbeat`, legacy
- * `/core.registry.heartbeat`) every `HEARTBEAT_INTERVAL_MS` (≈10s) with their
- * `pillarId`. The output is a discriminated union:
+ * Pillars POST the heartbeat route — currently `/core.registry.heartbeat` (the
+ * canonical `/registry/heartbeat` lands in a later phase) — every
+ * `HEARTBEAT_INTERVAL_MS` (≈10s) with their `pillarId`. The output is a
+ * discriminated union:
  *   - `ok: true`  — the heartbeat was recorded; status now `healthy`.
  *   - `ok: false` — the pillar is not registered; SDK should re-register.
  */

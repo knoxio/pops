@@ -1,10 +1,12 @@
 /**
  * Canonical (new) registry handshake/discovery HTTP paths.
  *
- * Idiomatic slash routes that replace the tRPC-vestigial dotted shape
- * (`/core.registry.*`). The core pillar serves these alongside the legacy
- * dotted paths during the rolling-deploy window; the SDK transport/discovery
- * prefer these and fall back to {@link LEGACY_REGISTRY_PATHS} on a 404.
+ * Idiomatic slash routes that will replace the tRPC-vestigial dotted shape
+ * (`/core.registry.*`). PLANNED for a later phase, NOT yet wired: in Phase 0
+ * core mounts only the legacy dotted paths and the SDK calls them directly.
+ * Once Phase 1 dual-serves these alongside the legacy paths, the SDK transport/
+ * discovery will prefer them and fall back to {@link LEGACY_REGISTRY_PATHS} on a
+ * 404 during the rolling-deploy window.
  */
 export const REGISTRY_PATHS = {
   register: '/registry/register',

@@ -71,6 +71,39 @@ describe('createPathResolver', () => {
     expect(resolver.candidates()).toEqual([NEW, OLD]);
   });
 
+  it('orders the primary winner first after remembering the primary', () => {
+    const resolver = createPathResolver(NEW, OLD);
+    resolver.remember(NEW);
+    expect(resolver.candidates()).toEqual([NEW, OLD]);
+  });
+
+  it('orders the fallback winner first but keeps the primary a candidate', () => {
+    const resolver = createPathResolver(NEW, OLD);
+    resolver.remember(OLD);
+    const ordered = resolver.candidates();
+    expect(ordered).toEqual([OLD, NEW]);
+    expect(ordered).toContain(NEW);
+  });
+
+  it('ignores remembering a path that is neither the primary nor the fallback', () => {
+    const resolver = createPathResolver(NEW, OLD);
+    const before = resolver.candidates();
+
+    resolver.remember('/registry/not-a-real-route');
+
+    expect(resolver.candidates()).toEqual(before);
+    expect(resolver.candidates()).toEqual([NEW, OLD]);
+  });
+
+  it('does not let an unknown path clobber a previously remembered winner', () => {
+    const resolver = createPathResolver(NEW, OLD);
+    resolver.remember(OLD);
+
+    resolver.remember('/core.registry.bogus');
+
+    expect(resolver.candidates()).toEqual([OLD, NEW]);
+  });
+
   it('resolves to the new path when core serves it (single request)', async () => {
     const resolver = createPathResolver(NEW, OLD);
     const result = await resolveOnce(resolver, serves(NEW), freshTracker());
