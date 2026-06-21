@@ -9,6 +9,9 @@ name: Rust Quality
 # workflow is their only gate. Adding a Rust crate to `crates/Cargo.toml`
 # (e.g. `pops-ai`, `pops-settings`) is covered here with no workflow edit
 # because every step operates on the whole workspace.
+#
+# Caching uses `actions/cache` (already on the repo's allow-list) rather than a
+# third-party Rust cache action so the workflow starts under org action policy.
 
 on:
   push:
@@ -27,11 +30,6 @@ concurrency:
   group: rust-quality-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-env:
-  # The cargo workspace root. `pillars/contacts` is a member referenced by
-  # relative path from here.
-  WORKSPACE_DIR: crates
-
 jobs:
   quality:
     name: fmt + clippy + build + test
@@ -46,28 +44,36 @@ jobs:
           rustc --version
           cargo --version
 
-      - uses: Swatinem/rust-cache@v2
+      - name: Cache cargo registry + workspace target
+        uses: actions/cache@v5
         with:
-          workspaces: ${{ env.WORKSPACE_DIR }}
+          path: |
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/git/db
+            crates/target
+          key: cargo-${{ runner.os }}-${{ hashFiles('crates/Cargo.toml', 'pillars/contacts/Cargo.toml') }}
+          restore-keys: |
+            cargo-${{ runner.os }}-
 
       - name: Format check
-        working-directory: ${{ env.WORKSPACE_DIR }}
+        working-directory: crates
         run: cargo fmt --all --check
 
       - name: Clippy (deny warnings)
-        working-directory: ${{ env.WORKSPACE_DIR }}
+        working-directory: crates
         run: cargo clippy --all-targets --all-features -- -D warnings
 
       - name: Build
-        working-directory: ${{ env.WORKSPACE_DIR }}
+        working-directory: crates
         run: cargo build --all-targets
 
       - name: Test
-        working-directory: ${{ env.WORKSPACE_DIR }}
+        working-directory: crates
         run: cargo test --all
 
       - name: OpenAPI spec is current (3.0 emission drift gate)
-        working-directory: ${{ env.WORKSPACE_DIR }}
+        working-directory: crates
         run: |
           cargo run -p contacts --bin emit-openapi
           if ! git diff --exit-code -- ../pillars/contacts/openapi; then
