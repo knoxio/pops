@@ -21,17 +21,21 @@
 use serde_json::{Map, Value};
 use utoipa::OpenApi;
 
-use crate::health::{health, root, HealthContract, HealthResponse};
+use crate::health::{HealthContract, HealthResponse};
 
 /// The contacts OpenAPI surface. N0 documents `/health` and the stub root;
 /// the entities/search/settings paths join in later nodes.
+///
+/// Path handlers are referenced fully-qualified so the `OpenApi` derive
+/// resolves the `__path_*` items `#[utoipa::path]` generates in their
+/// defining module (`crate::health`).
 #[derive(OpenApi)]
 #[openapi(
     info(
         title = "POPS Contacts",
         description = "Contacts pillar — authoritative entities store (first Rust pillar)."
     ),
-    paths(health, root),
+    paths(crate::health::health, crate::health::root),
     components(schemas(HealthResponse, HealthContract))
 )]
 pub struct ApiDoc;
