@@ -96,6 +96,7 @@ function toPillarSnapshot(entry: PillarRegistryEntryPayload): PillarSnapshot {
     registered,
     lastSeenAt,
     ...(entry.status !== undefined ? { status: entry.status } : {}),
+    ...(entry.capabilities !== undefined ? { capabilities: entry.capabilities } : {}),
   };
 }
 

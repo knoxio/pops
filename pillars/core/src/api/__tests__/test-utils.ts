@@ -199,6 +199,7 @@ export function makeClient(app: Express, headers?: ClientHeaders) {
       runNow: () => send<RunEvaluationResult>(r.post('/ai-alerts/run').send({})),
     },
     settings: {
+      list: () => send<{ data: Array<{ key: string; value: string }> }>(r.get('/settings')),
       get: (key: string) =>
         send<{ data: { key: string; value: string } | null }>(
           r.get(`/settings/${encodeURIComponent(key)}`)
@@ -212,6 +213,14 @@ export function makeClient(app: Express, headers?: ClientHeaders) {
       ensure: (key: string, value: string) =>
         send<{ data: { key: string; value: string } }>(
           r.post(`/settings/${encodeURIComponent(key)}/ensure`).send({ value })
+        ),
+      resetKey: (key: string) =>
+        send<{ data: { key: string; value: string }; message: string }>(
+          r.post(`/settings/${encodeURIComponent(key)}/reset`).send({})
+        ),
+      reset: (keys?: string[]) =>
+        send<{ reset: string[]; settings: Record<string, string> }>(
+          r.post('/settings/reset').send(keys ? { keys } : {})
         ),
       delete: (key: string) =>
         send<{ message: string }>(r.delete(`/settings/${encodeURIComponent(key)}`)),

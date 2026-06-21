@@ -1,3 +1,4 @@
+import type { CapabilityStatuses } from '../bootstrap/transport.js';
 import type { ManifestPayload } from '../manifest-schema/index.js';
 
 /**
@@ -28,6 +29,15 @@ export type PillarSnapshot = {
    * Optional because legacy snapshots / tests may omit it.
    */
   status?: PillarStatus;
+  /**
+   * Live capability statuses the pillar self-reported on register /
+   * heartbeat (`<capabilityKey> → up/down`), passed through from the
+   * registry wire. Consumers gate features and the federated-settings
+   * cutover on these (settings-federation GAP-256-D). Optional because a
+   * pillar with no capabilities omits it and legacy snapshots / tests may
+   * not carry it.
+   */
+  capabilities?: CapabilityStatuses;
 };
 
 /**

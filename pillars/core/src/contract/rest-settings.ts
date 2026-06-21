@@ -1,92 +1,60 @@
 /**
- * `settings.*` sub-router — the PRD-247 cross-pillar settings primitive
- * (`core.settings.*`).
+ * `settings.*` sub-router — core's own federated Read/Update/Reset surface,
+ * served via the shared `@pops/pillar-settings` contract factory
+ * (settings-federation S1; see `docs/plans/02-settings-federation.md`).
  *
- * Mapping from the legacy tRPC router (semantics preserved EXACTLY):
- *   - `get`     (query,   single key)  → `GET    /settings/:key`
- *   - `getMany` (query,   key array)   → `POST   /settings/get-many`
- *   - `set`     (mutation, key+value)  → `PUT    /settings/:key`
- *   - `ensure`  (mutation, key+value)  → `POST   /settings/:key/ensure`
- *   - `delete`  (mutation, single key) → `DELETE /settings/:key`
- *   - `setMany` (mutation, entries)    → `POST   /settings/set-many`
+ * The factory mounts the byte-identical federated surface every pillar serves:
  *
- * `getMany`/`setMany` carry arrays/objects, so they map to POST-with-body
- * rather than a path-id route. Their wire output is `Record<string,string>`
- * with **missing keys omitted** (`getMany`) and an **all-or-nothing**
- * transactional write (`setMany`) — both inherited verbatim from the
- * `settingsService` the handlers delegate to.
+ *   - `list`     → `GET    /settings`              collection (sensitive redacted)
+ *   - `get`      → `GET    /settings/:key`         single (null on unset)
+ *   - `getMany`  → `POST   /settings/get-many`     batch read (missing omitted)
+ *   - `set`      → `PUT    /settings/:key`         upsert one declared key
+ *   - `setMany`  → `POST   /settings/set-many`     transactional batch write
+ *   - `resetKey` → `POST   /settings/:key/reset`   reset one key to default
+ *   - `reset`    → `POST   /settings/reset`        reset declared keys
+ *   - `ensure`   → `POST   /settings/:key/ensure`  internal-only write-once seed
  *
- * Single-key routes constrain `:key` to `SETTINGS_KEY_VALUES` (matching the
- * tRPC enum input); `getMany`/`setMany` accept free-form string keys
- * (matching the service-layer bulk shape). Schemas are reused from
- * `@pops/core-contract`'s `settings-procedures` so the wire shape stays the
- * single source of truth shared with the tRPC router.
+ * On top of the shared protocol, core retains the LEGACY
+ * `DELETE /settings/:key` route as a rolling-deploy alias: an old shell that
+ * still issues `DELETE` keeps working against this image, and the handler maps
+ * it to reset-to-default (delete-override == old delete-then-default for a
+ * declared key). The alias is removed in the later S5 node once metrics show
+ * zero `DELETE /settings/*` traffic.
  *
- * Every route is identity-gated (`protected`): the handlers enforce the gate
- * via `requireProtected`, so `401` joins the common error set here.
+ * `:key` stays constrained to the full central `SETTINGS_KEY_VALUES` for S1:
+ * shrinking it to core's manifest-only key set is the S4 node, and the live
+ * cross-pillar surface (`PLEX_URL`, `PLEX_TOKEN`, … that finance reads) plus
+ * the `core-settings-sdk-itest` depend on the full enum here.
  */
 import { initContract } from '@ts-rest/core';
 import { z } from 'zod';
 
+import { makeSettingsContract } from '@pops/pillar-settings';
 import { SETTINGS_KEY_VALUES } from '@pops/types';
 
 import { AUTH_ERR_RESPONSES } from './rest-schemas.js';
-import {
-  SettingSchema,
-  SettingsGetManyInputSchema,
-  SettingsGetManyOutputSchema,
-  SettingsSetManyInputSchema,
-  SettingsSetManyOutputSchema,
-} from './schemas/index.js';
 
 const c = initContract();
 
 const SettingKeyParam = z.object({ key: z.enum(SETTINGS_KEY_VALUES) });
-const SettingValueBody = z.object({ value: z.string() });
 
+const federatedSettingsContract = makeSettingsContract(SETTINGS_KEY_VALUES, AUTH_ERR_RESPONSES);
+
+/**
+ * Composed by explicit per-route reference rather than object spread: spreading
+ * the factory's intersection-typed return widens the route map so
+ * `ServerInferRequest` (and the ts-rest express router) collapse the per-route
+ * shapes. Referencing each route preserves the discrete keys.
+ */
 export const coreSettingsContract = c.router({
-  get: {
-    method: 'GET',
-    path: '/settings/:key',
-    pathParams: SettingKeyParam,
-    responses: {
-      200: z.object({ data: SettingSchema.nullable() }),
-      ...AUTH_ERR_RESPONSES,
-    },
-    summary: 'Read a single setting (null on miss)',
-  },
-  getMany: {
-    method: 'POST',
-    path: '/settings/get-many',
-    body: SettingsGetManyInputSchema,
-    responses: {
-      200: SettingsGetManyOutputSchema,
-      ...AUTH_ERR_RESPONSES,
-    },
-    summary: 'Batch-read settings by key (missing keys omitted)',
-  },
-  set: {
-    method: 'PUT',
-    path: '/settings/:key',
-    pathParams: SettingKeyParam,
-    body: SettingValueBody,
-    responses: {
-      200: z.object({ data: SettingSchema, message: z.string() }),
-      ...AUTH_ERR_RESPONSES,
-    },
-    summary: 'Upsert a single setting',
-  },
-  ensure: {
-    method: 'POST',
-    path: '/settings/:key/ensure',
-    pathParams: SettingKeyParam,
-    body: SettingValueBody,
-    responses: {
-      200: z.object({ data: SettingSchema }),
-      ...AUTH_ERR_RESPONSES,
-    },
-    summary: 'Write-once upsert-and-return for a single setting',
-  },
+  list: federatedSettingsContract.list,
+  get: federatedSettingsContract.get,
+  getMany: federatedSettingsContract.getMany,
+  set: federatedSettingsContract.set,
+  setMany: federatedSettingsContract.setMany,
+  resetKey: federatedSettingsContract.resetKey,
+  reset: federatedSettingsContract.reset,
+  ensure: federatedSettingsContract.ensure,
   delete: {
     method: 'DELETE',
     path: '/settings/:key',
@@ -96,16 +64,6 @@ export const coreSettingsContract = c.router({
       200: z.object({ message: z.string() }),
       ...AUTH_ERR_RESPONSES,
     },
-    summary: 'Delete a single setting (404 on miss)',
-  },
-  setMany: {
-    method: 'POST',
-    path: '/settings/set-many',
-    body: SettingsSetManyInputSchema,
-    responses: {
-      200: SettingsSetManyOutputSchema,
-      ...AUTH_ERR_RESPONSES,
-    },
-    summary: 'Transactional batch write (all-or-nothing); returns the written mirror',
+    summary: 'Reset a single setting to its default (legacy DELETE alias for the reset route)',
   },
 });

@@ -94,6 +94,34 @@ describe('HttpDiscoveryTransport', () => {
     await expect(transport.fetchSnapshot()).rejects.toBeInstanceOf(PillarSdkError);
   });
 
+  it('threads the optional capabilities map through into the parsed entry', async () => {
+    const fetchImpl = fakeFetch(() =>
+      jsonResponse({
+        pillars: [discoveredPillar({ capabilities: { settings: true, redis: false } })],
+      })
+    );
+    const transport = new HttpDiscoveryTransport({ fetchImpl });
+    const snapshot = await transport.fetchSnapshot();
+    expect(snapshot[0]?.capabilities).toEqual({ settings: true, redis: false });
+  });
+
+  it('leaves capabilities undefined when the entry omits it', async () => {
+    const fetchImpl = fakeFetch(() => jsonResponse({ pillars: [discoveredPillar()] }));
+    const transport = new HttpDiscoveryTransport({ fetchImpl });
+    const snapshot = await transport.fetchSnapshot();
+    expect(snapshot[0]?.capabilities).toBeUndefined();
+  });
+
+  it('throws PillarSdkError when a capability value is not a boolean', async () => {
+    const fetchImpl = fakeFetch(() =>
+      jsonResponse({
+        pillars: [{ ...discoveredPillar(), capabilities: { settings: 'yes' } }],
+      })
+    );
+    const transport = new HttpDiscoveryTransport({ fetchImpl });
+    await expect(transport.fetchSnapshot()).rejects.toBeInstanceOf(PillarSdkError);
+  });
+
   it('attaches custom auth headers', async () => {
     let seen: Record<string, string> = {};
     const fetchImpl = fakeFetch((_url, init) => {

@@ -3,10 +3,16 @@
  * primitive), driven through the real Express app via supertest.
  *
  * Coverage:
- *   - Every procedure (`get`/`set`/`ensure`/`delete`/`getMany`/`setMany`).
+ *   - Every procedure (`list`/`get`/`set`/`ensure`/`getMany`/`setMany`/
+ *     `resetKey`/`reset`) plus the legacy `delete` reset alias.
+ *   - The RU+reset protocol: reset re-applies the manifest default, reset is
+ *     idempotent (never throws), and `list` resolves effective values.
+ *   - Redaction is wired but inert for core (no sensitive manifest keys), so
+ *     the cross-pillar surface still returns real values.
  *   - `getMany` Record-omitted semantics (missing keys absent, not null).
  *   - `setMany` transactional mirror.
- *   - Error mapping: 404 (delete miss), 400 (zod boundary).
+ *   - Error mapping: 400 (zod boundary); the legacy `delete` alias is now an
+ *     idempotent reset (200, no 404).
  *   - Auth gating (`protected`): 401 for an anonymous caller and for a
  *     service account lacking the scope; 200 for a service account WITH the
  *     scope; the dev-fallback user passes by default.
@@ -102,12 +108,66 @@ describe('settings REST — happy paths (dev-fallback user)', () => {
     expect(second.data.value).toBe('seed-1');
   });
 
-  it('delete removes an existing key', async () => {
+  it('delete (legacy alias) resets an existing key to its default', async () => {
     await client().settings.set(PLEX_TOKEN_KEY, 'tok-1');
     const res = await client().settings.delete(PLEX_TOKEN_KEY);
-    expect(res.message).toBe('Setting deleted');
+    expect(res.message).toBe('Setting reset to default');
+    // PLEX_TOKEN is not a core-manifest key, so it resets to no stored override.
     const after = await client().settings.get(PLEX_TOKEN_KEY);
     expect(after.data).toBeNull();
+  });
+});
+
+describe('settings REST — RU+reset protocol', () => {
+  const CORE_DEFAULT_LIMIT = SETTINGS_KEYS.CORE_DEFAULT_LIMIT;
+
+  it('resetKey re-applies the manifest default for a declared key', async () => {
+    await client().settings.set(CORE_DEFAULT_LIMIT, '999');
+    const res = await client().settings.resetKey(CORE_DEFAULT_LIMIT);
+    expect(res.data).toEqual({ key: CORE_DEFAULT_LIMIT, value: '50' });
+    expect(res.message).toBe('Setting reset to default');
+
+    const after = await client().settings.get(CORE_DEFAULT_LIMIT);
+    // The override is gone; list-effective resolves the default, single get is null.
+    expect(after.data).toBeNull();
+  });
+
+  it('resetKey is idempotent — resetting an unset key never throws', async () => {
+    const res = await client().settings.resetKey(CORE_DEFAULT_LIMIT);
+    expect(res.data.value).toBe('50');
+  });
+
+  it('reset with explicit keys clears their overrides and returns the defaults', async () => {
+    await client().settings.set(CORE_DEFAULT_LIMIT, '7');
+    const res = await client().settings.reset([CORE_DEFAULT_LIMIT]);
+    expect(res.reset).toEqual([CORE_DEFAULT_LIMIT]);
+    expect(res.settings[CORE_DEFAULT_LIMIT]).toBe('50');
+  });
+
+  it('list returns the effective value (override or manifest default) for declared keys', async () => {
+    await client().settings.set(CORE_DEFAULT_LIMIT, '12');
+    const res = await client().settings.list();
+    const row = res.data.find((entry) => entry.key === CORE_DEFAULT_LIMIT);
+    expect(row?.value).toBe('12');
+
+    await client().settings.resetKey(CORE_DEFAULT_LIMIT);
+    const after = await client().settings.list();
+    const reset = after.data.find((entry) => entry.key === CORE_DEFAULT_LIMIT);
+    expect(reset?.value).toBe('50');
+  });
+});
+
+describe('settings REST — redaction is wired but inert for core (no sensitive keys)', () => {
+  it('returns the real stored value on read for a non-sensitive key (no false redaction)', async () => {
+    // Core declares no sensitive manifest keys, so the cross-pillar surface
+    // finance reads (plex_token etc.) must still return real values, not the
+    // redaction sentinel — wire-compat with the core-settings-sdk itest.
+    await client().settings.set(PLEX_TOKEN_KEY, 'tok-real');
+    const got = await client().settings.get(PLEX_TOKEN_KEY);
+    expect(got.data).toEqual({ key: PLEX_TOKEN_KEY, value: 'tok-real' });
+
+    const many = await client().settings.getMany([PLEX_TOKEN_KEY]);
+    expect(many.settings[PLEX_TOKEN_KEY]).toBe('tok-real');
   });
 });
 
@@ -161,8 +221,9 @@ describe('settings REST — setMany transactional batch write', () => {
 });
 
 describe('settings REST — error mapping', () => {
-  it('404s a delete of a missing key', async () => {
-    await expect(client().settings.delete(PLEX_TOKEN_KEY)).rejects.toMatchObject({ status: 404 });
+  it('delete (legacy alias) is idempotent — resetting a missing key returns 200', async () => {
+    const res = await client().settings.delete(PLEX_TOKEN_KEY);
+    expect(res.message).toBe('Setting reset to default');
   });
 
   it('400s an unknown key at the contract boundary (single-key route)', async () => {

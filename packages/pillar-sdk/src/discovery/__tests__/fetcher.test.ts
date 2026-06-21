@@ -24,6 +24,42 @@ describe('fetchRegistrySnapshot', () => {
     expect(result.pillars[1]!.pillarId).toBe('media');
   });
 
+  it('threads the optional capabilities map through into the PillarSnapshot', async () => {
+    const fin = pillar('finance', 'http://finance-api:3004');
+    const raw = {
+      pillars: [
+        {
+          pillarId: fin.pillarId,
+          baseUrl: fin.baseUrl,
+          manifest: fin.manifest,
+          lastSeenAt: fin.lastSeenAt.toISOString(),
+          status: 'healthy',
+          capabilities: { settings: true },
+        },
+      ],
+    };
+    const fetchImpl = vi.fn().mockResolvedValue(jsonResponse(raw));
+
+    const result = await fetchRegistrySnapshot({
+      registryUrl: 'http://core-api:3001',
+      fetchImpl,
+    });
+
+    expect(result.pillars[0]!.capabilities).toEqual({ settings: true });
+  });
+
+  it('leaves capabilities undefined when the wire entry omits it', async () => {
+    const fin = pillar('finance', 'http://finance-api:3004');
+    const fetchImpl = vi.fn().mockResolvedValue(jsonResponse(wirePayload(fin)));
+
+    const result = await fetchRegistrySnapshot({
+      registryUrl: 'http://core-api:3001',
+      fetchImpl,
+    });
+
+    expect(result.pillars[0]!.capabilities).toBeUndefined();
+  });
+
   it('also accepts an un-enveloped payload (raw shape)', async () => {
     const fin = pillar('finance', 'http://finance-api:3004');
     const raw = {

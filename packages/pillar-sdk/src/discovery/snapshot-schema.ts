@@ -11,6 +11,7 @@ const PillarRegistryEntrySchema = z
     lastHeartbeatAt: z.string().min(1).optional(),
     registered: z.boolean().optional(),
     status: z.enum(['healthy', 'unavailable', 'unknown']).optional(),
+    capabilities: z.record(z.string(), z.boolean()).optional(),
   })
   .loose()
   .refine((entry) => Boolean(entry.lastSeenAt ?? entry.lastHeartbeatAt), {
