@@ -11,8 +11,7 @@
 import { initContract } from '@ts-rest/core';
 import { z } from 'zod';
 
-import { ENTITY_TYPES } from '@pops/shared-schema';
-
+import { ENTITY_TYPES } from '../db/index.js';
 import { ERR_RESPONSES, LimitQuery, OffsetQuery, PaginationMetaSchema } from './rest-schemas.js';
 
 const c = initContract();

@@ -85,6 +85,14 @@ module.exports = {
       from: { path: '.*' },
       to: { path: '^@pops/(core-db|core-contract|core-api)(/|$)' },
     },
+    {
+      name: 'no-dead-shared-schema-pkg',
+      severity: 'error',
+      comment:
+        'The `@pops/shared-schema` package no longer exists — it shared the `entities` and `ai_inference_log` drizzle table definitions across core, finance, and food. Each pillar now owns a byte-compatible local copy of the table it persists (`pillars/<p>/src/db/schema/`), so pillars are self-contained black boxes with no cross-pillar schema dependency.',
+      from: { path: '.*' },
+      to: { path: '^@pops/shared-schema(/|$)' },
+    },
     ...contractBoundaryRules,
   ],
   options: {
