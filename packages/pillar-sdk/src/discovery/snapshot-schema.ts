@@ -30,7 +30,8 @@ const RegistrySnapshotPayloadSchema = z
   .loose();
 
 /**
- * Validates the JSON body returned by `core.registry.list` (PRD-161).
+ * Validates the JSON body returned by the registry discovery snapshot
+ * (PRD-161) — canonical `GET /registry/pillars`, legacy `GET /core.registry.list`.
  *
  * Accepts both the bare payload shape and the tRPC-wrapped
  * `{ result: { data: ... } }` envelope so the fetcher can talk to either

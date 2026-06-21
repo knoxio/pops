@@ -5,11 +5,13 @@ import { validateManifestPayload } from '@pops/pillar-sdk';
  *
  * External pillars — those that ship from a different repository and run
  * outside the in-tree `bootstrapPillar` path — register themselves with the
- * core registry by POSTing to `/core.registry.register`. The nginx edge
- * blocks the mutating `core.registry.*` paths from external traffic
- * (PRD-161); PRD-228 carves a sibling allow-list at
- * `^/core\.registry\.(register|heartbeat|deregister)$` for this plain
- * HTTP-JSON surface.
+ * core registry by POSTing the register route (canonical `/registry/register`,
+ * legacy `/core.registry.register` still served in-cluster). The nginx edge
+ * blocks the mutating registry paths from external traffic (PRD-161); PRD-228
+ * carves a sibling allow-list — `^/core\.registry\.(register|heartbeat|deregister)$`
+ * today, to be widened to the `^/registry/(register|heartbeat|deregister)$`
+ * slash form before the dotted shape is removed — for this plain HTTP-JSON
+ * surface.
  *
  * Trust model (ADR-027): the docker network is the boundary. Anything
  * able to POST here is already inside the compose network — the
@@ -108,7 +110,8 @@ function persistAndRespond(
 export type ExternalRegisterHandler = (req: Request, res: Response) => void;
 
 /**
- * Factory for the `POST /core.registry.register` handler.
+ * Factory for the register handler (canonical `POST /registry/register`,
+ * legacy `POST /core.registry.register`).
  */
 export function createExternalRegisterHandler(deps: ExternalRegisterDeps): ExternalRegisterHandler {
   return function externalRegisterHandler(req, res) {

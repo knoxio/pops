@@ -11,8 +11,8 @@
  *
  *   - **Dynamic** (`--dynamic`) — PRD-232, Wave 6 BE-lego. Reads the
  *     live `pillar_registry` via the SDK's `HttpDiscoveryTransport`
- *     (`GET /core.registry.list`) and emits one `/<pillar>-api/` REST
- *     block per registered pillar.
+ *     (canonical `GET /registry/pillars`, legacy `GET /core.registry.list`)
+ *     and emits one `/<pillar>-api/` REST block per registered pillar.
  *     Used at boot-time inside the cluster: an init container (or a future
  *     subscription-bus watcher, PRD-163) runs the script with
  *     `--dynamic` so newly-registered external pillars (PRD-228) pick
@@ -37,8 +37,8 @@
  *   tsx generate-nginx-conf.ts --dynamic --out … --registry-url=http://core-api:3001
  *
  * The event-driven `nginx -s reload` wrapper that re-runs the dynamic
- * mode on each `core.registry` subscription event is intentionally NOT
- * shipped here; see PRD-163 follow-up.
+ * mode on each registry subscription event (`GET /registry/subscribe`) is
+ * intentionally NOT shipped here; see PRD-163 follow-up.
  */
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';

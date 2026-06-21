@@ -3,7 +3,8 @@ import { PillarSdkError } from './errors.js';
 import type { ManifestPayload } from '../manifest-schema/index.js';
 
 /**
- * The shape returned by `core.registry.list` (PRD-161 / PRD-159).
+ * The shape returned by the registry discovery snapshot (PRD-161 / PRD-159) —
+ * canonical `GET /registry/pillars`, legacy `GET /core.registry.list`.
  * One entry per registered pillar.
  */
 export type DiscoveredPillar = {
@@ -17,7 +18,8 @@ export type DiscoveredPillar = {
 
 /**
  * The transport the client uses to fetch the registry snapshot. The
- * default HTTP impl talks to `core.registry.list`; tests inject a
+ * default HTTP impl reads the discovery snapshot (canonical
+ * `/registry/pillars`, legacy `/core.registry.list`); tests inject a
  * fake. Decoupling the transport keeps the client unit-testable without
  * a live registry and lets future deployments swap to an SSE / file /
  * in-process variant without touching `pillar()`.
@@ -42,7 +44,7 @@ const DEFAULT_FETCH_TIMEOUT_MS = 5_000;
  * the raw HTTP wire and reshapes the response into `DiscoveredPillar[]`.
  *
  * Wire shape (raw — no tRPC):
- *   GET /core.registry.list
+ *   GET /registry/pillars   (legacy alias: GET /core.registry.list)
  *   → { pillars: [...], fetchedAt: ... }
  *
  * The body parser still tolerates a `{ result: { data } }` envelope so a

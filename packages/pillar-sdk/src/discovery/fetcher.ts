@@ -20,7 +20,9 @@ export type RegistryFetchResult = {
 export const DEFAULT_FETCH_TIMEOUT_MS = 5_000;
 
 /**
- * One-shot fetch of `core.registry.list` (PRD-161).
+ * One-shot fetch of the registry discovery snapshot (PRD-161) — canonical
+ * `GET /registry/pillars` (legacy `GET /core.registry.list` still served
+ * in-cluster until the dotted shape is removed).
  *
  * - 5s timeout via `AbortController` (configurable, but 5s is the default
  *   the PRD-159 contract calls out).
