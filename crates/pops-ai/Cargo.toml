@@ -1,0 +1,29 @@
+[package]
+name = "pops-ai"
+version = "0.1.0"
+# A direct member of the `crates/` cargo workspace (a sibling of `pops-settings`
+# and of the `pillars/contacts` crate). 1:1 Rust mirror of the TS
+# `@pops/ai-telemetry` wire contract — the cross-pillar AI-inference telemetry
+# sink. Standalone library: it has no in-tree consumer yet (the contacts Rust
+# pillar will adopt it), so it ships compiled + tested-but-unused, with a
+# golden-fixture parity test pinning the wire bytes against the TS schema.
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "POPS AI telemetry — Rust mirror of @pops/ai-telemetry's inference-record wire contract."
+
+[lib]
+name = "pops_ai"
+path = "src/lib.rs"
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+reqwest = { workspace = true }
+tokio = { workspace = true }
+futures = { workspace = true }
+async-trait = { workspace = true }
+anyhow = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["rt-multi-thread", "macros", "test-util"] }

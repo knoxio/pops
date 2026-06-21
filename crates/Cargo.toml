@@ -12,7 +12,7 @@
 # member by relative path.
 [workspace]
 resolver = "2"
-members = ["../pillars/contacts"]
+members = ["../pillars/contacts", "pops-ai"]
 
 [workspace.package]
 edition = "2021"
@@ -33,3 +33,7 @@ reqwest = { version = "0.12", default-features = false, features = ["json", "rus
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 uuid = { version = "1", features = ["v4"] }
+async-trait = "0.1"
+thiserror = "2"
+anyhow = "1"
+futures = "0.3"
