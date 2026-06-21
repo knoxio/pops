@@ -1,17 +1,24 @@
 /**
  * Anthropic request + response parsing for the categorizer. Ported from the
- * monolith `imports/lib/ai-categorizer-api.ts`, minus the `trackInference`
- * usage-logging/budget wrapper (the pillar drops central AI telemetry).
+ * monolith `imports/lib/ai-categorizer-api.ts`. Usage/cost/latency is reported
+ * to the ai pillar through `@pops/ai-telemetry` (`callWithLogging`,
+ * fire-and-forget) — telemetry never alters the call's behaviour.
  *
  * Only the merchant description is sent to the API — no account/card numbers
- * or personal identifiers.
+ * or personal identifiers. `contextId` is an opaque import-batch key, never the
+ * description, so the telemetry store carries no PII.
  */
+import { callWithLogging } from '@pops/ai-telemetry';
+
+import { ANTHROPIC_PROVIDER, FINANCE_DOMAIN, financeTelemetryDeps } from '../ai-telemetry-deps.js';
 import { AiCategorizationError } from './ai-categorizer-error.js';
 import { withRateLimitRetry } from './ai-retry.js';
 
 import type Anthropic from '@anthropic-ai/sdk';
 
 import type { AiCacheEntry } from './ai-categorizer.js';
+
+export const CATEGORIZE_OPERATION = 'imports.categorize';
 
 export interface ApiCallResponse {
   text: string | null;
@@ -26,6 +33,8 @@ export interface ApiCallOptions {
   model: string;
   maxTokens: number;
   knownTags: string[];
+  /** Opaque import-batch key for telemetry correlation (never the description). */
+  contextId?: string;
 }
 
 export function buildPrompt(rawRow: string, knownTags: string[]): string {
@@ -89,15 +98,34 @@ export function sanitizeEntityName(name: string | null): string | null {
 }
 
 export async function callApi(opts: ApiCallOptions): Promise<ApiCallResponse> {
-  const { client, rawRow, sanitizedDescription, model, maxTokens, knownTags } = opts;
-  const response = await withRateLimitRetry(
-    () =>
-      client.messages.create({
-        model,
-        max_tokens: maxTokens,
-        messages: [{ role: 'user', content: buildPrompt(rawRow, knownTags) }],
-      }),
-    sanitizedDescription
+  const { client, rawRow, sanitizedDescription, model, maxTokens, knownTags, contextId } = opts;
+  const response = await callWithLogging(
+    {
+      provider: ANTHROPIC_PROVIDER,
+      model,
+      operation: CATEGORIZE_OPERATION,
+      domain: FINANCE_DOMAIN,
+      ...(contextId !== undefined ? { contextId } : {}),
+      call: async () => {
+        const created = await withRateLimitRetry(
+          () =>
+            client.messages.create({
+              model,
+              max_tokens: maxTokens,
+              messages: [{ role: 'user', content: buildPrompt(rawRow, knownTags) }],
+            }),
+          sanitizedDescription
+        );
+        return {
+          response: created,
+          usage: {
+            inputTokens: created.usage.input_tokens,
+            outputTokens: created.usage.output_tokens,
+          },
+        };
+      },
+    },
+    financeTelemetryDeps()
   );
   const block = response.content[0];
   const text = block?.type === 'text' ? block.text : null;

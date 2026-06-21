@@ -7,10 +7,12 @@
  *   - config from env, not core-settings (`FINANCE_AI_CATEGORIZER_MODEL`,
  *     `FINANCE_AI_CATEGORIZER_MAX_TOKENS`, `ANTHROPIC_API_KEY`/`CLAUDE_API_KEY`);
  *   - gated by `FINANCE_AI_CATEGORIZER_ENABLED` (disabled → no call, `{result:null}`);
- *   - no disk cache and no central usage-logging / budget enforcement.
+ *   - no disk cache and no budget enforcement.
  *
- * Only the merchant description is sent to the API — no account/card numbers
- * or personal identifiers.
+ * Usage/cost is reported to the ai pillar via `@pops/ai-telemetry` (fire-and-
+ * forget, in `callApi`). Only the merchant description is sent to the API — no
+ * account/card numbers or personal identifiers; the telemetry `contextId` is an
+ * opaque import-batch key, never the description.
  */
 import Anthropic from '@anthropic-ai/sdk';
 
@@ -72,7 +74,7 @@ function getApiKey(): string {
  */
 export async function categorizeWithAi(
   rawRow: string,
-  _importBatchId?: string,
+  importBatchId?: string,
   knownTags: string[] = []
 ): Promise<AiCallResult> {
   if (!isAiCategorizerEnabled()) return { result: null };
@@ -90,6 +92,9 @@ export async function categorizeWithAi(
     model: getModel(),
     maxTokens: getMaxTokens(),
     knownTags,
+    ...(importBatchId !== undefined && importBatchId !== ''
+      ? { contextId: `import_batch:${importBatchId}` }
+      : {}),
   });
 
   if (!response.text) return { result: null };

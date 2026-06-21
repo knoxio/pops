@@ -12,13 +12,22 @@
  *   `getSettingValue('ego.*')`. The pillar has no settings service, so the
  *   model is a hardcoded constant with an optional `CEREBRUM_EGO_MODEL` env
  *   override and the chat/summary token+temperature knobs are constants.
- * - **Inference logging**: the monolith wraps every call in `trackInference()`.
- *   The pillar has no such table; we keep only the 429 backoff
- *   ({@link withRateLimitRetry}) and drop the DB logging entirely.
+ * - **Inference logging**: usage/cost/latency is reported to the ai pillar via
+ *   `@pops/ai-telemetry` (`callWithLogging` for chat/summarise,
+ *   `callWithLoggingStream` for the SSE stream — both fire-and-forget) plus the
+ *   429 backoff ({@link withRateLimitRetry}) for correctness.
  */
 import Anthropic from '@anthropic-ai/sdk';
 
+import { callWithLogging, callWithLoggingStream } from '@pops/ai-telemetry';
+
+import {
+  ANTHROPIC_PROVIDER,
+  CEREBRUM_DOMAIN,
+  cerebrumTelemetryDeps,
+} from '../ai-telemetry-deps.js';
 import { withRateLimitRetry } from '../ingest/llm.js';
+import { egoStreamEvents } from './stream-events.js';
 
 import type { MessageStream } from '@anthropic-ai/sdk/lib/MessageStream';
 
@@ -100,17 +109,36 @@ export class AnthropicEgoLlm implements EgoLlm {
     }
 
     const client = new Anthropic({ apiKey, maxRetries: 0 });
+    const model = this.model();
     try {
-      const response = await withRateLimitRetry(
-        () =>
-          client.messages.create({
-            model: this.model(),
-            max_tokens: CHAT_MAX_TOKENS,
-            temperature: CHAT_TEMPERATURE,
-            system: systemPrompt,
-            messages,
-          }),
-        'ego.chat'
+      const response = await callWithLogging(
+        {
+          provider: ANTHROPIC_PROVIDER,
+          model,
+          operation: 'ego.chat',
+          domain: CEREBRUM_DOMAIN,
+          call: async () => {
+            const created = await withRateLimitRetry(
+              () =>
+                client.messages.create({
+                  model,
+                  max_tokens: CHAT_MAX_TOKENS,
+                  temperature: CHAT_TEMPERATURE,
+                  system: systemPrompt,
+                  messages,
+                }),
+              'ego.chat'
+            );
+            return {
+              response: created,
+              usage: {
+                inputTokens: created.usage.input_tokens,
+                outputTokens: created.usage.output_tokens,
+              },
+            };
+          },
+        },
+        cerebrumTelemetryDeps()
       );
       const first = response.content[0];
       return {
@@ -135,10 +163,11 @@ export class AnthropicEgoLlm implements EgoLlm {
     }
 
     const client = new Anthropic({ apiKey, maxRetries: 0 });
+    const model = this.model();
     let messageStream: MessageStream;
     try {
       messageStream = client.messages.stream({
-        model: this.model(),
+        model,
         max_tokens: CHAT_MAX_TOKENS,
         temperature: CHAT_TEMPERATURE,
         system: systemPrompt,
@@ -152,31 +181,20 @@ export class AnthropicEgoLlm implements EgoLlm {
       return;
     }
 
-    let fullText = '';
-    try {
-      for await (const event of messageStream) {
-        if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
-          fullText += event.delta.text;
-          yield { type: 'token', text: event.delta.text };
-        }
-      }
-      const finalMessage = await messageStream.finalMessage();
-      yield {
-        type: 'done',
-        fullText,
-        tokensIn: finalMessage.usage.input_tokens,
-        tokensOut: finalMessage.usage.output_tokens,
-      };
-    } catch (err) {
-      console.warn(
-        `[cerebrum-ego] stream processing failed: ${err instanceof Error ? err.message : String(err)}`
-      );
-      if (fullText.length === 0) {
-        yield { type: 'token', text: LLM_ERROR_MSG };
-        fullText = LLM_ERROR_MSG;
-      }
-      yield { type: 'done', fullText, tokensIn: 0, tokensOut: 0 };
-    }
+    yield* callWithLoggingStream(
+      {
+        provider: ANTHROPIC_PROVIDER,
+        model,
+        operation: 'ego.stream',
+        domain: CEREBRUM_DOMAIN,
+        stream: () => egoStreamEvents(messageStream),
+        extractUsage: (last) =>
+          last?.type === 'done'
+            ? { inputTokens: last.tokensIn, outputTokens: last.tokensOut }
+            : null,
+      },
+      cerebrumTelemetryDeps()
+    );
   }
 
   async summarise(prompt: string, messageCount: number): Promise<string> {
@@ -185,16 +203,35 @@ export class AnthropicEgoLlm implements EgoLlm {
     if (apiKey === undefined || apiKey === '') return fallback;
 
     const client = new Anthropic({ apiKey, maxRetries: 0 });
+    const model = this.model();
     try {
-      const response = await withRateLimitRetry(
-        () =>
-          client.messages.create({
-            model: this.model(),
-            max_tokens: SUMMARY_MAX_TOKENS,
-            temperature: SUMMARY_TEMPERATURE,
-            messages: [{ role: 'user', content: prompt }],
-          }),
-        'ego.summarise'
+      const response = await callWithLogging(
+        {
+          provider: ANTHROPIC_PROVIDER,
+          model,
+          operation: 'ego.summarise',
+          domain: CEREBRUM_DOMAIN,
+          call: async () => {
+            const created = await withRateLimitRetry(
+              () =>
+                client.messages.create({
+                  model,
+                  max_tokens: SUMMARY_MAX_TOKENS,
+                  temperature: SUMMARY_TEMPERATURE,
+                  messages: [{ role: 'user', content: prompt }],
+                }),
+              'ego.summarise'
+            );
+            return {
+              response: created,
+              usage: {
+                inputTokens: created.usage.input_tokens,
+                outputTokens: created.usage.output_tokens,
+              },
+            };
+          },
+        },
+        cerebrumTelemetryDeps()
       );
       const first = response.content[0];
       return first?.type === 'text' ? first.text : fallback;

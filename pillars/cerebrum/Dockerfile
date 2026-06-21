@@ -16,6 +16,7 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json .oxfmtrc
 # resolution to that subgraph; unrelated pillars never need to exist
 # in this image's build context.
 COPY pillars/cerebrum/package.json ./pillars/cerebrum/
+COPY packages/ai-telemetry/package.json ./packages/ai-telemetry/
 COPY packages/pillar-sdk/package.json ./packages/pillar-sdk/
 COPY packages/types/package.json ./packages/types/
 
@@ -24,6 +25,9 @@ RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
     corepack enable && pnpm install --frozen-lockfile --filter "@pops/cerebrum..."
 
 # Phase 2: source for the transitive @pops/* deps of @pops/cerebrum.
+# @pops/ai-telemetry
+COPY packages/ai-telemetry/src ./packages/ai-telemetry/src
+COPY packages/ai-telemetry/tsconfig.json ./packages/ai-telemetry/tsconfig.json
 # @pops/pillar-sdk
 COPY packages/pillar-sdk/src ./packages/pillar-sdk/src
 COPY packages/pillar-sdk/tsconfig.json ./packages/pillar-sdk/tsconfig.json

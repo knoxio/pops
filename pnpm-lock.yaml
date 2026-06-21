@@ -883,6 +883,9 @@ importers:
       '@anthropic-ai/sdk':
         specifier: ^0.104.1
         version: 0.104.1(zod@4.4.3)
+      '@pops/ai-telemetry':
+        specifier: workspace:*
+        version: link:../../packages/ai-telemetry
       '@pops/pillar-sdk':
         specifier: workspace:*
         version: link:../../packages/pillar-sdk
@@ -1208,6 +1211,9 @@ importers:
       '@anthropic-ai/sdk':
         specifier: ^0.104.1
         version: 0.104.1(zod@4.4.3)
+      '@pops/ai-telemetry':
+        specifier: workspace:*
+        version: link:../../packages/ai-telemetry
       '@pops/pillar-sdk':
         specifier: workspace:*
         version: link:../../packages/pillar-sdk

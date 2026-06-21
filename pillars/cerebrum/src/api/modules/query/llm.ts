@@ -15,16 +15,27 @@
  * Deviations from the monolith (parity with the ingest slice):
  * - Model overrides / settings → hardcoded `claude-sonnet-4-6` constant with an
  *   optional `CEREBRUM_QUERY_MODEL` env override. No settings-DB tier.
- * - `trackInference` / `ai_inference_log` dropped entirely. Only the 429
- *   backoff ({@link withRateLimitRetry}, reused from the ingest slice) is kept.
+ * - Usage/cost is reported to the ai pillar via `@pops/ai-telemetry`
+ *   (`callWithLogging` for `ask`, `callWithLoggingStream` for the SSE route —
+ *   both fire-and-forget); the 429 backoff ({@link withRateLimitRetry}, reused
+ *   from the ingest slice) is retained for correctness.
  */
 import Anthropic from '@anthropic-ai/sdk';
 
+import { callWithLogging, callWithLoggingStream } from '@pops/ai-telemetry';
+
+import {
+  ANTHROPIC_PROVIDER,
+  CEREBRUM_DOMAIN,
+  cerebrumTelemetryDeps,
+} from '../ai-telemetry-deps.js';
 import { withRateLimitRetry } from '../ingest/llm.js';
 
 import type { MessageStream } from '@anthropic-ai/sdk/lib/MessageStream';
 
 export const DEFAULT_QUERY_MODEL = 'claude-sonnet-4-6';
+const QUERY_OPERATION = 'query.ask';
+const QUERY_STREAM_OPERATION = 'query.stream';
 const DEFAULT_MAX_TOKENS = 1024;
 
 const LLM_UNAVAILABLE_MSG =
@@ -84,17 +95,36 @@ export class AnthropicQueryLlm implements QueryLlm {
     }
 
     const client = new Anthropic({ apiKey, maxRetries: 0 });
+    const model = queryModel();
     try {
-      const response = await withRateLimitRetry(
-        () =>
-          client.messages.create({
-            model: queryModel(),
-            max_tokens: DEFAULT_MAX_TOKENS,
-            temperature: 0,
-            system: systemPrompt,
-            messages: [{ role: 'user', content: question }],
-          }),
-        'cerebrum.query'
+      const response = await callWithLogging(
+        {
+          provider: ANTHROPIC_PROVIDER,
+          model,
+          operation: QUERY_OPERATION,
+          domain: CEREBRUM_DOMAIN,
+          call: async () => {
+            const created = await withRateLimitRetry(
+              () =>
+                client.messages.create({
+                  model,
+                  max_tokens: DEFAULT_MAX_TOKENS,
+                  temperature: 0,
+                  system: systemPrompt,
+                  messages: [{ role: 'user', content: question }],
+                }),
+              'cerebrum.query'
+            );
+            return {
+              response: created,
+              usage: {
+                inputTokens: created.usage.input_tokens,
+                outputTokens: created.usage.output_tokens,
+              },
+            };
+          },
+        },
+        cerebrumTelemetryDeps()
       );
       const first = response.content[0];
       return first?.type === 'text' ? first.text : '';
@@ -137,10 +167,11 @@ export class AnthropicQueryStreamLlm implements QueryStreamLlm {
     }
 
     const client = new Anthropic({ apiKey, maxRetries: 0 });
+    const model = queryModel();
     let stream: MessageStream;
     try {
       stream = client.messages.stream({
-        model: queryModel(),
+        model,
         max_tokens: DEFAULT_MAX_TOKENS,
         temperature: 0,
         system: systemPrompt,
@@ -156,7 +187,20 @@ export class AnthropicQueryStreamLlm implements QueryStreamLlm {
     }
 
     try {
-      yield* iterateStream(stream);
+      yield* callWithLoggingStream(
+        {
+          provider: ANTHROPIC_PROVIDER,
+          model,
+          operation: QUERY_STREAM_OPERATION,
+          domain: CEREBRUM_DOMAIN,
+          stream: () => iterateStream(stream),
+          extractUsage: (last) =>
+            last?.kind === 'final'
+              ? { inputTokens: last.tokensIn, outputTokens: last.tokensOut }
+              : null,
+        },
+        cerebrumTelemetryDeps()
+      );
     } catch (err) {
       console.warn(
         `[cerebrum-query] stream processing failed: ${err instanceof Error ? err.message : String(err)}`

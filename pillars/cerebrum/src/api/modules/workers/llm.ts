@@ -9,13 +9,21 @@
  *
  * Pillar deltas (parity with the ingest/ego slices): model is a hardcoded haiku
  * constant with an optional `CEREBRUM_AUDITOR_MODEL` env override; no settings
- * service, no `trackInference` — only the 429 backoff is retained. A missing
- * `ANTHROPIC_API_KEY` yields null (no contradiction surfaced) rather than
- * throwing. Tests inject a fake.
+ * service; usage/cost is reported to the ai pillar via `@pops/ai-telemetry`
+ * (`callWithLogging`, fire-and-forget) and the 429 backoff is retained. A
+ * missing `ANTHROPIC_API_KEY` yields null (no contradiction surfaced) rather
+ * than throwing. Tests inject a fake.
  */
 import Anthropic from '@anthropic-ai/sdk';
 import { z } from 'zod';
 
+import { callWithLogging } from '@pops/ai-telemetry';
+
+import {
+  ANTHROPIC_PROVIDER,
+  CEREBRUM_DOMAIN,
+  cerebrumTelemetryDeps,
+} from '../ai-telemetry-deps.js';
 import { withRateLimitRetry } from '../ingest/llm.js';
 
 import type { ContradictionDetector } from './auditor.js';
@@ -92,16 +100,34 @@ export class AnthropicContradictionDetector implements ContradictionDetector {
     const userMessage = `Passage A:\n${truncate(bodyA)}\n\nPassage B:\n${truncate(bodyB)}`;
 
     try {
-      const response = await withRateLimitRetry(
-        () =>
-          client.messages.create({
-            model,
-            max_tokens: 500,
-            temperature: 0,
-            system: SYSTEM_PROMPT,
-            messages: [{ role: 'user', content: userMessage }],
-          }),
-        OPERATION
+      const response = await callWithLogging(
+        {
+          provider: ANTHROPIC_PROVIDER,
+          model,
+          operation: OPERATION,
+          domain: CEREBRUM_DOMAIN,
+          call: async () => {
+            const created = await withRateLimitRetry(
+              () =>
+                client.messages.create({
+                  model,
+                  max_tokens: 500,
+                  temperature: 0,
+                  system: SYSTEM_PROMPT,
+                  messages: [{ role: 'user', content: userMessage }],
+                }),
+              OPERATION
+            );
+            return {
+              response: created,
+              usage: {
+                inputTokens: created.usage.input_tokens,
+                outputTokens: created.usage.output_tokens,
+              },
+            };
+          },
+        },
+        cerebrumTelemetryDeps()
       );
       const first = response.content[0];
       const text = first?.type === 'text' ? first.text : '';
