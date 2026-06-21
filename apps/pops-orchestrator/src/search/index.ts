@@ -16,14 +16,16 @@ export { searchAll, HITS_PER_SECTION } from './engine.js';
 export type { PillarSearchGroup, SearchSource, SearchAllResult } from './engine.js';
 export {
   createFederationSource,
-  resolveSearchPillars,
+  selectSearchPillars,
+  sectionMetaFor,
   sdkSearchInvoker,
-  SEARCH_PILLARS,
+  SEARCH_SECTION_META,
 } from './federation.js';
 export type {
   FederationSourceOptions,
   PillarSearchMeta,
   PillarSearchResponse,
+  ResolvedSearchPillar,
   SearchInvoker,
 } from './federation.js';
 export { parseQuery } from './query-parser.js';

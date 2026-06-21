@@ -46,7 +46,12 @@ export interface PillarRegistryOptions {
  */
 export type RegistrySnapshotReader = () => Promise<readonly PillarSnapshot[]>;
 
-const defaultSnapshotReader: RegistrySnapshotReader = async () => {
+/**
+ * Production snapshot reader: the SDK discovery client (TTL-cached). Shared by
+ * the `GET /pillars` view and the federated-search membership projection so
+ * both read the same live registry through one path.
+ */
+export const defaultSnapshotReader: RegistrySnapshotReader = async () => {
   const snapshot = await pillarRegistry();
   return snapshot.pillars;
 };

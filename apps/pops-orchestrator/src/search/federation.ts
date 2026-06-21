@@ -19,19 +19,29 @@
  * SDK result is LOGGED and SKIPPED — federation never fails the whole search
  * because one pillar is down (epic 06).
  *
- * Pillar discovery: the search-capable set is a typed constant
- * ({@link SEARCH_PILLARS}) intersected with the pillars actually present in
- * `POPS_PILLARS`. The registry/manifest does advertise search capability
- * (`manifest.search.adapters`), but the orchestrator's `POPS_PILLARS` registry
- * view (`pillars/registry.ts`) carries only `{ id, baseUrl }` — not manifests
- * — so capability cannot be read from it cleanly. The constant list is the
- * deliberate, typed alternative; see the increment report.
+ * Pillar discovery (registry-as-truth): the search-capable set is derived from
+ * the LIVE registry snapshot — every registered, healthy pillar whose manifest
+ * declares a non-empty `search.adapters` slot is federated, mirroring the
+ * AI-tools handler's `manifest.ai.tools` projection. Adding a search-capable
+ * pillar needs no orchestrator edit: it registers, advertises `search.adapters`,
+ * and appears in federated search on the next discovery refresh.
+ *
+ * Presentation metadata (the section `icon`/`color`/`domain`) is NOT carried by
+ * the manifest's `search` slot — that slot describes adapter mechanics
+ * (`name`/`entityType`/`queryShape`/`procedurePath`), not section chrome. The
+ * monolith's per-section icon/color descriptors have no manifest equivalent, so
+ * they stay in the small static {@link SEARCH_SECTION_META} table keyed by
+ * pillar id. A search-capable pillar with no entry there is still federated,
+ * decorated with {@link DEFAULT_SECTION_META} — membership is registry-driven,
+ * only the chrome falls back.
  */
+import { RegistryUnreachableError } from '@pops/pillar-sdk/discovery';
 import { pillar } from '@pops/pillar-sdk/server';
 
-import { getPillarRegistry } from '../pillars/registry.js';
+import { defaultSnapshotReader, type RegistrySnapshotReader } from '../pillars/registry.js';
 
 import type { CallResult } from '@pops/pillar-sdk/client';
+import type { PillarSnapshot, PillarStatus } from '@pops/pillar-sdk/discovery';
 
 import type { PillarSearchGroup, SearchSource } from './engine.js';
 import type { Query, SearchContext, SearchHit } from './types.js';
@@ -47,8 +57,11 @@ export interface PillarSearchMeta {
 }
 
 /**
- * The pillars that serve `POST /search` and the section metadata the
- * federator decorates their hits with. Ported from the monolith:
+ * Section presentation metadata, ported from the monolith adapter descriptors.
+ * This table does NOT decide membership — that is the live registry's job (a
+ * pillar whose manifest declares `search.adapters`). It only supplies the
+ * section chrome (icon/color/domain) the manifest's `search` slot does not
+ * express:
  *   - core  → `entities` adapter (`Building2`, green)
  *   - finance → transactions/budgets/wishlist adapters, aggregated under one
  *     `/search`; decorated with the transactions descriptor (`ArrowRightLeft`,
@@ -56,14 +69,35 @@ export interface PillarSearchMeta {
  *   - inventory → items adapter; pillar manifest icon `package` / color
  *     `amber`.
  *
- * Media also serves `/search` but is out of scope for this increment (core /
- * finance / inventory only).
+ * A search-capable pillar absent from this table (e.g. media, or a brand-new
+ * pillar) is still federated, decorated with {@link DEFAULT_SECTION_META}.
  */
-export const SEARCH_PILLARS: Readonly<Record<string, PillarSearchMeta>> = {
+export const SEARCH_SECTION_META: Readonly<Record<string, PillarSearchMeta>> = {
   core: { domain: 'core', icon: 'Building2', color: 'green' },
   finance: { domain: 'finance', icon: 'ArrowRightLeft', color: 'green' },
   inventory: { domain: 'inventory', icon: 'Package', color: 'amber' },
 };
+
+/**
+ * Chrome for a search-capable pillar with no {@link SEARCH_SECTION_META} entry.
+ * `domain` is overridden with the pillar id by {@link sectionMetaFor} so
+ * context-section detection still works for an unmapped pillar.
+ */
+const DEFAULT_SECTION_META: PillarSearchMeta = {
+  domain: '',
+  icon: 'Circle',
+  color: 'gray',
+};
+
+/**
+ * Resolve a pillar's section chrome: its static entry, or a default keyed to
+ * the pillar id so an unmapped-but-search-capable pillar still federates.
+ */
+export function sectionMetaFor(pillarId: string): PillarSearchMeta {
+  const mapped = SEARCH_SECTION_META[pillarId];
+  if (mapped !== undefined) return mapped;
+  return { ...DEFAULT_SECTION_META, domain: pillarId };
+}
 
 /** Wire shape returned by a pillar's `search.search` procedure. */
 export interface PillarSearchResponse {
@@ -102,50 +136,108 @@ export interface FederationSourceOptions {
   /** Search dispatcher. Defaults to {@link sdkSearchInvoker}. */
   readonly invoke?: SearchInvoker;
   /**
-   * Search-capable pillars present in this deploy. Defaults to the constant
-   * {@link SEARCH_PILLARS} intersected with `POPS_PILLARS` via
-   * {@link resolveSearchPillars}.
+   * Live registry snapshot reader. Defaults to the SDK discovery client (the
+   * same `defaultSnapshotReader` the `GET /pillars` view uses). Injectable so
+   * tests drive membership off a fixed snapshot with no network.
    */
-  readonly pillars?: readonly { id: string; meta: PillarSearchMeta }[];
+  readonly snapshotReader?: RegistrySnapshotReader;
   /** Warning sink. Defaults to `console.warn` so a down pillar is observable. */
   readonly onWarn?: (message: string, detail?: unknown) => void;
-  /** Self base URL for the registry view. Defaults to the unused localhost placeholder. */
-  readonly selfBaseUrl?: string;
+}
+
+/** One resolved, search-capable pillar plus the chrome to decorate its hits. */
+export interface ResolvedSearchPillar {
+  readonly id: string;
+  readonly meta: PillarSearchMeta;
 }
 
 /**
- * Intersect the search-capable constant with the pillars actually present in
- * `POPS_PILLARS`. A search-capable pillar absent from the registry is silently
- * skipped (it is not deployed); a registry pillar with no search capability
- * (e.g. `food`) is ignored.
+ * Effective availability for federation. Mirrors the AI-tools handler's
+ * `resolveStatus`: `registered=false` is authoritative (the SDK client refuses
+ * to route an unregistered pillar regardless of `status`), and a missing
+ * `status` on a registered pillar is treated as healthy for legacy snapshots.
  */
-export function resolveSearchPillars(
-  selfBaseUrl: string
-): readonly { id: string; meta: PillarSearchMeta }[] {
-  const registered = new Set(getPillarRegistry({ selfBaseUrl }).map((p) => p.id));
-  const resolved: { id: string; meta: PillarSearchMeta }[] = [];
-  for (const [id, meta] of Object.entries(SEARCH_PILLARS)) {
-    if (registered.has(id)) resolved.push({ id, meta });
+function resolveStatus(snapshot: PillarSnapshot): PillarStatus {
+  if (!snapshot.registered) return 'unavailable';
+  if (snapshot.status !== undefined) return snapshot.status;
+  return 'healthy';
+}
+
+/** True iff the pillar advertises at least one search adapter in its manifest. */
+function isSearchCapable(snapshot: PillarSnapshot): boolean {
+  return snapshot.manifest.search.adapters.length > 0;
+}
+
+/**
+ * Project the live registry snapshot to the set of search-capable pillars,
+ * each decorated with its section chrome. Selection mirrors the AI-tools
+ * `buildToolList` projection: registered, healthy, and advertising the
+ * capability (here `search.adapters`; there `ai.tools`).
+ *
+ * Defensive: a single malformed snapshot row is skipped (logged), never
+ * allowed to sink the whole projection — one bad manifest must not break
+ * search for every other pillar.
+ */
+export function selectSearchPillars(
+  snapshots: readonly PillarSnapshot[],
+  onWarn: (message: string, detail?: unknown) => void
+): readonly ResolvedSearchPillar[] {
+  const resolved: ResolvedSearchPillar[] = [];
+
+  for (const snapshot of snapshots) {
+    try {
+      if (resolveStatus(snapshot) !== 'healthy') continue;
+      if (!isSearchCapable(snapshot)) continue;
+      resolved.push({ id: snapshot.pillarId, meta: sectionMetaFor(snapshot.pillarId) });
+    } catch (err) {
+      onWarn('[orchestrator] skipped malformed registry entry during search projection', err);
+    }
   }
+
   return resolved;
 }
 
-/** Localhost placeholder — the registry view requires a self base URL but the federator never calls itself. */
-const REGISTRY_SELF_PLACEHOLDER = 'http://localhost';
+/**
+ * Resolve the search-capable pillar set from the live registry, degrading to an
+ * empty set when the registry read fails. An empty set is the correct degraded
+ * result — federation returns no sections rather than throwing, matching the
+ * AI-tools handler's "empty list, never a 500" stance.
+ */
+async function resolveSearchPillars(
+  reader: RegistrySnapshotReader,
+  onWarn: (message: string, detail?: unknown) => void
+): Promise<readonly ResolvedSearchPillar[]> {
+  let snapshots: readonly PillarSnapshot[];
+  try {
+    snapshots = await reader();
+  } catch (err) {
+    if (err instanceof RegistryUnreachableError) {
+      onWarn('[orchestrator] registry unreachable; serving empty federated-search set', err);
+    } else {
+      onWarn('[orchestrator] registry read failed; serving empty federated-search set', err);
+    }
+    return [];
+  }
+  return selectSearchPillars(snapshots, onWarn);
+}
 
 /**
- * Build the federation {@link SearchSource}. Fans the query out to every
- * resolved search-capable pillar in parallel; collects each pillar's hits and
- * decorates them; skips (logs) any pillar that is unavailable, errors, or
- * returns a non-ok result.
+ * Build the federation {@link SearchSource}. On every search it re-reads the
+ * live registry, projects the search-capable pillars, fans the query out to
+ * each in parallel, collects + decorates their hits, and skips (logs) any
+ * pillar that is unavailable, errors, or returns a non-ok result. Membership is
+ * resolved per-search so a newly registered search-capable pillar is picked up
+ * without restarting the orchestrator (the SDK discovery cache rate-limits the
+ * actual registry traffic).
  */
 export function createFederationSource(options: FederationSourceOptions = {}): SearchSource {
   const invoke = options.invoke ?? sdkSearchInvoker;
   const onWarn = options.onWarn ?? defaultWarn;
-  const selfBaseUrl = options.selfBaseUrl ?? REGISTRY_SELF_PLACEHOLDER;
-  const pillars = options.pillars ?? resolveSearchPillars(selfBaseUrl);
+  const reader = options.snapshotReader ?? defaultSnapshotReader;
 
   return async (query: Query, context: SearchContext): Promise<PillarSearchGroup[]> => {
+    const pillars = await resolveSearchPillars(reader, onWarn);
+
     const settled = await Promise.allSettled(
       pillars.map(async ({ id, meta }) => {
         const result = await invoke(id, { query, context });
