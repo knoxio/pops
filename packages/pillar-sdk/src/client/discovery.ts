@@ -6,6 +6,7 @@ import {
 import { LEGACY_REGISTRY_PATHS, REGISTRY_PATHS } from '../registry-paths.js';
 import { PillarSdkError } from './errors.js';
 
+import type { CapabilityStatuses } from '../bootstrap/transport.js';
 import type { ManifestPayload } from '../manifest-schema/index.js';
 
 const HTTP_NOT_FOUND = 404;
@@ -27,6 +28,12 @@ export type DiscoveredPillar = {
   manifest: ManifestPayload;
   lastSeenAt: string;
   registered: boolean;
+  /**
+   * Live capability statuses the pillar self-reported (`<capabilityKey> →
+   * up/down`), threaded through from the registry wire (settings-federation
+   * GAP-256-D). Absent when the entry omits `capabilities`.
+   */
+  capabilities?: CapabilityStatuses;
 };
 
 /**
@@ -138,6 +145,7 @@ function parseRegistryEntry(entry: unknown, index: number): DiscoveredPillar {
   if (!isRecord(entry)) {
     throw new PillarSdkError(`registry snapshot entry ${index} is not an object`);
   }
+  const capabilities = optionalCapabilities(entry['capabilities'], index);
   return {
     pillarId: requireString(entry, 'pillarId', index),
     baseUrl: requireString(entry, 'baseUrl', index),
@@ -145,6 +153,7 @@ function parseRegistryEntry(entry: unknown, index: number): DiscoveredPillar {
     manifest: requireManifest(entry['manifest'], index),
     lastSeenAt: requireLastSeenAt(entry, index),
     registered: requireRegistered(entry['registered'], index),
+    ...(capabilities !== undefined ? { capabilities } : {}),
   };
 }
 
@@ -189,6 +198,29 @@ function requireRegistered(value: unknown, index: number): boolean {
     throw new PillarSdkError(`registry snapshot entry ${index} registered is not boolean`);
   }
   return value;
+}
+
+/**
+ * Normalise the optional `capabilities` map (`<capabilityKey> → up/down`).
+ * Absent / null ⇒ `undefined` (a pillar with no capabilities). Present ⇒
+ * validated as a flat `Record<string, boolean>`; any non-boolean member is a
+ * malformed wire entry and is rejected (settings-federation GAP-256-D).
+ */
+function optionalCapabilities(value: unknown, index: number): CapabilityStatuses | undefined {
+  if (value === undefined || value === null) return undefined;
+  if (!isRecord(value)) {
+    throw new PillarSdkError(`registry snapshot entry ${index} capabilities is not an object`);
+  }
+  const result: CapabilityStatuses = {};
+  for (const [key, raw] of Object.entries(value)) {
+    if (typeof raw !== 'boolean') {
+      throw new PillarSdkError(
+        `registry snapshot entry ${index} capability '${key}' is not boolean`
+      );
+    }
+    result[key] = raw;
+  }
+  return result;
 }
 
 function extractTrpcData(body: unknown): unknown {

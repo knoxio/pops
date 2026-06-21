@@ -20,12 +20,14 @@ import { bootstrapPillar, type PillarBootstrapHandle } from '@pops/pillar-sdk/bo
  * `pillarHandle.stop()` so the heartbeat clears and the registry sees
  * an explicit deregister before the HTTP server shuts down.
  */
+import { coreKeyDefaults } from '../contract/settings/key-defaults.js';
 import { openCoreDb } from '../db/index.js';
 import { createCoreApiApp } from './app.js';
 import { buildCoreManifest } from './core-manifest.js';
 import { resolveCoreSqlitePath } from './core-sqlite-path.js';
 import { startAlertsScheduler } from './modules/ai-alerts/scheduler.js';
 import { startObservabilityScheduler } from './modules/ai-observability/scheduler.js';
+import { assertFeatureKeysAreCoreOwned } from './modules/features/key-ownership.js';
 import { reconcileRegistryOnBoot } from './modules/registry/boot.js';
 import { startEvictionTicker } from './modules/registry/eviction-ticker.js';
 import { startHeartbeatTicker } from './modules/registry/ticker.js';
@@ -55,6 +57,11 @@ const selfBaseUrl = parseBareOrigin(
 const coreDb = openCoreDb(resolveCoreSqlitePath());
 
 reconcileRegistryOnBoot(coreDb.db);
+
+// settings-federation S1 (R10): fail boot loudly if a system-scoped feature
+// names a setting key core does not own — otherwise the toggle would write a
+// key the owning pillar never reads once settings federate.
+assertFeatureKeysAreCoreOwned(buildCoreManifest(version).features ?? [], coreKeyDefaults);
 
 /**
  * Live status of core's `redis` capability. The core pillar container ships
