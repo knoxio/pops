@@ -24,6 +24,7 @@ import { coreKeyDefaults } from '../../contract/settings/key-defaults.js';
 import { type CoreDb } from '../../db/index.js';
 import { type Principal, readPrincipal, requireProtected } from '../middleware/identity.js';
 import { runHttp } from './error-mapping.js';
+import { makeSettingsAggregateHandler } from './settings-aggregate-handler.js';
 
 import type { ServerInferRequest } from '@ts-rest/core';
 import type { Response } from 'express';
@@ -49,6 +50,8 @@ export function makeSettingsHandlers(db: CoreDb) {
   });
 
   return {
+    aggregate: makeSettingsAggregateHandler(db),
+
     list: ({ res }: { res: Response }) =>
       runHttp(() => ({ status: 200 as const, body: shared.list(readPrincipal(res)) })),
 

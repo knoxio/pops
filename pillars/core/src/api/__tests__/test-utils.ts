@@ -82,6 +82,15 @@ export function makeClient(app: Express, headers?: ClientHeaders) {
     },
     settings: {
       list: () => send<{ data: Array<{ key: string; value: string }> }>(r.get('/settings')),
+      aggregate: () =>
+        send<{
+          pillars: Array<{
+            pillarId: string;
+            settings: Array<{ key: string; value: string }>;
+            error?: 'unreachable' | 'unauthorized';
+          }>;
+          fetchedAt: string;
+        }>(r.get('/settings/aggregate')),
       get: (key: string) =>
         send<{ data: { key: string; value: string } | null }>(
           r.get(`/settings/${encodeURIComponent(key)}`)
