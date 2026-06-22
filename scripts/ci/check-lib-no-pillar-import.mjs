@@ -72,12 +72,12 @@ const ALLOWED_DEV_PILLAR_DEPS = {
   '@pops/module-registry': new Set([
     '@pops/ai',
     '@pops/cerebrum',
-    '@pops/core',
     '@pops/finance',
     '@pops/food',
     '@pops/inventory',
     '@pops/lists',
     '@pops/media',
+    '@pops/registry',
   ]),
 };
 
