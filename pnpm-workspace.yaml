@@ -3,3 +3,4 @@ packages:
   - 'packages/*'
   - 'pillars/*'
   - 'pillars/*/*'
+  - 'libs/*'
