@@ -172,4 +172,18 @@ describe('media federated /settings', () => {
     const res = await request(app()).put('/settings/totally.unknown').send({ value: 'x' });
     expect(res.status).toBe(400);
   });
+
+  it('treats ensure as a write-once seed that never clobbers the landed value', async () => {
+    const first = await request(app())
+      .post('/settings/plex_url/ensure')
+      .send({ value: 'http://first' });
+    expect(first.body.data).toEqual({ key: 'plex_url', value: 'http://first' });
+
+    const second = await request(app())
+      .post('/settings/plex_url/ensure')
+      .send({ value: 'http://second' });
+    // The seed is preserved: the second ensure returns the originally-landed value.
+    expect(second.body.data).toEqual({ key: 'plex_url', value: 'http://first' });
+    expect(rawValue(plexSettings, 'plex_url')?.value).toBe('http://first');
+  });
 });

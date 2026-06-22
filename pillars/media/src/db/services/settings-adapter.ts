@@ -36,6 +36,15 @@ import type { MediaDb } from './internal.js';
 type KvTable = typeof plexSettings | typeof rotationSettings | typeof settings;
 
 /**
+ * A persistence handle: either the top-level `MediaDb` or the transaction handle
+ * drizzle hands the `db.transaction(...)` callback. Typed as their union so the
+ * low-level read/write/delete helpers run against whichever the caller holds —
+ * batch writes MUST pass the `tx` handle so their statements actually
+ * participate in the transaction.
+ */
+type Handle = MediaDb | Parameters<Parameters<MediaDb['transaction']>[0]>[0];
+
+/**
  * Keys whose stored form is the legacy `'true'`/`''` boolean encoding but whose
  * federated wire form is the canonical `'true'`/`'false'` toggle. The `plex_*`
  * scheduler flag and the rotation enable flag both follow this convention.
@@ -66,19 +75,29 @@ function decode(key: string, value: string): string {
   return value === 'true' ? 'true' : 'false';
 }
 
-function readRaw(db: MediaDb, key: string): string | null {
+function readRaw(db: Handle, key: string): string | null {
   const table = tableFor(key);
   const row = db.select({ value: table.value }).from(table).where(eq(table.key, key)).get();
   return row?.value ?? null;
 }
 
-function writeRaw(db: MediaDb, key: string, value: string): void {
+function writeRaw(db: Handle, key: string, value: string): void {
   const table = tableFor(key);
   const set = bumpsUpdatedAt(table) ? { value, updatedAt: sql`(datetime('now'))` } : { value };
   db.insert(table).values({ key, value }).onConflictDoUpdate({ target: table.key, set }).run();
 }
 
-function deleteRaw(db: MediaDb, key: string): void {
+/**
+ * Write-once insert: persists only when the key is absent, leaving an existing
+ * row untouched. Concurrent first-time callers converge on whichever row landed
+ * first (`ON CONFLICT DO NOTHING`), preserving the seed's write-once guarantee.
+ */
+function insertOnce(db: Handle, key: string, value: string): void {
+  const table = tableFor(key);
+  db.insert(table).values({ key, value }).onConflictDoNothing({ target: table.key }).run();
+}
+
+function deleteRaw(db: Handle, key: string): void {
   const table = tableFor(key);
   db.delete(table).where(eq(table.key, key)).run();
 }
@@ -136,8 +155,8 @@ export function setRaw(db: MediaDb, key: string, value: string): SettingRow {
  */
 export function setBulk(db: MediaDb, entries: readonly SettingEntry[]): Record<string, string> {
   if (entries.length === 0) return {};
-  db.transaction(() => {
-    for (const { key, value } of entries) writeRaw(db, key, encode(key, value));
+  db.transaction((tx) => {
+    for (const { key, value } of entries) writeRaw(tx, key, encode(key, value));
   });
   const out: Record<string, string> = {};
   for (const { key, value } of entries) out[key] = value;
@@ -150,10 +169,9 @@ export function setBulk(db: MediaDb, entries: readonly SettingEntry[]): Record<s
  * user-facing RU+reset surface.
  */
 export function ensure(db: MediaDb, key: string, value: string): SettingRow {
-  const existing = readRaw(db, key);
-  if (existing !== null) return { key, value: decode(key, existing) };
-  writeRaw(db, key, encode(key, value));
-  return { key, value };
+  insertOnce(db, key, encode(key, value));
+  const stored = readRaw(db, key);
+  return { key, value: stored !== null ? decode(key, stored) : value };
 }
 
 /**
@@ -184,8 +202,8 @@ export function resetSettings(
 ): ResetResult {
   const declared = new Set(kd.keys);
   const target = keys && keys.length > 0 ? keys.filter((key) => declared.has(key)) : [...kd.keys];
-  db.transaction(() => {
-    for (const key of target) deleteRaw(db, key);
+  db.transaction((tx) => {
+    for (const key of target) deleteRaw(tx, key);
   });
   const out: Record<string, string> = {};
   for (const key of target) out[key] = kd.defaults[key] ?? '';
