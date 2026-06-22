@@ -419,6 +419,47 @@ services:
       pops-redis:
         condition: service_healthy
 
+  # Contacts pillar API — the first Rust pillar (axum + sqlx + utoipa).
+  # Authoritative entities store; nginx routes /contacts-api/ here on port
+  # 3010. Built from its hand-written multi-stage Rust Dockerfile. Unlike the
+  # TS pillars it self-registers via POPS_REGISTRY_ENABLED=true: its Rust
+  # registry transport POSTs the register/heartbeat/deregister envelopes to
+  # core, trying the canonical /registry/* path then the legacy
+  # /core.registry.* path on a 404.
+  contacts-api:
+    build:
+      context: ..
+      dockerfile: pillars/contacts/Dockerfile
+      args:
+        BUILD_VERSION: ${BUILD_VERSION:-dev}
+    container_name: pops-contacts
+    restart: unless-stopped
+    networks:
+      - frontend
+      - backend
+    volumes:
+      - sqlite-data:/data/sqlite
+    environment:
+      PORT: '3010'
+      CONTACTS_SQLITE_PATH: /data/sqlite/contacts.db
+      CONTACTS_SELF_BASE_URL: http://contacts-api:3010
+      # Opt in to registry self-registration (the Rust lifecycle is gated on
+      # this, mirroring the TS SDK's POPS_REGISTRY_ENABLED).
+      POPS_REGISTRY_ENABLED: 'true'
+      POPS_REGISTRY_URL: ${POPS_REGISTRY_URL:-http://core-api:3001}
+      POPS_API_INTERNAL_TOKEN: ${POPS_API_INTERNAL_TOKEN:-}
+      POPS_PILLARS: ${POPS_PILLARS:-core:http://core-api:3001,inventory:http://inventory-api:3002,media:http://media-api:3003,finance:http://finance-api:3004,food:http://food-api:3005,lists:http://lists-api:3006}
+    expose:
+      - '3010'
+    depends_on:
+      core-api:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD', 'curl', '-fsS', 'http://localhost:3010/health']
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
   # Cross-pillar orchestrator (ADR-029, epics 06+07). Federates over the
   # pillars via @pops/pillar-sdk (REST); owns no domain DB. nginx routes
   # /orchestrator-api/ here on port 3009. Built from the app Dockerfile;
