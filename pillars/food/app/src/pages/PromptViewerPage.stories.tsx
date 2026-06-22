@@ -10,7 +10,8 @@ import { createInstance, type i18n as I18n } from 'i18next';
 import { useMemo } from 'react';
 import { I18nextProvider, initReactI18next } from 'react-i18next';
 
-import enAUFood from '../../../../../apps/pops-shell/src/i18n/locales/en-AU/food.json';
+import enAUFood from '@pops/locales/en-AU/food.json';
+
 import { PromptViewerPage } from './PromptViewerPage';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';

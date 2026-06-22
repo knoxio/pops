@@ -23,7 +23,7 @@ import { MemoryRouter, Route, Routes, useLocation } from 'react-router';
 import { Toaster } from 'sonner';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import enAUFood from '../../../../../../../../apps/pops-shell/src/i18n/locales/en-AU/food.json';
+import enAUFood from '@pops/locales/en-AU/food.json';
 
 import type { InspectorResult } from '../inspector-wire-types.js';
 

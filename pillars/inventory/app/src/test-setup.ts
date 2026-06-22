@@ -3,7 +3,7 @@ import '@testing-library/jest-dom/vitest';
 import { createInstance } from 'i18next';
 import { initReactI18next } from 'react-i18next';
 
-import enAUInventory from '../../../../apps/pops-shell/src/i18n/locales/en-AU/inventory.json';
+import enAUInventory from '@pops/locales/en-AU/inventory.json';
 
 const i18n = createInstance();
 

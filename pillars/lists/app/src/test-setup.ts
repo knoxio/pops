@@ -3,7 +3,7 @@ import '@testing-library/jest-dom/vitest';
 import { createInstance } from 'i18next';
 import { initReactI18next } from 'react-i18next';
 
-import enAULists from '../../../../apps/pops-shell/src/i18n/locales/en-AU/lists.json';
+import enAULists from '@pops/locales/en-AU/lists.json';
 
 // Radix UI components (used by the New-list modal Dialog) rely on
 // ResizeObserver to manage popover/portal sizing. jsdom doesn't ship it, so
