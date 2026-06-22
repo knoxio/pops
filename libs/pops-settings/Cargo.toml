@@ -1,8 +1,9 @@
 [package]
 name = "pops-settings"
 version = "0.1.0"
-# A direct member of the `crates/` cargo workspace (a sibling of `pops-ai` and
-# of the `pillars/contacts` crate). 1:1 Rust mirror of the TS
+# A direct member of the cargo workspace, a shared library under `libs/`
+# (a sibling of `pops-ai` and of the `pillars/contacts` crate). 1:1 Rust mirror
+# of the TS
 # `@pops/pillar-settings` federated RU+reset settings surface — the byte-
 # identical `/settings/*` wire contract every pillar serves
 # (`docs/plans/02-settings-federation.md` §4.4/§4.6, US-S6). Standalone
