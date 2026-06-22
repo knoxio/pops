@@ -22,8 +22,6 @@ type Req = ServerInferRequest<typeof mediaComparisonsContract>;
 const DEFAULT_OFFSET = 0;
 
 export function makeComparisonsHandlers(db: MediaDb) {
-  const defaultLimit = comparisonsService.getDefaultLimit();
-
   return {
     listDimensions: () =>
       runHttp(() => ({
@@ -68,7 +66,7 @@ export function makeComparisonsHandlers(db: MediaDb) {
 
     listForMedia: ({ query }: Req['listForMedia']) =>
       runHttp(() => {
-        const limit = query.limit ?? defaultLimit;
+        const limit = query.limit ?? comparisonsService.getDefaultLimit(db);
         const offset = query.offset ?? DEFAULT_OFFSET;
         const { rows, total } = comparisonsService.listComparisonsForMedia(db, {
           mediaType: query.mediaType,
@@ -88,7 +86,7 @@ export function makeComparisonsHandlers(db: MediaDb) {
 
     listAll: ({ query }: Req['listAll']) =>
       runHttp(() => {
-        const limit = query.limit ?? defaultLimit;
+        const limit = query.limit ?? comparisonsService.getDefaultLimit(db);
         const offset = query.offset ?? DEFAULT_OFFSET;
         const { rows, total } = comparisonsService.listAllComparisons(db, {
           dimensionId: query.dimensionId,

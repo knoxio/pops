@@ -50,7 +50,7 @@ export function excludeFromDimension(
           mediaType,
           mediaId,
           dimensionId,
-          score: getDefaultScore(),
+          score: getDefaultScore(db),
           comparisonCount: 0,
           excluded: 1,
         })

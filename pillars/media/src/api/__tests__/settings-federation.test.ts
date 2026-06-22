@@ -28,8 +28,9 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { REDACTED } from '@pops/pillar-settings';
 
-import { openMediaDb, type OpenedMediaDb } from '../../db/index.js';
+import { comparisonsService, openMediaDb, type OpenedMediaDb } from '../../db/index.js';
 import { plexSettings, rotationSettings, settings } from '../../db/schema.js';
+import * as settingsAdapter from '../../db/services/settings-adapter.js';
 import { createMediaApiApp } from '../app.js';
 
 let tmpDir: string;
@@ -185,5 +186,47 @@ describe('media federated /settings', () => {
     // The seed is preserved: the second ensure returns the originally-landed value.
     expect(second.body.data).toEqual({ key: 'plex_url', value: 'http://first' });
     expect(rawValue(plexSettings, 'plex_url')?.value).toBe('http://first');
+  });
+});
+
+/**
+ * Runtime-read assertions for the comparisons config readers (OD-4 / S2b,
+ * GAP-256-B). Proves the readers in
+ * `db/services/comparisons/config.ts` resolve the EFFECTIVE value from media's
+ * pillar-local `settings` table — so an edit persisted through `/settings` takes
+ * effect at runtime — falling back to the manifest default when nothing is
+ * stored. These exercise the real reader against the real temp SQLite db (no
+ * mocks): a table write is observed by the getter, and the unset path resolves
+ * the manifest default rather than a stale `process.env`-era value.
+ */
+describe('comparisons config runtime reads', () => {
+  it('reflects a stored override for the int eloK reader', async () => {
+    expect(comparisonsService.getEloK(mediaDb.db)).toBe(32);
+
+    await request(app()).put('/settings/media.comparisons.eloK').send({ value: '64' });
+    expect(comparisonsService.getEloK(mediaDb.db)).toBe(64);
+  });
+
+  it('reflects a stored override for the float stalenessThreshold reader', async () => {
+    expect(comparisonsService.getStalenessThreshold(mediaDb.db)).toBe(0.3);
+
+    settingsAdapter.setRaw(mediaDb.db, 'media.comparisons.stalenessThreshold', '0.45');
+    expect(comparisonsService.getStalenessThreshold(mediaDb.db)).toBe(0.45);
+  });
+
+  it('falls back to the manifest default for every reader when unset', () => {
+    expect(comparisonsService.getEloK(mediaDb.db)).toBe(32);
+    expect(comparisonsService.getDefaultScore(mediaDb.db)).toBe(1500);
+    expect(comparisonsService.getMaxTierListMovies(mediaDb.db)).toBe(8);
+    expect(comparisonsService.getStalenessThreshold(mediaDb.db)).toBe(0.3);
+    expect(comparisonsService.getDefaultLimit(mediaDb.db)).toBe(50);
+  });
+
+  it('resets restore the manifest default the reader observes', async () => {
+    await request(app()).put('/settings/media.comparisons.eloK').send({ value: '64' });
+    expect(comparisonsService.getEloK(mediaDb.db)).toBe(64);
+
+    await request(app()).post('/settings/media.comparisons.eloK/reset');
+    expect(comparisonsService.getEloK(mediaDb.db)).toBe(32);
   });
 });

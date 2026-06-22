@@ -46,6 +46,7 @@ function toTierListMovie(row: ScoreRow, tierOverrideMap: Map<number, string>): T
 }
 
 function fetchEligibleRows(db: MediaDb, dimensionId: number): ScoreRow[] {
+  const stalenessThreshold = getStalenessThreshold(db);
   return db.all<ScoreRow>(sql`
     SELECT
       ms.media_id AS mediaId,
@@ -63,7 +64,7 @@ function fetchEligibleRows(db: MediaDb, dimensionId: number): ScoreRow[] {
       AND ms.media_type = 'movie'
       AND ms.excluded = 0
       AND wh.id IS NULL
-      AND COALESCE(cs.staleness, 1.0) >= ${getStalenessThreshold()}
+      AND COALESCE(cs.staleness, 1.0) >= ${stalenessThreshold}
     ORDER BY ms.comparison_count ASC, ms.score DESC
   `);
 }
@@ -134,10 +135,9 @@ function pickBestCandidate(
   return bestIdx;
 }
 
-function greedySelect(rows: ScoreRow[], existingPairs: Set<string>): ScoreRow[] {
+function greedySelect(rows: ScoreRow[], existingPairs: Set<string>, max: number): ScoreRow[] {
   const selected: ScoreRow[] = [];
   const selectedIds = new Set<number>();
-  const max = getMaxTierListMovies();
   for (let round = 0; round < max && rows.length > 0; round++) {
     const bestIdx = pickBestCandidate(rows, selected, selectedIds, existingPairs);
     if (bestIdx === -1) break;
@@ -165,9 +165,12 @@ export function getTierListMovies(db: MediaDb, dimensionId: number): TierListMov
 
   const tierOverrideMap = buildTierOverrideMap(getTierOverrides(db, dimensionId));
 
-  if (rows.length <= getMaxTierListMovies()) {
+  const maxTierListMovies = getMaxTierListMovies(db);
+  if (rows.length <= maxTierListMovies) {
     return rows.map((r) => toTierListMovie(r, tierOverrideMap));
   }
   const existingPairs = fetchExistingPairKeys(db, dimensionId);
-  return greedySelect(rows, existingPairs).map((r) => toTierListMovie(r, tierOverrideMap));
+  return greedySelect(rows, existingPairs, maxTierListMovies).map((r) =>
+    toTierListMovie(r, tierOverrideMap)
+  );
 }

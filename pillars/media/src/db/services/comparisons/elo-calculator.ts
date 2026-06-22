@@ -1,9 +1,6 @@
 /**
  * Pure ELO math for the comparisons ranking engine. No DB access.
  */
-import { getEloK } from './config.js';
-
-export { getEloK };
 
 /** Map a draw tier to an ELO outcome. High = both gain, Mid = neutral, Low = both lose. */
 export function drawTierOutcome(tier: string | null | undefined): number {

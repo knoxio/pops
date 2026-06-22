@@ -39,7 +39,7 @@ function fetchScoresMap(db: MediaDb, movieIds: number[], dimensionId: number): M
 function captureScores(db: MediaDb, input: SubmitTierListInput): Map<number, number> {
   const ids = input.placements.map((p) => p.movieId);
   const map = fetchScoresMap(db, ids, input.dimensionId);
-  for (const id of ids) if (!map.has(id)) map.set(id, getDefaultScore());
+  for (const id of ids) if (!map.has(id)) map.set(id, getDefaultScore(db));
   return map;
 }
 
@@ -64,8 +64,8 @@ function collectScoreChanges(
   const newScores = fetchScoresMap(db, ids, input.dimensionId);
   return input.placements.map((placement) => ({
     movieId: placement.movieId,
-    oldScore: oldScores.get(placement.movieId) ?? getDefaultScore(),
-    newScore: newScores.get(placement.movieId) ?? getDefaultScore(),
+    oldScore: oldScores.get(placement.movieId) ?? getDefaultScore(db),
+    newScore: newScores.get(placement.movieId) ?? getDefaultScore(db),
   }));
 }
 

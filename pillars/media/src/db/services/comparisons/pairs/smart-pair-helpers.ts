@@ -96,7 +96,7 @@ export function buildCandidates(args: BuildCandidatesArgs): CandidateMovie[] {
       posterPath: meta.posterPath,
       tmdbId: meta.tmdbId,
       posterOverridePath: meta.posterOverridePath,
-      score: scoreInfo?.score ?? getDefaultScore(),
+      score: scoreInfo?.score ?? getDefaultScore(db),
       comparisonCount: scoreInfo?.comparisonCount ?? 0,
       daysSinceLastWatch: daysSince(watchDateMap.get(movieId)),
       staleness: getStaleness(db, 'movie', movieId),
