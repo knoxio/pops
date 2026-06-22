@@ -49,241 +49,6 @@ importers:
         specifier: ^4.4.3
         version: 4.4.3
 
-  apps/pops-cli:
-    dependencies:
-      commander:
-        specifier: ^14.0.1
-        version: 14.0.3
-    devDependencies:
-      '@types/node':
-        specifier: ^25.9.3
-        version: 25.9.3
-      '@vitest/coverage-v8':
-        specifier: ^4.1.8
-        version: 4.1.8(vitest@4.1.8)
-      tsx:
-        specifier: ^4.22.4
-        version: 4.22.4
-      typescript:
-        specifier: ^6.0.3
-        version: 6.0.3
-      vitest:
-        specifier: ^4.1.8
-        version: 4.1.8(@types/node@25.9.3)(@vitest/coverage-v8@4.1.8)(jsdom@29.1.1(@noble/hashes@1.8.0))(msw@2.14.6(@types/node@25.9.3)(typescript@6.0.3))(vite@8.0.16(@types/node@25.9.3)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.46.1)(tsx@4.22.4)(yaml@2.9.0))
-
-  apps/pops-docs:
-    devDependencies:
-      '@types/node':
-        specifier: ^25.9.3
-        version: 25.9.3
-      tsx:
-        specifier: ^4.22.4
-        version: 4.22.4
-      typescript:
-        specifier: ^6.0.3
-        version: 6.0.3
-      vitest:
-        specifier: ^4.1.8
-        version: 4.1.8(@types/node@25.9.3)(@vitest/coverage-v8@4.1.8)(jsdom@29.1.1(@noble/hashes@1.8.0))(msw@2.14.6(@types/node@25.9.3)(typescript@6.0.3))(vite@8.0.16(@types/node@25.9.3)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.46.1)(tsx@4.22.4)(yaml@2.9.0))
-
-  apps/pops-mcp:
-    dependencies:
-      '@modelcontextprotocol/sdk':
-        specifier: ^1.29.0
-        version: 1.29.0(zod@4.4.3)
-      '@pops/pillar-sdk':
-        specifier: workspace:*
-        version: link:../../libs/sdk
-      dotenv:
-        specifier: ^16.5.0
-        version: 16.6.1
-      express:
-        specifier: ^5.0.1
-        version: 5.2.1
-    devDependencies:
-      '@types/express':
-        specifier: ^5.0.0
-        version: 5.0.6
-      '@types/node':
-        specifier: ^25.9.3
-        version: 25.9.3
-      tsx:
-        specifier: ^4.22.4
-        version: 4.22.4
-      typescript:
-        specifier: ^6.0.3
-        version: 6.0.3
-      vitest:
-        specifier: ^4.1.8
-        version: 4.1.8(@types/node@25.9.3)(@vitest/coverage-v8@4.1.8)(jsdom@29.1.1(@noble/hashes@1.8.0))(msw@2.14.6(@types/node@25.9.3)(typescript@6.0.3))(vite@8.0.16(@types/node@25.9.3)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.46.1)(tsx@4.22.4)(yaml@2.9.0))
-
-  apps/pops-orchestrator:
-    dependencies:
-      '@pops/pillar-sdk':
-        specifier: workspace:*
-        version: link:../../libs/sdk
-      '@pops/types':
-        specifier: workspace:*
-        version: link:../../libs/types
-      express:
-        specifier: ^5.1.0
-        version: 5.2.1
-      zod:
-        specifier: ^4.4.3
-        version: 4.4.3
-    devDependencies:
-      '@types/express':
-        specifier: ^5.0.4
-        version: 5.0.6
-      '@types/node':
-        specifier: ^25.9.3
-        version: 25.9.3
-      '@types/supertest':
-        specifier: ^6.0.3
-        version: 6.0.3
-      '@vitest/coverage-v8':
-        specifier: ^4.1.8
-        version: 4.1.8(vitest@4.1.8)
-      supertest:
-        specifier: ^7.1.4
-        version: 7.2.2
-      tsx:
-        specifier: ^4.22.4
-        version: 4.22.4
-      typescript:
-        specifier: ^6.0.3
-        version: 6.0.3
-      vitest:
-        specifier: ^4.1.8
-        version: 4.1.8(@types/node@25.9.3)(@vitest/coverage-v8@4.1.8)(jsdom@29.1.1(@noble/hashes@1.8.0))(msw@2.14.6(@types/node@25.9.3)(typescript@6.0.3))(vite@8.0.16(@types/node@25.9.3)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.46.1)(tsx@4.22.4)(yaml@2.9.0))
-
-  apps/pops-shell:
-    dependencies:
-      '@hey-api/client-fetch':
-        specifier: ^0.13.1
-        version: 0.13.1(@hey-api/openapi-ts@0.98.2(magicast@0.5.3)(typescript@6.0.3))
-      '@pops/app-ai':
-        specifier: workspace:*
-        version: link:../../pillars/ai/app
-      '@pops/app-cerebrum':
-        specifier: workspace:*
-        version: link:../../pillars/cerebrum/app
-      '@pops/app-finance':
-        specifier: workspace:*
-        version: link:../../pillars/finance/app
-      '@pops/app-food':
-        specifier: workspace:*
-        version: link:../../pillars/food/app
-      '@pops/app-inventory':
-        specifier: workspace:*
-        version: link:../../pillars/inventory/app
-      '@pops/app-lists':
-        specifier: workspace:*
-        version: link:../../pillars/lists/app
-      '@pops/app-media':
-        specifier: workspace:*
-        version: link:../../pillars/media/app
-      '@pops/locales':
-        specifier: workspace:*
-        version: link:../../libs/locales
-      '@pops/module-registry':
-        specifier: workspace:*
-        version: link:../../libs/module-registry
-      '@pops/navigation':
-        specifier: workspace:*
-        version: link:../../libs/navigation
-      '@pops/overlay-ego':
-        specifier: workspace:*
-        version: link:../../libs/overlay-ego
-      '@pops/pillar-sdk':
-        specifier: workspace:*
-        version: link:../../libs/sdk
-      '@pops/types':
-        specifier: workspace:*
-        version: link:../../libs/types
-      '@pops/ui':
-        specifier: workspace:*
-        version: link:../../libs/ui
-      '@tailwindcss/vite':
-        specifier: 4.3.0
-        version: 4.3.0(vite@8.0.16(@types/node@25.9.3)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.46.1)(tsx@4.22.4)(yaml@2.9.0))
-      '@tanstack/react-query':
-        specifier: 5.101.0
-        version: 5.101.0(react@19.2.7)
-      i18next:
-        specifier: ^26.3.1
-        version: 26.3.1(typescript@6.0.3)
-      lucide-react:
-        specifier: ^1.17.0
-        version: 1.17.0(react@19.2.7)
-      react:
-        specifier: ^19.2.7
-        version: 19.2.7
-      react-dom:
-        specifier: ^19.2.7
-        version: 19.2.7(react@19.2.7)
-      react-i18next:
-        specifier: ^17.0.8
-        version: 17.0.8(i18next@26.3.1(typescript@6.0.3))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(typescript@6.0.3)
-      react-router:
-        specifier: ^7.17.0
-        version: 7.17.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      sonner:
-        specifier: ^2.0.7
-        version: 2.0.7(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      tailwindcss:
-        specifier: 4.3.0
-        version: 4.3.0
-      zustand:
-        specifier: 5.0.14
-        version: 5.0.14(@types/react@19.2.17)(immer@11.1.4)(react@19.2.7)(use-sync-external-store@1.6.0(react@19.2.7))
-    devDependencies:
-      '@hey-api/openapi-ts':
-        specifier: ^0.98.2
-        version: 0.98.2(magicast@0.5.3)(typescript@6.0.3)
-      '@playwright/test':
-        specifier: ^1.60.0
-        version: 1.60.0
-      '@tanstack/react-query-devtools':
-        specifier: ^5.101.0
-        version: 5.101.0(@tanstack/react-query@5.101.0(react@19.2.7))(react@19.2.7)
-      '@testing-library/jest-dom':
-        specifier: ^6.9.1
-        version: 6.9.1
-      '@testing-library/react':
-        specifier: ^16.3.2
-        version: 16.3.2(@testing-library/dom@10.4.1)(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@types/node':
-        specifier: ^25.9.3
-        version: 25.9.3
-      '@types/react':
-        specifier: ^19.2.17
-        version: 19.2.17
-      '@types/react-dom':
-        specifier: ^19.0.0
-        version: 19.2.3(@types/react@19.2.17)
-      '@vitejs/plugin-react':
-        specifier: ^6.0.2
-        version: 6.0.2(vite@8.0.16(@types/node@25.9.3)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.46.1)(tsx@4.22.4)(yaml@2.9.0))
-      esbuild:
-        specifier: ^0.28.0
-        version: 0.28.0
-      jsdom:
-        specifier: ^29.1.1
-        version: 29.1.1(@noble/hashes@1.8.0)
-      tsx:
-        specifier: ^4.22.4
-        version: 4.22.4
-      typescript:
-        specifier: ^6.0.3
-        version: 6.0.3
-      vite:
-        specifier: ^8.0.16
-        version: 8.0.16(@types/node@25.9.3)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.46.1)(tsx@4.22.4)(yaml@2.9.0)
-      vitest:
-        specifier: ^4.1.8
-        version: 4.1.8(@types/node@25.9.3)(@vitest/coverage-v8@4.1.8)(jsdom@29.1.1(@noble/hashes@1.8.0))(msw@2.14.6(@types/node@25.9.3)(typescript@6.0.3))(vite@8.0.16(@types/node@25.9.3)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.46.1)(tsx@4.22.4)(yaml@2.9.0))
-
   libs/ai-telemetry:
     dependencies:
       zod:
@@ -1092,6 +857,21 @@ importers:
         specifier: ^4.1.8
         version: 4.1.8(@types/node@25.9.3)(@vitest/coverage-v8@4.1.8)(jsdom@29.1.1(@noble/hashes@1.8.0))(msw@2.14.6(@types/node@25.9.3)(typescript@6.0.3))(vite@8.0.16(@types/node@25.9.3)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.46.1)(tsx@4.22.4)(yaml@2.9.0))
 
+  pillars/docs:
+    devDependencies:
+      '@types/node':
+        specifier: ^25.9.3
+        version: 25.9.3
+      tsx:
+        specifier: ^4.22.4
+        version: 4.22.4
+      typescript:
+        specifier: ^6.0.3
+        version: 6.0.3
+      vitest:
+        specifier: ^4.1.8
+        version: 4.1.8(@types/node@25.9.3)(@vitest/coverage-v8@4.1.8)(jsdom@29.1.1(@noble/hashes@1.8.0))(msw@2.14.6(@types/node@25.9.3)(typescript@6.0.3))(vite@8.0.16(@types/node@25.9.3)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.46.1)(tsx@4.22.4)(yaml@2.9.0))
+
   pillars/finance:
     dependencies:
       '@anthropic-ai/sdk':
@@ -1850,6 +1630,37 @@ importers:
         specifier: ^4.1.8
         version: 4.1.8(@types/node@25.9.3)(@vitest/coverage-v8@4.1.8)(jsdom@29.1.1(@noble/hashes@1.8.0))(msw@2.14.6(@types/node@25.9.3)(typescript@6.0.3))(vite@8.0.16(@types/node@25.9.3)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.46.1)(tsx@4.22.4)(yaml@2.9.0))
 
+  pillars/mcp:
+    dependencies:
+      '@modelcontextprotocol/sdk':
+        specifier: ^1.29.0
+        version: 1.29.0(zod@4.4.3)
+      '@pops/pillar-sdk':
+        specifier: workspace:*
+        version: link:../../libs/sdk
+      dotenv:
+        specifier: ^16.5.0
+        version: 16.6.1
+      express:
+        specifier: ^5.0.1
+        version: 5.2.1
+    devDependencies:
+      '@types/express':
+        specifier: ^5.0.0
+        version: 5.0.6
+      '@types/node':
+        specifier: ^25.9.3
+        version: 25.9.3
+      tsx:
+        specifier: ^4.22.4
+        version: 4.22.4
+      typescript:
+        specifier: ^6.0.3
+        version: 6.0.3
+      vitest:
+        specifier: ^4.1.8
+        version: 4.1.8(@types/node@25.9.3)(@vitest/coverage-v8@4.1.8)(jsdom@29.1.1(@noble/hashes@1.8.0))(msw@2.14.6(@types/node@25.9.3)(typescript@6.0.3))(vite@8.0.16(@types/node@25.9.3)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.46.1)(tsx@4.22.4)(yaml@2.9.0))
+
   pillars/media:
     dependencies:
       '@pops/pillar-sdk':
@@ -2008,6 +1819,46 @@ importers:
         specifier: ^4.1.8
         version: 4.1.8(@types/node@25.9.3)(@vitest/coverage-v8@4.1.8)(jsdom@29.1.1(@noble/hashes@1.8.0))(msw@2.14.6(@types/node@25.9.3)(typescript@6.0.3))(vite@8.0.16(@types/node@25.9.3)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.46.1)(tsx@4.22.4)(yaml@2.9.0))
 
+  pillars/orchestrator:
+    dependencies:
+      '@pops/pillar-sdk':
+        specifier: workspace:*
+        version: link:../../libs/sdk
+      '@pops/types':
+        specifier: workspace:*
+        version: link:../../libs/types
+      express:
+        specifier: ^5.1.0
+        version: 5.2.1
+      zod:
+        specifier: ^4.4.3
+        version: 4.4.3
+    devDependencies:
+      '@types/express':
+        specifier: ^5.0.4
+        version: 5.0.6
+      '@types/node':
+        specifier: ^25.9.3
+        version: 25.9.3
+      '@types/supertest':
+        specifier: ^6.0.3
+        version: 6.0.3
+      '@vitest/coverage-v8':
+        specifier: ^4.1.8
+        version: 4.1.8(vitest@4.1.8)
+      supertest:
+        specifier: ^7.1.4
+        version: 7.2.2
+      tsx:
+        specifier: ^4.22.4
+        version: 4.22.4
+      typescript:
+        specifier: ^6.0.3
+        version: 6.0.3
+      vitest:
+        specifier: ^4.1.8
+        version: 4.1.8(@types/node@25.9.3)(@vitest/coverage-v8@4.1.8)(jsdom@29.1.1(@noble/hashes@1.8.0))(msw@2.14.6(@types/node@25.9.3)(typescript@6.0.3))(vite@8.0.16(@types/node@25.9.3)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.46.1)(tsx@4.22.4)(yaml@2.9.0))
+
   pillars/registry:
     dependencies:
       '@pops/pillar-sdk':
@@ -2083,6 +1934,133 @@ importers:
       typescript:
         specifier: ^6.0.3
         version: 6.0.3
+      vitest:
+        specifier: ^4.1.8
+        version: 4.1.8(@types/node@25.9.3)(@vitest/coverage-v8@4.1.8)(jsdom@29.1.1(@noble/hashes@1.8.0))(msw@2.14.6(@types/node@25.9.3)(typescript@6.0.3))(vite@8.0.16(@types/node@25.9.3)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.46.1)(tsx@4.22.4)(yaml@2.9.0))
+
+  pillars/shell:
+    dependencies:
+      '@hey-api/client-fetch':
+        specifier: ^0.13.1
+        version: 0.13.1(@hey-api/openapi-ts@0.98.2(magicast@0.5.3)(typescript@6.0.3))
+      '@pops/app-ai':
+        specifier: workspace:*
+        version: link:../ai/app
+      '@pops/app-cerebrum':
+        specifier: workspace:*
+        version: link:../cerebrum/app
+      '@pops/app-finance':
+        specifier: workspace:*
+        version: link:../finance/app
+      '@pops/app-food':
+        specifier: workspace:*
+        version: link:../food/app
+      '@pops/app-inventory':
+        specifier: workspace:*
+        version: link:../inventory/app
+      '@pops/app-lists':
+        specifier: workspace:*
+        version: link:../lists/app
+      '@pops/app-media':
+        specifier: workspace:*
+        version: link:../media/app
+      '@pops/locales':
+        specifier: workspace:*
+        version: link:../../libs/locales
+      '@pops/module-registry':
+        specifier: workspace:*
+        version: link:../../libs/module-registry
+      '@pops/navigation':
+        specifier: workspace:*
+        version: link:../../libs/navigation
+      '@pops/overlay-ego':
+        specifier: workspace:*
+        version: link:../../libs/overlay-ego
+      '@pops/pillar-sdk':
+        specifier: workspace:*
+        version: link:../../libs/sdk
+      '@pops/types':
+        specifier: workspace:*
+        version: link:../../libs/types
+      '@pops/ui':
+        specifier: workspace:*
+        version: link:../../libs/ui
+      '@tailwindcss/vite':
+        specifier: 4.3.0
+        version: 4.3.0(vite@8.0.16(@types/node@25.9.3)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.46.1)(tsx@4.22.4)(yaml@2.9.0))
+      '@tanstack/react-query':
+        specifier: 5.101.0
+        version: 5.101.0(react@19.2.7)
+      i18next:
+        specifier: ^26.3.1
+        version: 26.3.1(typescript@6.0.3)
+      lucide-react:
+        specifier: ^1.17.0
+        version: 1.17.0(react@19.2.7)
+      react:
+        specifier: ^19.2.7
+        version: 19.2.7
+      react-dom:
+        specifier: ^19.2.7
+        version: 19.2.7(react@19.2.7)
+      react-i18next:
+        specifier: ^17.0.8
+        version: 17.0.8(i18next@26.3.1(typescript@6.0.3))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(typescript@6.0.3)
+      react-router:
+        specifier: ^7.17.0
+        version: 7.17.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      sonner:
+        specifier: ^2.0.7
+        version: 2.0.7(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      tailwindcss:
+        specifier: 4.3.0
+        version: 4.3.0
+      zustand:
+        specifier: 5.0.14
+        version: 5.0.14(@types/react@19.2.17)(immer@11.1.4)(react@19.2.7)(use-sync-external-store@1.6.0(react@19.2.7))
+    devDependencies:
+      '@hey-api/openapi-ts':
+        specifier: ^0.98.2
+        version: 0.98.2(magicast@0.5.3)(typescript@6.0.3)
+      '@playwright/test':
+        specifier: ^1.60.0
+        version: 1.60.0
+      '@tanstack/react-query-devtools':
+        specifier: ^5.101.0
+        version: 5.101.0(@tanstack/react-query@5.101.0(react@19.2.7))(react@19.2.7)
+      '@testing-library/jest-dom':
+        specifier: ^6.9.1
+        version: 6.9.1
+      '@testing-library/react':
+        specifier: ^16.3.2
+        version: 16.3.2(@testing-library/dom@10.4.1)(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      '@types/node':
+        specifier: ^25.9.3
+        version: 25.9.3
+      '@types/react':
+        specifier: ^19.2.17
+        version: 19.2.17
+      '@types/react-dom':
+        specifier: ^19.0.0
+        version: 19.2.3(@types/react@19.2.17)
+      '@vitejs/plugin-react':
+        specifier: ^6.0.2
+        version: 6.0.2(vite@8.0.16(@types/node@25.9.3)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.46.1)(tsx@4.22.4)(yaml@2.9.0))
+      esbuild:
+        specifier: ^0.28.0
+        version: 0.28.0
+      jsdom:
+        specifier: ^29.1.1
+        version: 29.1.1(@noble/hashes@1.8.0)
+      tsx:
+        specifier: ^4.22.4
+        version: 4.22.4
+      typescript:
+        specifier: ^6.0.3
+        version: 6.0.3
+      vite:
+        specifier: ^8.0.16
+        version: 8.0.16(@types/node@25.9.3)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.46.1)(tsx@4.22.4)(yaml@2.9.0)
       vitest:
         specifier: ^4.1.8
         version: 4.1.8(@types/node@25.9.3)(@vitest/coverage-v8@4.1.8)(jsdom@29.1.1(@noble/hashes@1.8.0))(msw@2.14.6(@types/node@25.9.3)(typescript@6.0.3))(vite@8.0.16(@types/node@25.9.3)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.46.1)(tsx@4.22.4)(yaml@2.9.0))

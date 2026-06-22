@@ -22,10 +22,10 @@ jobs:
         # rather than a pillar. Pillars are published by the `pillars` job
         # below from their colocated `pillars/<x>/Dockerfile`.
         app:
-          - { image: pops-shell, file: apps/pops-shell/Dockerfile }
-          - { image: pops-mcp, file: apps/pops-mcp/Dockerfile }
-          - { image: pops-orchestrator, file: apps/pops-orchestrator/Dockerfile }
-          - { image: pops-docs, file: apps/pops-docs/Dockerfile }
+          - { image: pops-shell, file: pillars/shell/Dockerfile }
+          - { image: pops-mcp, file: pillars/mcp/Dockerfile }
+          - { image: pops-orchestrator, file: pillars/orchestrator/Dockerfile }
+          - { image: pops-docs, file: pillars/docs/Dockerfile }
     steps:
       - uses: actions/checkout@v6
 

@@ -75,8 +75,8 @@ jobs:
         # the `*-quality.yml` workflows + publish-images own the full image.
         run: |
           set -euo pipefail
-          docker build --target builder -f apps/pops-shell/Dockerfile .
-          docker build --target builder -f apps/pops-mcp/Dockerfile .
+          docker build --target builder -f pillars/shell/Dockerfile .
+          docker build --target builder -f pillars/mcp/Dockerfile .
           for dockerfile in pillars/*/Dockerfile; do
             echo "::group::build ${dockerfile}"
             docker build --target builder -f "${dockerfile}" .
