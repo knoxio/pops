@@ -11,12 +11,11 @@
  * `packages/module-registry/scripts/known-modules.ts` with a workspace
  * discovery walk that consumes this export.
  *
- * The registry still serves the `ai.*` settings keys during the
- * settings-federation S1 wire-compat window (`aiConfigManifest`), but the
- * `ai` MODULE manifest itself now lives in the extracted `ai` pillar
- * (PRD-055).
+ * The registry no longer advertises the `ai.*` settings keys: the extracted
+ * `ai` pillar (PRD-055) owns and advertises `ai.config`, and the registry's
+ * settings surface is now its own `coreOperationalManifest` only.
  */
-import { aiConfigManifest, coreOperationalManifest } from './settings/index.js';
+import { coreOperationalManifest } from './settings/index.js';
 
 import type { ModuleManifest } from '@pops/types';
 
@@ -28,5 +27,5 @@ export const coreManifest: ModuleManifest = {
   version: '0.1.0',
   surfaces: ['app'],
   description: 'Cross-cutting platform services: settings, features, registry.',
-  settings: [aiConfigManifest, coreOperationalManifest],
+  settings: [coreOperationalManifest],
 };

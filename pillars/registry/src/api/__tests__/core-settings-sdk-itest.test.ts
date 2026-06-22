@@ -34,10 +34,12 @@
  *     `PillarCallError` with `result.kind === 'unavailable'` at the
  *     media-shaped handler.
  *
- * The single-key procedures constrain `key` to `SETTINGS_KEY_VALUES`,
- * so the test uses the real Plex keys (`PLEX_URL`, `PLEX_TOKEN`,
- * `PLEX_USERNAME`, `PLEX_ENCRYPTION_SEED`) the audit calls out as the
- * dominant hot-path consumers — no need to widen the enum for the test.
+ * The single-key procedures constrain `key` to the registry's own
+ * manifest key set (derived from `coreOperationalManifest`), so this test
+ * uses real `core.*` keys (`core.defaultLimit`, `core.search.showMoreLimit`,
+ * `core.aiRetry.maxRetries`). The Plex keys this itest formerly exercised
+ * moved to media's federated settings surface once the per-pillar
+ * `capabilities.settings` flip landed — the registry no longer serves them.
  *
  * The server SDK resolves `pillar('core').settings.*` over the REST
  * transport — it fetches the pillar's `/openapi`, builds the operationId
@@ -63,10 +65,13 @@ import {
   type DiscoveredPillar,
   type DiscoveryTransport,
 } from '@pops/pillar-sdk/server';
-import { SETTINGS_KEYS } from '@pops/types';
 
 import { openCoreDb, serviceAccountsService, type OpenedCoreDb } from '../../db/index.js';
 import { createCoreApiApp } from '../app.js';
+
+const CORE_DEFAULT_LIMIT = 'core.defaultLimit';
+const CORE_SHOW_MORE_LIMIT = 'core.search.showMoreLimit';
+const CORE_AI_RETRY_MAX_RETRIES = 'core.aiRetry.maxRetries';
 
 import type { AddressInfo } from 'node:net';
 
@@ -331,51 +336,47 @@ async function callMedia(
 describe("PRD-247 US-04 — pillar('core').settings.* end-to-end", () => {
   it('round-trips a single key through set + get from a media-shaped handler', async () => {
     const setRes = await callMedia('/media/settings/set', {
-      key: SETTINGS_KEYS.PLEX_URL,
-      value: 'http://plex.example.com:32400',
+      key: CORE_DEFAULT_LIMIT,
+      value: '125',
     });
     expect(setRes.status, JSON.stringify(setRes.body)).toBe(200);
     expect(setRes.body).toMatchObject({
       ok: true,
       data: {
-        data: { key: SETTINGS_KEYS.PLEX_URL, value: 'http://plex.example.com:32400' },
+        data: { key: CORE_DEFAULT_LIMIT, value: '125' },
         message: 'Setting saved',
       },
     });
 
-    const getRes = await callMedia('/media/settings/get', { key: SETTINGS_KEYS.PLEX_URL });
+    const getRes = await callMedia('/media/settings/get', { key: CORE_DEFAULT_LIMIT });
     expect(getRes.status, JSON.stringify(getRes.body)).toBe(200);
     expect(getRes.body).toMatchObject({
       ok: true,
       data: {
-        data: { key: SETTINGS_KEYS.PLEX_URL, value: 'http://plex.example.com:32400' },
+        data: { key: CORE_DEFAULT_LIMIT, value: '125' },
       },
     });
   });
 
   it('returns only the set keys from getMany; unset keys are omitted', async () => {
     await callMedia('/media/settings/set', {
-      key: SETTINGS_KEYS.PLEX_TOKEN,
-      value: 'token-abc',
+      key: CORE_DEFAULT_LIMIT,
+      value: '7',
     });
     await callMedia('/media/settings/set', {
-      key: SETTINGS_KEYS.PLEX_USERNAME,
-      value: 'jdoe',
+      key: CORE_SHOW_MORE_LIMIT,
+      value: '9',
     });
 
     const res = await callMedia('/media/settings/getMany', {
-      keys: [
-        SETTINGS_KEYS.PLEX_TOKEN,
-        SETTINGS_KEYS.PLEX_USERNAME,
-        SETTINGS_KEYS.PLEX_ENCRYPTION_SEED,
-      ],
+      keys: [CORE_DEFAULT_LIMIT, CORE_SHOW_MORE_LIMIT, CORE_AI_RETRY_MAX_RETRIES],
     });
     expect(res.status, JSON.stringify(res.body)).toBe(200);
     expect(res.body.ok).toBe(true);
     const settings = (res.body.data as { settings: Record<string, string> }).settings;
-    expect(settings[SETTINGS_KEYS.PLEX_TOKEN]).toBe('token-abc');
-    expect(settings[SETTINGS_KEYS.PLEX_USERNAME]).toBe('jdoe');
-    expect(SETTINGS_KEYS.PLEX_ENCRYPTION_SEED in settings).toBe(false);
+    expect(settings[CORE_DEFAULT_LIMIT]).toBe('7');
+    expect(settings[CORE_SHOW_MORE_LIMIT]).toBe('9');
+    expect(CORE_AI_RETRY_MAX_RETRIES in settings).toBe(false);
   });
 
   it('resolves the discovery snapshot exactly once across back-to-back procedure calls', async () => {
@@ -383,7 +384,7 @@ describe("PRD-247 US-04 — pillar('core').settings.* end-to-end", () => {
     expect(before).toBeGreaterThan(0);
 
     for (let i = 0; i < 4; i += 1) {
-      const res = await callMedia('/media/settings/get', { key: SETTINGS_KEYS.PLEX_URL });
+      const res = await callMedia('/media/settings/get', { key: CORE_DEFAULT_LIMIT });
       expect(res.status, JSON.stringify(res.body)).toBe(200);
     }
 
@@ -395,7 +396,7 @@ describe('PRD-247 US-04 — unavailable-pillar discriminant on core-api shutdown
   it("surfaces PillarCallError with kind: 'unavailable' once core-api is taken down", async () => {
     await closeServer(env.coreApiServer);
 
-    const res = await callMedia('/media/settings/get', { key: SETTINGS_KEYS.PLEX_URL });
+    const res = await callMedia('/media/settings/get', { key: CORE_DEFAULT_LIMIT });
     expect(res.status).toBe(503);
     expect(res.body).toMatchObject({
       ok: false,

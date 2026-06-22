@@ -1,32 +1,26 @@
 /**
- * Core's settings key authority for the shared `@pops/pillar-settings`
- * surface (settings-federation S1).
+ * The registry pillar's settings key authority for the shared
+ * `@pops/pillar-settings` surface (settings-federation).
  *
- * `deriveKeySet([aiConfigManifest, coreOperationalManifest])` is the source
- * of reset defaults and the read-side sensitive set. Its declared-key list,
- * however, is NOT yet the wire enum: shrinking core's `:key` enum to the
- * manifest-only set is the later S4 node. For S1 the wire enum (and the
- * handler's declared-key assertion) stays the full central
- * `SETTINGS_KEY_VALUES`, preserving the live cross-pillar surface that finance
- * reads (`PLEX_URL`, `PLEX_TOKEN`, …) and the `core-settings-sdk-itest`.
+ * The registry derives its declared key set, reset defaults, and read-side
+ * sensitive set from its OWN manifest (`coreOperationalManifest`) only. It no
+ * longer serves `ai.*` keys: the extracted `ai` pillar owns and advertises
+ * `ai.config`, and (since the per-pillar `capabilities.settings` flip) the
+ * shell routes `ai.*` reads/writes to that pillar — so the registry's `:key`
+ * enum no longer needs to carry them (crossPlanConflict #3).
  *
- * So `keys` is pinned to the central enum here while `defaults`/`sensitive`
- * are enriched from core's manifests — a single `KeyDefaults` the contract
- * factory and the handler factory both consume.
+ * `keys` (the wire enum and the handler's declared-key assertion) and
+ * `defaults`/`sensitive` now all flow from the same manifest-derived
+ * {@link KeyDefaults}, so the contract factory and handler factory share one
+ * source of truth.
  */
 import { deriveKeySet, type KeyDefaults } from '@pops/pillar-settings';
-import { SETTINGS_KEY_VALUES } from '@pops/types';
 
-import { aiConfigManifest, coreOperationalManifest } from './index.js';
-
-const manifestKeySet = deriveKeySet([aiConfigManifest, coreOperationalManifest]);
+import { coreOperationalManifest } from './index.js';
 
 /**
- * Core's effective {@link KeyDefaults}: the full central key enum (S1
- * wire-compat) with manifest-derived defaults and sensitive flags.
+ * The registry's effective {@link KeyDefaults}, derived solely from
+ * `coreOperationalManifest`: its declared keys, manifest defaults, and
+ * sensitive flags.
  */
-export const coreKeyDefaults: KeyDefaults = {
-  keys: SETTINGS_KEY_VALUES,
-  defaults: manifestKeySet.defaults,
-  sensitive: manifestKeySet.sensitive,
-};
+export const coreKeyDefaults: KeyDefaults = deriveKeySet([coreOperationalManifest]);

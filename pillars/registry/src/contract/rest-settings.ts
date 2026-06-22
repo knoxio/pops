@@ -21,10 +21,11 @@
  * declared key). The alias is removed in the later S5 node once metrics show
  * zero `DELETE /settings/*` traffic.
  *
- * `:key` stays constrained to the full central `SETTINGS_KEY_VALUES` for S1:
- * shrinking it to core's manifest-only key set is the S4 node, and the live
- * cross-pillar surface (`PLEX_URL`, `PLEX_TOKEN`, … that finance reads) plus
- * the `core-settings-sdk-itest` depend on the full enum here.
+ * `:key` is constrained to the registry's OWN manifest key set, derived from
+ * `coreOperationalManifest` via `keyValuesFor(deriveKeySet(...))` (S4). The
+ * registry no longer serves `ai.*` or the cross-pillar `plex_*`/`media.*`/…
+ * keys: each owning pillar advertises `capabilities.settings`, so the shell
+ * routes those keys to the pillar that owns them rather than to the registry.
  *
  * On top of the shared protocol, core ALSO serves the federation aggregator
  * (settings-federation S3): `GET /settings/aggregate` fans out over the live
@@ -35,16 +36,18 @@
 import { initContract } from '@ts-rest/core';
 import { z } from 'zod';
 
-import { makeSettingsContract } from '@pops/pillar-settings';
-import { SETTINGS_KEY_VALUES } from '@pops/types';
+import { deriveKeySet, keyValuesFor, makeSettingsContract } from '@pops/pillar-settings';
 
 import { AUTH_ERR_RESPONSES } from './rest-schemas.js';
+import { coreOperationalManifest } from './settings/index.js';
 
 const c = initContract();
 
-const SettingKeyParam = z.object({ key: z.enum(SETTINGS_KEY_VALUES) });
+const registryKeyValues = keyValuesFor(deriveKeySet([coreOperationalManifest]));
 
-const federatedSettingsContract = makeSettingsContract(SETTINGS_KEY_VALUES, AUTH_ERR_RESPONSES);
+const SettingKeyParam = z.object({ key: z.enum(registryKeyValues) });
+
+const federatedSettingsContract = makeSettingsContract(registryKeyValues, AUTH_ERR_RESPONSES);
 
 const AggregateSettingRowSchema = z.object({ key: z.string(), value: z.string() });
 

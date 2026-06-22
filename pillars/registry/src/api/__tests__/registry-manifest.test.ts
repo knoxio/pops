@@ -2,14 +2,15 @@
  * Smoke test for the hand-rolled registry pillar manifest payload (PRD-240
  * US-03; pillar formerly named `core`). Confirms the payload passes
  * `validateManifestPayload`, declares the renamed pillar identity, and
- * exposes both `aiConfigManifest` + `coreOperationalManifest` as
- * descriptors under `settings.manifests`.
+ * exposes `coreOperationalManifest` as its sole descriptor under
+ * `settings.manifests` (the `ai.config` manifest now lives in and is
+ * advertised by the extracted `ai` pillar — crossPlanConflict #3).
  */
 import { describe, expect, it } from 'vitest';
 
 import { validateManifestPayload } from '@pops/pillar-sdk';
 
-import { aiConfigManifest, coreOperationalManifest } from '../../contract/settings/index.js';
+import { coreOperationalManifest } from '../../contract/settings/index.js';
 import { buildRegistryManifest } from '../registry-manifest.js';
 
 describe('buildRegistryManifest — PRD-240 US-03 settings dimension', () => {
@@ -26,16 +27,16 @@ describe('buildRegistryManifest — PRD-240 US-03 settings dimension', () => {
     expect(manifest.contract.tag).toBe('contract-registry@v0.0.1-test');
   });
 
-  it('declares aiConfigManifest + coreOperationalManifest under settings.manifests', () => {
+  it('declares coreOperationalManifest as its sole settings.manifests descriptor', () => {
     const manifest = buildRegistryManifest('0.0.1-test');
-    expect(manifest.settings?.manifests).toEqual([aiConfigManifest, coreOperationalManifest]);
+    expect(manifest.settings?.manifests).toEqual([coreOperationalManifest]);
   });
 
-  it('exposes both descriptors by id', () => {
+  it('exposes core.operational by id and no longer advertises ai.config', () => {
     const manifest = buildRegistryManifest('0.0.1-test');
     const ids = manifest.settings?.manifests.map((m) => m.id) ?? [];
-    expect(ids).toContain('ai.config');
     expect(ids).toContain('core.operational');
+    expect(ids).not.toContain('ai.config');
   });
 
   describe('epic 05 / S0 — capability features', () => {

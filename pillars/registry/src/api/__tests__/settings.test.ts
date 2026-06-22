@@ -27,8 +27,6 @@ import { join } from 'node:path';
 import request from 'supertest';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { SETTINGS_KEYS } from '@pops/types';
-
 import { openCoreDb, type OpenedCoreDb } from '../../db/index.js';
 import { createCoreApiApp } from '../app.js';
 import { makeClient, type ClientHeaders } from './test-utils.js';
@@ -46,9 +44,13 @@ afterEach(() => {
   rmSync(tmpDir, { recursive: true, force: true });
 });
 
-const PLEX_TOKEN_KEY = SETTINGS_KEYS.PLEX_TOKEN;
-const PLEX_USERNAME_KEY = SETTINGS_KEYS.PLEX_USERNAME;
-const PLEX_URL_KEY = SETTINGS_KEYS.PLEX_URL;
+// Three distinct keys from the registry's own `coreOperationalManifest`. The
+// Plex keys this suite formerly exercised moved to media's federated settings
+// surface once the per-pillar `capabilities.settings` flip landed — the
+// registry's `:key` enum no longer carries them.
+const RETRIES_KEY = 'core.aiRetry.maxRetries';
+const DELAY_KEY = 'core.aiRetry.baseDelayMs';
+const CONCURRENCY_KEY = 'core.queue.syncConcurrency';
 
 function app(): ReturnType<typeof createCoreApiApp> {
   return createCoreApiApp({ coreDb, version: '0.0.1-test', selfBaseUrl: 'http://localhost:3001' });
@@ -80,46 +82,47 @@ async function withProdIdentity(fn: () => Promise<void>): Promise<void> {
 
 describe('settings REST — happy paths (dev-fallback user)', () => {
   it('set then get round-trips a single setting', async () => {
-    const setRes = await client().settings.set(PLEX_TOKEN_KEY, 'tok-1');
-    expect(setRes.data).toEqual({ key: PLEX_TOKEN_KEY, value: 'tok-1' });
+    const setRes = await client().settings.set(RETRIES_KEY, 'tok-1');
+    expect(setRes.data).toEqual({ key: RETRIES_KEY, value: 'tok-1' });
     expect(setRes.message).toBe('Setting saved');
 
-    const got = await client().settings.get(PLEX_TOKEN_KEY);
-    expect(got.data).toEqual({ key: PLEX_TOKEN_KEY, value: 'tok-1' });
+    const got = await client().settings.get(RETRIES_KEY);
+    expect(got.data).toEqual({ key: RETRIES_KEY, value: 'tok-1' });
   });
 
   it('get returns { data: null } for a missing key', async () => {
-    const got = await client().settings.get(PLEX_TOKEN_KEY);
+    const got = await client().settings.get(RETRIES_KEY);
     expect(got.data).toBeNull();
   });
 
   it('set overwrites an existing value', async () => {
-    await client().settings.set(PLEX_TOKEN_KEY, 'tok-1');
-    const res = await client().settings.set(PLEX_TOKEN_KEY, 'tok-2');
+    await client().settings.set(RETRIES_KEY, 'tok-1');
+    const res = await client().settings.set(RETRIES_KEY, 'tok-2');
     expect(res.data.value).toBe('tok-2');
-    const got = await client().settings.get(PLEX_TOKEN_KEY);
+    const got = await client().settings.get(RETRIES_KEY);
     expect(got.data?.value).toBe('tok-2');
   });
 
   it('ensure is write-once — second call returns the persisted row unchanged', async () => {
-    const first = await client().settings.ensure(PLEX_TOKEN_KEY, 'seed-1');
-    expect(first.data).toEqual({ key: PLEX_TOKEN_KEY, value: 'seed-1' });
-    const second = await client().settings.ensure(PLEX_TOKEN_KEY, 'would-overwrite');
+    const first = await client().settings.ensure(RETRIES_KEY, 'seed-1');
+    expect(first.data).toEqual({ key: RETRIES_KEY, value: 'seed-1' });
+    const second = await client().settings.ensure(RETRIES_KEY, 'would-overwrite');
     expect(second.data.value).toBe('seed-1');
   });
 
   it('delete (legacy alias) resets an existing key to its default', async () => {
-    await client().settings.set(PLEX_TOKEN_KEY, 'tok-1');
-    const res = await client().settings.delete(PLEX_TOKEN_KEY);
+    await client().settings.set(RETRIES_KEY, 'tok-1');
+    const res = await client().settings.delete(RETRIES_KEY);
     expect(res.message).toBe('Setting reset to default');
-    // PLEX_TOKEN is not a core-manifest key, so it resets to no stored override.
-    const after = await client().settings.get(PLEX_TOKEN_KEY);
+    // Reset deletes the stored override; a single `get` reads only the
+    // override (not the resolved default), so it now returns null.
+    const after = await client().settings.get(RETRIES_KEY);
     expect(after.data).toBeNull();
   });
 });
 
 describe('settings REST — RU+reset protocol', () => {
-  const CORE_DEFAULT_LIMIT = SETTINGS_KEYS.CORE_DEFAULT_LIMIT;
+  const CORE_DEFAULT_LIMIT = 'core.defaultLimit';
 
   it('resetKey re-applies the manifest default for a declared key', async () => {
     await client().settings.set(CORE_DEFAULT_LIMIT, '999');
@@ -159,26 +162,25 @@ describe('settings REST — RU+reset protocol', () => {
 
 describe('settings REST — redaction is wired but inert for core (no sensitive keys)', () => {
   it('returns the real stored value on read for a non-sensitive key (no false redaction)', async () => {
-    // Core declares no sensitive manifest keys, so the cross-pillar surface
-    // finance reads (plex_token etc.) must still return real values, not the
-    // redaction sentinel — wire-compat with the core-settings-sdk itest.
-    await client().settings.set(PLEX_TOKEN_KEY, 'tok-real');
-    const got = await client().settings.get(PLEX_TOKEN_KEY);
-    expect(got.data).toEqual({ key: PLEX_TOKEN_KEY, value: 'tok-real' });
+    // The registry declares no sensitive manifest keys, so its federated
+    // surface must return real values on read, not the redaction sentinel.
+    await client().settings.set(RETRIES_KEY, 'tok-real');
+    const got = await client().settings.get(RETRIES_KEY);
+    expect(got.data).toEqual({ key: RETRIES_KEY, value: 'tok-real' });
 
-    const many = await client().settings.getMany([PLEX_TOKEN_KEY]);
-    expect(many.settings[PLEX_TOKEN_KEY]).toBe('tok-real');
+    const many = await client().settings.getMany([RETRIES_KEY]);
+    expect(many.settings[RETRIES_KEY]).toBe('tok-real');
   });
 });
 
 describe('settings REST — getMany Record-omitted semantics', () => {
   it('returns every present key and OMITS missing ones (not null-filled)', async () => {
-    await client().settings.set(PLEX_TOKEN_KEY, 'tok-1');
-    await client().settings.set(PLEX_USERNAME_KEY, 'alice');
+    await client().settings.set(RETRIES_KEY, 'tok-1');
+    await client().settings.set(DELAY_KEY, 'alice');
 
-    const res = await client().settings.getMany([PLEX_TOKEN_KEY, PLEX_USERNAME_KEY, PLEX_URL_KEY]);
-    expect(res.settings).toEqual({ [PLEX_TOKEN_KEY]: 'tok-1', [PLEX_USERNAME_KEY]: 'alice' });
-    expect(PLEX_URL_KEY in res.settings).toBe(false);
+    const res = await client().settings.getMany([RETRIES_KEY, DELAY_KEY, CONCURRENCY_KEY]);
+    expect(res.settings).toEqual({ [RETRIES_KEY]: 'tok-1', [DELAY_KEY]: 'alice' });
+    expect(CONCURRENCY_KEY in res.settings).toBe(false);
   });
 
   it('returns {} for an empty keys array', async () => {
@@ -187,7 +189,7 @@ describe('settings REST — getMany Record-omitted semantics', () => {
   });
 
   it('returns {} when no requested key exists', async () => {
-    const res = await client().settings.getMany([PLEX_TOKEN_KEY, PLEX_USERNAME_KEY]);
+    const res = await client().settings.getMany([RETRIES_KEY, DELAY_KEY]);
     expect(res.settings).toEqual({});
   });
 });
@@ -195,13 +197,13 @@ describe('settings REST — getMany Record-omitted semantics', () => {
 describe('settings REST — setMany transactional batch write', () => {
   it('writes every entry and returns the mirror; readable via getMany', async () => {
     const res = await client().settings.setMany([
-      { key: PLEX_TOKEN_KEY, value: 'tok-1' },
-      { key: PLEX_USERNAME_KEY, value: 'alice' },
+      { key: RETRIES_KEY, value: 'tok-1' },
+      { key: DELAY_KEY, value: 'alice' },
     ]);
-    expect(res.settings).toEqual({ [PLEX_TOKEN_KEY]: 'tok-1', [PLEX_USERNAME_KEY]: 'alice' });
+    expect(res.settings).toEqual({ [RETRIES_KEY]: 'tok-1', [DELAY_KEY]: 'alice' });
 
-    const read = await client().settings.getMany([PLEX_TOKEN_KEY, PLEX_USERNAME_KEY]);
-    expect(read.settings).toEqual({ [PLEX_TOKEN_KEY]: 'tok-1', [PLEX_USERNAME_KEY]: 'alice' });
+    const read = await client().settings.getMany([RETRIES_KEY, DELAY_KEY]);
+    expect(read.settings).toEqual({ [RETRIES_KEY]: 'tok-1', [DELAY_KEY]: 'alice' });
   });
 
   it('returns {} for an empty entries array', async () => {
@@ -210,19 +212,19 @@ describe('settings REST — setMany transactional batch write', () => {
   });
 
   it('overwrites pre-existing keys inside the batch', async () => {
-    await client().settings.set(PLEX_TOKEN_KEY, 'old');
+    await client().settings.set(RETRIES_KEY, 'old');
     const res = await client().settings.setMany([
-      { key: PLEX_TOKEN_KEY, value: 'new' },
-      { key: PLEX_USERNAME_KEY, value: 'alice' },
+      { key: RETRIES_KEY, value: 'new' },
+      { key: DELAY_KEY, value: 'alice' },
     ]);
-    expect(res.settings[PLEX_TOKEN_KEY]).toBe('new');
-    expect(res.settings[PLEX_USERNAME_KEY]).toBe('alice');
+    expect(res.settings[RETRIES_KEY]).toBe('new');
+    expect(res.settings[DELAY_KEY]).toBe('alice');
   });
 });
 
 describe('settings REST — error mapping', () => {
   it('delete (legacy alias) is idempotent — resetting a missing key returns 200', async () => {
-    const res = await client().settings.delete(PLEX_TOKEN_KEY);
+    const res = await client().settings.delete(RETRIES_KEY);
     expect(res.message).toBe('Setting reset to default');
   });
 
@@ -240,15 +242,15 @@ describe('settings REST — error mapping', () => {
 describe('settings REST — auth gating (protected)', () => {
   it('401s an anonymous caller (production identity, no principal) on read and write', async () => {
     await withProdIdentity(async () => {
-      await expect(client().settings.get(PLEX_TOKEN_KEY)).rejects.toMatchObject({ status: 401 });
-      await expect(client().settings.set(PLEX_TOKEN_KEY, 'x')).rejects.toMatchObject({
+      await expect(client().settings.get(RETRIES_KEY)).rejects.toMatchObject({ status: 401 });
+      await expect(client().settings.set(RETRIES_KEY, 'x')).rejects.toMatchObject({
         status: 401,
       });
-      await expect(client().settings.getMany([PLEX_TOKEN_KEY])).rejects.toMatchObject({
+      await expect(client().settings.getMany([RETRIES_KEY])).rejects.toMatchObject({
         status: 401,
       });
       await expect(
-        client().settings.setMany([{ key: PLEX_TOKEN_KEY, value: 'x' }])
+        client().settings.setMany([{ key: RETRIES_KEY, value: 'x' }])
       ).rejects.toMatchObject({ status: 401 });
     });
   });
@@ -263,8 +265,8 @@ describe('settings REST — auth gating (protected)', () => {
       scopes: ['cerebrum.query'],
     });
     const scoped = client({ 'x-api-key': created.plaintextKey });
-    await expect(scoped.settings.get(PLEX_TOKEN_KEY)).rejects.toMatchObject({ status: 401 });
-    await expect(scoped.settings.set(PLEX_TOKEN_KEY, 'x')).rejects.toMatchObject({ status: 401 });
+    await expect(scoped.settings.get(RETRIES_KEY)).rejects.toMatchObject({ status: 401 });
+    await expect(scoped.settings.set(RETRIES_KEY, 'x')).rejects.toMatchObject({ status: 401 });
   });
 
   it('lets a service account WITH the core.settings scope read and write', async () => {
@@ -274,10 +276,10 @@ describe('settings REST — auth gating (protected)', () => {
     });
     const scoped = client({ 'x-api-key': created.plaintextKey });
 
-    const setRes = await scoped.settings.set(PLEX_TOKEN_KEY, 'sa-tok');
+    const setRes = await scoped.settings.set(RETRIES_KEY, 'sa-tok');
     expect(setRes.data.value).toBe('sa-tok');
 
-    const got = await scoped.settings.get(PLEX_TOKEN_KEY);
+    const got = await scoped.settings.get(RETRIES_KEY);
     expect(got.data?.value).toBe('sa-tok');
   });
 });

@@ -18,7 +18,7 @@
  * byte-identical so the live register/heartbeat/discovery handshake is
  * unaffected by the pillar-identity rename.
  */
-import { aiConfigManifest, coreOperationalManifest } from '../contract/settings/index.js';
+import { coreOperationalManifest } from '../contract/settings/index.js';
 
 import type { ManifestPayload } from '@pops/pillar-sdk/manifest-schema';
 
@@ -46,7 +46,7 @@ export function buildRegistryManifest(version: string): ManifestPayload {
     ai: { tools: [] },
     uri: { types: [] },
     consumedSettings: { keys: [] },
-    settings: { manifests: [aiConfigManifest, coreOperationalManifest] },
+    settings: { manifests: [coreOperationalManifest] },
     features: [
       {
         key: 'core.redis',
