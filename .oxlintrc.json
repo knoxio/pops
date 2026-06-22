@@ -215,10 +215,10 @@
     {
       "files": [
         "apps/pops-shell/src/**/*.{ts,tsx}",
-        "packages/ui/src/**/*.{ts,tsx}",
+        "libs/ui/src/**/*.{ts,tsx}",
         "pillars/*/app/src/**/*.{ts,tsx}",
-        "pillars/*/overlay-*/src/**/*.{ts,tsx}",
-        "packages/navigation/src/**/*.{ts,tsx}"
+        "libs/overlay-*/src/**/*.{ts,tsx}",
+        "libs/navigation/src/**/*.{ts,tsx}"
       ],
       "rules": {
         "typescript/explicit-module-boundary-types": "off"
@@ -227,17 +227,17 @@
     {
       "files": [
         "apps/pops-shell/src/**/*.{ts,tsx}",
-        "packages/ui/src/**/*.{ts,tsx}",
+        "libs/ui/src/**/*.{ts,tsx}",
         "pillars/*/app/src/**/*.{ts,tsx}",
-        "pillars/*/overlay-*/src/**/*.{ts,tsx}",
-        "packages/navigation/src/**/*.{ts,tsx}"
+        "libs/overlay-*/src/**/*.{ts,tsx}",
+        "libs/navigation/src/**/*.{ts,tsx}"
       ],
       "rules": {
         "typescript/explicit-function-return-type": "off"
       }
     },
     {
-      "files": ["packages/ui/src/**/*.{ts,tsx}"],
+      "files": ["libs/ui/src/**/*.{ts,tsx}"],
       "rules": {
         "jsx-a11y/alt-text": "warn",
         "jsx-a11y/aria-role": "warn",
@@ -301,7 +301,7 @@
       }
     },
     {
-      "files": ["packages/module-registry/src/generated.ts"],
+      "files": ["libs/module-registry/src/generated.ts"],
       "rules": {
         "max-lines": "off"
       }
@@ -324,8 +324,8 @@
       "files": [
         "pillars/*/app/src/**/*.gen.ts",
         "pillars/*/app/src/*-api/**/*.{ts,tsx}",
-        "pillars/*/overlay-*/src/**/*.gen.ts",
-        "pillars/*/overlay-*/src/*-api/**/*.{ts,tsx}",
+        "libs/overlay-*/src/**/*.gen.ts",
+        "libs/overlay-*/src/*-api/**/*.{ts,tsx}",
         "apps/pops-shell/src/**/*.gen.ts",
         "apps/pops-shell/src/*-api/**/*.{ts,tsx}"
       ],
@@ -346,7 +346,7 @@
       }
     },
     {
-      "files": ["packages/module-registry/scripts/known-modules.ts"],
+      "files": ["libs/module-registry/scripts/known-modules.ts"],
       "rules": {
         "max-lines": "off"
       }

@@ -4,12 +4,12 @@ on:
   push:
     branches: [main]
     paths:
-      - "packages/pillar-settings/**"
+      - "libs/settings/**"
       - ".github/workflows/pillar-settings-quality.yml"
       - ".github/workflows/_pkg-check.yml"
   pull_request:
     paths:
-      - "packages/pillar-settings/**"
+      - "libs/settings/**"
       - ".github/workflows/pillar-settings-quality.yml"
       - ".github/workflows/_pkg-check.yml"
 
@@ -27,7 +27,7 @@ jobs:
         with:
           filters: |
             relevant:
-              - 'packages/pillar-settings/**'
+              - 'libs/settings/**'
               - '.github/workflows/pillar-settings-quality.yml'
               - '.github/workflows/_pkg-check.yml'
 
@@ -36,7 +36,7 @@ jobs:
     if: always()
     uses: ./.github/workflows/_pkg-check.yml
     with:
-      package-path: packages/pillar-settings
+      package-path: libs/settings
       has-test: true
       needs-db-build: false
       skip: ${{ github.event_name == 'pull_request' && needs.changes.outputs.relevant != 'true' }}

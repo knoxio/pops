@@ -4,14 +4,14 @@ on:
   push:
     branches: [main]
     paths:
-      - "packages/module-registry/**"
-      - "packages/types/**"
+      - "libs/module-registry/**"
+      - "libs/types/**"
       - ".github/workflows/module-registry-quality.yml"
       - ".github/workflows/_pkg-check.yml"
   pull_request:
     paths:
-      - "packages/module-registry/**"
-      - "packages/types/**"
+      - "libs/module-registry/**"
+      - "libs/types/**"
       - ".github/workflows/module-registry-quality.yml"
       - ".github/workflows/_pkg-check.yml"
 
@@ -29,8 +29,8 @@ jobs:
         with:
           filters: |
             relevant:
-              - 'packages/module-registry/**'
-              - 'packages/types/**'
+              - 'libs/module-registry/**'
+              - 'libs/types/**'
               - '.github/workflows/module-registry-quality.yml'
               - '.github/workflows/_pkg-check.yml'
 
@@ -39,7 +39,7 @@ jobs:
     if: always()
     uses: ./.github/workflows/_pkg-check.yml
     with:
-      package-path: packages/module-registry
+      package-path: libs/module-registry
       has-test: true
       needs-db-build: true
       skip: ${{ github.event_name == 'pull_request' && needs.changes.outputs.relevant != 'true' }}
@@ -59,9 +59,9 @@ jobs:
         run: pnpm turbo run registry:build --filter=@pops/module-registry
       - name: Verify generated.ts is up to date
         run: |
-          if ! git diff --exit-code -- packages/module-registry/src/generated.ts; then
+          if ! git diff --exit-code -- libs/module-registry/src/generated.ts; then
             echo ""
-            echo "::error::packages/module-registry/src/generated.ts is out of date."
+            echo "::error::libs/module-registry/src/generated.ts is out of date."
             echo "Run 'pnpm registry:build' locally and commit the result."
             exit 1
           fi
