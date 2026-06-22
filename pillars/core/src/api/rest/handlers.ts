@@ -9,7 +9,6 @@ import { initServer } from '@ts-rest/express';
 
 import { coreContract } from '../../contract/rest.js';
 import { type OpenedCoreDb } from '../../db/index.js';
-import { makeAiUsageHandlers } from './ai-usage-handlers.js';
 import { makeFeaturesHandlers } from './features-handlers.js';
 import { makeServiceAccountsHandlers } from './service-accounts-handlers.js';
 import { makeSettingsHandlers } from './settings-handlers.js';
@@ -23,7 +22,6 @@ export function makeCoreRestHandlers(deps: {
 }): ReturnType<typeof server.router<typeof coreContract>> {
   const db = deps.coreDb.db;
   return server.router(coreContract, {
-    aiUsage: makeAiUsageHandlers(),
     features: makeFeaturesHandlers(db),
     serviceAccounts: makeServiceAccountsHandlers(db),
     settings: makeSettingsHandlers(db),

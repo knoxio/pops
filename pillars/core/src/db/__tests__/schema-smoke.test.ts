@@ -12,7 +12,6 @@ import { getTableName } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 
 import {
-  aiUsage,
   environments,
   pillarRegistry,
   serviceAccounts,
@@ -23,14 +22,13 @@ import {
 describe('PRD-245 US-07 core schema relocation', () => {
   // The AI-ops observability tables (ai_inference_log/daily, budgets,
   // alerts, providers, pricing) relocated to the `ai` pillar (PRD-055);
-  // only the finance-categorizer `ai_usage` table remains core-owned.
+  // the finance-categorizer `ai_usage` table re-homed to finance (gap #3489).
   it.each([
     [environments, 'environments'],
     [pillarRegistry, 'pillar_registry'],
     [serviceAccounts, 'service_accounts'],
     [settings, 'settings'],
     [userSettings, 'user_settings'],
-    [aiUsage, 'ai_usage'],
   ])('resolves %#: %s', (table, expectedName) => {
     expect(getTableName(table)).toBe(expectedName);
   });

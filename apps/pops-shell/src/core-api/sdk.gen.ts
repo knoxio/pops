@@ -4,13 +4,6 @@ import { client } from './client.gen';
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import type {
-  AiUsageCacheStatsData,
-  AiUsageCacheStatsResponses,
-  AiUsageClearAllCacheData,
-  AiUsageClearAllCacheResponses,
-  AiUsageClearStaleCacheData,
-  AiUsageClearStaleCacheErrors,
-  AiUsageClearStaleCacheResponses,
   FeaturesClearUserPreferenceData,
   FeaturesClearUserPreferenceErrors,
   FeaturesClearUserPreferenceResponses,
@@ -89,51 +82,6 @@ export type Options<
    */
   meta?: keyof ClientMeta extends never ? Record<string, unknown> : ClientMeta;
 };
-
-/**
- * Clear the entire AI cache
- */
-export const aiUsageClearAllCache = <ThrowOnError extends boolean = false>(
-  options?: Options<AiUsageClearAllCacheData, ThrowOnError>
-): RequestResult<AiUsageClearAllCacheResponses, unknown, ThrowOnError> =>
-  (options?.client ?? client).delete<AiUsageClearAllCacheResponses, unknown, ThrowOnError>({
-    url: '/ai-usage/cache',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options?.headers,
-    },
-  });
-
-/**
- * Get AI cache statistics (entry count, on-disk size)
- */
-export const aiUsageCacheStats = <ThrowOnError extends boolean = false>(
-  options?: Options<AiUsageCacheStatsData, ThrowOnError>
-): RequestResult<AiUsageCacheStatsResponses, unknown, ThrowOnError> =>
-  (options?.client ?? client).get<AiUsageCacheStatsResponses, unknown, ThrowOnError>({
-    url: '/ai-usage/cache',
-    ...options,
-  });
-
-/**
- * Remove AI cache entries older than maxAgeDays
- */
-export const aiUsageClearStaleCache = <ThrowOnError extends boolean = false>(
-  options?: Options<AiUsageClearStaleCacheData, ThrowOnError>
-): RequestResult<AiUsageClearStaleCacheResponses, AiUsageClearStaleCacheErrors, ThrowOnError> =>
-  (options?.client ?? client).post<
-    AiUsageClearStaleCacheResponses,
-    AiUsageClearStaleCacheErrors,
-    ThrowOnError
-  >({
-    url: '/ai-usage/cache/prune',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options?.headers,
-    },
-  });
 
 /**
  * Resolved feature status for the current user (admin Features page)

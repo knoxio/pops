@@ -10,6 +10,7 @@ import { initServer } from '@ts-rest/express';
 import { financeContract } from '../../contract/rest.js';
 import { type OpenedFinanceDb } from '../../db/index.js';
 import { type ContactsClient } from '../contacts/client.js';
+import { makeAiCacheHandlers } from './ai-cache-handlers.js';
 import { makeBudgetsHandlers } from './budgets-handlers.js';
 import { makeCorrectionsHandlers } from './corrections-handlers.js';
 import { makeEntityUsageHandlers } from './entity-usage-handlers.js';
@@ -37,5 +38,6 @@ export function makeFinanceRestHandlers(deps: {
     imports: makeImportsHandlers(db, deps.contacts),
     search: makeSearchHandlers(db),
     settings: makeSettingsHandlers(db),
+    aiCache: makeAiCacheHandlers(),
   });
 }

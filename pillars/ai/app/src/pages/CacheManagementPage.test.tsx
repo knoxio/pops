@@ -5,14 +5,14 @@ import { createElement, type ReactNode } from 'react';
 import { MemoryRouter } from 'react-router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const aiUsageCacheStatsMock = vi.hoisted(() => vi.fn());
-const aiUsageClearStaleCacheMock = vi.hoisted(() => vi.fn());
-const aiUsageClearAllCacheMock = vi.hoisted(() => vi.fn());
+const aiCacheCacheStatsMock = vi.hoisted(() => vi.fn());
+const aiCacheClearStaleCacheMock = vi.hoisted(() => vi.fn());
+const aiCacheClearAllCacheMock = vi.hoisted(() => vi.fn());
 
-vi.mock('../core-api/index.js', () => ({
-  aiUsageCacheStats: (...args: unknown[]) => aiUsageCacheStatsMock(...args),
-  aiUsageClearStaleCache: (...args: unknown[]) => aiUsageClearStaleCacheMock(...args),
-  aiUsageClearAllCache: (...args: unknown[]) => aiUsageClearAllCacheMock(...args),
+vi.mock('../finance-api/index.js', () => ({
+  aiCacheCacheStats: (...args: unknown[]) => aiCacheCacheStatsMock(...args),
+  aiCacheClearStaleCache: (...args: unknown[]) => aiCacheClearStaleCacheMock(...args),
+  aiCacheClearAllCache: (...args: unknown[]) => aiCacheClearAllCacheMock(...args),
 }));
 
 const mockToastSuccess = vi.fn();
@@ -57,7 +57,7 @@ function setupDefaults(overrides?: {
 }) {
   const loading = overrides?.loading ?? false;
 
-  aiUsageCacheStatsMock.mockReturnValue(
+  aiCacheCacheStatsMock.mockReturnValue(
     loading
       ? pending()
       : Promise.resolve(
@@ -75,8 +75,8 @@ afterEach(() => {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  aiUsageClearStaleCacheMock.mockResolvedValue(ok({ removed: 0 }));
-  aiUsageClearAllCacheMock.mockResolvedValue(ok({ removed: 0 }));
+  aiCacheClearStaleCacheMock.mockResolvedValue(ok({ removed: 0 }));
+  aiCacheClearAllCacheMock.mockResolvedValue(ok({ removed: 0 }));
 });
 
 describe('CacheManagementPage', () => {
@@ -100,7 +100,7 @@ describe('CacheManagementPage', () => {
 
   it('calls clearStaleCache with configured days and shows toast', async () => {
     setupDefaults();
-    aiUsageClearStaleCacheMock.mockResolvedValue(ok({ removed: 12 }));
+    aiCacheClearStaleCacheMock.mockResolvedValue(ok({ removed: 12 }));
     renderPage();
 
     const user = userEvent.setup();
@@ -110,7 +110,7 @@ describe('CacheManagementPage', () => {
     await user.click(screen.getByRole('button', { name: 'Clear Stale' }));
 
     await waitFor(() =>
-      expect(aiUsageClearStaleCacheMock).toHaveBeenCalledWith({ body: { maxAgeDays: 30 } })
+      expect(aiCacheClearStaleCacheMock).toHaveBeenCalledWith({ body: { maxAgeDays: 30 } })
     );
     await waitFor(() =>
       expect(mockToastSuccess).toHaveBeenCalledWith('Removed 12 stale cache entries')
@@ -119,7 +119,7 @@ describe('CacheManagementPage', () => {
 
   it('shows confirmation dialog before clearing all, then clears and toasts', async () => {
     setupDefaults({ totalEntries: 150 });
-    aiUsageClearAllCacheMock.mockResolvedValue(ok({ removed: 150 }));
+    aiCacheClearAllCacheMock.mockResolvedValue(ok({ removed: 150 }));
     renderPage();
 
     const user = userEvent.setup();
@@ -129,13 +129,13 @@ describe('CacheManagementPage', () => {
     expect(screen.getByText(/150 cached/)).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'Clear All' }));
-    await waitFor(() => expect(aiUsageClearAllCacheMock).toHaveBeenCalled());
+    await waitFor(() => expect(aiCacheClearAllCacheMock).toHaveBeenCalled());
     await waitFor(() => expect(mockToastSuccess).toHaveBeenCalledWith('Cleared 150 cache entries'));
   });
 
   it('invalidates the cache queries after clearing', async () => {
     setupDefaults();
-    aiUsageClearStaleCacheMock.mockResolvedValue(ok({ removed: 5 }));
+    aiCacheClearStaleCacheMock.mockResolvedValue(ok({ removed: 5 }));
     const queryClient = makeQueryClient();
     const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
     renderPage(queryClient);
@@ -144,7 +144,7 @@ describe('CacheManagementPage', () => {
     await user.click(await screen.findByRole('button', { name: 'Clear Stale' }));
 
     await waitFor(() =>
-      expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['core', 'aiUsage'] })
+      expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['finance', 'aiCache'] })
     );
   });
 

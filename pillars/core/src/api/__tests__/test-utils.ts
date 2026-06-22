@@ -116,12 +116,5 @@ export function makeClient(app: Express, headers?: ClientHeaders) {
       revoke: (id: string) =>
         send<{ ok: true }>(r.post(`/service-accounts/${encodeURIComponent(id)}/revoke`).send({})),
     },
-    aiUsage: {
-      cacheStats: () =>
-        send<{ totalEntries: number; diskSizeBytes: number }>(r.get('/ai-usage/cache')),
-      clearStaleCache: (body: { maxAgeDays?: number } = {}) =>
-        send<{ removed: number }>(r.post('/ai-usage/cache/prune').send(body)),
-      clearAllCache: () => send<{ removed: number }>(r.delete('/ai-usage/cache')),
-    },
   };
 }

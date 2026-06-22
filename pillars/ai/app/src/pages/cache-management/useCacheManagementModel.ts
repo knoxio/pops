@@ -2,18 +2,18 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
-import { unwrap } from '../../core-api-helpers.js';
+import { unwrap } from '../../finance-api-helpers.js';
 import {
-  aiUsageCacheStats,
-  aiUsageClearAllCache,
-  aiUsageClearStaleCache,
-} from '../../core-api/index.js';
+  aiCacheCacheStats,
+  aiCacheClearAllCache,
+  aiCacheClearStaleCache,
+} from '../../finance-api/index.js';
 
 import type {
-  AiUsageCacheStatsResponse,
-  AiUsageClearAllCacheResponse,
-  AiUsageClearStaleCacheResponse,
-} from '../../core-api/types.gen.js';
+  AiCacheCacheStatsResponse,
+  AiCacheClearAllCacheResponse,
+  AiCacheClearStaleCacheResponse,
+} from '../../finance-api/types.gen.js';
 
 interface ClearStaleInput {
   maxAgeDays: number;
@@ -21,11 +21,11 @@ interface ClearStaleInput {
 
 function useClearStaleMutation() {
   const queryClient = useQueryClient();
-  return useMutation<AiUsageClearStaleCacheResponse, Error, ClearStaleInput>({
-    mutationFn: async (body) => unwrap(await aiUsageClearStaleCache({ body })),
+  return useMutation<AiCacheClearStaleCacheResponse, Error, ClearStaleInput>({
+    mutationFn: async (body) => unwrap(await aiCacheClearStaleCache({ body })),
     onSuccess: (data) => {
       toast.success(`Removed ${data.removed} stale cache entries`);
-      void queryClient.invalidateQueries({ queryKey: ['core', 'aiUsage'] });
+      void queryClient.invalidateQueries({ queryKey: ['finance', 'aiCache'] });
     },
     onError: () => {
       toast.error('Failed to clear stale cache');
@@ -35,11 +35,11 @@ function useClearStaleMutation() {
 
 function useClearAllMutation() {
   const queryClient = useQueryClient();
-  return useMutation<AiUsageClearAllCacheResponse, Error, void>({
-    mutationFn: async () => unwrap(await aiUsageClearAllCache()),
+  return useMutation<AiCacheClearAllCacheResponse, Error, void>({
+    mutationFn: async () => unwrap(await aiCacheClearAllCache()),
     onSuccess: (data) => {
       toast.success(`Cleared ${data.removed} cache entries`);
-      void queryClient.invalidateQueries({ queryKey: ['core', 'aiUsage'] });
+      void queryClient.invalidateQueries({ queryKey: ['finance', 'aiCache'] });
     },
     onError: () => {
       toast.error('Failed to clear cache');
@@ -54,9 +54,9 @@ export function useCacheManagementModel() {
     data: cacheStats,
     isLoading,
     error: cacheError,
-  } = useQuery<AiUsageCacheStatsResponse>({
-    queryKey: ['core', 'aiUsage', 'cacheStats'],
-    queryFn: async () => unwrap(await aiUsageCacheStats()),
+  } = useQuery<AiCacheCacheStatsResponse>({
+    queryKey: ['finance', 'aiCache', 'cacheStats'],
+    queryFn: async () => unwrap(await aiCacheCacheStats()),
   });
 
   const clearStaleMutation = useClearStaleMutation();

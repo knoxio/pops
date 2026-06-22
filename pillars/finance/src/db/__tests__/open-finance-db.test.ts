@@ -69,6 +69,29 @@ describe('openFinanceDb', () => {
     }
   });
 
+  it('creates the re-homed ai_usage table + indexes (0058, gap #3489)', () => {
+    const path = join(tmpDir, 'finance.db');
+    const { raw } = openFinanceDb(path);
+    try {
+      const table = raw
+        .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name = 'ai_usage'")
+        .get();
+      expect(table).toBeDefined();
+
+      const indexes = new Set(
+        (
+          raw.prepare("SELECT name FROM sqlite_master WHERE type='index'").all() as {
+            name: string;
+          }[]
+        ).map((r) => r.name)
+      );
+      expect(indexes.has('idx_ai_usage_created_at')).toBe(true);
+      expect(indexes.has('idx_ai_usage_batch')).toBe(true);
+    } finally {
+      raw.close();
+    }
+  });
+
   it('drops the entities mirror table and its FK constraints (0057)', () => {
     const path = join(tmpDir, 'finance.db');
     const { raw } = openFinanceDb(path);

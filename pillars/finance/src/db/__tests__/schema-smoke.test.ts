@@ -11,6 +11,7 @@ import { getTableName } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 
 import {
+  aiUsage,
   budgets,
   tagVocabulary,
   tierOverrides,
@@ -29,6 +30,8 @@ describe('PRD-245 US-03 finance schema relocation', () => {
     [transactionTagRules, 'transaction_tag_rules'],
     [transactions, 'transactions'],
     [wishList, 'wish_list'],
+    // Finance-categorizer ai_usage table re-homed from core (gap #3489).
+    [aiUsage, 'ai_usage'],
   ])('resolves %#: %s', (table, expectedName) => {
     expect(getTableName(table)).toBe(expectedName);
   });
