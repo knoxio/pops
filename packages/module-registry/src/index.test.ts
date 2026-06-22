@@ -83,11 +83,12 @@ describe('@pops/module-registry exports', () => {
     }
   });
 
-  it('core is always installed regardless of env restrictions', () => {
-    // `core` is the platform shell — `POPS_APPS` gates optional modules only.
-    // The registry must always include it so the settings page surfaces
-    // `ai.config` / `core.operational` even on a minimal install.
-    expect(MODULES.some((m) => m.id === 'core')).toBe(true);
+  it('registry is always installed regardless of env restrictions', () => {
+    // `registry` (formerly `core`) is the platform shell — `POPS_APPS` gates
+    // optional modules only. The registry must always include it so the
+    // settings page surfaces `ai.config` / `core.operational` even on a
+    // minimal install.
+    expect(MODULES.some((m) => m.id === 'registry')).toBe(true);
   });
 });
 

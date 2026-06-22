@@ -35,7 +35,7 @@ const config: StorybookConfig = {
           { find: '@pops/ui', replacement: path.resolve(__dirname, '../../../packages/ui/src') },
           {
             find: '@pops/app-ai',
-            replacement: path.resolve(__dirname, '../../../pillars/core/app/src'),
+            replacement: path.resolve(__dirname, '../../../pillars/registry/app/src'),
           },
           {
             find: '@pops/app-cerebrum',

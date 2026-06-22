@@ -185,13 +185,22 @@ describe('CallResult discriminant', () => {
 describe('KnownPillarId', () => {
   it('covers every entry in PILLARS', () => {
     expectTypeOf<KnownPillarId>().toEqualTypeOf<
-      'core' | 'finance' | 'media' | 'inventory' | 'cerebrum' | 'food' | 'lists' | 'contacts'
+      'registry' | 'finance' | 'media' | 'inventory' | 'cerebrum' | 'food' | 'lists' | 'contacts'
     >();
   });
 
   it('PILLARS is a readonly tuple at the value level', () => {
     expectTypeOf(PILLARS).toEqualTypeOf<
-      readonly ['core', 'finance', 'media', 'inventory', 'cerebrum', 'food', 'lists', 'contacts']
+      readonly [
+        'registry',
+        'finance',
+        'media',
+        'inventory',
+        'cerebrum',
+        'food',
+        'lists',
+        'contacts',
+      ]
     >();
   });
 });

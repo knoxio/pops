@@ -27,7 +27,7 @@ import {
   startCrossPillarReconciliationWorker,
 } from '../reconcile-cross-pillar.js';
 
-import type { CoreRouter, FinanceRouter } from '../reconcile-cross-pillar.js';
+import type { RegistryRouter, FinanceRouter } from '../reconcile-cross-pillar.js';
 
 let tmpDir: string;
 let inventoryDb: OpenedInventoryDb;
@@ -119,7 +119,7 @@ function makeFinanceProxy(byId: Record<string, FakeFinanceCall>): PillarHandle<F
   return fake as unknown as PillarHandle<FinanceRouter>;
 }
 
-function makeCoreProxy(byUri: Record<string, FakeCoreCall>): PillarHandle<CoreRouter> {
+function makeRegistryProxy(byUri: Record<string, FakeCoreCall>): PillarHandle<RegistryRouter> {
   const fake = {
     callDynamic: vi.fn(
       async (
@@ -130,7 +130,7 @@ function makeCoreProxy(byUri: Record<string, FakeCoreCall>): PillarHandle<CoreRo
         const uri = (input as { uri: string } | undefined)?.uri ?? '';
         const slot = byUri[uri];
         if (!slot) {
-          return { kind: 'not-found', pillar: 'core' };
+          return { kind: 'not-found', pillar: 'registry' };
         }
         if (slot.error) throw slot.error;
         if (slot.result) return slot.result;
@@ -138,7 +138,7 @@ function makeCoreProxy(byUri: Record<string, FakeCoreCall>): PillarHandle<CoreRo
       }
     ),
   };
-  return fake as unknown as PillarHandle<CoreRouter>;
+  return fake as unknown as PillarHandle<RegistryRouter>;
 }
 
 describe('parseSoftUri', () => {
@@ -185,12 +185,12 @@ describe('runReconciliation — happy-path', () => {
     );
 
     const finance = makeFinanceProxy({ 'tx-1': {} });
-    const core = makeCoreProxy({ 'pops://core/user/joao@example.com': {} });
+    const registry = makeRegistryProxy({ 'pops://core/user/joao@example.com': {} });
     const info = vi.fn();
 
     const counters = await runReconciliation({
       db: inventoryDb.db,
-      proxies: { finance, core },
+      proxies: { finance, registry },
       logger: { info },
     });
 
@@ -213,12 +213,12 @@ describe('runReconciliation — 404', () => {
       ownerUri: 'pops://core/user/nobody@example.com',
     });
     const finance = makeFinanceProxy({});
-    const core = makeCoreProxy({});
+    const registry = makeRegistryProxy({});
     const info = vi.fn();
 
     const counters = await runReconciliation({
       db: inventoryDb.db,
-      proxies: { finance, core },
+      proxies: { finance, registry },
       logger: { info },
     });
 
@@ -241,11 +241,11 @@ describe('runReconciliation — 404', () => {
         throw new PillarCallError('finance', { kind: 'not-found', pillar: 'finance' });
       }),
     } as unknown as PillarHandle<FinanceRouter>;
-    const core = makeCoreProxy({});
+    const registry = makeRegistryProxy({});
 
     const counters = await runReconciliation({
       db: inventoryDb.db,
-      proxies: { finance, core },
+      proxies: { finance, registry },
     });
 
     expect(counters.notFound).toBe(1);
@@ -265,12 +265,12 @@ describe('runReconciliation — owning-pillar-unavailable', () => {
         async (): Promise<CallResult<unknown>> => ({ kind: 'unavailable', pillar: 'finance' })
       ),
     } as unknown as PillarHandle<FinanceRouter>;
-    const core = makeCoreProxy({});
+    const registry = makeRegistryProxy({});
     const warn = vi.fn();
 
     const counters = await runReconciliation({
       db: inventoryDb.db,
-      proxies: { finance, core },
+      proxies: { finance, registry },
       logger: { warn },
     });
 
@@ -289,15 +289,15 @@ describe('runReconciliation — owning-pillar-unavailable', () => {
       ownerUri: 'pops://core/user/transient@example.com',
     });
     const finance = makeFinanceProxy({});
-    const core: PillarHandle<CoreRouter> = {
+    const registry: PillarHandle<RegistryRouter> = {
       callDynamic: vi.fn(async () => {
         throw new Error('socket hang up');
       }),
-    } as unknown as PillarHandle<CoreRouter>;
+    } as unknown as PillarHandle<RegistryRouter>;
 
     const counters = await runReconciliation({
       db: inventoryDb.db,
-      proxies: { finance, core },
+      proxies: { finance, registry },
     });
 
     expect(counters.unavailable).toBe(1);
@@ -314,12 +314,12 @@ describe('runReconciliation — bad-URI', () => {
       ownerUri: 'pops://core/wrong-type/foo',
     });
     const finance = makeFinanceProxy({});
-    const core = makeCoreProxy({});
+    const registry = makeRegistryProxy({});
     const warn = vi.fn();
 
     const counters = await runReconciliation({
       db: inventoryDb.db,
-      proxies: { finance, core },
+      proxies: { finance, registry },
       logger: { warn },
     });
 
@@ -347,11 +347,11 @@ describe('runReconciliation — bad-URI', () => {
         })
       ),
     } as unknown as PillarHandle<FinanceRouter>;
-    const core = makeCoreProxy({});
+    const registry = makeRegistryProxy({});
 
     const counters = await runReconciliation({
       db: inventoryDb.db,
-      proxies: { finance, core },
+      proxies: { finance, registry },
     });
 
     expect(counters.badUri).toBe(1);
@@ -365,12 +365,12 @@ describe('startCrossPillarReconciliationWorker', () => {
       purchaseTransactionUri: 'pops://finance/transaction/tx-5',
     });
     const finance = makeFinanceProxy({ 'tx-5': {} });
-    const core = makeCoreProxy({});
+    const registry = makeRegistryProxy({});
 
     const handle = startCrossPillarReconciliationWorker({
       db: inventoryDb.db,
       intervalMs: 60_000,
-      proxies: { finance, core },
+      proxies: { finance, registry },
     });
 
     await vi.advanceTimersByTimeAsync(0);

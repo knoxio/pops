@@ -17,7 +17,7 @@ function emptySnapshot(source: RegistrySnapshot['source'] = 'fresh'): RegistrySn
 describe('@pops/pillar-sdk/testing/discovery', () => {
   beforeEach(() => {
     configureDiscoveryForTest({
-      registryUrl: 'http://core-api:3001',
+      registryUrl: 'http://registry-api:3001',
       ttlMs: 30_000,
       fetcher: async () => {
         throw new Error('test must not hit the network');
@@ -49,7 +49,7 @@ describe('@pops/pillar-sdk/testing/discovery', () => {
   it('a seeded snapshot suspends background refresh (no fetcher hit even after a long delay)', async () => {
     let fetcherCalls = 0;
     configureDiscoveryForTest({
-      registryUrl: 'http://core-api:3001',
+      registryUrl: 'http://registry-api:3001',
       ttlMs: 30_000,
       fetcher: async () => {
         fetcherCalls += 1;
@@ -80,7 +80,7 @@ describe('@pops/pillar-sdk/testing/discovery', () => {
   it('failNextRegistryFetches exhausts after N calls then falls through to the real fetcher', async () => {
     let calls = 0;
     configureDiscoveryForTest({
-      registryUrl: 'http://core-api:3001',
+      registryUrl: 'http://registry-api:3001',
       ttlMs: 30_000,
       fetcher: async () => {
         calls += 1;

@@ -7,8 +7,9 @@
  *   - Both env vars unset  → install every known id.
  *   - At least one set     → install only the union of their CSV entries,
  *                            intersected with the known id list.
- *   - `alwaysInstalled` ids stay in the result regardless. `core` is the
- *     canonical example — it is the platform shell and must never be gated.
+ *   - `alwaysInstalled` ids stay in the result regardless. `registry`
+ *     (formerly `core`) is the canonical example — it is the platform shell
+ *     and must never be gated.
  *
  * Unknown ids in the env vars are silently dropped here because
  * `apps/pops-api/src/modules/env-modules.ts` is the canonical strict

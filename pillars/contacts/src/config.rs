@@ -23,8 +23,10 @@ pub const DEFAULT_VERSION: &str = "0.0.0-dev";
 
 /// Registry base URL used when neither `POPS_REGISTRY_URL` nor `CORE_URL` is
 /// set. Matches the TS SDK fallback (`bootstrap/bootstrap.ts`) and the
-/// `core-api` compose service name.
-pub const DEFAULT_REGISTRY_URL: &str = "http://core-api:3001";
+/// `registry-api` compose service name (the pillar formerly named `core`).
+/// During the core→registry rename window the registry container also answers
+/// to the legacy `core-api` alias, so an un-rebuilt deploy resolves either.
+pub const DEFAULT_REGISTRY_URL: &str = "http://registry-api:3001";
 
 /// Resolved configuration for one process lifetime.
 #[derive(Debug, Clone)]
@@ -138,16 +140,16 @@ mod tests {
     #[test]
     fn strip_trailing_slashes_normalises_origins() {
         assert_eq!(
-            strip_trailing_slashes("http://core-api:3001/"),
-            "http://core-api:3001"
+            strip_trailing_slashes("http://registry-api:3001/"),
+            "http://registry-api:3001"
         );
         assert_eq!(
-            strip_trailing_slashes("http://core-api:3001///"),
-            "http://core-api:3001"
+            strip_trailing_slashes("http://registry-api:3001///"),
+            "http://registry-api:3001"
         );
         assert_eq!(
-            strip_trailing_slashes("http://core-api:3001"),
-            "http://core-api:3001"
+            strip_trailing_slashes("http://registry-api:3001"),
+            "http://registry-api:3001"
         );
     }
 }

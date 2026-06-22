@@ -1,0 +1,43 @@
+## Litestream replication config — registry pillar SQLite (the pillar
+## formerly named `core`).
+##
+## Phase 2 PR 4 of the registry pillar migration (ADR-026). Mirrors the
+## per-pillar pattern so each pillar's database streams independently
+## of the shared pops.db.
+##
+## Production deployment lives in the homelab-infra repo (see AGENTS.md
+## for the deployment model); this file is the canonical reference the
+## deployer copies into its own Litestream config. The replica target
+## (S3 bucket name, region, credentials) is provided by the deployer's
+## environment — leave it as a `${CORE_LITESTREAM_REPLICA_URL}` style
+## placeholder here.
+##
+## RENAME CONTINUITY (core→registry): the on-disk db file is still
+## `core.db` and the replica env is still `${CORE_LITESTREAM_REPLICA_URL}`.
+## These are DELIBERATELY left stable so the existing `core.db` backup
+## stream is not orphaned. The container's `CORE_SQLITE_PATH` (compose)
+## still points at `core.db` too, so litestream and the pillar agree on
+## the live file. The deployer (homelab-infra) renames the on-disk file to
+## `registry.db` and re-keys the replica to `${REGISTRY_LITESTREAM_REPLICA_URL}`
+## out of band, flipping BOTH this config and `CORE_SQLITE_PATH` in the
+## same change once the migrated/replicated file exists. Do NOT change the
+## db path or replica key here before that migration, or the registry boots
+## empty / the backup destination silently moves.
+##
+## Restore drill (single line — safe to copy/paste during an incident):
+##   litestream restore -o /data/sqlite/core.db "${CORE_LITESTREAM_REPLICA_URL}"
+## Stop the registry-api container first so it isn't writing concurrently;
+## the drill is exercised in Phase 4 verification.
+
+dbs:
+  - path: /data/sqlite/core.db
+    replicas:
+      - url: ${CORE_LITESTREAM_REPLICA_URL}
+        # Per-pillar config so a single-pillar restore doesn't pull in
+        # the whole pops.db blob. Sync interval matches the shared
+        # singleton's existing replica config (1s by default — see
+        # homelab-infra).
+        sync-interval: 1s
+        retention: 24h
+        snapshot-interval: 1h
+        validation-interval: 12h

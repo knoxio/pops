@@ -27,7 +27,7 @@ import type { PillarHandle } from '@pops/pillar-sdk/server';
 const INTERNAL_BASE_URLS: Readonly<Record<string, string>> = {
   inventory: process.env['POPS_INVENTORY_API_URL'] ?? 'http://inventory-api:3003',
   finance: process.env['POPS_FINANCE_API_URL'] ?? 'http://finance-api:3004',
-  core: process.env['POPS_CORE_API_URL'] ?? 'http://core-api:3001',
+  registry: process.env['POPS_REGISTRY_API_URL'] ?? 'http://registry-api:3001',
   media: process.env['POPS_MEDIA_API_URL'] ?? 'http://media-api:3005',
   cerebrum: process.env['POPS_CEREBRUM_API_URL'] ?? 'http://cerebrum-api:3006',
   contacts: process.env['POPS_CONTACTS_API_URL'] ?? 'http://contacts-api:3010',

@@ -33,13 +33,13 @@ export const ALL_MODULE_IDS = [
   'ai',
   'cerebrum',
   'contacts',
-  'core',
   'ego',
   'finance',
   'food',
   'inventory',
   'lists',
   'media',
+  'registry',
 ] as const;
 
 /**
@@ -77,11 +77,11 @@ export const MODULE_PARENT_PILLAR: Record<ModuleId, KnownPillarId> = {
   ai: 'ai',
   cerebrum: 'cerebrum',
   contacts: 'contacts',
-  core: 'core',
   ego: 'cerebrum',
   finance: 'finance',
   food: 'food',
   inventory: 'inventory',
   lists: 'lists',
   media: 'media',
+  registry: 'registry',
 };

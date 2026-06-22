@@ -9,14 +9,16 @@
  *
  * The set started from the seven pillars ADR-026 carves the platform into;
  * `contacts` (the first Rust pillar) extends it as the canonical entities
- * store extracted out of `core`; `ai` is a first-class pillar as of PRD-055,
- * extracting the AI-ops backend (observability, providers, budgets, alerts,
- * the cross-pillar telemetry ingest) out of `core`.
+ * store extracted out of the registry pillar; `ai` is a first-class pillar as
+ * of PRD-055, extracting the AI-ops backend (observability, providers,
+ * budgets, alerts, the cross-pillar telemetry ingest) out of it.
+ * The `registry` pillar (formerly `core`) is the platform registry /
+ * discovery / settings host.
  * Adding a new pillar = add a string here → every consumer that types a
  * pillar id against `KnownPillarId` updates at compile time.
  */
 export const PILLARS = [
-  'core',
+  'registry',
   'finance',
   'media',
   'inventory',

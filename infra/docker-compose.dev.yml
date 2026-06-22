@@ -18,37 +18,49 @@ services:
 
   # ── BACKEND ──────────────────────────────────────────────────────
 
-  # Core pillar API (ADR-026, Phase 3 PR 3). Sibling pillars treat the
-  # core container as the authoritative pillar registry: `GET /pillars`
-  # returns a snapshot derived from the `POPS_PILLARS` env plus a
-  # synthetic `core` entry — there is no dynamic register-on-boot step.
-  # Startup ordering is enforced by `depends_on: core-api` (below) so
+  # Registry pillar API (ADR-026, Phase 3 PR 3; the pillar formerly named
+  # `core`). Sibling pillars treat the registry container as the authoritative
+  # pillar registry: `GET /pillars` returns a snapshot derived from the
+  # `POPS_PILLARS` env plus a synthetic `registry` entry.
+  # Startup ordering is enforced by `depends_on: registry-api` (below) so
   # consumers can rely on the snapshot being available when they boot.
-  # Today the container only exposes /health + /pillars; subsequent
-  # pillar splits move settings, AI Ops, and URI dispatch behind it.
-  core-api:
+  #
+  # DUAL-ALIAS RENAME WINDOW: the service is named `registry-api` but carries
+  # the legacy `core-api` network alias on BOTH networks so a not-yet-rebuilt
+  # pillar image (whose baked-in SDK default still dials `http://core-api:3001`)
+  # keeps resolving to this same container during the rename rollout.
+  registry-api:
     build:
       context: ..
-      dockerfile: pillars/core/Dockerfile
+      dockerfile: pillars/registry/Dockerfile
       args:
         BUILD_VERSION: ${BUILD_VERSION:-dev}
-    container_name: pops-core
+    container_name: pops-registry
     restart: unless-stopped
     networks:
-      - frontend
-      - backend
+      frontend:
+        aliases:
+          - core-api
+          - registry-api
+      backend:
+        aliases:
+          - core-api
+          - registry-api
     volumes:
       - sqlite-data:/data/sqlite
     environment:
       NODE_ENV: production
       PORT: '3001'
+      # On-disk SQLite filename stays `core.db` through the rename window; the
+      # deployer renames the live file to `registry.db` out of band and flips
+      # this path in the same change (flipping early boots the registry empty).
       CORE_SQLITE_PATH: /data/sqlite/core.db
-      CORE_SELF_BASE_URL: http://core-api:3001
-      # Cross-pillar registry — core-api hosts the authoritative
+      REGISTRY_SELF_BASE_URL: http://registry-api:3001
+      # Cross-pillar registry — registry-api hosts the authoritative
       # `/pillars` snapshot that the shell's nginx proxy fans out to,
       # so it MUST default to the full sibling list rather than empty.
       # Sibling pillars get appended (id:baseUrl,...) as they extract.
-      POPS_PILLARS: ${POPS_PILLARS:-core:http://core-api:3001,inventory:http://inventory-api:3002,media:http://media-api:3003,finance:http://finance-api:3004,food:http://food-api:3005,lists:http://lists-api:3006}
+      POPS_PILLARS: ${POPS_PILLARS:-registry:http://registry-api:3001,inventory:http://inventory-api:3002,media:http://media-api:3003,finance:http://finance-api:3004,food:http://food-api:3005,lists:http://lists-api:3006}
     expose:
       - '3001'
     healthcheck:
@@ -86,13 +98,13 @@ services:
       PORT: '3002'
       INVENTORY_SQLITE_PATH: /data/sqlite/inventory.db
       INVENTORY_SELF_BASE_URL: http://inventory-api:3002
-      # Cross-pillar registry. Includes core-api by default so /pillars
+      # Cross-pillar registry. Includes registry-api by default so /pillars
       # surfaces both host pillars on the synthetic-entry list.
-      POPS_PILLARS: ${POPS_PILLARS:-core:http://core-api:3001,inventory:http://inventory-api:3002,media:http://media-api:3003,finance:http://finance-api:3004,food:http://food-api:3005,lists:http://lists-api:3006}
+      POPS_PILLARS: ${POPS_PILLARS:-registry:http://registry-api:3001,inventory:http://inventory-api:3002,media:http://media-api:3003,finance:http://finance-api:3004,food:http://food-api:3005,lists:http://lists-api:3006}
     expose:
       - '3002'
     depends_on:
-      core-api:
+      registry-api:
         condition: service_healthy
     healthcheck:
       test:
@@ -135,11 +147,11 @@ services:
       POPS_API_INTERNAL_TOKEN: ${POPS_API_INTERNAL_TOKEN:-}
       # Cross-pillar registry — included for parity with siblings even
       # though finance-api today only exposes /health.
-      POPS_PILLARS: ${POPS_PILLARS:-core:http://core-api:3001,inventory:http://inventory-api:3002,media:http://media-api:3003,finance:http://finance-api:3004,food:http://food-api:3005,lists:http://lists-api:3006}
+      POPS_PILLARS: ${POPS_PILLARS:-registry:http://registry-api:3001,inventory:http://inventory-api:3002,media:http://media-api:3003,finance:http://finance-api:3004,food:http://food-api:3005,lists:http://lists-api:3006}
     expose:
       - '3004'
     depends_on:
-      core-api:
+      registry-api:
         condition: service_healthy
     healthcheck:
       test:
@@ -176,13 +188,13 @@ services:
       PORT: '3003'
       MEDIA_SQLITE_PATH: /data/sqlite/media.db
       MEDIA_SELF_BASE_URL: http://media-api:3003
-      # Cross-pillar registry. Includes core-api + inventory-api by default
+      # Cross-pillar registry. Includes registry-api + inventory-api by default
       # so /pillars surfaces every host pillar on the synthetic-entry list.
-      POPS_PILLARS: ${POPS_PILLARS:-core:http://core-api:3001,inventory:http://inventory-api:3002,media:http://media-api:3003,finance:http://finance-api:3004,food:http://food-api:3005,lists:http://lists-api:3006}
+      POPS_PILLARS: ${POPS_PILLARS:-registry:http://registry-api:3001,inventory:http://inventory-api:3002,media:http://media-api:3003,finance:http://finance-api:3004,food:http://food-api:3005,lists:http://lists-api:3006}
     expose:
       - '3003'
     depends_on:
-      core-api:
+      registry-api:
         condition: service_healthy
     healthcheck:
       test:
@@ -224,11 +236,11 @@ services:
       POPS_API_INTERNAL_TOKEN: ${POPS_API_INTERNAL_TOKEN:-}
       # Cross-pillar registry — included for parity with siblings even
       # though food-api today only exposes /health.
-      POPS_PILLARS: ${POPS_PILLARS:-core:http://core-api:3001,inventory:http://inventory-api:3002,media:http://media-api:3003,finance:http://finance-api:3004,food:http://food-api:3005,lists:http://lists-api:3006}
+      POPS_PILLARS: ${POPS_PILLARS:-registry:http://registry-api:3001,inventory:http://inventory-api:3002,media:http://media-api:3003,finance:http://finance-api:3004,food:http://food-api:3005,lists:http://lists-api:3006}
     expose:
       - '3005'
     depends_on:
-      core-api:
+      registry-api:
         condition: service_healthy
     healthcheck:
       test:
@@ -266,11 +278,11 @@ services:
       LISTS_SELF_BASE_URL: http://lists-api:3006
       # Cross-pillar registry — included for parity with siblings even
       # though lists-api today only exposes /health.
-      POPS_PILLARS: ${POPS_PILLARS:-core:http://core-api:3001,inventory:http://inventory-api:3002,media:http://media-api:3003,finance:http://finance-api:3004,food:http://food-api:3005,lists:http://lists-api:3006}
+      POPS_PILLARS: ${POPS_PILLARS:-registry:http://registry-api:3001,inventory:http://inventory-api:3002,media:http://media-api:3003,finance:http://finance-api:3004,food:http://food-api:3005,lists:http://lists-api:3006}
     expose:
       - '3006'
     depends_on:
-      core-api:
+      registry-api:
         condition: service_healthy
     healthcheck:
       test:
@@ -308,11 +320,11 @@ services:
       # Validates `x-pops-internal-token` on `POST /ai-usage/record`. The
       # reporting pillars (finance/food/cerebrum) carry the same token.
       POPS_API_INTERNAL_TOKEN: ${POPS_API_INTERNAL_TOKEN:-}
-      POPS_PILLARS: ${POPS_PILLARS:-core:http://core-api:3001,inventory:http://inventory-api:3002,media:http://media-api:3003,finance:http://finance-api:3004,food:http://food-api:3005,lists:http://lists-api:3006}
+      POPS_PILLARS: ${POPS_PILLARS:-registry:http://registry-api:3001,inventory:http://inventory-api:3002,media:http://media-api:3003,finance:http://finance-api:3004,food:http://food-api:3005,lists:http://lists-api:3006}
     expose:
       - '3008'
     depends_on:
-      core-api:
+      registry-api:
         condition: service_healthy
     healthcheck:
       test:
@@ -361,13 +373,13 @@ services:
       EMBEDDING_API_KEY: ${EMBEDDING_API_KEY:-}
       EMBEDDING_MODEL: ${EMBEDDING_MODEL:-}
       EMBEDDING_DIMENSIONS: ${EMBEDDING_DIMENSIONS:-}
-      POPS_PILLARS: ${POPS_PILLARS:-core:http://core-api:3001,inventory:http://inventory-api:3002,media:http://media-api:3003,finance:http://finance-api:3004,food:http://food-api:3005,lists:http://lists-api:3006}
+      POPS_PILLARS: ${POPS_PILLARS:-registry:http://registry-api:3001,inventory:http://inventory-api:3002,media:http://media-api:3003,finance:http://finance-api:3004,food:http://food-api:3005,lists:http://lists-api:3006}
     expose:
       - '3007'
     depends_on:
       pops-redis:
         condition: service_healthy
-      core-api:
+      registry-api:
         condition: service_healthy
     healthcheck:
       test:
@@ -414,7 +426,7 @@ services:
       EMBEDDING_API_KEY: ${EMBEDDING_API_KEY:-}
       EMBEDDING_MODEL: ${EMBEDDING_MODEL:-}
       EMBEDDING_DIMENSIONS: ${EMBEDDING_DIMENSIONS:-}
-      POPS_PILLARS: ${POPS_PILLARS:-core:http://core-api:3001,inventory:http://inventory-api:3002,media:http://media-api:3003,finance:http://finance-api:3004,food:http://food-api:3005,lists:http://lists-api:3006}
+      POPS_PILLARS: ${POPS_PILLARS:-registry:http://registry-api:3001,inventory:http://inventory-api:3002,media:http://media-api:3003,finance:http://finance-api:3004,food:http://food-api:3005,lists:http://lists-api:3006}
     depends_on:
       pops-redis:
         condition: service_healthy
@@ -446,13 +458,13 @@ services:
       # Opt in to registry self-registration (the Rust lifecycle is gated on
       # this, mirroring the TS SDK's POPS_REGISTRY_ENABLED).
       POPS_REGISTRY_ENABLED: 'true'
-      POPS_REGISTRY_URL: ${POPS_REGISTRY_URL:-http://core-api:3001}
+      POPS_REGISTRY_URL: ${POPS_REGISTRY_URL:-http://registry-api:3001}
       POPS_API_INTERNAL_TOKEN: ${POPS_API_INTERNAL_TOKEN:-}
-      POPS_PILLARS: ${POPS_PILLARS:-core:http://core-api:3001,inventory:http://inventory-api:3002,media:http://media-api:3003,finance:http://finance-api:3004,food:http://food-api:3005,lists:http://lists-api:3006}
+      POPS_PILLARS: ${POPS_PILLARS:-registry:http://registry-api:3001,inventory:http://inventory-api:3002,media:http://media-api:3003,finance:http://finance-api:3004,food:http://food-api:3005,lists:http://lists-api:3006}
     expose:
       - '3010'
     depends_on:
-      core-api:
+      registry-api:
         condition: service_healthy
     healthcheck:
       test: ['CMD', 'curl', '-fsS', 'http://localhost:3010/health']
@@ -479,11 +491,11 @@ services:
       NODE_ENV: production
       PORT: '3009'
       ORCHESTRATOR_SELF_BASE_URL: http://pops-orchestrator:3009
-      POPS_PILLARS: ${POPS_PILLARS:-core:http://core-api:3001,inventory:http://inventory-api:3002,media:http://media-api:3003,finance:http://finance-api:3004,food:http://food-api:3005,lists:http://lists-api:3006}
+      POPS_PILLARS: ${POPS_PILLARS:-registry:http://registry-api:3001,inventory:http://inventory-api:3002,media:http://media-api:3003,finance:http://finance-api:3004,food:http://food-api:3005,lists:http://lists-api:3006}
     expose:
       - '3009'
     depends_on:
-      core-api:
+      registry-api:
         condition: service_healthy
     healthcheck:
       test:
@@ -615,7 +627,7 @@ services:
     ports:
       - '${MCP_BIND_ADDR:-0.0.0.0}:3002:3002'
     depends_on:
-      core-api:
+      registry-api:
         condition: service_healthy
     healthcheck:
       test:
@@ -708,13 +720,13 @@ services:
   #     NODE_ENV: production
   #     PORT: '30XX'
   #     <PILLAR>_SQLITE_PATH: /data/sqlite/<pillar>.db
-  #     # core-api hosts the pillar registry; every other pillar resolves
+  #     # registry-api hosts the pillar registry; every other pillar resolves
   #     # cross-pillar URIs against POPS_PILLARS or via the registry.
   #     POPS_PILLARS: ${POPS_PILLARS:-}
   #   expose:
   #     - '30XX'
   #   depends_on:
-  #     core-api:                        # every pillar except core itself
+  #     registry-api:                    # every pillar except the registry itself
   #       condition: service_healthy
   #   healthcheck:
   #     test:

@@ -9,5 +9,5 @@ export { PillarGuard } from './PillarGuard';
 export { PillarStatusProvider } from './PillarStatusProvider';
 export { PillarUnavailableRoute } from './PillarUnavailableRoute';
 export { usePillarStatus, usePillarStatusContext } from './usePillarStatus';
-export { pillarIdForModule, CORE_PILLAR_ID } from './manifest-pillar';
+export { pillarIdForModule, REGISTRY_PILLAR_ID } from './manifest-pillar';
 export type { PillarBootSnapshot, PillarHealthStatus, PillarStatusContextValue } from './types';

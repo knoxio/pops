@@ -48,7 +48,7 @@ type ContactsRouter = {
 
 /** Read the whole core entity set by paging `entities.list` until exhausted. */
 async function readAllCoreEntities(): Promise<CoreEntity[]> {
-  const core = pillar<CoreRouter>('core');
+  const core = pillar<CoreRouter>('registry');
   const all: CoreEntity[] = [];
   for (let page = 0; page < MAX_PAGES; page++) {
     const result = await core.entities.list({ limit: PAGE_SIZE, offset: page * PAGE_SIZE });

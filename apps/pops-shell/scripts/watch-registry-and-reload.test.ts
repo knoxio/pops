@@ -5,7 +5,7 @@ import { readConfig } from './watch-registry-and-reload.ts';
 describe('readConfig', () => {
   it('falls back to documented defaults when env is empty', () => {
     const cfg = readConfig({});
-    expect(cfg.registryUrl).toBe('http://core-api:3001');
+    expect(cfg.registryUrl).toBe('http://registry-api:3001');
     expect(cfg.reloadCmd).toBe('nginx -s reload');
     expect(cfg.debounceMs).toBe(250);
     expect(cfg.backoffMs).toBe(1000);

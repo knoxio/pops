@@ -65,7 +65,7 @@ describe('PillarCallError', () => {
 describe('PILLARS', () => {
   it('is the canonical readonly list of pillar ids', () => {
     expect(PILLARS).toEqual([
-      'core',
+      'registry',
       'finance',
       'media',
       'inventory',

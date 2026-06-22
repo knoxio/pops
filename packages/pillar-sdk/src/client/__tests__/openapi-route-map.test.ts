@@ -5,28 +5,28 @@ import { describe, expect, it } from 'vitest';
 
 import { buildRouteMap, type OpenApiDocument } from '../openapi-route-map.js';
 
-const CORE_OPENAPI_PATH = fileURLToPath(
-  new URL('../../../../../pillars/core/openapi/core.openapi.json', import.meta.url)
+const REGISTRY_OPENAPI_PATH = fileURLToPath(
+  new URL('../../../../../pillars/registry/openapi/registry.openapi.json', import.meta.url)
 );
 
-function loadCoreOpenApi(): OpenApiDocument {
-  const raw = readFileSync(CORE_OPENAPI_PATH, 'utf8');
+function loadRegistryOpenApi(): OpenApiDocument {
+  const raw = readFileSync(REGISTRY_OPENAPI_PATH, 'utf8');
   return JSON.parse(raw) as OpenApiDocument;
 }
 
-describe('buildRouteMap — against the real core OpenAPI document', () => {
-  const map = buildRouteMap(loadCoreOpenApi());
+describe('buildRouteMap — against the real registry OpenAPI document', () => {
+  const map = buildRouteMap(loadRegistryOpenApi());
 
   it("keys operations by operationId '<domain>.<proc>' (no pillarId prefix)", () => {
-    expect(map.has('entities.get')).toBe(true);
-    expect(map.has('core.entities.get')).toBe(false);
+    expect(map.has('settings.get')).toBe(true);
+    expect(map.has('registry.settings.get')).toBe(false);
   });
 
-  it('maps a path-param GET — entities.get → GET /entities/{id}', () => {
-    expect(map.get('entities.get')).toEqual({
+  it('maps a path-param GET — settings.get → GET /settings/{key}', () => {
+    expect(map.get('settings.get')).toEqual({
       method: 'GET',
-      pathTemplate: '/entities/{id}',
-      pathParams: ['id'],
+      pathTemplate: '/settings/{key}',
+      pathParams: ['key'],
       queryParams: [],
       hasBody: false,
     });
@@ -52,30 +52,30 @@ describe('buildRouteMap — against the real core OpenAPI document', () => {
     });
   });
 
-  it('maps a mixed PATCH — entities.update → PATCH /entities/{id} with path param AND body', () => {
-    expect(map.get('entities.update')).toEqual({
-      method: 'PATCH',
-      pathTemplate: '/entities/{id}',
-      pathParams: ['id'],
+  it('maps a mixed write — settings.set → PUT /settings/{key} with path param AND body', () => {
+    expect(map.get('settings.set')).toEqual({
+      method: 'PUT',
+      pathTemplate: '/settings/{key}',
+      pathParams: ['key'],
       queryParams: [],
       hasBody: true,
     });
   });
 
-  it('captures every query parameter in declaration order', () => {
-    expect(map.get('entities.list')).toEqual({
+  it('captures the declared query parameter', () => {
+    expect(map.get('users.get')).toEqual({
       method: 'GET',
-      pathTemplate: '/entities',
+      pathTemplate: '/users',
       pathParams: [],
-      queryParams: ['search', 'type', 'limit', 'offset'],
+      queryParams: ['uri'],
       hasBody: false,
     });
   });
 
   it('treats a DELETE with an optional body as hasBody (requestBody present)', () => {
-    const route = map.get('entities.delete');
+    const route = map.get('settings.delete');
     expect(route?.method).toBe('DELETE');
-    expect(route?.pathParams).toEqual(['id']);
+    expect(route?.pathParams).toEqual(['key']);
   });
 });
 

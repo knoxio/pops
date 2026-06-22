@@ -6,7 +6,7 @@ describe('getDomainApp', () => {
   it('maps pillar-level section domains to their app', () => {
     expect(getDomainApp('finance')).toBe('finance');
     expect(getDomainApp('inventory')).toBe('inventory');
-    expect(getDomainApp('core')).toBe('core');
+    expect(getDomainApp('registry')).toBe('registry');
     expect(getDomainApp('contacts')).toBe('contacts');
   });
 

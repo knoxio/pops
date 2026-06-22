@@ -618,6 +618,66 @@ export type SettingsListResponses = {
 
 export type SettingsListResponse = SettingsListResponses[keyof SettingsListResponses];
 
+export type SettingsAggregateData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: '/settings/aggregate';
+};
+
+export type SettingsAggregateErrors = {
+  /**
+   * 400
+   */
+  400: {
+    code?: string;
+    message: string;
+  };
+  /**
+   * 401
+   */
+  401: {
+    code?: string;
+    message: string;
+  };
+  /**
+   * 404
+   */
+  404: {
+    code?: string;
+    message: string;
+  };
+  /**
+   * 409
+   */
+  409: {
+    code?: string;
+    message: string;
+  };
+};
+
+export type SettingsAggregateError = SettingsAggregateErrors[keyof SettingsAggregateErrors];
+
+export type SettingsAggregateResponses = {
+  /**
+   * 200
+   */
+  200: {
+    fetchedAt: string;
+    pillars: Array<{
+      error?: 'unreachable' | 'unauthorized';
+      pillarId: string;
+      settings: Array<{
+        key: string;
+        value: string;
+      }>;
+    }>;
+  };
+};
+
+export type SettingsAggregateResponse =
+  SettingsAggregateResponses[keyof SettingsAggregateResponses];
+
 export type SettingsGetManyData = {
   /**
    * Body

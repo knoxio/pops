@@ -20,12 +20,12 @@ describe('HttpDiscoveryTransport', () => {
     });
 
     const transport = new HttpDiscoveryTransport({
-      registryUrl: 'http://core-api:3001',
+      registryUrl: 'http://registry-api:3001',
       fetchImpl,
     });
 
     const snapshot = await transport.fetchSnapshot();
-    expect(calledUrl).toBe('http://core-api:3001/registry/pillars');
+    expect(calledUrl).toBe('http://registry-api:3001/registry/pillars');
     expect(snapshot).toHaveLength(1);
     expect(snapshot[0]?.pillarId).toBe('finance');
   });
@@ -46,11 +46,11 @@ describe('HttpDiscoveryTransport', () => {
       return jsonResponse({ pillars: [] });
     });
     const transport = new HttpDiscoveryTransport({
-      registryUrl: 'http://core-api:3001/',
+      registryUrl: 'http://registry-api:3001/',
       fetchImpl,
     });
     await transport.fetchSnapshot();
-    expect(calledUrl).toBe('http://core-api:3001/registry/pillars');
+    expect(calledUrl).toBe('http://registry-api:3001/registry/pillars');
   });
 
   it('throws PillarSdkError on a non-2xx HTTP response', async () => {
@@ -83,7 +83,7 @@ describe('HttpDiscoveryTransport', () => {
         '/core.registry.list': () => jsonResponse({ pillars: [discoveredPillar()] }),
       });
       const transport = new HttpDiscoveryTransport({
-        registryUrl: 'http://core-api:3001',
+        registryUrl: 'http://registry-api:3001',
         fetchImpl,
       });
 
@@ -102,7 +102,7 @@ describe('HttpDiscoveryTransport', () => {
         '/core.registry.list': () => jsonResponse({ pillars: [discoveredPillar()] }),
       });
       const transport = new HttpDiscoveryTransport({
-        registryUrl: 'http://core-api:3001',
+        registryUrl: 'http://registry-api:3001',
         fetchImpl,
       });
 
@@ -121,7 +121,7 @@ describe('HttpDiscoveryTransport', () => {
         return jsonResponse({ pillars: [discoveredPillar({ pillarId: id })] });
       });
       const transport = new HttpDiscoveryTransport({
-        registryUrl: 'http://core-api:3001',
+        registryUrl: 'http://registry-api:3001',
         fetchImpl,
       });
 

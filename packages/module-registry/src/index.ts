@@ -75,10 +75,11 @@ export function isModuleId(value: string): value is ModuleId {
 }
 
 /**
- * `core` is the always-mounted platform shell (PRD-100). It stays in the
- * runtime install set even when `POPS_APPS` would otherwise exclude it.
+ * `registry` (formerly `core`) is the always-mounted platform shell
+ * (PRD-100). It stays in the runtime install set even when `POPS_APPS` would
+ * otherwise exclude it.
  */
-const ALWAYS_INSTALLED: readonly string[] = ['core'];
+const ALWAYS_INSTALLED: readonly string[] = ['registry'];
 
 interface MaybeProcess {
   readonly env?: Readonly<Record<string, string | undefined>>;

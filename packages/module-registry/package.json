@@ -26,12 +26,12 @@
   "devDependencies": {
     "@pops/ai": "workspace:*",
     "@pops/cerebrum": "workspace:*",
-    "@pops/core": "workspace:*",
     "@pops/finance": "workspace:*",
     "@pops/food": "workspace:*",
     "@pops/inventory": "workspace:*",
     "@pops/lists": "workspace:*",
     "@pops/media": "workspace:*",
+    "@pops/registry": "workspace:*",
     "@types/node": "^25.9.3",
     "@vitest/coverage-v8": "^4.1.8",
     "tsx": "^4.22.4",

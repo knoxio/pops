@@ -80,7 +80,7 @@ module.exports = {
       name: 'no-dead-core-pkgs',
       severity: 'error',
       comment:
-        'Core has collapsed into `pillars/core/` — `@pops/core-db`, `@pops/core-contract`, and `@pops/core-api` are the retirement tombstone (deleted in the 02 decommission). No new code may import them; consumers go through `@pops/core` (contract types + api-types + openapi) and the core REST API for cross-pillar calls.',
+        'Core has collapsed into `pillars/registry/` (the pillar formerly named `core`) — `@pops/core-db`, `@pops/core-contract`, and `@pops/core-api` are the retirement tombstone (deleted in the 02 decommission). No new code may import them; consumers go through `@pops/registry` (contract types + api-types + openapi) and the registry REST API for cross-pillar calls.',
       from: { path: '.*' },
       to: { path: '^@pops/(core-db|core-contract|core-api)(/|$)' },
     },

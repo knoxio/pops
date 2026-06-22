@@ -30,12 +30,12 @@ import { reconcileUriBatch, type ReconcileLogger } from './reconcile-cross-pilla
 
 /**
  * Opaque cross-pillar router types for the proxies. `@pops/finance` and
- * `@pops/core` both speak REST now, so there is no concrete router type to
+ * `@pops/registry` both speak REST now, so there is no concrete router type to
  * import — the proxies are fully opaque (`unknown`); `PillarHandle<unknown>`
  * resolves to a handle with no procedure keys.
  */
 export type FinanceRouter = unknown;
-export type CoreRouter = unknown;
+export type RegistryRouter = unknown;
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -43,7 +43,7 @@ export type { ReconcileLogger };
 
 export interface ReconcileProxies {
   finance?: PillarHandle<FinanceRouter>;
-  core?: PillarHandle<CoreRouter>;
+  registry?: PillarHandle<RegistryRouter>;
 }
 
 export interface ReconcileWorkerOptions {
@@ -132,7 +132,7 @@ export async function runReconciliation(options: {
   const stampIso = new Date(now()).toISOString();
   const counters: ReconcileCounters = { ok: 0, notFound: 0, unavailable: 0, badUri: 0 };
   const finance = options.proxies?.finance ?? serverPillar<FinanceRouter>('finance');
-  const core = options.proxies?.core ?? serverPillar<CoreRouter>('core');
+  const registry = options.proxies?.registry ?? serverPillar<RegistryRouter>('registry');
   const db = options.db;
 
   await reconcileUriBatch({
@@ -154,10 +154,15 @@ export async function runReconciliation(options: {
     logger: options.logger,
     counters,
     uris: crossPillarUrisService.listDistinctOwnerUris(db),
+    // The owner URI namespace stays `pops://core/user/...` (PRD-251 H7 wire
+    // contract) even though the pillar directory/id renamed to `registry`. The
+    // registry pillar's `/users` handler still resolves `pops://core/...` URIs,
+    // and the rows persisted on disk carry the `core` namespace — so the URI
+    // shape match MUST keep `expectedPillar: 'core'`, NOT `registry`.
     expectedPillar: 'core',
     expectedType: 'user',
     parse: parseSoftUri,
-    probe: (_parsed, uri) => safeCall(() => core.callDynamic('users', 'get', { uri }, 'query')),
+    probe: (_parsed, uri) => safeCall(() => registry.callDynamic('users', 'get', { uri }, 'query')),
     onOk: (uri) => crossPillarUrisService.clearOwnerUriStale(db, uri),
     onNotFound: (uri) => crossPillarUrisService.markOwnerUriStale(db, uri, stampIso),
   });

@@ -1,13 +1,14 @@
 /**
  * Production adapter that wires the {@link ReconcileLookupFn} contract to
- * the pillar SDK proxy. Calls `pillar('core').users.get({ uri })` and
+ * the pillar SDK proxy. Calls `pillar('registry').users.get({ uri })` and
  * folds the {@link CallResult} discriminants down to the cron's smaller
  * vocabulary (`ok` / `not-found` / `bad-uri` / `unavailable`).
  *
  * Wire contract: PRD-251 §"Surface" specifies a URI-shaped cross-pillar
  * contract — input `{ uri }`, output `{ data: { uri } }`. Both the
- * inventory and finance crons go through the same `core.users.get` and
- * pass the URI through end-to-end.
+ * inventory and finance crons go through the same `registry.users.get`
+ * (the registry pillar, formerly `core`) and pass the URI through
+ * end-to-end.
  *
  * Kept separate from the worker so unit tests can wire a stub directly
  * without exercising the HTTP transport.
@@ -26,7 +27,7 @@ type CoreUsersHandle = {
 
 export function createPillarOwnerUriLookup(): ReconcileLookupFn {
   return async (uri: string): Promise<ReconcileLookupResult> => {
-    const handle = pillar<CoreUsersHandle>('core');
+    const handle = pillar<CoreUsersHandle>('registry');
     const result = await handle.users.get({ uri });
     if (isOk(result)) {
       return { kind: 'ok' };

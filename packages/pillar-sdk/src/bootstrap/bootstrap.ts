@@ -62,7 +62,7 @@ const DEFAULT_MAX_REGISTER_ATTEMPTS = 5;
 const DEFAULT_REGISTER_INITIAL_BACKOFF_MS = 1_000;
 const DEFAULT_REGISTER_MAX_BACKOFF_MS = 30_000;
 const DEFAULT_REGISTRY_URL_ENV = 'POPS_REGISTRY_URL';
-const DEFAULT_REGISTRY_URL_FALLBACK = 'http://core-api:3001';
+const DEFAULT_REGISTRY_URL_FALLBACK = 'http://registry-api:3001';
 
 export async function bootstrapPillar(
   options: BootstrapPillarOptions

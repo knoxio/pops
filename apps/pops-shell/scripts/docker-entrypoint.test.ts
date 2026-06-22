@@ -36,7 +36,7 @@ describe('docker-entrypoint.sh', () => {
 
   it('reads the registry URL from POPS_REGISTRY_URL with a CORE_REGISTRY_URL fallback', async () => {
     const src = await readFile(ENTRYPOINT, 'utf8');
-    expect(src).toMatch(/POPS_REGISTRY_URL:-\$\{CORE_REGISTRY_URL:-http:\/\/core-api:3001\}/);
+    expect(src).toMatch(/POPS_REGISTRY_URL:-\$\{CORE_REGISTRY_URL:-http:\/\/registry-api:3001\}/);
   });
 
   it('starts both nginx and the watcher and supervises them', async () => {

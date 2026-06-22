@@ -110,14 +110,15 @@ const ALLOWLISTED_MISSING_INDEXES = {};
  *
  *   - finance:tier_overrides — relocated by #3344 (REST slice 1); the
  *     finance migrations journal does not create `tier_overrides`.
- *   - core:environments — relocated by the core scaffold (Phase 0); the
- *     core migrations journal does not create `environments`.
+ *   - registry:environments — relocated by the registry pillar scaffold
+ *     (Phase 0; the pillar was formerly named `core`); the registry
+ *     migrations journal does not create `environments`.
  *
  * @type {Record<string, Set<string>>}
  */
 const ALLOWLISTED_MISSING_TABLES = {
   finance: new Set(['tier_overrides']),
-  core: new Set(['environments']),
+  registry: new Set(['environments']),
 };
 
 /**
