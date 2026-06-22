@@ -103,7 +103,7 @@ pub async fn get(pool: &SqlitePool, id: &str) -> Result<Option<EntityRow>, sqlx:
 /// `409` raised by a case-variant create resolves to the row that already owns
 /// that name.
 pub async fn find_by_name(pool: &SqlitePool, name: &str) -> Result<Option<EntityRow>, sqlx::Error> {
-    let sql = format!("SELECT {SELECT_COLUMNS} FROM entities WHERE name = ?1 COLLATE NOCASE");
+    let sql = format!("SELECT {SELECT_COLUMNS} FROM entities WHERE name COLLATE NOCASE = ?1");
     sqlx::query_as::<_, EntityRow>(&sql)
         .bind(name)
         .fetch_optional(pool)
@@ -247,14 +247,22 @@ pub async fn search_candidates(
 /// the write — the index catches that race and this turns it into the same 409
 /// the pre-check would have returned.
 fn name_conflict_or(err: sqlx::Error, name: &str) -> RepoError {
-    if err
-        .as_database_error()
-        .is_some_and(|db| db.is_unique_violation())
-    {
+    if is_name_unique_violation(&err) {
         RepoError::Conflict(format!("Entity with name '{name}' already exists"))
     } else {
         RepoError::Db(err)
     }
+}
+
+/// Whether `err` is the `entities.name` unique index firing specifically — not
+/// some other unique constraint (e.g. `notion_id`, or a column a later
+/// migration adds). SQLite reports the offending column as
+/// `UNIQUE constraint failed: entities.name`, so we gate on that rather than on
+/// `is_unique_violation()` alone to avoid mislabeling an unrelated conflict as
+/// a duplicate name.
+fn is_name_unique_violation(err: &sqlx::Error) -> bool {
+    err.as_database_error()
+        .is_some_and(|db| db.is_unique_violation() && db.message().contains("entities.name"))
 }
 
 /// Whether an entity with `name` exists (matched case-insensitively, mirroring
@@ -266,7 +274,7 @@ async fn name_exists(
     exclude: Option<&str>,
 ) -> Result<bool, sqlx::Error> {
     let found: Option<String> = sqlx::query_scalar(
-        "SELECT id FROM entities WHERE name = ?1 COLLATE NOCASE AND (?2 IS NULL OR id <> ?2) LIMIT 1",
+        "SELECT id FROM entities WHERE name COLLATE NOCASE = ?1 AND (?2 IS NULL OR id <> ?2) LIMIT 1",
     )
     .bind(name)
     .bind(exclude)
@@ -419,6 +427,52 @@ mod tests {
         assert!(
             db.is_unique_violation(),
             "the failure is the unique-name index, not some other error: {db}"
+        );
+        assert!(
+            is_name_unique_violation(&err),
+            "the name index is the offending constraint"
+        );
+    }
+
+    #[tokio::test]
+    async fn a_notion_id_collision_is_not_classified_as_a_name_conflict() {
+        let pool = pool().await;
+        async fn insert_with_notion_id(
+            pool: &SqlitePool,
+            name: &str,
+            notion_id: &str,
+        ) -> Result<(), sqlx::Error> {
+            sqlx::query(
+                "INSERT INTO entities (id, notion_id, name, type, last_edited_time) \
+                 VALUES (?1, ?2, ?3, 'company', '2026-01-01T00:00:00Z')",
+            )
+            .bind(uuid::Uuid::new_v4().to_string())
+            .bind(notion_id)
+            .bind(name)
+            .execute(pool)
+            .await?;
+            Ok(())
+        }
+
+        insert_with_notion_id(&pool, "Acme", "n-1")
+            .await
+            .expect("first insert");
+        let err = insert_with_notion_id(&pool, "Distinct Name", "n-1")
+            .await
+            .expect_err("the notion_id unique constraint rejects the duplicate");
+
+        assert!(
+            err.as_database_error()
+                .is_some_and(|db| db.is_unique_violation()),
+            "it is a unique violation"
+        );
+        assert!(
+            !is_name_unique_violation(&err),
+            "a notion_id collision must NOT be misread as a duplicate name"
+        );
+        assert!(
+            matches!(name_conflict_or(err, "Distinct Name"), RepoError::Db(_)),
+            "an unrelated unique violation passes through as a raw DB error, not a 409"
         );
     }
 
