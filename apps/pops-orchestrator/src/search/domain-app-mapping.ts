@@ -12,21 +12,25 @@
  *     …) so the mapping stays correct if a section is ever decorated at
  *     adapter granularity again, and
  *   - the pillar-level section domains the federation source emits today
- *     (`finance`, `inventory`, `entities`) — one section per pillar, because a
+ *     (`finance`, `inventory`, `contacts`) — one section per pillar, because a
  *     pillar's `/search` returns a single flat hit list.
+ *
+ * The `entities` adapter domain now belongs to the contacts pillar (PRD-163);
+ * a `contacts` pillar-level key is added alongside it.
  */
 
 const DOMAIN_APP_MAP: Record<string, string> = {
   movies: 'media',
   'tv-shows': 'media',
   transactions: 'finance',
-  entities: 'core',
+  entities: 'contacts',
   budgets: 'finance',
   wishlist: 'finance',
   'inventory-items': 'inventory',
   finance: 'finance',
   inventory: 'inventory',
   core: 'core',
+  contacts: 'contacts',
 };
 
 /**
