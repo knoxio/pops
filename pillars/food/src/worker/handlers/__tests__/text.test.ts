@@ -1,15 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { __setFoodTelemetryDepsForTests } from '../../ai/ai-telemetry-deps.js';
 import { extractedRecipeSchema, type ExtractedRecipe } from '../extracted-recipe.js';
-import {
-  __setTextIngestClientForTests,
-  __setTextIngestLogForTests,
-  extractWithClaudeText,
-  runTextIngest,
-} from '../text.js';
+import { __setTextIngestClientForTests, extractWithClaudeText, runTextIngest } from '../text.js';
+
+import type { InferenceRecord, PricingEntry } from '@pops/ai-telemetry';
 
 import type { AnthropicLike, AnthropicMessage } from '../../ai/anthropic.js';
-import type { InferenceLogInput } from '../../ai/log-inference.js';
 import type { HandlerContext } from '../types.js';
 
 const ctx: HandlerContext = { isCancelled: () => false };
@@ -77,20 +74,40 @@ function buildMockClient(impl: () => Promise<AnthropicMessage>): AnthropicLike {
   };
 }
 
-let capturedLogs: InferenceLogInput[];
+const PRICING: PricingEntry = { input: 1, output: 5 };
+
+let capturedRecords: InferenceRecord[];
+let resolveNextRecord: ((record: InferenceRecord) => void) | undefined;
+
+/** Resolves once the fire-and-forget telemetry report lands. */
+function nextRecord(): Promise<InferenceRecord> {
+  return new Promise<InferenceRecord>((resolve) => {
+    if (capturedRecords.length > 0) {
+      resolve(capturedRecords[capturedRecords.length - 1]!);
+      return;
+    }
+    resolveNextRecord = resolve;
+  });
+}
 
 beforeEach(() => {
   process.env['ANTHROPIC_API_KEY'] = 'test-key';
   process.env['FOOD_TEXT_LLM_MODEL'] = 'claude-haiku-4-5-20251001';
-  capturedLogs = [];
-  __setTextIngestLogForTests((entry) => {
-    capturedLogs.push(entry);
+  capturedRecords = [];
+  resolveNextRecord = undefined;
+  __setFoodTelemetryDepsForTests({
+    lookupPricing: () => Promise.resolve(PRICING),
+    report: (record) => {
+      capturedRecords.push(record);
+      resolveNextRecord?.(record);
+      return Promise.resolve();
+    },
   });
 });
 
 afterEach(() => {
   __setTextIngestClientForTests(null);
-  __setTextIngestLogForTests(null);
+  __setFoodTelemetryDepsForTests(null);
   delete process.env['ANTHROPIC_API_KEY'];
   delete process.env['FOOD_TEXT_LLM_MODEL'];
   vi.restoreAllMocks();
@@ -151,9 +168,15 @@ describe('runTextIngest — happy path', () => {
       input_tokens: 100,
       output_tokens: 150,
     });
-    expect(capturedLogs.length).toBe(1);
-    expect(capturedLogs[0]?.operation).toBe('recipe-extract-text');
-    expect(capturedLogs[0]?.contextId).toBe('ingest_source:42');
+    const record = await nextRecord();
+    expect(capturedRecords.length).toBe(1);
+    expect(record.operation).toBe('recipe-extract-text');
+    expect(record.domain).toBe('food');
+    expect(record.provider).toBe('anthropic');
+    expect(record.status).toBe('success');
+    expect(record.contextId).toBe('ingest_source:42');
+    expect(record.inputTokens).toBe(100);
+    expect(record.outputTokens).toBe(150);
   });
 
   it('produces DSL whose lines satisfy the PRD-114 grammar shape', async () => {
@@ -358,6 +381,8 @@ describe('extractWithClaudeText — shared surface', () => {
       contextId: 'ingest_source:99',
     });
     expect(result.ok).toBe(true);
-    expect(capturedLogs[0]?.operation).toBe('recipe-extract-ig-text-fallback');
+    const record = await nextRecord();
+    expect(record.operation).toBe('recipe-extract-ig-text-fallback');
+    expect(record.domain).toBe('food');
   });
 });

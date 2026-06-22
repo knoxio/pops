@@ -41,6 +41,7 @@
     "start:api": "node dist/api/server.js",
     "start:worker": "node dist/worker/worker.js",
     "db:seed:food": "tsx scripts/db-seed-food.ts",
+    "backfill:ai-inference": "tsx scripts/backfill-ai-inference.ts",
     "typecheck": "tsc --noEmit && tsc --noEmit -p scripts/tsconfig.json",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
@@ -53,6 +54,7 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.104.1",
     "@mozilla/readability": "^0.6.0",
+    "@pops/ai-telemetry": "workspace:*",
     "@pops/pillar-sdk": "workspace:*",
     "@pops/types": "workspace:*",
     "@ts-rest/core": "3.53.0-rc.1",

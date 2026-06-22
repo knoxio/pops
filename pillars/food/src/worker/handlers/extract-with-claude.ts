@@ -1,9 +1,11 @@
+import { callWithLogging } from '@pops/ai-telemetry';
+
+import { ANTHROPIC_PROVIDER, FOOD_DOMAIN, foodTelemetryDeps } from '../ai/ai-telemetry-deps.js';
 import {
   createAnthropicClient,
   type AnthropicLike,
   type AnthropicMessage,
 } from '../ai/anthropic.js';
-import { callClaudeWithLogging, type CallClaudeWithLoggingOpts } from '../ai/log-inference.js';
 import { PROMPT_VERSION_TEXT, renderTextPrompt } from '../prompts/text.js';
 import { extractedRecipeSchema, type ExtractedRecipe } from './extracted-recipe.js';
 
@@ -25,14 +27,9 @@ let cachedClient: AnthropicLike | null = null;
 let cachedClientKey: string | null = null;
 
 let testClientOverride: AnthropicLike | null = null;
-let testLogOverride: CallClaudeWithLoggingOpts['onLog'] | null = null;
 
 export function __setTextIngestClientForTests(client: AnthropicLike | null): void {
   testClientOverride = client;
-}
-
-export function __setTextIngestLogForTests(onLog: CallClaudeWithLoggingOpts['onLog'] | null): void {
-  testLogOverride = onLog ?? null;
 }
 
 function resolveClient(apiKey: string): AnthropicLike {
@@ -96,21 +93,33 @@ async function callClaude(
 > {
   const start = Date.now();
   try {
-    const result = await callClaudeWithLogging({
-      operation: pickOperation(input.source),
-      model,
-      promptVersion: PROMPT_VERSION_TEXT,
-      contextId: input.contextId,
-      call: () =>
-        client.messages.create({
-          model,
-          max_tokens: MAX_OUTPUT_TOKENS,
-          temperature: 0,
-          messages: [{ role: 'user', content: prompt }],
-        }),
-      ...(testLogOverride ? { onLog: testLogOverride } : {}),
-    });
-    return { ok: true, message: result.message, durationMs: result.durationMs };
+    const message = await callWithLogging<AnthropicMessage>(
+      {
+        provider: ANTHROPIC_PROVIDER,
+        model,
+        operation: pickOperation(input.source),
+        domain: FOOD_DOMAIN,
+        contextId: input.contextId,
+        promptVersion: PROMPT_VERSION_TEXT,
+        call: async () => {
+          const created = await client.messages.create({
+            model,
+            max_tokens: MAX_OUTPUT_TOKENS,
+            temperature: 0,
+            messages: [{ role: 'user', content: prompt }],
+          });
+          return {
+            response: created,
+            usage: {
+              inputTokens: created.usage?.input_tokens ?? 0,
+              outputTokens: created.usage?.output_tokens ?? 0,
+            },
+          };
+        },
+      },
+      foodTelemetryDeps()
+    );
+    return { ok: true, message, durationMs: Date.now() - start };
   } catch (err) {
     return {
       ok: false,

@@ -1,13 +1,49 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { __setFoodTelemetryDepsForTests } from '../../ai/ai-telemetry-deps.js';
 import { setAnthropicClientForTests } from '../../ai/web-llm-anthropic.js';
 import { buildWebLlmDsl, slugify } from '../web-llm-dsl.js';
 import { extractReadable } from '../web-llm-readability.js';
 import { processWithLlm } from '../web-llm.js';
 
+import type { InferenceRecord, PricingEntry } from '@pops/ai-telemetry';
+
 import type { IngestJobData } from '../../../contract/queue/index.js';
 import type { AnthropicLike, AnthropicMessage } from '../../ai/web-llm-anthropic.js';
 import type { ExtractedRecipe } from '../web-llm-recipe.js';
+
+const TELEMETRY_PRICING: PricingEntry = { input: 1, output: 5 };
+
+let telemetryRecords: InferenceRecord[];
+let resolveNextTelemetry: ((record: InferenceRecord) => void) | undefined;
+
+/** Resolves once the fire-and-forget telemetry report lands. */
+function nextTelemetry(): Promise<InferenceRecord> {
+  return new Promise<InferenceRecord>((resolve) => {
+    if (telemetryRecords.length > 0) {
+      resolve(telemetryRecords[telemetryRecords.length - 1]!);
+      return;
+    }
+    resolveNextTelemetry = resolve;
+  });
+}
+
+beforeEach(() => {
+  telemetryRecords = [];
+  resolveNextTelemetry = undefined;
+  __setFoodTelemetryDepsForTests({
+    lookupPricing: () => Promise.resolve(TELEMETRY_PRICING),
+    report: (record) => {
+      telemetryRecords.push(record);
+      resolveNextTelemetry?.(record);
+      return Promise.resolve();
+    },
+  });
+});
+
+afterEach(() => {
+  __setFoodTelemetryDepsForTests(null);
+});
 
 const WEB_JOB = {
   kind: 'url-web',
@@ -185,12 +221,10 @@ describe('buildWebLlmDsl', () => {
 
 describe('processWithLlm', () => {
   it('returns ok=true with DSL + meta on the happy path', async () => {
-    const onLog = vi.fn();
     const client = fakeClient(JSON.stringify(SAMPLE_RECIPE));
 
     const result = await processWithLlm(SMALL_HTML, WEB_JOB, WEB_JOB.url, {
       client,
-      onLog,
     });
 
     expect(result.ok).toBe(true);
@@ -208,13 +242,17 @@ describe('processWithLlm', () => {
     expect(result.meta.stages['dsl_build']).toMatchObject({ ok: true });
     expect(result.meta.total_cost_usd).toBeGreaterThan(0);
 
-    expect(onLog).toHaveBeenCalledTimes(1);
-    const logged = onLog.mock.calls[0]?.[0];
-    expect(logged).toMatchObject({
+    const record = await nextTelemetry();
+    expect(telemetryRecords.length).toBe(1);
+    expect(record).toMatchObject({
       operation: 'recipe-extract-web-llm',
+      domain: 'food',
+      provider: 'anthropic',
       contextId: `ingest_source:${WEB_JOB.sourceId}`,
-      ok: true,
+      status: 'success',
     });
+    expect(record.inputTokens).toBe(1200);
+    expect(record.outputTokens).toBe(400);
   });
 
   it('returns NoExtractableContent when readability bottoms out', async () => {
@@ -285,15 +323,16 @@ describe('processWithLlm', () => {
         }) as AnthropicLike['messages']['create'],
       },
     };
-    const onLog = vi.fn();
     const result = await processWithLlm(SMALL_HTML, WEB_JOB, WEB_JOB.url, {
       client,
-      onLog,
     });
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.errorMessage).toMatch(/sdk-error/);
-    expect(onLog).toHaveBeenCalledWith(expect.objectContaining({ ok: false }));
+    const record = await nextTelemetry();
+    expect(record.status).toBe('error');
+    expect(record.operation).toBe('recipe-extract-web-llm');
+    expect(record.domain).toBe('food');
   });
 
   it('returns Cancelled before invoking readability or the LLM when cancelled up-front', async () => {
