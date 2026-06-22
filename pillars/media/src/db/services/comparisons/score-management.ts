@@ -5,8 +5,8 @@
 import { and, asc, eq } from 'drizzle-orm';
 
 import { comparisonDimensions, comparisons, mediaScores } from '../../schema.js';
-import { getDefaultScore } from './config.js';
-import { drawTierOutcome, expectedScore, getEloK } from './elo-calculator.js';
+import { getDefaultScore, getEloK } from './config.js';
+import { drawTierOutcome, expectedScore } from './elo-calculator.js';
 
 import type { MediaScoreRow } from '../../row-types.js';
 import type { MediaDb } from '../internal.js';
@@ -49,7 +49,7 @@ export function getOrCreateScore(
   if (existing) return existing;
 
   db.insert(mediaScores)
-    .values({ mediaType, mediaId, dimensionId, score: getDefaultScore(), comparisonCount: 0 })
+    .values({ mediaType, mediaId, dimensionId, score: getDefaultScore(db), comparisonCount: 0 })
     .run();
 
   const score = db
@@ -89,7 +89,7 @@ export function updateEloScores(
   const actualA = actualScoreA(input, isDraw, drawOutcome);
   const actualB = isDraw ? drawOutcome : 1 - actualA;
 
-  const k = getEloK();
+  const k = getEloK(db);
   const newScoreA = scoreA.score + k * (actualA - expectedA);
   const newScoreB = scoreB.score + k * (actualB - expectedB);
   const deltaA = Math.round(newScoreA - scoreA.score);
@@ -115,7 +115,7 @@ export function updateEloScores(
  */
 export function recalcDimensionElo(db: MediaDb, dimensionId: number): void {
   db.update(mediaScores)
-    .set({ score: getDefaultScore(), comparisonCount: 0, updatedAt: new Date().toISOString() })
+    .set({ score: getDefaultScore(db), comparisonCount: 0, updatedAt: new Date().toISOString() })
     .where(eq(mediaScores.dimensionId, dimensionId))
     .run();
 

@@ -17,8 +17,6 @@ type Req = ServerInferRequest<typeof mediaComparisonsContract>;
 const DEFAULT_OFFSET = 0;
 
 export function makeComparisonsScoreHandlers(db: MediaDb) {
-  const defaultLimit = comparisonsService.getDefaultLimit();
-
   return {
     scores: ({ query }: Req['scores']) =>
       runHttp(() => ({
@@ -32,7 +30,7 @@ export function makeComparisonsScoreHandlers(db: MediaDb) {
 
     rankings: ({ query }: Req['rankings']) =>
       runHttp(() => {
-        const limit = query.limit ?? defaultLimit;
+        const limit = query.limit ?? comparisonsService.getDefaultLimit(db);
         const offset = query.offset ?? DEFAULT_OFFSET;
         const { rows, total } = comparisonsService.getRankings(db, {
           dimensionId: query.dimensionId,

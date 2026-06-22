@@ -5,7 +5,10 @@
  * Everything here is HTTP-free and `(db, …)`-arg; the REST handler boundary
  * (`api/rest/comparisons-handlers.ts`) maps the typed errors to status codes.
  * Config (ELO K, default score, tier-list size, staleness threshold, default
- * limit) reads from `process.env` via `./config.js` — no `core/settings`.
+ * limit) resolves from media's pillar-local `settings` table via `./config.js`,
+ * falling back to the manifest default — no `core/settings`, no `process.env`.
+ * Each getter takes `db` so edits made through `/settings` take effect at
+ * runtime without a restart.
  */
 export {
   ComparisonNotFoundError,
