@@ -22,6 +22,15 @@ export type AiInferenceLogRow = InferSelectModel<typeof aiInferenceLog>;
 export const BACKFILL_SOURCE = 'food';
 export const DEDUPE_KEY_PREFIX = 'food:ai_inference_log';
 
+/**
+ * Food's historical rows recorded `provider='claude'`, but the live
+ * `callWithLogging` callers emit `provider='anthropic'`. Normalise the legacy
+ * id so observability/budgets/pricing don't split the same system across two
+ * providers; the original is preserved in `metadata.legacy_provider`.
+ */
+const LEGACY_PROVIDER = 'claude';
+const NORMALISED_PROVIDER = 'anthropic';
+
 const CONTEXT_ID_MAX = 128;
 const NO_WHITESPACE = /^\S+$/;
 const ERROR_MESSAGE_MAX = 1000;
@@ -71,17 +80,19 @@ function normaliseStatus(status: string): InferenceRecord['status'] {
  */
 export function foodRowToInferenceRecord(row: AiInferenceLogRow): InferenceRecord {
   const existing = parseMetadata(row.metadata);
+  const provider = row.provider === LEGACY_PROVIDER ? NORMALISED_PROVIDER : row.provider;
   const metadata: Record<string, unknown> = {
     ...existing,
     backfilled_from: BACKFILL_SOURCE,
     dedupe_key: backfillDedupeKey(row.id),
+    ...(provider !== row.provider ? { legacy_provider: row.provider } : {}),
   };
   const contextId = safeContextId(row.contextId);
   const errorMessage =
     row.errorMessage == null ? undefined : row.errorMessage.slice(0, ERROR_MESSAGE_MAX);
 
   return InferenceRecordSchema.parse({
-    provider: row.provider,
+    provider,
     model: row.model,
     operation: row.operation,
     domain: BACKFILL_SOURCE,

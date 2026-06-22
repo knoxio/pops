@@ -31,7 +31,6 @@ describe('foodRowToInferenceRecord', () => {
   it('maps the core columns and forces domain=food', () => {
     const record = foodRowToInferenceRecord(row());
     expect(record).toMatchObject({
-      provider: 'claude',
       model: 'claude-haiku-4-5-20251001',
       operation: 'recipe-extract-web-llm',
       domain: 'food',
@@ -43,6 +42,18 @@ describe('foodRowToInferenceRecord', () => {
       cached: false,
       contextId: 'ingest_source:42',
     });
+  });
+
+  it('normalises the legacy provider=claude to anthropic and keeps the original', () => {
+    const record = foodRowToInferenceRecord(row({ provider: 'claude' }));
+    expect(record.provider).toBe('anthropic');
+    expect(record.metadata?.['legacy_provider']).toBe('claude');
+  });
+
+  it('leaves a non-legacy provider untouched and does not stamp legacy_provider', () => {
+    const record = foodRowToInferenceRecord(row({ provider: 'anthropic' }));
+    expect(record.provider).toBe('anthropic');
+    expect(record.metadata?.['legacy_provider']).toBeUndefined();
   });
 
   it('stamps a stable dedupe key + backfilled_from and preserves prior metadata', () => {
@@ -90,7 +101,7 @@ describe('foodRowToInferenceRecord', () => {
   });
 
   it('tolerates malformed metadata JSON by falling back to an empty object', () => {
-    const record = foodRowToInferenceRecord(row({ metadata: '{not json' }));
+    const record = foodRowToInferenceRecord(row({ metadata: '{not json', provider: 'anthropic' }));
     expect(record.metadata).toEqual({
       backfilled_from: 'food',
       dedupe_key: 'food:ai_inference_log:7',

@@ -31,6 +31,7 @@ import { foodRowToInferenceRecord } from '../src/worker/ai/backfill-mapping.js';
 import type { InferenceRecord } from '@pops/ai-telemetry';
 
 const RECORD_PATH = '/ai-usage/record';
+const POST_TIMEOUT_MS = 10_000;
 
 interface BackfillConfig {
   aiApiUrl: string;
@@ -64,6 +65,7 @@ async function postRecord(config: BackfillConfig, record: InferenceRecord): Prom
     method: 'POST',
     headers: { 'content-type': 'application/json', 'x-pops-internal-token': config.token },
     body: JSON.stringify(record),
+    signal: AbortSignal.timeout(POST_TIMEOUT_MS),
   });
   if (!res.ok) {
     throw new Error(`POST ${RECORD_PATH} -> HTTP ${res.status}`);
@@ -82,7 +84,7 @@ export async function runBackfill(config: BackfillConfig): Promise<BackfillSumma
         record = foodRowToInferenceRecord(row);
       } catch (err) {
         summary.skipped += 1;
-        console.warn(`[backfill] skipping unmappable row id=${row.id}:`, err);
+        console.warn(`[backfill] skipping unmappable row id=${row.id}: ${String(err)}`);
         continue;
       }
       if (config.dryRun) {
@@ -94,7 +96,7 @@ export async function runBackfill(config: BackfillConfig): Promise<BackfillSumma
         summary.posted += 1;
       } catch (err) {
         summary.failed += 1;
-        console.error(`[backfill] failed to post row id=${row.id}:`, err);
+        console.error(`[backfill] failed to post row id=${row.id}: ${String(err)}`);
       }
     }
   } finally {
