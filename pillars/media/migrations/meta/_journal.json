@@ -120,6 +120,13 @@
       "when": 1798000005000,
       "tag": "0037_rotation_settings_baseline",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1798000006000,
+      "tag": "0038_settings_baseline",
+      "breakpoints": true
     }
   ]
 }

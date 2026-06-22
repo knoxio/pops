@@ -17,6 +17,7 @@ import { makeMoviesHandlers } from './movies-handlers.js';
 import { makePlexHandlers } from './plex-handlers.js';
 import { makeRotationHandlers } from './rotation-handlers.js';
 import { makeSearchHandlers } from './search-handlers.js';
+import { makeSettingsHandlers } from './settings-handlers.js';
 import { makeShelfImpressionsHandlers } from './shelf-impressions-handlers.js';
 import { makeTvShowsHandlers } from './tv-shows-handlers.js';
 import { makeWatchHistoryHandlers } from './watch-history-handlers.js';
@@ -41,5 +42,6 @@ export function makeMediaRestHandlers(deps: {
     rotation: makeRotationHandlers(db),
     discovery: makeDiscoveryHandlers(db),
     search: makeSearchHandlers(),
+    settings: makeSettingsHandlers(db),
   });
 }
