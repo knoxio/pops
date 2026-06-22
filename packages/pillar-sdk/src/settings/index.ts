@@ -12,5 +12,6 @@ export {
   discoverSettings,
   findSettingsManifest,
   type DiscoverSettingsOptions,
+  type SettingsContribution,
   type SettingsDiscoverySource,
 } from './discover-settings.js';

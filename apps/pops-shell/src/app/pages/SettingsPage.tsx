@@ -2,53 +2,62 @@ import { SectionRenderer } from '@/components/settings/SectionRenderer';
 import { useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { INSTALLED_MODULES, MODULES } from '@pops/module-registry';
-import { Select } from '@pops/ui';
+import { Select, Skeleton } from '@pops/ui';
 
 import { SectionNav } from './settings-page/SectionNav';
 import { SettingsEmpty } from './settings-page/SettingsLoading';
 import { useHashSelectedId } from './settings-page/useHashSelectedId';
+import { useSettingsSections, type SettingsSection } from './settings-page/useSettingsSections';
 import { useTestActionHandler } from './settings-page/useTestActionHandler';
 
-import type { SettingsManifest } from '@pops/types';
-
 function ManifestPanel({
-  manifest,
+  section,
   onTestAction,
 }: {
-  manifest: SettingsManifest;
+  section: SettingsSection;
   onTestAction: (procedure: string) => Promise<void>;
 }) {
   return (
     <>
-      <h2 className="text-lg font-semibold mb-4">{manifest.title}</h2>
-      <SectionRenderer manifest={manifest} onTestAction={onTestAction} />
+      <h2 className="text-lg font-semibold mb-4">{section.manifest.title}</h2>
+      <SectionRenderer
+        manifest={section.manifest}
+        ownerPillar={section.ownerPillar}
+        hasFederatedSettings={section.hasFederatedSettings}
+        onTestAction={onTestAction}
+      />
     </>
   );
 }
 
-/**
- * Aggregate every installed module's settings sections (PRD-101 US-04 follow-up).
- * `MODULES` carries the build-time data; `INSTALLED_MODULES` (PRD-218 US-01)
- * is the per-deploy install set computed from `POPS_APPS` / `POPS_OVERLAYS`
- * at module load. The intersection means a deploy that gates out a module
- * never renders its settings sections. The per-module narrow tuple types
- * are widened back to `SettingsManifest` via the inner-callback return
- * annotation so the sort comparator gets the contract type.
- */
-function getManifests(): SettingsManifest[] {
-  return MODULES.filter((m) => INSTALLED_MODULES.includes(m.id))
-    .flatMap((m): readonly SettingsManifest[] =>
-      'settings' in m && m.settings !== undefined ? m.settings : []
-    )
-    .toSorted((a, b) => a.order - b.order);
+function SettingsLoadingSidebar() {
+  return (
+    <div className="flex h-full min-h-0">
+      <aside className="w-60 shrink-0 hidden md:flex flex-col border-r border-border/50 p-4 gap-2">
+        <Skeleton className="h-6 w-32" />
+        <Skeleton className="h-8 w-full" />
+        <Skeleton className="h-8 w-full" />
+      </aside>
+      <div className="flex-1 p-6 space-y-3">
+        <Skeleton className="h-32 w-full" />
+        <Skeleton className="h-32 w-full" />
+      </div>
+    </div>
+  );
 }
 
+/**
+ * The admin Settings page (settings-federation S3). Sections come from the
+ * LIVE registry (`discoverSettings` over the snapshot) rather than the
+ * build-time `MODULES` projection, and each section's read/write routes to its
+ * OWNING pillar (capability-gated) via `SectionRenderer`.
+ */
 export function SettingsPage() {
   const { t } = useTranslation('shell');
   const handleTestAction = useTestActionHandler();
 
-  const manifests = useMemo(() => getManifests(), []);
+  const { data: sections, isLoading } = useSettingsSections();
+  const manifests = useMemo(() => (sections ?? []).map((section) => section.manifest), [sections]);
   const [selectedId, setSelectedId] = useHashSelectedId(manifests);
 
   const handleSelect = useCallback(
@@ -59,11 +68,13 @@ export function SettingsPage() {
     [setSelectedId]
   );
 
-  const selectedManifest = useMemo(
-    () => manifests.find((m) => m.id === selectedId) ?? manifests[0],
-    [manifests, selectedId]
+  const selectedSection = useMemo(
+    () =>
+      (sections ?? []).find((section) => section.manifest.id === selectedId) ?? (sections ?? [])[0],
+    [sections, selectedId]
   );
 
+  if (isLoading) return <SettingsLoadingSidebar />;
   if (!manifests.length) return <SettingsEmpty />;
 
   return (
@@ -90,17 +101,17 @@ export function SettingsPage() {
             options={manifests.map((m) => ({ value: m.id, label: m.title }))}
           />
         </div>
-        {selectedManifest && (
+        {selectedSection && (
           <div className="flex-1 overflow-y-auto p-6">
-            <ManifestPanel manifest={selectedManifest} onTestAction={handleTestAction} />
+            <ManifestPanel section={selectedSection} onTestAction={handleTestAction} />
           </div>
         )}
       </div>
 
       {/* Desktop: right content pane */}
-      {selectedManifest && (
+      {selectedSection && (
         <div className="hidden md:block flex-1 overflow-y-auto p-6 min-w-0">
-          <ManifestPanel manifest={selectedManifest} onTestAction={handleTestAction} />
+          <ManifestPanel section={selectedSection} onTestAction={handleTestAction} />
         </div>
       )}
     </div>

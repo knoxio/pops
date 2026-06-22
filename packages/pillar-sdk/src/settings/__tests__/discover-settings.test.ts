@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { discoverSettings, findSettingsManifest } from '../discover-settings.js';
 
+import type { CapabilityStatuses } from '../../bootstrap/transport.js';
 import type { PillarSnapshot } from '../../discovery/types.js';
 import type { ManifestPayload, SettingsManifestDescriptor } from '../../manifest-schema/index.js';
 
@@ -48,14 +49,16 @@ function manifest(
 function snapshot(
   pillarId: string,
   manifests?: readonly SettingsManifestDescriptor[],
-  registered = true
+  options: { registered?: boolean; capabilities?: CapabilityStatuses } = {}
 ): PillarSnapshot {
+  const { registered = true, capabilities } = options;
   return {
     pillarId,
     baseUrl: `https://${pillarId}.test`,
     manifest: manifest(pillarId, manifests),
     registered,
     lastSeenAt: new Date('2026-01-01T00:00:00Z'),
+    ...(capabilities !== undefined ? { capabilities } : {}),
   };
 }
 
@@ -65,22 +68,38 @@ describe('discoverSettings', () => {
     expect(result).toEqual([]);
   });
 
-  it('returns the lone contribution when a single pillar contributes one manifest', async () => {
+  it('returns the lone contribution tagged with its owner pillar', async () => {
     const finance = snapshot('finance', [descriptor('finance')]);
     const result = await discoverSettings({ discovery: [finance] });
-    expect(result.map((m) => m.id)).toEqual(['finance']);
+    expect(result.map((c) => c.descriptor.id)).toEqual(['finance']);
+    expect(result.map((c) => c.ownerPillar)).toEqual(['finance']);
   });
 
-  it('flattens contributions from a pillar declaring multiple manifests', async () => {
+  it('attaches the owning pillar to every contribution it flattens', async () => {
     const cerebrum = snapshot('cerebrum', [
       descriptor('cerebrum', { order: 0 }),
       descriptor('ego', { order: 1 }),
     ]);
     const result = await discoverSettings({ discovery: [cerebrum] });
-    expect(result.map((m) => m.id)).toEqual(['cerebrum', 'ego']);
+    expect(result.map((c) => c.descriptor.id)).toEqual(['cerebrum', 'ego']);
+    expect(result.every((c) => c.ownerPillar === 'cerebrum')).toBe(true);
   });
 
-  it('orders contributions by (pillarId, manifest.order, manifest.id) across pillars', async () => {
+  it('exposes the live capabilities map so the shell can gate the cutover', async () => {
+    const finance = snapshot('finance', [descriptor('finance')], {
+      capabilities: { settings: true },
+    });
+    const [contribution] = await discoverSettings({ discovery: [finance] });
+    expect(contribution?.capabilities).toEqual({ settings: true });
+  });
+
+  it('omits capabilities when the snapshot carries none (legacy pillar)', async () => {
+    const finance = snapshot('finance', [descriptor('finance')]);
+    const [contribution] = await discoverSettings({ discovery: [finance] });
+    expect(contribution?.capabilities).toBeUndefined();
+  });
+
+  it('orders contributions by (ownerPillar, descriptor.order, descriptor.id) across pillars', async () => {
     const media = snapshot('media', [
       descriptor('plex', { order: 2 }),
       descriptor('arr', { order: 1 }),
@@ -90,16 +109,17 @@ describe('discoverSettings', () => {
 
     const result = await discoverSettings({ discovery: [media, finance] });
 
-    expect(result.map((m) => m.id)).toEqual(['finance', 'arr', 'rotation', 'plex']);
+    expect(result.map((c) => c.descriptor.id)).toEqual(['finance', 'arr', 'rotation', 'plex']);
+    expect(result.map((c) => c.ownerPillar)).toEqual(['finance', 'media', 'media', 'media']);
   });
 
   it('skips pillars whose registration is not active', async () => {
     const active = snapshot('finance', [descriptor('finance')]);
-    const inactive = snapshot('cerebrum', [descriptor('cerebrum')], false);
+    const inactive = snapshot('cerebrum', [descriptor('cerebrum')], { registered: false });
 
     const result = await discoverSettings({ discovery: [active, inactive] });
 
-    expect(result.map((m) => m.id)).toEqual(['finance']);
+    expect(result.map((c) => c.descriptor.id)).toEqual(['finance']);
   });
 
   it('treats a missing settings block as no contribution', async () => {
@@ -108,30 +128,31 @@ describe('discoverSettings', () => {
 
     const result = await discoverSettings({ discovery: [contributor, silent] });
 
-    expect(result.map((m) => m.id)).toEqual(['finance']);
+    expect(result.map((c) => c.descriptor.id)).toEqual(['finance']);
   });
 
   it('resolves discovery from an async fetcher', async () => {
     const finance = snapshot('finance', [descriptor('finance')]);
     const result = await discoverSettings({ discovery: async () => [finance] });
-    expect(result.map((m) => m.id)).toEqual(['finance']);
+    expect(result.map((c) => c.descriptor.id)).toEqual(['finance']);
   });
 });
 
 describe('findSettingsManifest', () => {
-  it('returns the matching manifest when an id is present', async () => {
+  it('returns the matching contribution when an id is present', async () => {
     const cerebrum = snapshot('cerebrum', [descriptor('cerebrum'), descriptor('ego')]);
-    const manifests = await discoverSettings({ discovery: [cerebrum] });
+    const contributions = await discoverSettings({ discovery: [cerebrum] });
 
-    const ego = findSettingsManifest(manifests, 'ego');
+    const ego = findSettingsManifest(contributions, 'ego');
 
-    expect(ego?.id).toBe('ego');
+    expect(ego?.descriptor.id).toBe('ego');
+    expect(ego?.ownerPillar).toBe('cerebrum');
   });
 
   it('returns undefined for an unknown id', async () => {
     const finance = snapshot('finance', [descriptor('finance')]);
-    const manifests = await discoverSettings({ discovery: [finance] });
+    const contributions = await discoverSettings({ discovery: [finance] });
 
-    expect(findSettingsManifest(manifests, 'no-such-pillar')).toBeUndefined();
+    expect(findSettingsManifest(contributions, 'no-such-pillar')).toBeUndefined();
   });
 });

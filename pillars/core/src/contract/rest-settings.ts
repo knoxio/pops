@@ -25,6 +25,12 @@
  * shrinking it to core's manifest-only key set is the S4 node, and the live
  * cross-pillar surface (`PLEX_URL`, `PLEX_TOKEN`, … that finance reads) plus
  * the `core-settings-sdk-itest` depend on the full enum here.
+ *
+ * On top of the shared protocol, core ALSO serves the federation aggregator
+ * (settings-federation S3): `GET /settings/aggregate` fans out over the live
+ * registry to every federated pillar's `GET /settings` and returns the unified
+ * admin view (sensitive redacted). It is identity-gated (`core.settings.aggregate`);
+ * the in-cluster fan-out itself carries the shared internal token (OD-7).
  */
 import { initContract } from '@ts-rest/core';
 import { z } from 'zod';
@@ -40,6 +46,19 @@ const SettingKeyParam = z.object({ key: z.enum(SETTINGS_KEY_VALUES) });
 
 const federatedSettingsContract = makeSettingsContract(SETTINGS_KEY_VALUES, AUTH_ERR_RESPONSES);
 
+const AggregateSettingRowSchema = z.object({ key: z.string(), value: z.string() });
+
+const SettingsAggregateSchema = z.object({
+  pillars: z.array(
+    z.object({
+      pillarId: z.string(),
+      settings: z.array(AggregateSettingRowSchema),
+      error: z.enum(['unreachable', 'unauthorized']).optional(),
+    })
+  ),
+  fetchedAt: z.string(),
+});
+
 /**
  * Composed by explicit per-route reference rather than object spread: spreading
  * the factory's intersection-typed return widens the route map so
@@ -47,6 +66,18 @@ const federatedSettingsContract = makeSettingsContract(SETTINGS_KEY_VALUES, AUTH
  * shapes. Referencing each route preserves the discrete keys.
  */
 export const coreSettingsContract = c.router({
+  // `aggregate` is declared before `get` so the express router matches
+  // `GET /settings/aggregate` to this route rather than capturing `aggregate`
+  // as the `:key` path-param of `GET /settings/:key`.
+  aggregate: {
+    method: 'GET',
+    path: '/settings/aggregate',
+    responses: {
+      200: SettingsAggregateSchema,
+      ...AUTH_ERR_RESPONSES,
+    },
+    summary: 'Unified admin settings view fanned out over the live pillar registry',
+  },
   list: federatedSettingsContract.list,
   get: federatedSettingsContract.get,
   getMany: federatedSettingsContract.getMany,

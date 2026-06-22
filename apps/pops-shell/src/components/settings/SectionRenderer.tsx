@@ -1,47 +1,18 @@
-import { settingsGetMany, settingsSetMany } from '@/core-api';
-import { unwrap } from '@/core-api-helpers';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useCallback, useMemo } from 'react';
+import { useCallback } from 'react';
 
 import { Skeleton } from '@pops/ui';
 
 import { GroupRenderer } from './section-renderer/GroupRenderer';
-import { useAutoSave } from './section-renderer/useAutoSave';
-import { useDynamicOptions } from './section-renderer/useDynamicOptions';
-import { useDynamicOptionsLoaders } from './section-renderer/useDynamicOptionsLoaders';
-import { useSettingsValues } from './section-renderer/useSettingsValues';
+import { useSectionState } from './section-renderer/useSectionState';
 
 import type { SettingsManifest } from '@pops/types';
 
-/**
- * Reads and writes the section's settings over core's REST surface
- * (`settings.getMany` / `settings.setMany`). Both round-trip the
- * `{ settings: Record<string, string> }` shape `useSettingsValues` and
- * `useAutoSave` expect. The setter invalidates the matching `getMany` query
- * so the loaded baseline reflects the saved value.
- */
-function useBulkSettings(allKeys: string[]) {
-  const queryClient = useQueryClient();
-  const queryKey = ['core', 'settings', 'getMany', allKeys] as const;
-
-  const query = useQuery({
-    queryKey,
-    queryFn: async () => unwrap(await settingsGetMany({ body: { keys: allKeys } })),
-  });
-
-  const mutation = useMutation({
-    mutationFn: async (input: { entries: { key: string; value: string }[] }) =>
-      unwrap(await settingsSetMany({ body: { entries: input.entries } })),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['core', 'settings', 'getMany'] });
-    },
-  });
-
-  return { query, mutation };
-}
-
 interface SectionRendererProps {
   manifest: SettingsManifest;
+  /** The pillar that owns this section's settings; resolves the transport. */
+  ownerPillar?: string;
+  /** Live `capabilities.settings` flag — routes to the pillar when true, else core. */
+  hasFederatedSettings?: boolean;
   optionsLoaders?: Record<string, () => Promise<{ value: string; label: string }[]>>;
   onTestAction?: (procedure: string) => Promise<void>;
 }
@@ -62,29 +33,28 @@ function applyDynamicOptions(
   };
 }
 
-export function SectionRenderer({ manifest, optionsLoaders, onTestAction }: SectionRendererProps) {
-  const allKeys = useMemo(
-    () => manifest.groups.flatMap((g) => g.fields.map((f) => f.key)),
-    [manifest.groups]
-  );
-  const fieldsByKey = useMemo(
-    () => Object.fromEntries(manifest.groups.flatMap((g) => g.fields.map((f) => [f.key, f]))),
-    [manifest.groups]
-  );
-
-  const { query: bulkQuery, mutation: setBulkMutation } = useBulkSettings(allKeys);
-  const { data, isLoading } = bulkQuery;
-
-  const { values, setValues, loadedKeys } = useSettingsValues({ data, manifest });
-  const dynamicLoaders = useDynamicOptionsLoaders(manifest);
-  const mergedLoaders = useMemo(
-    () => (optionsLoaders ? { ...dynamicLoaders, ...optionsLoaders } : dynamicLoaders),
-    [dynamicLoaders, optionsLoaders]
-  );
-  const { dynamicOptions, loadingOptionKeys } = useDynamicOptions(
-    Object.keys(mergedLoaders).length > 0 ? mergedLoaders : undefined
-  );
-  const { saveStates, handleChange } = useAutoSave({ setBulkMutation, fieldsByKey, setValues });
+/**
+ * Renders one settings section and routes its read/write to the OWNING pillar
+ * (capability-gated) via `useSectionState` (settings-federation S3). When the
+ * owning pillar has not advertised the `settings` capability the transport
+ * falls back to core, so an un-upgraded pillar keeps working.
+ */
+export function SectionRenderer({
+  manifest,
+  ownerPillar = 'core',
+  hasFederatedSettings = false,
+  optionsLoaders,
+  onTestAction,
+}: SectionRendererProps) {
+  const {
+    isLoading,
+    values,
+    loadedKeys,
+    dynamicOptions,
+    loadingOptionKeys,
+    saveStates,
+    handleChange,
+  } = useSectionState(manifest, ownerPillar, hasFederatedSettings, optionsLoaders);
 
   const handleTestAction = useCallback(
     async (procedure: string) => {
