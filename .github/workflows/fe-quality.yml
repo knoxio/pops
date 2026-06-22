@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
     paths:
-      - "apps/pops-shell/**"
+      - "pillars/shell/**"
       - "pillars/*/app/**"
       # Every pillar's OpenAPI projection feeds the generated FE client.
       # Globbed from disk so a new pillar (or `lists`, previously omitted)
@@ -18,7 +18,7 @@ on:
       - ".github/workflows/fe-quality.yml"
   pull_request:
     paths:
-      - "apps/pops-shell/**"
+      - "pillars/shell/**"
       - "pillars/*/app/**"
       - "pillars/*/openapi/**"
       - "libs/db-types/**"
@@ -42,7 +42,7 @@ jobs:
         with:
           filters: |
             shell:
-              - 'apps/pops-shell/**'
+              - 'pillars/shell/**'
               - 'pillars/*/app/**'
               - 'libs/db-types/**'
               # Glob every pillar's OpenAPI projection so the filter can't
@@ -84,23 +84,23 @@ jobs:
 
       - name: Build shared packages
         if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
-        run: pnpm --filter "@pops/shell^..." --filter "!./apps/*" build
+        run: pnpm --filter "@pops/shell^..." --filter "!./pillars/*/app" build
 
       - name: Type check
         if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
-        run: cd apps/pops-shell && pnpm typecheck
+        run: cd pillars/shell && pnpm typecheck
 
       # The committed nginx.conf is the prod BOOT FALLBACK (PRD-255). Gate it
       # for drift here, not only via the Vitest snapshot, so a stale fallback
       # fails the build.
       - name: nginx fallback conf drift gate
         if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
-        run: cd apps/pops-shell && pnpm gen:nginx:check
+        run: cd pillars/shell && pnpm gen:nginx:check
 
       - name: Test
         if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
-        run: cd apps/pops-shell && pnpm test
+        run: cd pillars/shell && pnpm test
 
       - name: Build
         if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
-        run: cd apps/pops-shell && pnpm build
+        run: cd pillars/shell && pnpm build

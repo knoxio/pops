@@ -7,7 +7,7 @@ name: Orchestrator Quality
 #
 # Bubble-of-happiness rule: this workflow is the one that MUST stay green
 # for the orchestrator. No Docker job yet — the Dockerfile is a deliberate
-# follow-up (see apps/pops-orchestrator/README.md). Search adapters (epic
+# follow-up (see pillars/orchestrator/README.md). Search adapters (epic
 # 06), the AI-tool registry (epic 07), and the cross-pillar embeddings
 # pipeline land in follow-up increments.
 
@@ -15,7 +15,7 @@ on:
   push:
     branches: [main]
     paths:
-      - "apps/pops-orchestrator/**"
+      - "pillars/orchestrator/**"
       - "libs/sdk/**"
       - "libs/types/**"
       - "pnpm-lock.yaml"
@@ -26,7 +26,7 @@ on:
       - ".github/workflows/orchestrator-quality.yml"
   pull_request:
     paths:
-      - "apps/pops-orchestrator/**"
+      - "pillars/orchestrator/**"
       - "libs/sdk/**"
       - "libs/types/**"
       - "pnpm-lock.yaml"
@@ -58,10 +58,10 @@ jobs:
         run: pnpm install --frozen-lockfile --filter "@pops/orchestrator..."
 
       - name: Format check
-        run: pnpm exec oxfmt --check apps/pops-orchestrator/
+        run: pnpm exec oxfmt --check pillars/orchestrator/
 
       - name: Lint
-        run: pnpm exec oxlint apps/pops-orchestrator/src
+        run: pnpm exec oxlint pillars/orchestrator/src
 
       - name: Build transitive deps
         run: pnpm --filter "@pops/orchestrator^..." build

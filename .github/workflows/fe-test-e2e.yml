@@ -41,7 +41,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build shared packages
-        run: pnpm --filter "@pops/shell^..." --filter "!./apps/*" build
+        run: pnpm --filter "@pops/shell^..." --filter "!./pillars/*/app" build
 
       - name: Cache Playwright browsers
         id: playwright-cache
@@ -53,18 +53,18 @@ jobs:
       - name: Install Playwright browsers
         if: steps.playwright-cache.outputs.cache-hit != 'true'
         run: |
-          cd apps/pops-shell
+          cd pillars/shell
           npx playwright install --with-deps
 
       - name: Install Playwright system dependencies
         if: steps.playwright-cache.outputs.cache-hit == 'true'
         run: |
-          cd apps/pops-shell
+          cd pillars/shell
           npx playwright install-deps
 
       - name: Run Playwright tests
         run: |
-          cd apps/pops-shell
+          cd pillars/shell
           # Boots the two shell webServers defined in playwright.config.ts:
           #   - chromium-all-modules — canonical workspace registry
           #   - chromium-finance-only — POPS_APPS=finance,core registry snapshot
@@ -79,7 +79,7 @@ jobs:
         if: always()
         with:
           name: playwright-report
-          path: apps/pops-shell/playwright-report/
+          path: pillars/shell/playwright-report/
           retention-days: 30
 
       - name: Upload test screenshots
@@ -87,5 +87,5 @@ jobs:
         if: failure()
         with:
           name: playwright-screenshots
-          path: apps/pops-shell/test-results/
+          path: pillars/shell/test-results/
           retention-days: 7
