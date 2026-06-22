@@ -97,10 +97,13 @@ pub async fn get(pool: &SqlitePool, id: &str) -> Result<Option<EntityRow>, sqlx:
         .await
 }
 
-/// Fetch one entity by exact name, or `None`. Backs the finance commit
-/// create-or-fetch-by-name idempotency path (a 409 on create fetches here).
+/// Fetch one entity by name, matched case-insensitively, or `None`. Backs the
+/// finance commit create-or-fetch-by-name idempotency path (a 409 on create
+/// fetches here). The `NOCASE` collation matches the name-uniqueness rule, so a
+/// `409` raised by a case-variant create resolves to the row that already owns
+/// that name.
 pub async fn find_by_name(pool: &SqlitePool, name: &str) -> Result<Option<EntityRow>, sqlx::Error> {
-    let sql = format!("SELECT {SELECT_COLUMNS} FROM entities WHERE name = ?1");
+    let sql = format!("SELECT {SELECT_COLUMNS} FROM entities WHERE name COLLATE NOCASE = ?1");
     sqlx::query_as::<_, EntityRow>(&sql)
         .bind(name)
         .fetch_optional(pool)
@@ -139,7 +142,8 @@ pub async fn create(pool: &SqlitePool, body: CreateEntityBody) -> Result<EntityR
     .bind(body.notes.as_deref())
     .bind(&now)
     .execute(pool)
-    .await?;
+    .await
+    .map_err(|err| name_conflict_or(err, &body.name))?;
 
     get(pool, &id).await?.ok_or(RepoError::NotFound)
 }
@@ -188,7 +192,13 @@ pub async fn update(
     }
 
     if !builder.is_empty() {
-        builder.execute(pool, id).await?;
+        builder
+            .execute(pool, id)
+            .await
+            .map_err(|err| match &patch.name {
+                Some(name) => name_conflict_or(err, name),
+                None => RepoError::Db(err),
+            })?;
     }
 
     get(pool, id).await?.ok_or(RepoError::NotFound)
@@ -230,15 +240,41 @@ pub async fn search_candidates(
     .await
 }
 
-/// Whether an entity with `name` exists, optionally excluding the row `exclude`
-/// (so a no-op rename of an entity to its own name is not a conflict).
+/// Map a write failure to a name [`RepoError::Conflict`] when it is the
+/// `NOCASE` unique-name index firing, otherwise pass it through as a raw DB
+/// error. This is the fail-closed backstop: the create/rename pre-check runs in
+/// a separate statement, so a concurrent writer can slip between the check and
+/// the write — the index catches that race and this turns it into the same 409
+/// the pre-check would have returned.
+fn name_conflict_or(err: sqlx::Error, name: &str) -> RepoError {
+    if is_name_unique_violation(&err) {
+        RepoError::Conflict(format!("Entity with name '{name}' already exists"))
+    } else {
+        RepoError::Db(err)
+    }
+}
+
+/// Whether `err` is the `entities.name` unique index firing specifically — not
+/// some other unique constraint (e.g. `notion_id`, or a column a later
+/// migration adds). SQLite reports the offending column as
+/// `UNIQUE constraint failed: entities.name`, so we gate on that rather than on
+/// `is_unique_violation()` alone to avoid mislabeling an unrelated conflict as
+/// a duplicate name.
+fn is_name_unique_violation(err: &sqlx::Error) -> bool {
+    err.as_database_error()
+        .is_some_and(|db| db.is_unique_violation() && db.message().contains("entities.name"))
+}
+
+/// Whether an entity with `name` exists (matched case-insensitively, mirroring
+/// the `NOCASE` unique index), optionally excluding the row `exclude` (so a
+/// no-op rename of an entity to its own name is not a conflict).
 async fn name_exists(
     pool: &SqlitePool,
     name: &str,
     exclude: Option<&str>,
 ) -> Result<bool, sqlx::Error> {
     let found: Option<String> = sqlx::query_scalar(
-        "SELECT id FROM entities WHERE name = ?1 AND (?2 IS NULL OR id <> ?2) LIMIT 1",
+        "SELECT id FROM entities WHERE name COLLATE NOCASE = ?1 AND (?2 IS NULL OR id <> ?2) LIMIT 1",
     )
     .bind(name)
     .bind(exclude)
@@ -351,6 +387,118 @@ mod tests {
         let pool = pool().await;
         create(&pool, body("Acme")).await.expect("first create");
         let err = create(&pool, body("Acme")).await.unwrap_err();
+        assert!(matches!(err, RepoError::Conflict(_)));
+    }
+
+    #[tokio::test]
+    async fn create_rejects_case_variant_name() {
+        let pool = pool().await;
+        create(&pool, body("Acme")).await.expect("first create");
+
+        let err = create(&pool, body("ACME")).await.unwrap_err();
+        assert!(
+            matches!(err, RepoError::Conflict(_)),
+            "a case-variant create must 409, not insert a second row"
+        );
+
+        let (rows, total) = list(&pool, None, None, 50, 0).await.expect("list");
+        assert_eq!(total, 1, "no second row was inserted");
+        assert_eq!(rows[0].name, "Acme", "the original casing is preserved");
+    }
+
+    #[tokio::test]
+    async fn unique_index_blocks_a_direct_case_variant_insert() {
+        let pool = pool().await;
+        create(&pool, body("Acme")).await.expect("seed via repo");
+
+        let direct = sqlx::query(
+            "INSERT INTO entities (id, name, type, last_edited_time) \
+             VALUES (?1, ?2, 'company', '2026-01-01T00:00:00Z')",
+        )
+        .bind(uuid::Uuid::new_v4().to_string())
+        .bind("acme")
+        .execute(&pool)
+        .await;
+
+        let err = direct.expect_err("the NOCASE unique index must reject the case-variant insert");
+        let db = err
+            .as_database_error()
+            .expect("a unique-constraint violation is a database error");
+        assert!(
+            db.is_unique_violation(),
+            "the failure is the unique-name index, not some other error: {db}"
+        );
+        assert!(
+            is_name_unique_violation(&err),
+            "the name index is the offending constraint"
+        );
+    }
+
+    #[tokio::test]
+    async fn a_notion_id_collision_is_not_classified_as_a_name_conflict() {
+        let pool = pool().await;
+        async fn insert_with_notion_id(
+            pool: &SqlitePool,
+            name: &str,
+            notion_id: &str,
+        ) -> Result<(), sqlx::Error> {
+            sqlx::query(
+                "INSERT INTO entities (id, notion_id, name, type, last_edited_time) \
+                 VALUES (?1, ?2, ?3, 'company', '2026-01-01T00:00:00Z')",
+            )
+            .bind(uuid::Uuid::new_v4().to_string())
+            .bind(notion_id)
+            .bind(name)
+            .execute(pool)
+            .await?;
+            Ok(())
+        }
+
+        insert_with_notion_id(&pool, "Acme", "n-1")
+            .await
+            .expect("first insert");
+        let err = insert_with_notion_id(&pool, "Distinct Name", "n-1")
+            .await
+            .expect_err("the notion_id unique constraint rejects the duplicate");
+
+        assert!(
+            err.as_database_error()
+                .is_some_and(|db| db.is_unique_violation()),
+            "it is a unique violation"
+        );
+        assert!(
+            !is_name_unique_violation(&err),
+            "a notion_id collision must NOT be misread as a duplicate name"
+        );
+        assert!(
+            matches!(name_conflict_or(err, "Distinct Name"), RepoError::Db(_)),
+            "an unrelated unique violation passes through as a raw DB error, not a 409"
+        );
+    }
+
+    #[tokio::test]
+    async fn find_by_name_is_case_insensitive() {
+        let pool = pool().await;
+        create(&pool, body("Acme")).await.expect("create");
+
+        let found = find_by_name(&pool, "ACME")
+            .await
+            .expect("find")
+            .expect("a case-variant lookup resolves to the stored row");
+        assert_eq!(found.name, "Acme");
+    }
+
+    #[tokio::test]
+    async fn update_rejects_rename_to_case_variant_of_existing_name() {
+        let pool = pool().await;
+        create(&pool, body("Acme")).await.expect("create a");
+        let b = create(&pool, body("Beta")).await.expect("create b");
+
+        let patch = UpdateEntityBody {
+            name: Some("acme".to_string()),
+            ..Default::default()
+        };
+        let err = update(&pool, &b.id, patch).await.unwrap_err();
         assert!(matches!(err, RepoError::Conflict(_)));
     }
 
