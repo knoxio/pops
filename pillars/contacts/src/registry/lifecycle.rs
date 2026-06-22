@@ -23,7 +23,7 @@ use std::time::Duration;
 use tokio::sync::Notify;
 use tokio::task::JoinHandle;
 
-use super::transport::{RegistryError, RegistryTransport};
+use super::transport::{HeartbeatOutcome, RegistryError, RegistryTransport};
 
 /// Default heartbeat cadence — matches the SDK `DEFAULT_HEARTBEAT_MS` and core's
 /// `HEARTBEAT_INTERVAL_MS`.
@@ -161,8 +161,23 @@ async fn run_until_shutdown<T: RegistryTransport>(
 
     loop {
         ticker.tick().await;
-        if let Err(err) = transport.heartbeat(pillar_id).await {
-            tracing::warn!(error = %err, "heartbeat failed (best-effort)");
+        match transport.heartbeat(pillar_id).await {
+            Ok(HeartbeatOutcome::Acknowledged) => {}
+            Ok(HeartbeatOutcome::NotRegistered) => {
+                // Core answered but has no row for us — the initial register
+                // never landed, or we were evicted after a long outage. Without
+                // re-registering here the pillar would heartbeat into the void
+                // forever (core soft-fails not-registered at HTTP 200, so the
+                // loop would never otherwise recover). Re-register, then resume
+                // the cadence.
+                tracing::warn!("registry reports this pillar is not registered — re-registering");
+                if let Err(err) = register_with_retry(transport, base_url, manifest, config).await {
+                    tracing::warn!(error = %err, "re-registration failed — will retry next heartbeat");
+                }
+            }
+            Err(err) => {
+                tracing::warn!(error = %err, "heartbeat failed (best-effort)");
+            }
         }
     }
 }
@@ -241,13 +256,16 @@ mod tests {
     }
 
     /// Fake transport that fails register `fail_register_times` times (with the
-    /// configured retriability) before succeeding, and records calls.
+    /// configured retriability) before succeeding, and records calls. The first
+    /// `heartbeat_not_registered_times` heartbeats report `NotRegistered` to
+    /// exercise the re-register path.
     struct FakeTransport {
         register_calls: AtomicU32,
         heartbeat_calls: AtomicU32,
         deregister_calls: AtomicU32,
         fail_register_times: u32,
         register_retriable: bool,
+        heartbeat_not_registered_times: u32,
         last_base_url: Mutex<Option<String>>,
         last_manifest: Mutex<Option<serde_json::Value>>,
     }
@@ -260,9 +278,15 @@ mod tests {
                 deregister_calls: AtomicU32::new(0),
                 fail_register_times,
                 register_retriable,
+                heartbeat_not_registered_times: 0,
                 last_base_url: Mutex::new(None),
                 last_manifest: Mutex::new(None),
             }
+        }
+
+        fn with_not_registered_heartbeats(mut self, times: u32) -> Self {
+            self.heartbeat_not_registered_times = times;
+            self
         }
     }
 
@@ -285,9 +309,13 @@ mod tests {
             Ok(())
         }
 
-        async fn heartbeat(&self, _pillar_id: &str) -> Result<(), RegistryError> {
-            self.heartbeat_calls.fetch_add(1, Ordering::SeqCst);
-            Ok(())
+        async fn heartbeat(&self, _pillar_id: &str) -> Result<HeartbeatOutcome, RegistryError> {
+            let n = self.heartbeat_calls.fetch_add(1, Ordering::SeqCst);
+            if n < self.heartbeat_not_registered_times {
+                Ok(HeartbeatOutcome::NotRegistered)
+            } else {
+                Ok(HeartbeatOutcome::Acknowledged)
+            }
         }
 
         async fn deregister(&self, _pillar_id: &str) -> Result<(), RegistryError> {
@@ -401,6 +429,34 @@ mod tests {
         assert!(
             transport.heartbeat_calls.load(Ordering::SeqCst) >= 1,
             "heartbeats fire even after a failed registration"
+        );
+        assert_eq!(transport.deregister_calls.load(Ordering::SeqCst), 1);
+    }
+
+    #[tokio::test]
+    async fn lifecycle_reregisters_when_a_heartbeat_reports_not_registered() {
+        // Initial register succeeds, but the first two heartbeats report
+        // not-registered (e.g. the pillar was evicted). Each must trigger a
+        // re-register so membership is restored — otherwise the pillar would
+        // heartbeat into the void forever.
+        let transport = Arc::new(FakeTransport::new(0, true).with_not_registered_heartbeats(2));
+        let handle = spawn_lifecycle(
+            Arc::clone(&transport),
+            "http://localhost:3010".to_string(),
+            serde_json::json!({ "pillar": "contacts" }),
+            "contacts".to_string(),
+            fast_config(),
+        );
+        // 5ms cadence; sleep long enough for both not-registered heartbeats.
+        tokio::time::sleep(Duration::from_millis(60)).await;
+        handle.stop().await;
+
+        // 1 initial register + at least 2 re-registers (one per not-registered
+        // heartbeat).
+        assert!(
+            transport.register_calls.load(Ordering::SeqCst) >= 3,
+            "each not-registered heartbeat triggers a re-register (got {})",
+            transport.register_calls.load(Ordering::SeqCst)
         );
         assert_eq!(transport.deregister_calls.load(Ordering::SeqCst), 1);
     }

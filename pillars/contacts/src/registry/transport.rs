@@ -100,6 +100,21 @@ impl std::fmt::Display for RegistryError {
 
 impl std::error::Error for RegistryError {}
 
+/// Outcome of a heartbeat that reached the registry (HTTP 2xx).
+///
+/// Core's heartbeat route soft-fails with `{ ok: false, reason: 'not-registered' }`
+/// at HTTP 200 when the pillar has no registration row (e.g. it was evicted, or
+/// the initial register never succeeded). Distinguishing this from an
+/// acknowledged heartbeat lets the lifecycle re-register instead of
+/// heartbeating into the void forever.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum HeartbeatOutcome {
+    /// `{ ok: true, … }` — the registration is live.
+    Acknowledged,
+    /// `{ ok: false, reason: 'not-registered' }` — core has no row for us.
+    NotRegistered,
+}
+
 /// The registry operations a pillar drives over its lifetime. A trait so the
 /// lifecycle loop can be exercised against an in-process fake (the integration
 /// tests) without a live core.
@@ -115,8 +130,13 @@ pub trait RegistryTransport: Send + Sync {
         base_url: &str,
         manifest: &Value,
     ) -> impl Future<Output = Result<(), RegistryError>> + Send;
-    /// Report liveness for `pillar_id`.
-    fn heartbeat(&self, pillar_id: &str) -> impl Future<Output = Result<(), RegistryError>> + Send;
+    /// Report liveness for `pillar_id`. A transport error is a failure to
+    /// reach/parse the registry; an `Ok(NotRegistered)` means core answered but
+    /// has no row for us (re-register).
+    fn heartbeat(
+        &self,
+        pillar_id: &str,
+    ) -> impl Future<Output = Result<HeartbeatOutcome, RegistryError>> + Send;
     /// Drop `pillar_id`'s registration on graceful shutdown.
     fn deregister(&self, pillar_id: &str)
         -> impl Future<Output = Result<(), RegistryError>> + Send;
@@ -180,11 +200,11 @@ impl ResolverLeg {
 }
 
 /// Run `send` across the leg's candidate paths with the self-healing
-/// slash-first / legacy-fallback policy.
-async fn resolve_with_fallback<F, Fut>(leg: &ResolverLeg, send: F) -> Result<(), RegistryError>
+/// slash-first / legacy-fallback policy, returning the winning call's value.
+async fn resolve_with_fallback<T, F, Fut>(leg: &ResolverLeg, send: F) -> Result<T, RegistryError>
 where
     F: Fn(&'static str) -> Fut,
-    Fut: std::future::Future<Output = Result<(), RegistryError>>,
+    Fut: std::future::Future<Output = Result<T, RegistryError>>,
 {
     let candidates = leg.candidates();
     let last_index = candidates.len() - 1;
@@ -193,9 +213,9 @@ where
     for (index, path) in candidates.iter().enumerate() {
         let is_last = index == last_index;
         match send(path).await {
-            Ok(()) => {
+            Ok(value) => {
                 leg.remember(path);
-                return Ok(());
+                return Ok(value);
             }
             Err(err) => {
                 if !err.is_not_found() || is_last {
@@ -261,7 +281,10 @@ impl HttpRegistryTransport {
         }
     }
 
-    async fn post(&self, path: &str, body: &Value) -> Result<(), RegistryError> {
+    /// POST `body` to `path`; on a 2xx return the parsed JSON response body
+    /// (`Value::Null` if it is empty/unparseable, which is fine for the callers
+    /// that ignore the body). A non-2xx maps to a typed [`RegistryError`].
+    async fn post(&self, path: &str, body: &Value) -> Result<Value, RegistryError> {
         let url = format!("{}{path}", self.base_url);
         let response = self
             .client
@@ -272,11 +295,21 @@ impl HttpRegistryTransport {
             .map_err(|err| RegistryError::network(format!("POST {path} failed: {err}")))?;
 
         let status = response.status().as_u16();
-        if response.status().is_success() {
-            return Ok(());
-        }
+        let is_success = response.status().is_success();
         let text = response.text().await.unwrap_or_default();
+        if is_success {
+            return Ok(serde_json::from_str(&text).unwrap_or(Value::Null));
+        }
         Err(RegistryError::from_status(path, status, &text))
+    }
+}
+
+/// Parse a heartbeat response body into a [`HeartbeatOutcome`]. `ok: false`
+/// (or a missing `ok`) is treated as not-registered; anything else is an ack.
+fn heartbeat_outcome(body: &Value) -> HeartbeatOutcome {
+    match body.get("ok").and_then(Value::as_bool) {
+        Some(true) => HeartbeatOutcome::Acknowledged,
+        _ => HeartbeatOutcome::NotRegistered,
     }
 }
 
@@ -287,17 +320,21 @@ impl RegistryTransport for HttpRegistryTransport {
             "baseUrl": base_url,
             "manifest": manifest,
         });
-        resolve_with_fallback(&self.register_leg, |path| self.post(path, &body)).await
+        resolve_with_fallback(&self.register_leg, |path| self.post(path, &body)).await?;
+        Ok(())
     }
 
-    async fn heartbeat(&self, pillar_id: &str) -> Result<(), RegistryError> {
+    async fn heartbeat(&self, pillar_id: &str) -> Result<HeartbeatOutcome, RegistryError> {
         let body = serde_json::json!({ "pillarId": pillar_id });
-        resolve_with_fallback(&self.heartbeat_leg, |path| self.post(path, &body)).await
+        let response =
+            resolve_with_fallback(&self.heartbeat_leg, |path| self.post(path, &body)).await?;
+        Ok(heartbeat_outcome(&response))
     }
 
     async fn deregister(&self, pillar_id: &str) -> Result<(), RegistryError> {
         let body = serde_json::json!({ "pillarId": pillar_id });
-        resolve_with_fallback(&self.deregister_leg, |path| self.post(path, &body)).await
+        resolve_with_fallback(&self.deregister_leg, |path| self.post(path, &body)).await?;
+        Ok(())
     }
 }
 
@@ -324,6 +361,24 @@ mod tests {
         assert!(server_error("/p").retriable);
         assert!(!not_found("/p").retriable);
         assert!(!RegistryError::from_status("/p", 400, "bad").retriable);
+    }
+
+    #[test]
+    fn heartbeat_outcome_distinguishes_ack_from_not_registered() {
+        assert_eq!(
+            heartbeat_outcome(&serde_json::json!({ "ok": true, "pillarId": "contacts" })),
+            HeartbeatOutcome::Acknowledged
+        );
+        assert_eq!(
+            heartbeat_outcome(&serde_json::json!({ "ok": false, "reason": "not-registered" })),
+            HeartbeatOutcome::NotRegistered
+        );
+        // A missing/odd body is treated conservatively as not-registered so the
+        // lifecycle re-registers rather than assuming membership.
+        assert_eq!(
+            heartbeat_outcome(&Value::Null),
+            HeartbeatOutcome::NotRegistered
+        );
     }
 
     #[tokio::test]
@@ -377,7 +432,7 @@ mod tests {
 
         let err = resolve_with_fallback(&leg, |path| {
             seen.borrow_mut().push(path);
-            async move { Err(server_error(path)) }
+            async move { Result::<(), RegistryError>::Err(server_error(path)) }
         })
         .await
         .expect_err("5xx is surfaced");
@@ -426,9 +481,11 @@ mod tests {
     #[tokio::test]
     async fn a_404_from_both_candidates_surfaces_the_last_error() {
         let leg = ResolverLeg::new("/registry/register", "/core.registry.register");
-        let err = resolve_with_fallback(&leg, |path| async move { Err(not_found(path)) })
-            .await
-            .expect_err("both 404 → error");
+        let err = resolve_with_fallback(&leg, |path| async move {
+            Result::<(), RegistryError>::Err(not_found(path))
+        })
+        .await
+        .expect_err("both 404 → error");
         assert!(err.is_not_found());
     }
 }

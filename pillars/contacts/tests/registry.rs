@@ -19,7 +19,7 @@ use serde_json::{json, Value};
 use tokio::net::TcpListener;
 
 use contacts::manifest::build_contacts_manifest;
-use contacts::registry::{HttpRegistryTransport, RegistryTransport};
+use contacts::registry::{HeartbeatOutcome, HttpRegistryTransport, RegistryTransport};
 
 /// Records every register/heartbeat/deregister call the mock registry saw.
 #[derive(Default)]
@@ -181,10 +181,15 @@ async fn heartbeat_and_deregister_round_trip_over_real_http() {
     let (base_url, log) = spawn_mock_registry(false).await;
     let transport = HttpRegistryTransport::new(base_url);
 
-    transport
+    let outcome = transport
         .heartbeat("contacts")
         .await
         .expect("heartbeat succeeds");
+    assert_eq!(
+        outcome,
+        HeartbeatOutcome::Acknowledged,
+        "the mock returns {{ ok: true }}, so the heartbeat is acknowledged"
+    );
     transport
         .deregister("contacts")
         .await

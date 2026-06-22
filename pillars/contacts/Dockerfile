@@ -31,10 +31,13 @@ COPY crates/pops-ai/Cargo.toml ./crates/pops-ai/
 COPY crates/pops-settings/Cargo.toml ./crates/pops-settings/
 COPY pillars/contacts/Cargo.toml ./pillars/contacts/
 
-# Stub sources so the dependency layer compiles without the real code. Each
-# member needs a lib target to satisfy its manifest; contacts also declares two
-# bins. Building here warms the registry-download cache (the slow part);
-# `--mount=type=cache` keeps it across builds.
+# Stub sources so the dependency layer compiles the third-party crate graph
+# without the real source. Each member needs a lib target to satisfy its
+# manifest; contacts also declares two bins. The stub lib is empty and the
+# stub bins are trivial `fn main() {}`, so this build genuinely SUCCEEDS — it
+# compiles every dependency (the slow part, cached via `--mount=type=cache`)
+# plus a trivial crate. No `|| true`: a broken dependency graph fails here
+# loudly instead of being masked.
 RUN mkdir -p crates/pops-ai/src crates/pops-settings/src \
         pillars/contacts/src pillars/contacts/src/bin \
     && echo '' > crates/pops-ai/src/lib.rs \
@@ -43,14 +46,13 @@ RUN mkdir -p crates/pops-ai/src crates/pops-settings/src \
     && echo 'fn main() {}' > pillars/contacts/src/main.rs \
     && echo 'fn main() {}' > pillars/contacts/src/bin/emit_openapi.rs
 RUN --mount=type=cache,target=/usr/local/cargo/registry \
-    cargo build --release --manifest-path crates/Cargo.toml -p contacts || true
+    cargo build --release --manifest-path crates/Cargo.toml -p contacts
 
-# Real sources. The contacts crate's own build artifacts from the stub layer
-# are stale (they compiled the empty stub lib/main), and cargo fingerprints by
-# mtime — so purge the contacts crate's artifacts to force a clean recompile of
-# the crate against the real source. The (cached, slow) dependency artifacts in
-# `target/release/deps` for third-party crates are untouched, so the rebuild is
-# still fast.
+# Real sources. The contacts crate's own artifacts from the stub layer compiled
+# the empty stub lib/main, and cargo fingerprints by mtime — so purge the
+# contacts crate's artifacts to force a clean recompile against the real source.
+# The (cached, slow) third-party dependency artifacts in `target/release/deps`
+# are untouched, so the rebuild is still fast.
 COPY pillars/contacts/migrations ./pillars/contacts/migrations
 COPY pillars/contacts/openapi ./pillars/contacts/openapi
 COPY pillars/contacts/src ./pillars/contacts/src
