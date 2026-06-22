@@ -4,16 +4,16 @@ on:
   push:
     branches: [main]
     paths:
-      - "packages/navigation/**"
-      - "packages/db-types/**"
-      - "packages/types/**"
+      - "libs/navigation/**"
+      - "libs/db-types/**"
+      - "libs/types/**"
       - ".github/workflows/navigation-quality.yml"
       - ".github/workflows/_pkg-check.yml"
   pull_request:
     paths:
-      - "packages/navigation/**"
-      - "packages/db-types/**"
-      - "packages/types/**"
+      - "libs/navigation/**"
+      - "libs/db-types/**"
+      - "libs/types/**"
       - ".github/workflows/navigation-quality.yml"
       - ".github/workflows/_pkg-check.yml"
 
@@ -31,9 +31,9 @@ jobs:
         with:
           filters: |
             relevant:
-              - 'packages/navigation/**'
-              - 'packages/db-types/**'
-              - 'packages/types/**'
+              - 'libs/navigation/**'
+              - 'libs/db-types/**'
+              - 'libs/types/**'
               - '.github/workflows/navigation-quality.yml'
               - '.github/workflows/_pkg-check.yml'
 
@@ -42,7 +42,7 @@ jobs:
     if: always()
     uses: ./.github/workflows/_pkg-check.yml
     with:
-      package-path: packages/navigation
+      package-path: libs/navigation
       needs-db-build: true
       has-test: true
       skip: ${{ github.event_name == 'pull_request' && needs.changes.outputs.relevant != 'true' }}

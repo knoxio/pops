@@ -4,12 +4,12 @@ on:
   push:
     branches: [main]
     paths:
-      - "packages/ai-telemetry/**"
+      - "libs/ai-telemetry/**"
       - ".github/workflows/ai-telemetry-quality.yml"
       - ".github/workflows/_pkg-check.yml"
   pull_request:
     paths:
-      - "packages/ai-telemetry/**"
+      - "libs/ai-telemetry/**"
       - ".github/workflows/ai-telemetry-quality.yml"
       - ".github/workflows/_pkg-check.yml"
 
@@ -27,7 +27,7 @@ jobs:
         with:
           filters: |
             relevant:
-              - 'packages/ai-telemetry/**'
+              - 'libs/ai-telemetry/**'
               - '.github/workflows/ai-telemetry-quality.yml'
               - '.github/workflows/_pkg-check.yml'
 
@@ -36,7 +36,7 @@ jobs:
     if: always()
     uses: ./.github/workflows/_pkg-check.yml
     with:
-      package-path: packages/ai-telemetry
+      package-path: libs/ai-telemetry
       has-test: true
       needs-db-build: false
       skip: ${{ github.event_name == 'pull_request' && needs.changes.outputs.relevant != 'true' }}

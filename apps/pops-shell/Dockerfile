@@ -4,7 +4,7 @@ WORKDIR /app
 # The shell composes every pillar app (`@pops/app-*`), and those apps import
 # contract/dsl types from their pillar packages (`@pops/finance`,
 # `@pops/food/dsl`, …). The full workspace closure of `@pops/shell` therefore
-# spans most of `packages/*` plus every `pillars/*` contract. Rather than
+# spans most of `libs/*` plus every `pillars/*` contract. Rather than
 # hand-list ~20 COPY blocks (which drift every time the migration reshapes a
 # package), copy the whole workspace and let pnpm's `--filter "@pops/shell..."`
 # scope install + build to the real subgraph. `.dockerignore` keeps
@@ -12,7 +12,7 @@ WORKDIR /app
 # discarded — only `apps/pops-shell/dist` reaches the nginx image — so the
 # wider copy adds no weight to the published artifact.
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json .oxfmtrc.json ./
-COPY packages/ ./packages/
+COPY libs/ ./libs/
 COPY pillars/ ./pillars/
 COPY apps/pops-shell/ ./apps/pops-shell/
 
