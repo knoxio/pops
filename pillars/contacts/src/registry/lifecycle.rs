@@ -136,6 +136,37 @@ impl LifecycleHandle {
     }
 }
 
+/// Register (with backoff), then heartbeat forever. Returns only if the
+/// heartbeat loop is somehow exited; in practice it runs until the caller's
+/// `select!` shutdown branch cancels it. Split out so the cancellation point is
+/// the single `select!` in [`spawn_lifecycle`].
+async fn run_until_shutdown<T: RegistryTransport>(
+    transport: &T,
+    base_url: &str,
+    manifest: &serde_json::Value,
+    pillar_id: &str,
+    config: &LifecycleConfig,
+) {
+    if let Err(err) = register_with_retry(transport, base_url, manifest, config).await {
+        tracing::warn!(
+            error = %err,
+            "initial registration failed — serving anyway; heartbeats will re-establish membership"
+        );
+    }
+
+    let mut ticker = tokio::time::interval(config.heartbeat);
+    // The first tick fires immediately; skip it so we don't double up with the
+    // register we just did.
+    ticker.tick().await;
+
+    loop {
+        ticker.tick().await;
+        if let Err(err) = transport.heartbeat(pillar_id).await {
+            tracing::warn!(error = %err, "heartbeat failed (best-effort)");
+        }
+    }
+}
+
 /// Spawn the boot-register + heartbeat loop as a detached task.
 ///
 /// The task first registers (with backoff). Whether or not registration
@@ -160,29 +191,13 @@ where
     let task_shutdown = Arc::clone(&shutdown);
 
     let task = tokio::spawn(async move {
-        if let Err(err) = register_with_retry(&*transport, &base_url, &manifest, &config).await {
-            tracing::warn!(
-                error = %err,
-                "initial registration failed — serving anyway; heartbeats will re-establish membership"
-            );
-        }
-
-        let mut ticker = tokio::time::interval(config.heartbeat);
-        // The first tick fires immediately; skip it so we don't double up with
-        // the register we just did.
-        ticker.tick().await;
-
-        loop {
-            tokio::select! {
-                _ = ticker.tick() => {
-                    if let Err(err) = transport.heartbeat(&pillar_id).await {
-                        tracing::warn!(error = %err, "heartbeat failed (best-effort)");
-                    }
-                }
-                _ = task_shutdown.notified() => {
-                    break;
-                }
-            }
+        // The whole register+heartbeat sequence races against shutdown so a
+        // SIGTERM mid-backoff (registry still unreachable) aborts promptly and
+        // proceeds straight to the best-effort deregister — shutdown latency is
+        // bounded by one in-flight request, never the remaining backoff budget.
+        tokio::select! {
+            _ = run_until_shutdown(&*transport, &base_url, &manifest, &pillar_id, &config) => {}
+            _ = task_shutdown.notified() => {}
         }
 
         if let Err(err) = transport.deregister(&pillar_id).await {
@@ -388,5 +403,39 @@ mod tests {
             "heartbeats fire even after a failed registration"
         );
         assert_eq!(transport.deregister_calls.load(Ordering::SeqCst), 1);
+    }
+
+    #[tokio::test]
+    async fn stop_during_register_backoff_deregisters_promptly() {
+        // A retriable failure with a very long backoff: when stop() fires a few
+        // ms in, the register loop is asleep mid-backoff. The select! against
+        // shutdown must abort it and reach the deregister without waiting out
+        // the (10s) backoff — otherwise SIGTERM handling would hang.
+        let transport = Arc::new(FakeTransport::new(u32::MAX, true));
+        let config = LifecycleConfig {
+            heartbeat: Duration::from_secs(10),
+            max_attempts: 5,
+            initial_backoff: Duration::from_secs(10),
+            max_backoff: Duration::from_secs(30),
+        };
+        let handle = spawn_lifecycle(
+            Arc::clone(&transport),
+            "http://localhost:3010".to_string(),
+            serde_json::json!({ "pillar": "contacts" }),
+            "contacts".to_string(),
+            config,
+        );
+
+        tokio::time::sleep(Duration::from_millis(20)).await;
+        // If stop() blocked on the backoff this would exceed the timeout.
+        tokio::time::timeout(Duration::from_secs(1), handle.stop())
+            .await
+            .expect("stop() returns promptly even mid-backoff");
+
+        assert_eq!(
+            transport.deregister_calls.load(Ordering::SeqCst),
+            1,
+            "shutdown mid-backoff still deregisters"
+        );
     }
 }
