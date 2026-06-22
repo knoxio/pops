@@ -11,13 +11,10 @@
  */
 import type { InferInsertModel, InferSelectModel } from 'drizzle-orm';
 
-import type { aiUsage, environments, userSettings } from './schema.js';
+import type { environments, userSettings } from './schema.js';
 
 export type EnvironmentRow = InferSelectModel<typeof environments>;
 export type EnvironmentInsert = InferInsertModel<typeof environments>;
 
 export type UserSettingRow = InferSelectModel<typeof userSettings>;
 export type UserSettingInsert = InferInsertModel<typeof userSettings>;
-
-export type AiUsageRow = InferSelectModel<typeof aiUsage>;
-export type AiUsageInsert = InferInsertModel<typeof aiUsage>;

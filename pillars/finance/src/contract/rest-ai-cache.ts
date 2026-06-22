@@ -1,12 +1,12 @@
 /**
- * `ai-usage.*` sub-router — finance-categorizer AI cache maintenance
- * (`core.aiUsage.*`).
+ * `aiCache.*` sub-router — finance-categorizer AI cache maintenance.
  *
- * Only the cache surface lives in core. The AI-Ops telemetry analytics
- * (stats / history / providers / budgets / alerts / observability) were
- * extracted into the `ai` pillar (ai-ops plan §1.2); the finance-categorizer
- * cache (`ai_entity_cache.json`, served by `api/modules/ai-usage/cache.ts`)
- * stays in core until the finance re-home.
+ * The AI-Ops telemetry analytics (stats / history / providers / budgets /
+ * alerts / observability) live in the `ai` pillar (ai-ops plan §1.2). The
+ * finance-categorizer cache (`ai_entity_cache.json`, served by
+ * `api/modules/ai-usage-cache.ts`) re-homed from core to finance (gap #3489):
+ * it is finance-categorizer state, not AI-ops telemetry. Wire paths are
+ * preserved verbatim so the cache-management UI is a transport swap.
  *
  *   - `cacheStats`      (query, no input)      → `GET    /ai-usage/cache`
  *   - `clearStaleCache` (mutation, maxAgeDays) → `POST   /ai-usage/cache/prune` (body)
@@ -33,7 +33,7 @@ const ClearStaleBody = z.object({
   maxAgeDays: z.number().int().positive().optional().default(30),
 });
 
-export const coreAiUsageContract = c.router({
+export const financeAiCacheContract = c.router({
   cacheStats: {
     method: 'GET',
     path: '/ai-usage/cache',

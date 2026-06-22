@@ -68,24 +68,11 @@ describe('@pops/core REST openapi projection', () => {
     expect(op?.operationId).toBe(operationId);
   });
 
-  it.each([
-    ['GET', '/ai-usage/cache', 'aiUsage.cacheStats'],
-    ['POST', '/ai-usage/cache/prune', 'aiUsage.clearStaleCache'],
-    ['DELETE', '/ai-usage/cache', 'aiUsage.clearAllCache'],
-  ])('describes the %s %s endpoint with operationId %s', (method, path, operationId) => {
-    const op = openapi.paths[path]?.[method.toLowerCase()];
-    expect(op, `${method} ${path} should be documented`).toBeDefined();
-    expect(op?.operationId).toBe(operationId);
-  });
-
-  it('keeps only the cache surface under /ai-usage (stats/history moved to the ai pillar)', () => {
-    const aiPaths = Object.keys(openapi.paths).filter((p) => p.startsWith('/ai-usage'));
-    expect(aiPaths.toSorted()).toEqual(['/ai-usage/cache', '/ai-usage/cache/prune']);
-    expect(
-      Object.keys(openapi.paths).some(
-        (p) => p.startsWith('/ai-') && !p.startsWith('/ai-usage/cache')
-      )
-    ).toBe(false);
+  it('serves no /ai-* paths (telemetry → ai pillar, categorizer cache → finance)', () => {
+    // The AI-ops observability slice extracted to the `ai` pillar (PRD-055)
+    // and the finance-categorizer cache (`/ai-usage/cache*`) re-homed to
+    // finance (gap #3489), so core exposes nothing under /ai-.
+    expect(Object.keys(openapi.paths).some((p) => p.startsWith('/ai-'))).toBe(false);
   });
 
   it('documents only the migrated REST domains, not the tRPC surface', () => {
@@ -98,7 +85,6 @@ describe('@pops/core REST openapi projection', () => {
       '/settings',
       '/service-accounts',
       '/features',
-      '/ai-usage',
     ];
     const paths = Object.keys(openapi.paths);
     for (const p of paths) {

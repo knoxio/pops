@@ -10,7 +10,7 @@
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
     "generate:api": "openapi-ts && oxfmt --write src/ai-api",
-    "generate:core-client": "openapi-ts -f openapi-ts.core.config.ts && oxfmt --write src/core-api"
+    "generate:finance-client": "openapi-ts -f openapi-ts.finance.config.ts && oxfmt --write src/finance-api"
   },
   "dependencies": {
     "@hey-api/client-fetch": "^0.13.1",

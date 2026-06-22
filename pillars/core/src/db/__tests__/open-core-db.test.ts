@@ -51,7 +51,7 @@ describe('openCoreDb', () => {
     }
   });
 
-  it('applies the PRD-186 PR4 ai_model_pricing, sync_job_results, and ai_usage migrations', () => {
+  it('applies the PRD-186 PR4 ai_model_pricing + sync_job_results migrations and drops ai_usage', () => {
     const path = join(tmpDir, 'core.db');
     const { raw } = openCoreDb(path);
     try {
@@ -64,7 +64,9 @@ describe('openCoreDb', () => {
       );
       expect(tables.has('ai_model_pricing')).toBe(true);
       expect(tables.has('sync_job_results')).toBe(true);
-      expect(tables.has('ai_usage')).toBe(true);
+      // The finance-categorizer ai_usage table re-homed to finance (gap #3489);
+      // 0065_drop_ai_usage drops it after the historical 0061 CREATE.
+      expect(tables.has('ai_usage')).toBe(false);
 
       const indexes = new Set(
         (
@@ -75,8 +77,8 @@ describe('openCoreDb', () => {
       );
       expect(indexes.has('uq_ai_model_pricing_provider_model')).toBe(true);
       expect(indexes.has('idx_sync_job_results_type_completed')).toBe(true);
-      expect(indexes.has('idx_ai_usage_created_at')).toBe(true);
-      expect(indexes.has('idx_ai_usage_batch')).toBe(true);
+      expect(indexes.has('idx_ai_usage_created_at')).toBe(false);
+      expect(indexes.has('idx_ai_usage_batch')).toBe(false);
     } finally {
       raw.close();
     }

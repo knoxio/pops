@@ -1,8 +1,15 @@
+/**
+ * Finance-categorizer AI entity cache (`ai_entity_cache.json`).
+ *
+ * Process-global in-memory `Map` persisted to a JSON file beside the finance
+ * DB. Re-homed from core (gap #3489): the cache is finance-categorizer state,
+ * not AI-ops telemetry. The cache path defaults next to `finance.db`
+ * (`FINANCE_SQLITE_PATH`), overridable via `AI_CACHE_PATH` for test isolation.
+ */
 import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 
-import { DEFAULT_CORE_SQLITE_PATH } from '../../core-sqlite-path.js';
-import { logger } from '../../shared/logger.js';
+import { DEFAULT_FINANCE_SQLITE_PATH } from '../finance-sqlite-path.js';
 
 export interface AiCacheEntry {
   description: string;
@@ -27,7 +34,9 @@ function getCachePath(): string {
     process.env['AI_CACHE_PATH'] ??
     join(
       dirname(
-        process.env['CORE_SQLITE_PATH'] ?? process.env['SQLITE_PATH'] ?? DEFAULT_CORE_SQLITE_PATH
+        process.env['FINANCE_SQLITE_PATH'] ??
+          process.env['SQLITE_PATH'] ??
+          DEFAULT_FINANCE_SQLITE_PATH
       ),
       'ai_entity_cache.json'
     )
@@ -45,12 +54,10 @@ export function loadCacheFromDisk(): void {
     for (const entry of entries) {
       cache.set(entry.description.toUpperCase().trim(), entry);
     }
-    logger.info({ path, entries: entries.length }, '[AI] Loaded cache from disk');
+    console.warn(`[AI] Loaded cache from disk (${entries.length} entries) at ${path}`);
   } catch (err) {
-    logger.warn(
-      { path, error: err instanceof Error ? err.message : String(err) },
-      '[AI] Failed to load cache from disk, starting fresh'
-    );
+    const message = err instanceof Error ? err.message : String(err);
+    console.warn(`[AI] Failed to load cache from disk at ${path}, starting fresh: ${message}`);
   }
 }
 
@@ -61,10 +68,8 @@ export function saveCacheToDisk(): void {
     const entries = [...cache.values()];
     writeFileSync(path, JSON.stringify(entries, null, 2));
   } catch (err) {
-    logger.warn(
-      { path, error: err instanceof Error ? err.message : String(err) },
-      '[AI] Failed to save cache to disk'
-    );
+    const message = err instanceof Error ? err.message : String(err);
+    console.warn(`[AI] Failed to save cache to disk at ${path}: ${message}`);
   }
 }
 

@@ -106,6 +106,13 @@
       "when": 1782604800000,
       "tag": "0069_drop_entities",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1782691200000,
+      "tag": "0070_drop_ai_usage",
+      "breakpoints": true
     }
   ]
 }

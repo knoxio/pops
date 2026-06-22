@@ -9,10 +9,10 @@ import { useCacheManagementModel } from './cache-management/useCacheManagementMo
 
 /**
  * CacheManagementPage — view and manage the finance-categorizer AI entity
- * cache served by the CORE pillar (`/ai-usage/cache*`). Shows entry count
+ * cache served by the FINANCE pillar (`/ai-usage/cache*`). Shows entry count
  * and on-disk size, plus controls to prune stale entries or clear the
- * whole cache. The cache surface stays in core (PRD-053/US-03); this page
- * consumes it through the AI-Ops FE's core client.
+ * whole cache. The cache surface re-homed from core to finance (gap #3489);
+ * this AI-Ops admin page consumes it through the FE's finance client.
  */
 export function CacheManagementPage() {
   const { t } = useTranslation('ai');

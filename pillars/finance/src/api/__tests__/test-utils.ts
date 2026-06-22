@@ -368,6 +368,13 @@ export function makeClient(app: Express) {
           r.post('/imports/reevaluate-pending').send(body)
         ),
     },
+    aiCache: {
+      cacheStats: () =>
+        send<{ totalEntries: number; diskSizeBytes: number }>(r.get('/ai-usage/cache')),
+      clearStaleCache: (body: { maxAgeDays?: number } = {}) =>
+        send<{ removed: number }>(r.post('/ai-usage/cache/prune').send(body)),
+      clearAllCache: () => send<{ removed: number }>(r.delete('/ai-usage/cache')),
+    },
   };
 }
 

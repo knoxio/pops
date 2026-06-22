@@ -16,19 +16,19 @@
  *   a process-level singleton backed by a JSON file on disk (see
  *   ai-categorizer-cache.ts). Running the prune against the real pillar would
  *   mutate shared state used by other tests (and the dev environment), so we
- *   mock the three core-api cache REST routes the page calls.
+ *   mock the three finance-api cache REST routes the page calls.
  *
- *   The page reads its data via the generated core Hey API client
- *   (`@pops/app-ai` core-api, baseUrl `/core-api`):
- *     - GET  /core-api/ai-usage/cache        → { totalEntries, diskSizeBytes }
+ *   The page reads its data via the generated finance Hey API client
+ *   (`@pops/app-ai` finance-api, baseUrl `/finance-api`):
+ *     - GET  /finance-api/ai-usage/cache        → { totalEntries, diskSizeBytes }
  *     - GET  /core-api/ai-usage/stats        → usage roll-up
- *     - POST /core-api/ai-usage/cache/prune  → { removed }   (Clear Stale)
+ *     - POST /finance-api/ai-usage/cache/prune  → { removed }   (Clear Stale)
  *
  *   The mock drives a deterministic before/after comparison: the cache GET is
  *   routed through a mutable state object so the FIRST response returns a high
  *   entry count (1500), and after the prune fires the state flips so subsequent
  *   responses return a lower count (300). The cache model invalidates the
- *   `['core', 'aiUsage']` query key on mutation success, which triggers the
+ *   `['finance', 'aiCache']` query key on mutation success, which triggers the
  *   re-fetch and re-renders the StatCard with the new total.
  *
  * Product feedback — StatCard value semantics.
@@ -82,12 +82,12 @@ type CacheState = {
 };
 
 /**
- * Install REST mocks for the core-api cache routes the page calls. The
- * generated core Hey API client (`@pops/app-ai`) targets baseUrl `/core-api`,
- * which the shell proxy strips before forwarding to the core pillar:
- *   GET  /core-api/ai-usage/cache        — cache stats (entry count + disk size)
+ * Install REST mocks for the finance-api cache routes the page calls. The
+ * generated finance Hey API client (`@pops/app-ai`) targets baseUrl `/finance-api`,
+ * which the shell proxy strips before forwarding to the finance pillar:
+ *   GET  /finance-api/ai-usage/cache        — cache stats (entry count + disk size)
  *   GET  /core-api/ai-usage/stats        — usage roll-up (feeds the Hit Rate card)
- *   POST /core-api/ai-usage/cache/prune  — clear stale entries (Clear Stale button)
+ *   POST /finance-api/ai-usage/cache/prune  — clear stale entries (Clear Stale button)
  *
  * The cache GET is driven by a mutable `state.entries` so the value drops from
  * BEFORE_ENTRIES to AFTER_ENTRIES once the prune POST fires.
@@ -97,7 +97,7 @@ type CacheState = {
 async function installCacheMocks(page: Page): Promise<{ getClearCalls: () => number }> {
   const state: CacheState = { entries: BEFORE_ENTRIES, clearCalls: 0 };
 
-  await page.route('**/core-api/ai-usage/cache', async (route) => {
+  await page.route('**/finance-api/ai-usage/cache', async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -113,7 +113,7 @@ async function installCacheMocks(page: Page): Promise<{ getClearCalls: () => num
     });
   });
 
-  await page.route('**/core-api/ai-usage/cache/prune', async (route) => {
+  await page.route('**/finance-api/ai-usage/cache/prune', async (route) => {
     state.clearCalls += 1;
     state.entries = AFTER_ENTRIES;
     await route.fulfill({

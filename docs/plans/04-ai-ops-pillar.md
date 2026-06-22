@@ -78,7 +78,7 @@ Any acceptance criterion that cannot be ticked → a GitHub issue `drift-check(P
 
 - `drift-check(PRD-055) US-02 — pre-call budget enforcement not wired into cross-pillar wrapper (v1 telemetry-only)`.
 - `drift-check(PRD-055) US-05 — crates/pops-ai has no in-tree consumer until contacts Rust pillar lands`.
-- `drift-check(PRD-055) US-06 — ai_usage table re-home to finance pending finance-plan ratification`.
+- ~~`drift-check(PRD-055) US-06 — ai_usage table re-home to finance pending finance-plan ratification`~~ — RESOLVED (gap #3489): the `ai_usage` table + `ai-usage-cache.ts` + the 3 cache REST endpoints (`GET /ai-usage/cache`, `POST /ai-usage/cache/prune`, `DELETE /ai-usage/cache`) re-homed core→finance; finance migration `0058_ai_usage_baseline` creates the table, core migration `0070_drop_ai_usage` drops it (deploy-coupled: run `migrate-ai-usage` before core drops). The AI-Ops cache UI now calls `/finance-api/ai-usage/cache*`.
 
 ---
 
