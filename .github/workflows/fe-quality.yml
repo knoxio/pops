@@ -5,7 +5,7 @@ on:
     branches: [main]
     paths:
       - "apps/pops-shell/**"
-      - "packages/app-*/**"
+      - "pillars/*/app/**"
       # Every pillar's OpenAPI projection feeds the generated FE client.
       # Globbed from disk so a new pillar (or `lists`, previously omitted)
       # is covered without editing this list.
@@ -19,7 +19,7 @@ on:
   pull_request:
     paths:
       - "apps/pops-shell/**"
-      - "packages/app-*/**"
+      - "pillars/*/app/**"
       - "pillars/*/openapi/**"
       - "packages/db-types/**"
       - "packages/navigation/**"
@@ -43,7 +43,7 @@ jobs:
           filters: |
             shell:
               - 'apps/pops-shell/**'
-              - 'packages/app-*/**'
+              - 'pillars/*/app/**'
               - 'packages/db-types/**'
               # Glob every pillar's OpenAPI projection so the filter can't
               # drift from the trigger paths (previously omitted inventory

@@ -5,13 +5,13 @@ on:
     branches: [main]
     paths:
       - "apps/pops-storybook/**"
-      - "packages/app-*/package.json"
+      - "pillars/*/app/package.json"
       - ".github/workflows/storybook-quality.yml"
       - ".github/workflows/_pkg-check.yml"
   pull_request:
     paths:
       - "apps/pops-storybook/**"
-      - "packages/app-*/package.json"
+      - "pillars/*/app/package.json"
       - ".github/workflows/storybook-quality.yml"
       - ".github/workflows/_pkg-check.yml"
 
@@ -30,7 +30,7 @@ jobs:
           filters: |
             relevant:
               - 'apps/pops-storybook/**'
-              - 'packages/app-*/package.json'
+              - 'pillars/*/app/package.json'
               - '.github/workflows/storybook-quality.yml'
               - '.github/workflows/_pkg-check.yml'
 
