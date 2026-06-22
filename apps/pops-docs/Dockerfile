@@ -8,7 +8,7 @@ RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
     corepack enable && pnpm install --frozen-lockfile --filter @pops/docs...
 
 COPY apps/pops-docs/ ./apps/pops-docs/
-COPY libs/ ./libs/
+COPY pillars/ ./pillars/
 
 WORKDIR /app/apps/pops-docs
 RUN pnpm build
