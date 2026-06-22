@@ -65,3 +65,23 @@ export function deriveKeySet(manifests: readonly DeclaredSettingsManifest[]): Ke
   }
   return { keys: acc.keys, defaults: acc.defaults, sensitive: acc.sensitive };
 }
+
+/**
+ * Narrows a pillar's declared key list to the non-empty tuple
+ * `makeSettingsContract` requires for its `:key` enum. The contract factory's
+ * `KeyEnum extends [string, ...string[]]` bound cannot be satisfied by the
+ * `readonly string[]` {@link deriveKeySet} yields, so this checks non-emptiness
+ * at runtime and returns the same values under the precise type — a guarded
+ * narrowing, not an unchecked widening.
+ *
+ * Throws if the key set is empty: a federated pillar with zero declared
+ * settings keys cannot build a `z.enum`, and silently producing an empty enum
+ * would be a latent boot failure.
+ */
+export function keyValuesFor(kd: KeyDefaults): [string, ...string[]] {
+  const [first, ...rest] = kd.keys;
+  if (first === undefined) {
+    throw new Error('keyValuesFor: a federated pillar must declare at least one settings key');
+  }
+  return [first, ...rest];
+}

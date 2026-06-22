@@ -36,6 +36,7 @@ import { makeQueryHandlers } from './query-handlers.js';
 import { makeReflexHandlers } from './reflex-handlers.js';
 import { makeRetrievalHandlers } from './retrieval-handlers.js';
 import { makeScopesHandlers } from './scopes-handlers.js';
+import { makeSettingsHandlers } from './settings-handlers.js';
 import { makeTagsHandlers } from './tags-handlers.js';
 import { makeTemplatesHandlers } from './templates-handlers.js';
 import { makeWorkersHandlers } from './workers-handlers.js';
@@ -117,5 +118,6 @@ export function makeCerebrumRestHandlers(
     }),
     embeddings: makeEmbeddingsHandlers(db),
     debrief: makeDebriefHandlers(db),
+    settings: makeSettingsHandlers(db),
   });
 }

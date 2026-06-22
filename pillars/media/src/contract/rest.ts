@@ -19,6 +19,7 @@ import { mediaMoviesContract } from './rest-movies.js';
 import { mediaPlexContract } from './rest-plex.js';
 import { mediaRotationContract } from './rest-rotation.js';
 import { mediaSearchContract } from './rest-search.js';
+import { mediaSettingsContract } from './rest-settings.js';
 import { mediaShelfImpressionsContract } from './rest-shelf-impressions.js';
 import { mediaTvShowsContract } from './rest-tv-shows.js';
 import { mediaWatchHistoryContract } from './rest-watch-history.js';
@@ -40,6 +41,7 @@ export const mediaContract = c.router(
     rotation: mediaRotationContract,
     discovery: mediaDiscoveryContract,
     search: mediaSearchContract,
+    settings: mediaSettingsContract,
   },
   {
     pathPrefix: '',

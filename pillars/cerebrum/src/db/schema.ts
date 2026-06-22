@@ -44,3 +44,4 @@ export { gliaActions, gliaTrustState } from './schema/glia.js';
 export { nudgeLog } from './schema/nudge-log.js';
 export { plexusAdapters, plexusFilters } from './schema/plexus.js';
 export { reflexExecutions } from './schema/reflex-executions.js';
+export { settings } from './schema/settings.js';

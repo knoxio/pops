@@ -23,6 +23,7 @@ export { rotationLog } from './schema/rotation-log.js';
 export { rotationSettings } from './schema/rotation-settings.js';
 export { rotationSources } from './schema/rotation-sources.js';
 export { seasons } from './schema/seasons.js';
+export { settings } from './schema/settings.js';
 export { shelfImpressions } from './schema/shelf-impressions.js';
 export { syncJobResults } from './schema/sync-job-results.js';
 export { syncLogs } from './schema/sync-logs.js';

@@ -26,6 +26,7 @@ import { cerebrumQueryContract } from './rest-query.js';
 import { cerebrumReflexContract } from './rest-reflex.js';
 import { cerebrumRetrievalContract } from './rest-retrieval.js';
 import { cerebrumScopesContract } from './rest-scopes.js';
+import { cerebrumSettingsContract } from './rest-settings.js';
 import { cerebrumTagsContract } from './rest-tags.js';
 import { cerebrumTemplatesContract } from './rest-templates.js';
 import { cerebrumWorkersContract } from './rest-workers.js';
@@ -51,6 +52,7 @@ export const cerebrumContract = c.router(
     query: cerebrumQueryContract,
     embeddings: cerebrumEmbeddingsContract,
     debrief: cerebrumDebriefContract,
+    settings: cerebrumSettingsContract,
   },
   {
     pathPrefix: '',

@@ -11420,6 +11420,1190 @@
         "tags": ["scopes"]
       }
     },
+    "/settings": {
+      "get": {
+        "operationId": "settings.list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "key": {
+                            "type": "string"
+                          },
+                          "value": {
+                            "type": "string"
+                          }
+                        },
+                        "required": ["key", "value"],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": ["data"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "404"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "409"
+          }
+        },
+        "summary": "List effective values for every declared key (sensitive redacted)",
+        "tags": ["settings"]
+      }
+    },
+    "/settings/get-many": {
+      "post": {
+        "operationId": "settings.getMany",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "keys": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  }
+                },
+                "required": ["keys"],
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "settings": {
+                      "additionalProperties": {
+                        "type": "string"
+                      },
+                      "type": "object"
+                    }
+                  },
+                  "required": ["settings"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "404"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "409"
+          }
+        },
+        "summary": "Batch-read settings by key (missing omitted; sensitive redacted)",
+        "tags": ["settings"]
+      }
+    },
+    "/settings/reset": {
+      "post": {
+        "operationId": "settings.reset",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "keys": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "reset": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "settings": {
+                      "additionalProperties": {
+                        "type": "string"
+                      },
+                      "type": "object"
+                    }
+                  },
+                  "required": ["reset", "settings"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "404"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "409"
+          }
+        },
+        "summary": "Reset declared keys to defaults (omit keys ⇒ reset all)",
+        "tags": ["settings"]
+      }
+    },
+    "/settings/set-many": {
+      "post": {
+        "operationId": "settings.setMany",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "entries": {
+                    "items": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "key": {
+                          "type": "string"
+                        },
+                        "value": {
+                          "type": "string"
+                        }
+                      },
+                      "required": ["key", "value"],
+                      "type": "object"
+                    },
+                    "type": "array"
+                  }
+                },
+                "required": ["entries"],
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "settings": {
+                      "additionalProperties": {
+                        "type": "string"
+                      },
+                      "type": "object"
+                    }
+                  },
+                  "required": ["settings"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "404"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "409"
+          }
+        },
+        "summary": "Transactional batch write (all-or-nothing); returns the written mirror",
+        "tags": ["settings"]
+      }
+    },
+    "/settings/{key}": {
+      "get": {
+        "operationId": "settings.get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "key",
+            "required": true,
+            "schema": {
+              "enum": [
+                "cerebrum.query.maxSources",
+                "cerebrum.query.relevanceThreshold",
+                "cerebrum.query.tokenBudget",
+                "cerebrum.emit.maxTokens",
+                "cerebrum.emit.relevanceThreshold",
+                "cerebrum.emit.maxSources",
+                "cerebrum.emit.tokenBudget",
+                "cerebrum.semantic.defaultLimit",
+                "cerebrum.semantic.defaultThreshold",
+                "cerebrum.semantic.queryCacheTtl",
+                "cerebrum.hybrid.rrfK",
+                "cerebrum.hybrid.defaultLimit",
+                "cerebrum.hybrid.defaultThreshold",
+                "cerebrum.context.tokenBudget",
+                "cerebrum.classifier.confidenceThreshold",
+                "cerebrum.entityExtractor.confidenceThreshold",
+                "cerebrum.captureHotkey",
+                "cerebrum.nudge.consolidationSimilarity",
+                "cerebrum.nudge.consolidationMinCluster",
+                "cerebrum.nudge.stalenessDays",
+                "cerebrum.nudge.patternMinOccurrences",
+                "cerebrum.nudge.maxPending",
+                "cerebrum.nudge.cooldownHours",
+                "cerebrum.engram.fallbackScope",
+                "cerebrum.citation.excerptMaxLength",
+                "cerebrum.plexus.healthIntervalMs",
+                "cerebrum.plexus.healthTimeoutMs",
+                "cerebrum.plexus.maxConsecutiveFailures",
+                "cerebrum.thalamus.crossSourceIntervalMs",
+                "cerebrum.glia.proposeMinApproved",
+                "cerebrum.glia.proposeMaxRejectionRate",
+                "cerebrum.glia.actReportMinDays",
+                "cerebrum.glia.demotionRevertThreshold",
+                "cerebrum.glia.demotionWindowDays",
+                "cerebrum.mcp.queryMaxSources",
+                "cerebrum.mcp.searchSnippetLength",
+                "cerebrum.mcp.searchDefaultLimit",
+                "ego.defaultModel",
+                "ego.maxHistory",
+                "ego.maxRetrieval",
+                "ego.tokenBudget",
+                "ego.relevanceThreshold",
+                "ego.chat.maxTokens",
+                "ego.chat.temperature",
+                "ego.summary.maxTokens",
+                "ego.summary.temperature"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "additionalProperties": false,
+                      "nullable": true,
+                      "properties": {
+                        "key": {
+                          "type": "string"
+                        },
+                        "value": {
+                          "type": "string"
+                        }
+                      },
+                      "required": ["key", "value"],
+                      "type": "object"
+                    }
+                  },
+                  "required": ["data"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "404"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "409"
+          }
+        },
+        "summary": "Read a single setting (null on unset; sensitive redacted)",
+        "tags": ["settings"]
+      },
+      "put": {
+        "operationId": "settings.set",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "key",
+            "required": true,
+            "schema": {
+              "enum": [
+                "cerebrum.query.maxSources",
+                "cerebrum.query.relevanceThreshold",
+                "cerebrum.query.tokenBudget",
+                "cerebrum.emit.maxTokens",
+                "cerebrum.emit.relevanceThreshold",
+                "cerebrum.emit.maxSources",
+                "cerebrum.emit.tokenBudget",
+                "cerebrum.semantic.defaultLimit",
+                "cerebrum.semantic.defaultThreshold",
+                "cerebrum.semantic.queryCacheTtl",
+                "cerebrum.hybrid.rrfK",
+                "cerebrum.hybrid.defaultLimit",
+                "cerebrum.hybrid.defaultThreshold",
+                "cerebrum.context.tokenBudget",
+                "cerebrum.classifier.confidenceThreshold",
+                "cerebrum.entityExtractor.confidenceThreshold",
+                "cerebrum.captureHotkey",
+                "cerebrum.nudge.consolidationSimilarity",
+                "cerebrum.nudge.consolidationMinCluster",
+                "cerebrum.nudge.stalenessDays",
+                "cerebrum.nudge.patternMinOccurrences",
+                "cerebrum.nudge.maxPending",
+                "cerebrum.nudge.cooldownHours",
+                "cerebrum.engram.fallbackScope",
+                "cerebrum.citation.excerptMaxLength",
+                "cerebrum.plexus.healthIntervalMs",
+                "cerebrum.plexus.healthTimeoutMs",
+                "cerebrum.plexus.maxConsecutiveFailures",
+                "cerebrum.thalamus.crossSourceIntervalMs",
+                "cerebrum.glia.proposeMinApproved",
+                "cerebrum.glia.proposeMaxRejectionRate",
+                "cerebrum.glia.actReportMinDays",
+                "cerebrum.glia.demotionRevertThreshold",
+                "cerebrum.glia.demotionWindowDays",
+                "cerebrum.mcp.queryMaxSources",
+                "cerebrum.mcp.searchSnippetLength",
+                "cerebrum.mcp.searchDefaultLimit",
+                "ego.defaultModel",
+                "ego.maxHistory",
+                "ego.maxRetrieval",
+                "ego.tokenBudget",
+                "ego.relevanceThreshold",
+                "ego.chat.maxTokens",
+                "ego.chat.temperature",
+                "ego.summary.maxTokens",
+                "ego.summary.temperature"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "value": {
+                    "type": "string"
+                  }
+                },
+                "required": ["value"],
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "key": {
+                          "type": "string"
+                        },
+                        "value": {
+                          "type": "string"
+                        }
+                      },
+                      "required": ["key", "value"],
+                      "type": "object"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["data", "message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "404"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "409"
+          }
+        },
+        "summary": "Upsert a single declared setting",
+        "tags": ["settings"]
+      }
+    },
+    "/settings/{key}/ensure": {
+      "post": {
+        "operationId": "settings.ensure",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "key",
+            "required": true,
+            "schema": {
+              "enum": [
+                "cerebrum.query.maxSources",
+                "cerebrum.query.relevanceThreshold",
+                "cerebrum.query.tokenBudget",
+                "cerebrum.emit.maxTokens",
+                "cerebrum.emit.relevanceThreshold",
+                "cerebrum.emit.maxSources",
+                "cerebrum.emit.tokenBudget",
+                "cerebrum.semantic.defaultLimit",
+                "cerebrum.semantic.defaultThreshold",
+                "cerebrum.semantic.queryCacheTtl",
+                "cerebrum.hybrid.rrfK",
+                "cerebrum.hybrid.defaultLimit",
+                "cerebrum.hybrid.defaultThreshold",
+                "cerebrum.context.tokenBudget",
+                "cerebrum.classifier.confidenceThreshold",
+                "cerebrum.entityExtractor.confidenceThreshold",
+                "cerebrum.captureHotkey",
+                "cerebrum.nudge.consolidationSimilarity",
+                "cerebrum.nudge.consolidationMinCluster",
+                "cerebrum.nudge.stalenessDays",
+                "cerebrum.nudge.patternMinOccurrences",
+                "cerebrum.nudge.maxPending",
+                "cerebrum.nudge.cooldownHours",
+                "cerebrum.engram.fallbackScope",
+                "cerebrum.citation.excerptMaxLength",
+                "cerebrum.plexus.healthIntervalMs",
+                "cerebrum.plexus.healthTimeoutMs",
+                "cerebrum.plexus.maxConsecutiveFailures",
+                "cerebrum.thalamus.crossSourceIntervalMs",
+                "cerebrum.glia.proposeMinApproved",
+                "cerebrum.glia.proposeMaxRejectionRate",
+                "cerebrum.glia.actReportMinDays",
+                "cerebrum.glia.demotionRevertThreshold",
+                "cerebrum.glia.demotionWindowDays",
+                "cerebrum.mcp.queryMaxSources",
+                "cerebrum.mcp.searchSnippetLength",
+                "cerebrum.mcp.searchDefaultLimit",
+                "ego.defaultModel",
+                "ego.maxHistory",
+                "ego.maxRetrieval",
+                "ego.tokenBudget",
+                "ego.relevanceThreshold",
+                "ego.chat.maxTokens",
+                "ego.chat.temperature",
+                "ego.summary.maxTokens",
+                "ego.summary.temperature"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "value": {
+                    "type": "string"
+                  }
+                },
+                "required": ["value"],
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "key": {
+                          "type": "string"
+                        },
+                        "value": {
+                          "type": "string"
+                        }
+                      },
+                      "required": ["key", "value"],
+                      "type": "object"
+                    }
+                  },
+                  "required": ["data"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "404"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "409"
+          }
+        },
+        "summary": "Internal-only write-once seed (encryption seed / client id)",
+        "tags": ["settings"]
+      }
+    },
+    "/settings/{key}/reset": {
+      "post": {
+        "operationId": "settings.resetKey",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "key",
+            "required": true,
+            "schema": {
+              "enum": [
+                "cerebrum.query.maxSources",
+                "cerebrum.query.relevanceThreshold",
+                "cerebrum.query.tokenBudget",
+                "cerebrum.emit.maxTokens",
+                "cerebrum.emit.relevanceThreshold",
+                "cerebrum.emit.maxSources",
+                "cerebrum.emit.tokenBudget",
+                "cerebrum.semantic.defaultLimit",
+                "cerebrum.semantic.defaultThreshold",
+                "cerebrum.semantic.queryCacheTtl",
+                "cerebrum.hybrid.rrfK",
+                "cerebrum.hybrid.defaultLimit",
+                "cerebrum.hybrid.defaultThreshold",
+                "cerebrum.context.tokenBudget",
+                "cerebrum.classifier.confidenceThreshold",
+                "cerebrum.entityExtractor.confidenceThreshold",
+                "cerebrum.captureHotkey",
+                "cerebrum.nudge.consolidationSimilarity",
+                "cerebrum.nudge.consolidationMinCluster",
+                "cerebrum.nudge.stalenessDays",
+                "cerebrum.nudge.patternMinOccurrences",
+                "cerebrum.nudge.maxPending",
+                "cerebrum.nudge.cooldownHours",
+                "cerebrum.engram.fallbackScope",
+                "cerebrum.citation.excerptMaxLength",
+                "cerebrum.plexus.healthIntervalMs",
+                "cerebrum.plexus.healthTimeoutMs",
+                "cerebrum.plexus.maxConsecutiveFailures",
+                "cerebrum.thalamus.crossSourceIntervalMs",
+                "cerebrum.glia.proposeMinApproved",
+                "cerebrum.glia.proposeMaxRejectionRate",
+                "cerebrum.glia.actReportMinDays",
+                "cerebrum.glia.demotionRevertThreshold",
+                "cerebrum.glia.demotionWindowDays",
+                "cerebrum.mcp.queryMaxSources",
+                "cerebrum.mcp.searchSnippetLength",
+                "cerebrum.mcp.searchDefaultLimit",
+                "ego.defaultModel",
+                "ego.maxHistory",
+                "ego.maxRetrieval",
+                "ego.tokenBudget",
+                "ego.relevanceThreshold",
+                "ego.chat.maxTokens",
+                "ego.chat.temperature",
+                "ego.summary.maxTokens",
+                "ego.summary.temperature"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {},
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "key": {
+                          "type": "string"
+                        },
+                        "value": {
+                          "type": "string"
+                        }
+                      },
+                      "required": ["key", "value"],
+                      "type": "object"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["data", "message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "404"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "409"
+          }
+        },
+        "summary": "Reset a single setting to its manifest default",
+        "tags": ["settings"]
+      }
+    },
     "/tags": {
       "get": {
         "operationId": "tags.list",

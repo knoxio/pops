@@ -889,6 +889,9 @@ importers:
       '@pops/pillar-sdk':
         specifier: workspace:*
         version: link:../../packages/pillar-sdk
+      '@pops/pillar-settings':
+        specifier: workspace:*
+        version: link:../../packages/pillar-settings
       '@pops/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -1217,6 +1220,9 @@ importers:
       '@pops/pillar-sdk':
         specifier: workspace:*
         version: link:../../packages/pillar-sdk
+      '@pops/pillar-settings':
+        specifier: workspace:*
+        version: link:../../packages/pillar-settings
       '@pops/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -1626,6 +1632,9 @@ importers:
       '@pops/pillar-sdk':
         specifier: workspace:*
         version: link:../../packages/pillar-sdk
+      '@pops/pillar-settings':
+        specifier: workspace:*
+        version: link:../../packages/pillar-settings
       '@pops/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -1948,6 +1957,9 @@ importers:
       '@pops/pillar-sdk':
         specifier: workspace:*
         version: link:../../packages/pillar-sdk
+      '@pops/pillar-settings':
+        specifier: workspace:*
+        version: link:../../packages/pillar-settings
       '@pops/types':
         specifier: workspace:*
         version: link:../../packages/types

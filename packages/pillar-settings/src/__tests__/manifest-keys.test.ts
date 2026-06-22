@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { deriveKeySet, type DeclaredSettingsManifest } from '../manifest-keys.js';
+import { deriveKeySet, keyValuesFor, type DeclaredSettingsManifest } from '../manifest-keys.js';
 
 const manifests: DeclaredSettingsManifest[] = [
   {
@@ -57,5 +57,22 @@ describe('deriveKeySet', () => {
   it('handles manifests with empty groups', () => {
     const kd = deriveKeySet([{ groups: [] }]);
     expect(kd.keys).toEqual([]);
+  });
+});
+
+describe('keyValuesFor', () => {
+  it('returns the declared keys as a non-empty tuple preserving order', () => {
+    const kd = deriveKeySet(manifests);
+    expect(keyValuesFor(kd)).toEqual([
+      'finance.aiCategorizer.model',
+      'finance.apiToken',
+      'finance.retentionDays',
+      'finance.enabled',
+    ]);
+  });
+
+  it('throws when the pillar declares no settings keys', () => {
+    const kd = deriveKeySet([]);
+    expect(() => keyValuesFor(kd)).toThrow(/at least one settings key/);
   });
 });

@@ -19,6 +19,7 @@ import { makePaperlessHandlers } from './paperless-handlers.js';
 import { makePhotosHandlers } from './photos-handlers.js';
 import { makeReportsHandlers } from './reports-handlers.js';
 import { makeSearchHandlers } from './search-handlers.js';
+import { makeSettingsHandlers } from './settings-handlers.js';
 
 const server: ReturnType<typeof initServer> = initServer();
 
@@ -37,5 +38,6 @@ export function makeInventoryRestHandlers(deps: {
     reports: makeReportsHandlers(db),
     paperless: makePaperlessHandlers(),
     search: makeSearchHandlers(db),
+    settings: makeSettingsHandlers(db),
   });
 }

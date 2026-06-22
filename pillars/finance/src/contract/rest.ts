@@ -17,6 +17,7 @@ import { financeCorrectionsContract } from './rest-corrections.js';
 import { financeEntityUsageContract } from './rest-entity-usage.js';
 import { financeImportsContract } from './rest-imports.js';
 import { financeSearchContract } from './rest-search.js';
+import { financeSettingsContract } from './rest-settings.js';
 import { financeTagRulesContract } from './rest-tag-rules.js';
 import { financeTransactionsContract } from './rest-transactions.js';
 import { financeWishlistContract } from './rest-wishlist.js';
@@ -33,6 +34,7 @@ export const financeContract = c.router(
     entityUsage: financeEntityUsageContract,
     imports: financeImportsContract,
     search: financeSearchContract,
+    settings: financeSettingsContract,
   },
   {
     pathPrefix: '',
