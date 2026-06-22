@@ -1,0 +1,44 @@
+name: Agent Review
+
+# Federation review gate. Two deterministic isolation guards (load-bearing,
+# blocking) plus an advisory LLM reviewer (degrades to a no-op without
+# ANTHROPIC_API_KEY). See docs/plans/repo-federation/05-cicd-deployment.md §A.3.
+#
+# Runs on every non-draft PR so the `agent-review` required check always
+# reports a result (a never-triggered required check would block forever).
+# The guards are zero-dependency Node scripts — no pnpm install needed.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  pull-requests: write
+  contents: read
+
+jobs:
+  agent-review:
+    name: agent-review
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+      - name: Guard self-tests (prove the guards catch violations)
+        run: |
+          node scripts/ci/check-lib-no-pillar-import.mjs --self-test
+          node scripts/ci/check-contract-isolation.mjs --self-test
+      - name: Isolation litmus — no cross-contract reach-behind
+        run: node scripts/ci/check-contract-isolation.mjs --base "origin/${{ github.base_ref }}"
+      - name: Lib-never-imports-pillar guard
+        run: node scripts/ci/check-lib-no-pillar-import.mjs
+      - name: LLM review (advisory — federation invariants rubric)
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: node scripts/ci/agent-review.mjs --pr ${{ github.event.number }}
