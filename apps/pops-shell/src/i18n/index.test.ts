@@ -10,25 +10,26 @@
  */
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
+import enAUAi from '@pops/locales/en-AU/ai.json';
+import enAUCerebrum from '@pops/locales/en-AU/cerebrum.json';
+import enAUCommon from '@pops/locales/en-AU/common.json';
+import enAUFinance from '@pops/locales/en-AU/finance.json';
+import enAUInventory from '@pops/locales/en-AU/inventory.json';
+import enAUMedia from '@pops/locales/en-AU/media.json';
+import enAUNavigation from '@pops/locales/en-AU/navigation.json';
+import enAUShell from '@pops/locales/en-AU/shell.json';
+import enAUUi from '@pops/locales/en-AU/ui.json';
+import ptBRAi from '@pops/locales/pt-BR/ai.json';
+import ptBRCerebrum from '@pops/locales/pt-BR/cerebrum.json';
+import ptBRCommon from '@pops/locales/pt-BR/common.json';
+import ptBRFinance from '@pops/locales/pt-BR/finance.json';
+import ptBRInventory from '@pops/locales/pt-BR/inventory.json';
+import ptBRMedia from '@pops/locales/pt-BR/media.json';
+import ptBRNavigation from '@pops/locales/pt-BR/navigation.json';
+import ptBRShell from '@pops/locales/pt-BR/shell.json';
+import ptBRUi from '@pops/locales/pt-BR/ui.json';
+
 import i18n, { DEFAULT_LOCALE, LOCALE_STORAGE_KEY, SUPPORTED_LOCALES } from '.';
-import enAUAi from './locales/en-AU/ai.json';
-import enAUCerebrum from './locales/en-AU/cerebrum.json';
-import enAUCommon from './locales/en-AU/common.json';
-import enAUFinance from './locales/en-AU/finance.json';
-import enAUInventory from './locales/en-AU/inventory.json';
-import enAUMedia from './locales/en-AU/media.json';
-import enAUNavigation from './locales/en-AU/navigation.json';
-import enAUShell from './locales/en-AU/shell.json';
-import enAUUi from './locales/en-AU/ui.json';
-import ptBRAi from './locales/pt-BR/ai.json';
-import ptBRCerebrum from './locales/pt-BR/cerebrum.json';
-import ptBRCommon from './locales/pt-BR/common.json';
-import ptBRFinance from './locales/pt-BR/finance.json';
-import ptBRInventory from './locales/pt-BR/inventory.json';
-import ptBRMedia from './locales/pt-BR/media.json';
-import ptBRNavigation from './locales/pt-BR/navigation.json';
-import ptBRShell from './locales/pt-BR/shell.json';
-import ptBRUi from './locales/pt-BR/ui.json';
 
 // ---------------------------------------------------------------------------
 // Helpers

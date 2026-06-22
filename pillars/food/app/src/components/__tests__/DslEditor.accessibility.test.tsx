@@ -16,7 +16,8 @@ import { useMemo, type ReactElement } from 'react';
 import { I18nextProvider, initReactI18next } from 'react-i18next';
 import { describe, expect, it } from 'vitest';
 
-import enAUFood from '../../../../../../apps/pops-shell/src/i18n/locales/en-AU/food.json';
+import enAUFood from '@pops/locales/en-AU/food.json';
+
 import { DslEditor } from '../DslEditor';
 
 const RECIPE = [

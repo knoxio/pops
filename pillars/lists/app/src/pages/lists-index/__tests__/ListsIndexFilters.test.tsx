@@ -5,7 +5,8 @@ import { useState, useMemo, type ReactElement } from 'react';
 import { I18nextProvider, initReactI18next } from 'react-i18next';
 import { describe, expect, it } from 'vitest';
 
-import enAULists from '../../../../../../../apps/pops-shell/src/i18n/locales/en-AU/lists.json';
+import enAULists from '@pops/locales/en-AU/lists.json';
+
 import { DEFAULT_FILTERS, type ListsIndexFilterState } from '../list-index-types';
 import { ListsIndexFilters } from '../ListsIndexFilters';
 

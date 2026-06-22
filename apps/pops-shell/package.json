@@ -31,6 +31,7 @@
     "@pops/app-inventory": "workspace:*",
     "@pops/app-lists": "workspace:*",
     "@pops/app-media": "workspace:*",
+    "@pops/locales": "workspace:*",
     "@pops/module-registry": "workspace:*",
     "@pops/navigation": "workspace:*",
     "@pops/overlay-ego": "workspace:*",

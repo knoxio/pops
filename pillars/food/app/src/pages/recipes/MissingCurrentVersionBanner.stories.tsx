@@ -7,7 +7,8 @@ import { useMemo } from 'react';
 import { I18nextProvider, initReactI18next } from 'react-i18next';
 import { MemoryRouter } from 'react-router';
 
-import enAUFood from '../../../../../../apps/pops-shell/src/i18n/locales/en-AU/food.json';
+import enAUFood from '@pops/locales/en-AU/food.json';
+
 import { MissingCurrentVersionBanner } from './MissingCurrentVersionBanner';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';

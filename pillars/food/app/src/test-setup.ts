@@ -3,7 +3,7 @@ import '@testing-library/jest-dom/vitest';
 import { createInstance } from 'i18next';
 import { initReactI18next } from 'react-i18next';
 
-import enAUFood from '../../../../apps/pops-shell/src/i18n/locales/en-AU/food.json';
+import enAUFood from '@pops/locales/en-AU/food.json';
 
 // jsdom doesn't ship a ResizeObserver; Radix Dialog / Tooltip primitives
 // rely on it. Only install the stub when the environment doesn't already

@@ -3,7 +3,7 @@ import '@testing-library/jest-dom/vitest';
 import { createInstance } from 'i18next';
 import { initReactI18next } from 'react-i18next';
 
-import enAUMedia from '../../../../apps/pops-shell/src/i18n/locales/en-AU/media.json';
+import enAUMedia from '@pops/locales/en-AU/media.json';
 
 const i18n = createInstance();
 

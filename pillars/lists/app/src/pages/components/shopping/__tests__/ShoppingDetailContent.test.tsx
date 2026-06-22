@@ -7,7 +7,7 @@ import { I18nextProvider, initReactI18next } from 'react-i18next';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import enAULists from '../../../../../../../../apps/pops-shell/src/i18n/locales/en-AU/lists.json';
+import enAULists from '@pops/locales/en-AU/lists.json';
 
 import type { ListItemRow, ListRow } from '../../../detail/types.js';
 

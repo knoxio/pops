@@ -65,6 +65,7 @@
     "@codemirror/view": "^6.43.1",
     "@lezer/highlight": "^1.2.3",
     "@lezer/lr": "^1.4.10",
+    "@pops/locales": "workspace:*",
     "@storybook/addon-a11y": "^10.4.3",
     "@storybook/react-vite": "^10.4.3",
     "@tailwindcss/vite": "4.3.0",

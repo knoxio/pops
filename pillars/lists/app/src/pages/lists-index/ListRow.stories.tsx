@@ -13,7 +13,8 @@ import { useMemo } from 'react';
 import { I18nextProvider, initReactI18next } from 'react-i18next';
 import { MemoryRouter } from 'react-router';
 
-import enAULists from '../../../../../../apps/pops-shell/src/i18n/locales/en-AU/lists.json';
+import enAULists from '@pops/locales/en-AU/lists.json';
+
 import { ListRow } from './ListRow';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
