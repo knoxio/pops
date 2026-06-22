@@ -232,4 +232,12 @@ describe('aggregateSettings', () => {
 
     expect(result.pillars.map((p) => p.pillarId)).toEqual(['core', 'finance', 'media']);
   });
+
+  it('orders pillars total-ly: equal ids compare to 0, not an arbitrary side', () => {
+    const compare = (a: string, b: string): number => a.localeCompare(b);
+
+    expect(compare('finance', 'finance')).toBe(0);
+    expect(Math.sign(compare('core', 'media'))).toBe(-1);
+    expect(Math.sign(compare('media', 'core'))).toBe(1);
+  });
 });

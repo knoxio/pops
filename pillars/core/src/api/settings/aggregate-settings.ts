@@ -177,7 +177,7 @@ export async function aggregateSettings(
 
   const remote = await Promise.all(probes);
   return {
-    pillars: [self, ...remote].toSorted((a, b) => (a.pillarId < b.pillarId ? -1 : 1)),
+    pillars: [self, ...remote].toSorted((a, b) => a.pillarId.localeCompare(b.pillarId)),
     fetchedAt: now().toISOString(),
   };
 }

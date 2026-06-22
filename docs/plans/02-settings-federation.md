@@ -54,7 +54,7 @@ Any divergence not covered by a US is filed as a **gap issue** referencing PRD-2
 
 - **GAP-256-A**: the manifest/enum disagreement already in the tree (`rotation_*`, `ai.logRetentionDays`, `corrections.changeSetRejections:*` referenced but absent from `SETTINGS_KEYS`). Federation picks ONE authority per pillar; the manifest wins.
 - **GAP-256-B**: `media.comparisons.*` is env-backed at runtime yet table-backed in the UI — editing it does nothing. Reconcile (OD-4).
-- **GAP-256-C**: the shell aggregates from build-time `MODULES`, not the live registry — `discoverSettings` ships unused.
+- **GAP-256-C** (CLOSED by S3): the shell used to aggregate from build-time `MODULES`, not the live registry, leaving `discoverSettings` unused. S3 repointed `SettingsPage`/`SectionRenderer` onto the live registry via `discoverSettings` + capability-gated per-pillar transport (`settingsClientFor`) with a core fallback.
 - **GAP-256-D** (NEW, mustFix-derived): the discovery snapshot type (`PillarSnapshot`, `packages/pillar-sdk/src/discovery/types.ts:12-31`) and the discovery normalizer (`client/discovery.ts:109-121`) DROP the `capabilities` field even though the registry wire emits it (`pillars/core/src/api/modules/registry/snapshot.ts:47`). The capability-gated rollout is impossible until this is plumbed. File before Phase 3.
 - **GAP-256-E** (NEW, security): settings reads perform no redaction today; the new collection + aggregator reads must redact sensitive fields server-side or they leak `plex_token` / encryption seeds.
 
@@ -83,9 +83,9 @@ Any divergence not covered by a US is filed as a **gap issue** referencing PRD-2
 
 ### 3.4 Aggregation & the chokepoint
 
-- `discoverSettings` (`packages/pillar-sdk/src/settings/discover-settings.ts:55`) walks the live snapshot, skips `registered===false`, flattens, sorts. **Confirmed UNUSED in production.** It ALREADY tracks `pillarId` internally per descriptor (`:59,66`) but `.map`s it away at `:79` — so exposing `{ownerPillar, descriptor}[]` is strictly additive.
-- Shell aggregates from **build-time** `MODULES`: `apps/pops-shell/src/app/pages/SettingsPage.tsx:39-45`.
-- Single hardcoded transport: `apps/pops-shell/src/components/settings/SectionRenderer.tsx:1` imports `@/core-api`. The shell has only a `core-api` client; no per-pillar client dirs exist.
+- `discoverSettings` (`packages/pillar-sdk/src/settings/discover-settings.ts`) walks the live snapshot, skips `registered===false`, flattens, sorts, and now exposes `{ownerPillar, descriptor, capabilities}` per entry. **S3 UPDATE:** previously confirmed UNUSED in production (the shell read build-time `MODULES`); S3 cut the shell over to it — `discoverSettings` is now the shell's settings source. The original `.map`-away of `pillarId` was removed so the owner + capabilities flow through.
+- **S3 UPDATE — the shell no longer aggregates from build-time `MODULES`.** `SettingsPage` now subscribes to the live registry snapshot and feeds it to `discoverSettings`, passing each `{ownerPillar, descriptor, capabilities}` down. (Pre-S3 it read build-time `MODULES` at `apps/pops-shell/src/app/pages/SettingsPage.tsx`.)
+- **S3 UPDATE — the transport is no longer a single hardcoded `@/core-api` import.** `SectionRenderer` (`apps/pops-shell/src/components/settings/SectionRenderer.tsx`) now takes `ownerPillar` + `hasFederatedSettings` and resolves the transport per pillar via `settingsClientFor(ownerPillar, hasFederatedSettings)` (`apps/pops-shell/src/lib/settings-client.ts`): the live `capabilities.settings` flag routes to `/<id>-api/settings` when ON and falls back to `/core-api/settings` when OFF/absent, so an un-upgraded pillar keeps working. (Pre-S3 the renderer hardcoded `@/core-api` and the shell had only a `core-api` client.)
 
 ### 3.5 Cross-pillar readers & local carve-outs
 
