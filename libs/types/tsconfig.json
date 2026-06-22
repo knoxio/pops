@@ -4,8 +4,7 @@
     "module": "Node16",
     "moduleResolution": "Node16",
     "lib": ["ES2022"],
-    "declaration": true,
-    "declarationMap": true,
+    "noEmit": true,
     "outDir": "dist",
     "rootDir": "src",
     "types": ["vitest/globals"]

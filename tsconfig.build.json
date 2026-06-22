@@ -1,0 +1,19 @@
+{
+  "files": [],
+  "references": [
+    { "path": "libs/types/tsconfig.build.json" },
+    { "path": "libs/db-types/tsconfig.build.json" },
+    { "path": "libs/sdk/tsconfig.build.json" },
+    { "path": "libs/settings/tsconfig.build.json" },
+    { "path": "libs/ai-telemetry/tsconfig.build.json" },
+    { "path": "libs/module-registry/tsconfig.build.json" },
+    { "path": "pillars/registry/tsconfig.build.json" },
+    { "path": "pillars/ai/tsconfig.build.json" },
+    { "path": "pillars/cerebrum/tsconfig.build.json" },
+    { "path": "pillars/finance/tsconfig.build.json" },
+    { "path": "pillars/food/tsconfig.build.json" },
+    { "path": "pillars/inventory/tsconfig.build.json" },
+    { "path": "pillars/lists/tsconfig.build.json" },
+    { "path": "pillars/media/tsconfig.build.json" }
+  ]
+}

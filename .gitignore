@@ -6,6 +6,8 @@ package-lock.json
 dist/
 # Bundled nginx render + watcher CLIs (apps/pops-shell, built in-image)
 dist-scripts/
+# tsc -b project-reference incremental build state
+*.tsbuildinfo
 
 # Rust build output (crates/ cargo workspace + pillars/<id> Rust pillars).
 # Cargo.lock IS committed for the workspace (reproducible bin builds).
