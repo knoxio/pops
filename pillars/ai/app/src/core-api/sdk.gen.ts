@@ -11,20 +11,6 @@ import type {
   AiUsageClearStaleCacheData,
   AiUsageClearStaleCacheErrors,
   AiUsageClearStaleCacheResponses,
-  EntitiesCreateData,
-  EntitiesCreateErrors,
-  EntitiesCreateResponses,
-  EntitiesDeleteData,
-  EntitiesDeleteErrors,
-  EntitiesDeleteResponses,
-  EntitiesGetData,
-  EntitiesGetErrors,
-  EntitiesGetResponses,
-  EntitiesListData,
-  EntitiesListResponses,
-  EntitiesUpdateData,
-  EntitiesUpdateErrors,
-  EntitiesUpdateResponses,
   FeaturesClearUserPreferenceData,
   FeaturesClearUserPreferenceErrors,
   FeaturesClearUserPreferenceResponses,
@@ -43,8 +29,6 @@ import type {
   FeaturesSetUserPreferenceData,
   FeaturesSetUserPreferenceErrors,
   FeaturesSetUserPreferenceResponses,
-  SearchSearchData,
-  SearchSearchResponses,
   ServiceAccountsCreateData,
   ServiceAccountsCreateErrors,
   ServiceAccountsCreateResponses,
@@ -152,73 +136,6 @@ export const aiUsageClearStaleCache = <ThrowOnError extends boolean = false>(
   });
 
 /**
- * List entities with optional search / type filters and pagination
- */
-export const entitiesList = <ThrowOnError extends boolean = false>(
-  options?: Options<EntitiesListData, ThrowOnError>
-): RequestResult<EntitiesListResponses, unknown, ThrowOnError> =>
-  (options?.client ?? client).get<EntitiesListResponses, unknown, ThrowOnError>({
-    url: '/entities',
-    ...options,
-  });
-
-/**
- * Create an entity
- */
-export const entitiesCreate = <ThrowOnError extends boolean = false>(
-  options?: Options<EntitiesCreateData, ThrowOnError>
-): RequestResult<EntitiesCreateResponses, EntitiesCreateErrors, ThrowOnError> =>
-  (options?.client ?? client).post<EntitiesCreateResponses, EntitiesCreateErrors, ThrowOnError>({
-    url: '/entities',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options?.headers,
-    },
-  });
-
-/**
- * Delete an entity
- */
-export const entitiesDelete = <ThrowOnError extends boolean = false>(
-  options: Options<EntitiesDeleteData, ThrowOnError>
-): RequestResult<EntitiesDeleteResponses, EntitiesDeleteErrors, ThrowOnError> =>
-  (options.client ?? client).delete<EntitiesDeleteResponses, EntitiesDeleteErrors, ThrowOnError>({
-    url: '/entities/{id}',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
-
-/**
- * Get a single entity
- */
-export const entitiesGet = <ThrowOnError extends boolean = false>(
-  options: Options<EntitiesGetData, ThrowOnError>
-): RequestResult<EntitiesGetResponses, EntitiesGetErrors, ThrowOnError> =>
-  (options.client ?? client).get<EntitiesGetResponses, EntitiesGetErrors, ThrowOnError>({
-    url: '/entities/{id}',
-    ...options,
-  });
-
-/**
- * Update an entity
- */
-export const entitiesUpdate = <ThrowOnError extends boolean = false>(
-  options: Options<EntitiesUpdateData, ThrowOnError>
-): RequestResult<EntitiesUpdateResponses, EntitiesUpdateErrors, ThrowOnError> =>
-  (options.client ?? client).patch<EntitiesUpdateResponses, EntitiesUpdateErrors, ThrowOnError>({
-    url: '/entities/{id}',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
-
-/**
  * Resolved feature status for the current user (admin Features page)
  */
 export const featuresList = <ThrowOnError extends boolean = false>(
@@ -313,21 +230,6 @@ export const featuresSetUserPreference = <ThrowOnError extends boolean = false>(
     headers: {
       'Content-Type': 'application/json',
       ...options.headers,
-    },
-  });
-
-/**
- * Search the core pillar's domains (entities) for the unified search engine
- */
-export const searchSearch = <ThrowOnError extends boolean = false>(
-  options?: Options<SearchSearchData, ThrowOnError>
-): RequestResult<SearchSearchResponses, unknown, ThrowOnError> =>
-  (options?.client ?? client).post<SearchSearchResponses, unknown, ThrowOnError>({
-    url: '/search',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options?.headers,
     },
   });
 

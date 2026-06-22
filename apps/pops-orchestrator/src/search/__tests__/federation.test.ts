@@ -89,7 +89,7 @@ describe('selectSearchPillars — registry-driven membership', () => {
     const onWarn = vi.fn();
     const resolved = selectSearchPillars(
       [
-        snapshot('core'),
+        snapshot('contacts'),
         snapshot('finance'),
         snapshot('food', { searchCapable: false }),
         snapshot('inventory'),
@@ -97,7 +97,7 @@ describe('selectSearchPillars — registry-driven membership', () => {
       onWarn
     );
 
-    expect(resolved.map((p) => p.id).toSorted()).toEqual(['core', 'finance', 'inventory']);
+    expect(resolved.map((p) => p.id).toSorted()).toEqual(['contacts', 'finance', 'inventory']);
     expect(onWarn).not.toHaveBeenCalled();
   });
 
@@ -119,14 +119,14 @@ describe('selectSearchPillars — registry-driven membership', () => {
 
   it('treats a registered pillar with no explicit status as healthy (legacy snapshot)', () => {
     const legacy: PillarSnapshot = {
-      pillarId: 'core',
-      baseUrl: 'http://core:3000',
-      manifest: manifestFor('core'),
+      pillarId: 'contacts',
+      baseUrl: 'http://contacts:3000',
+      manifest: manifestFor('contacts'),
       registered: true,
       lastSeenAt: new Date(),
     };
     const resolved = selectSearchPillars([legacy], vi.fn());
-    expect(resolved.map((p) => p.id)).toEqual(['core']);
+    expect(resolved.map((p) => p.id)).toEqual(['contacts']);
   });
 
   it('decorates a known pillar with its ported section chrome', () => {
@@ -143,7 +143,11 @@ describe('selectSearchPillars — registry-driven membership', () => {
 
 describe('sectionMetaFor', () => {
   it('returns the static entry for a mapped pillar', () => {
-    expect(sectionMetaFor('core')).toEqual({ domain: 'core', icon: 'Building2', color: 'green' });
+    expect(sectionMetaFor('finance')).toEqual({
+      domain: 'finance',
+      icon: 'ArrowRightLeft',
+      color: 'green',
+    });
   });
 
   it('returns the configured contacts chrome, not the gray default', () => {
@@ -171,7 +175,7 @@ describe('createFederationSource', () => {
   it('fans the query out to every registry-resolved search-capable pillar', async () => {
     const invoke = vi.fn<SearchInvoker>(async () => ok([]));
     const source = sourceFor(
-      [snapshot('core'), snapshot('finance'), snapshot('inventory')],
+      [snapshot('contacts'), snapshot('finance'), snapshot('inventory')],
       invoke
     );
     const query = { text: 'rent' };
@@ -179,7 +183,7 @@ describe('createFederationSource', () => {
     await source(query, ROOT);
 
     expect(invoke).toHaveBeenCalledTimes(3);
-    for (const id of ['core', 'finance', 'inventory']) {
+    for (const id of ['contacts', 'finance', 'inventory']) {
       expect(invoke).toHaveBeenCalledWith(id, { query, context: ROOT });
     }
   });
@@ -201,14 +205,14 @@ describe('createFederationSource', () => {
   it('decorates each pillar group with its ported domain/icon/color', async () => {
     const invoke: SearchInvoker = async (pillarId) => ok([hit(`pops:${pillarId}/1`)]);
     const source = sourceFor(
-      [snapshot('core'), snapshot('finance'), snapshot('inventory')],
+      [snapshot('contacts'), snapshot('finance'), snapshot('inventory')],
       invoke
     );
 
     const groups = await source({ text: 'x' }, ROOT);
 
     const byId = Object.fromEntries(groups.map((g) => [g.moduleId, g]));
-    expect(byId['core']).toMatchObject({ domain: 'core', icon: 'Building2', color: 'green' });
+    expect(byId['contacts']).toMatchObject({ domain: 'contacts', icon: 'Users', color: 'blue' });
     expect(byId['finance']).toMatchObject({
       domain: 'finance',
       icon: 'ArrowRightLeft',
@@ -233,7 +237,7 @@ describe('createFederationSource', () => {
   });
 
   describe('best-effort failure isolation', () => {
-    const ALL = [snapshot('core'), snapshot('finance'), snapshot('inventory')];
+    const ALL = [snapshot('contacts'), snapshot('finance'), snapshot('inventory')];
 
     it('skips an unavailable pillar but keeps the others', async () => {
       const onWarn = vi.fn();
@@ -245,7 +249,7 @@ describe('createFederationSource', () => {
 
       const groups = await source({ text: 'x' }, ROOT);
 
-      expect(groups.map((g) => g.moduleId).toSorted()).toEqual(['core', 'inventory']);
+      expect(groups.map((g) => g.moduleId).toSorted()).toEqual(['contacts', 'inventory']);
       expect(onWarn).toHaveBeenCalledWith(
         "[orchestrator] federated search pillar 'finance' unavailable",
         expect.objectContaining({ kind: 'unavailable' })
@@ -262,7 +266,7 @@ describe('createFederationSource', () => {
 
       const groups = await source({ text: 'x' }, ROOT);
 
-      expect(groups.map((g) => g.moduleId).toSorted()).toEqual(['core', 'finance']);
+      expect(groups.map((g) => g.moduleId).toSorted()).toEqual(['contacts', 'finance']);
       expect(onWarn).toHaveBeenCalledWith(
         '[orchestrator] federated search pillar threw',
         expect.any(Error)

@@ -20,11 +20,11 @@ vi.mock('../../finance-api/index.js', () => ({
   }),
 }));
 
-// The entity picker reads `entities.list` over the generated core REST client;
-// the mock resolves the Hey API `{ data, error }` envelope so the picker's
-// `unwrap` returns the list payload. Corrections are finance REST (mocked
-// above) and the proposal dialog itself is stubbed below.
-vi.mock('../../core-api/index.js', () => ({
+// The entity picker reads `entities.list` over the generated contacts REST
+// client; the mock resolves the Hey API `{ data, error }` envelope so the
+// picker's `unwrap` returns the list payload. Corrections are finance REST
+// (mocked above) and the proposal dialog itself is stubbed below.
+vi.mock('../../contacts-api/index.js', () => ({
   entitiesList: (...args: unknown[]) => mockEntitiesQuery(...args),
 }));
 

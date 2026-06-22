@@ -22,9 +22,9 @@ vi.mock('../finance-api/index.js', () => ({
 }));
 
 // The manual rule-form's entity picker reads `entities.list` over the
-// generated core REST client; corrections themselves are now finance REST
+// generated contacts REST client; corrections themselves are now finance REST
 // (mocked above). The mock resolves the Hey API `{ data, error }` envelope.
-vi.mock('../core-api/index.js', () => ({
+vi.mock('../contacts-api/index.js', () => ({
   entitiesList: () =>
     Promise.resolve({
       data: { data: [], pagination: { total: 0, limit: 500, offset: 0, hasMore: false } },

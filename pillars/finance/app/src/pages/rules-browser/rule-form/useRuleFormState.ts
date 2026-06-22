@@ -4,8 +4,8 @@ import { useCallback, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 
-import { unwrap as unwrapCore } from '../../../core-api-helpers.js';
-import { entitiesList } from '../../../core-api/index.js';
+import { unwrap as unwrapContacts } from '../../../contacts-api-helpers.js';
+import { entitiesList } from '../../../contacts-api/index.js';
 import { unwrap } from '../../../finance-api-helpers.js';
 import { correctionsCreateOrUpdate, correctionsUpdate } from '../../../finance-api/index.js';
 import { DEFAULT_RULE_FORM_VALUES, type RuleFormValues, RuleFormSchema } from './types';
@@ -107,9 +107,9 @@ function buildSubmit(
  *
  * The dialog supports both create and edit, backed by the finance REST
  * `corrections.createOrUpdate` / `corrections.update` operations; the entity
- * picker reads the core `entities.list` over the generated core REST client.
- * Per PRD-244 Option A, `isSubmitting` aggregates the two mutation `isPending`
- * flags by hand.
+ * picker reads the contacts `entities.list` over the generated contacts REST
+ * client. Per PRD-244 Option A, `isSubmitting` aggregates the two mutation
+ * `isPending` flags by hand.
  */
 export function useRuleFormState({ onClose }: UseRuleFormStateOptions) {
   const [editingRule, setEditingRule] = useState<Correction | null>(null);
@@ -122,8 +122,8 @@ export function useRuleFormState({ onClose }: UseRuleFormStateOptions) {
   });
   const { createMutation, updateMutation } = useRuleMutations(onClose);
   const entitiesQuery = useQuery({
-    queryKey: ['core', 'entities', 'list', ENTITIES_LIST_INPUT],
-    queryFn: async () => unwrapCore(await entitiesList({ query: ENTITIES_LIST_INPUT })),
+    queryKey: ['contacts', 'entities', 'list', ENTITIES_LIST_INPUT],
+    queryFn: async () => unwrapContacts(await entitiesList({ query: ENTITIES_LIST_INPUT })),
   });
   const entities = (entitiesQuery.data?.data ?? []).map((e) => ({ id: e.id, name: e.name }));
 

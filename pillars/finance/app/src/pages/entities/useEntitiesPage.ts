@@ -4,8 +4,8 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 
-import { unwrap } from '../../core-api-helpers.js';
-import { entitiesCreate, entitiesDelete, entitiesUpdate } from '../../core-api/index.js';
+import { unwrap } from '../../contacts-api-helpers.js';
+import { entitiesCreate, entitiesDelete, entitiesUpdate } from '../../contacts-api/index.js';
 import { unwrap as unwrapFinance } from '../../finance-api-helpers.js';
 import { entityUsageList } from '../../finance-api/index.js';
 import {
@@ -16,7 +16,7 @@ import {
   type ENTITY_TYPES,
 } from './types';
 
-import type { EntitiesCreateData } from '../../core-api/types.gen.js';
+import type { EntitiesCreateData } from '../../contacts-api/types.gen.js';
 
 type CreateEntityInput = NonNullable<EntitiesCreateData['body']>;
 
@@ -30,7 +30,7 @@ interface DeleteEntityInput {
 }
 
 /** Query key for the entity list (usage-augmented, finance-served). */
-const ENTITIES_KEY = ['core', 'entities'] as const;
+const ENTITIES_KEY = ['contacts', 'entities'] as const;
 
 interface MutationDeps {
   setIsDialogOpen: (v: boolean) => void;
@@ -102,7 +102,7 @@ export function useEntitiesPage() {
   const [showOrphanedOnly, setShowOrphanedOnly] = useState(false);
 
   // The list (with per-entity transactionCount + the orphaned filter) is the
-  // finance-owned usage rollup; core's plain entities CRUD carries neither.
+  // finance-owned usage rollup; contacts' plain entities CRUD carries neither.
   const listQuery = { limit: 100, orphanedOnly: showOrphanedOnly ? 'true' : undefined } as const;
   const query = useQuery({
     queryKey: [...ENTITIES_KEY, 'list', listQuery],

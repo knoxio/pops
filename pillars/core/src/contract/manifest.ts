@@ -26,6 +26,6 @@ export const coreManifest: ModuleManifest = {
   name: 'Core',
   version: '0.1.0',
   surfaces: ['app'],
-  description: 'Cross-cutting platform services: entities, settings, features, search.',
+  description: 'Cross-cutting platform services: settings, features, registry.',
   settings: [aiConfigManifest, coreOperationalManifest],
 };

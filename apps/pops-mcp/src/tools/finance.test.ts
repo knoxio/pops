@@ -4,7 +4,7 @@ import {
   callContractMismatch,
   callOk,
   callUnavailable,
-  mockPillarCore,
+  mockPillarContacts,
   mockPillarFinance,
   pillarMockGetter,
 } from './test-helpers.js';
@@ -18,7 +18,7 @@ const { financeTools } = await import('./finance.js');
 
 const transactions = mockPillarFinance.finance.transactions;
 const budgets = mockPillarFinance.finance.budgets;
-const entities = mockPillarCore.core.entities;
+const entities = mockPillarContacts.contacts.entities;
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -59,7 +59,7 @@ describe('finance.transactions.list', () => {
 describe('finance.entities.list', () => {
   const tool = financeTools.find((t) => t.name === 'finance.entities.list')!;
 
-  it('calls core.entities.list with search filter', async () => {
+  it('calls contacts.entities.list with search filter', async () => {
     await tool.handler({ search: 'woolworths' });
     expect(entities.list).toHaveBeenCalledWith(expect.objectContaining({ search: 'woolworths' }));
   });

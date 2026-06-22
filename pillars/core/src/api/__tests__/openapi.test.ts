@@ -4,7 +4,7 @@
  * The route serves the committed `openapi/core.openapi.json` projection
  * verbatim so the pillar SDK can build its operationId route map against the
  * live pillar. This asserts the document is reachable, is OpenAPI 3.x, and
- * carries a known operationId (`entities.get`) from the migrated surface.
+ * carries a known operationId (`settings.list`) from the migrated surface.
  */
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -35,7 +35,7 @@ type OpenApiBody = {
 };
 
 describe('GET /openapi', () => {
-  it('serves the committed projection as JSON (3.x + entities.get operationId)', async () => {
+  it('serves the committed projection as JSON (3.x + settings.list operationId)', async () => {
     const app = createCoreApiApp({
       coreDb,
       version: '0.0.1-test',
@@ -52,6 +52,6 @@ describe('GET /openapi', () => {
       .filter((item): item is Record<string, { operationId?: unknown }> => item !== undefined)
       .flatMap((item) => Object.values(item))
       .map((operation) => operation.operationId);
-    expect(operationIds).toContain('entities.get');
+    expect(operationIds).toContain('settings.list');
   });
 });

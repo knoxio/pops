@@ -99,6 +99,13 @@
       "when": 1782518400000,
       "tag": "0068_pillar_registry_capabilities",
       "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1782604800000,
+      "tag": "0069_drop_entities",
+      "breakpoints": true
     }
   ]
 }

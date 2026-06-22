@@ -7,17 +7,11 @@
  *
  * Service-owned types (`SettingRow`, `AiBudgetRow`, `AiInferenceLogRow`,
  * etc.) live in their respective service modules and are re-exported
- * via `./index.ts`. This file hosts the remaining inferred row aliases
- * plus the `ENTITY_TYPES` discriminator set co-located with the table.
+ * via `./index.ts`. This file hosts the remaining inferred row aliases.
  */
 import type { InferInsertModel, InferSelectModel } from 'drizzle-orm';
 
-export { ENTITY_TYPES, type EntityType } from './schema/entity-types.js';
-
-import type { aiUsage, entities, environments, userSettings } from './schema.js';
-
-export type EntityRow = InferSelectModel<typeof entities>;
-export type EntityInsert = InferInsertModel<typeof entities>;
+import type { aiUsage, environments, userSettings } from './schema.js';
 
 export type EnvironmentRow = InferSelectModel<typeof environments>;
 export type EnvironmentInsert = InferInsertModel<typeof environments>;

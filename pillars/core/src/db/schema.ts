@@ -1,7 +1,7 @@
 /**
  * Core domain table barrel.
  *
- * Canonical definitions for core-owned tables (entities, environments,
+ * Canonical definitions for core-owned tables (environments,
  * pillar registry, service accounts, settings, user settings, plus the
  * finance-categorizer `ai_usage` table) live in this package per
  * PRD-245 US-07 (audit H6/H7). The AI-ops observability slice
@@ -10,7 +10,6 @@
  *
  */
 export { aiUsage } from './schema/ai-usage.js';
-export { entities } from './schema/entities.js';
 export { environments } from './schema/environments.js';
 export { pillarRegistry } from './schema/pillar-registry.js';
 export { serviceAccounts } from './schema/service-accounts.js';
