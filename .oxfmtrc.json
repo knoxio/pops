@@ -37,7 +37,7 @@
     "packages/*/openapi/*.openapi.json",
     "pillars/contacts/openapi/*.openapi.json",
     "**/__tests__/fixtures/*.json",
-    "crates/*/tests/fixtures/*.json",
+    "libs/*/tests/fixtures/*.json",
     "*.csv",
     "*.jsonl",
     "**/*.tsbuildinfo",
