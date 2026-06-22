@@ -1,14 +1,14 @@
 name: Rust Quality
 
-# Self-contained Rust CI lane for the `crates/` cargo workspace and the Rust
+# Self-contained Rust CI lane for the repo-root cargo workspace and the Rust
 # pillars it builds (currently `pillars/contacts`, the first Rust pillar).
 #
 # ADDITIVE by design: it is path-filtered to the Rust tree and is NOT part of
 # the TS `pillar-quality` / `_pkg-check` matrices. Rust pillars carry no
 # `package.json`, so the turbo/pnpm pillar discovery never sees them — this
-# workflow is their only gate. Adding a Rust crate to `crates/Cargo.toml`
-# (e.g. `pops-ai`, `pops-settings`) is covered here with no workflow edit
-# because every step operates on the whole workspace.
+# workflow is their only gate. Adding a Rust crate to the workspace
+# `Cargo.toml` (e.g. `pops-ai`, `pops-settings`) is covered here with no
+# workflow edit because every step operates on the whole workspace.
 #
 # Caching uses `actions/cache` (already on the repo's allow-list) rather than a
 # third-party Rust cache action so the workflow starts under org action policy.
@@ -17,12 +17,18 @@ on:
   push:
     branches: [main]
     paths:
-      - "crates/**"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - "libs/pops-ai/**"
+      - "libs/pops-settings/**"
       - "pillars/contacts/**"
       - ".github/workflows/rust-quality.yml"
   pull_request:
     paths:
-      - "crates/**"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - "libs/pops-ai/**"
+      - "libs/pops-settings/**"
       - "pillars/contacts/**"
       - ".github/workflows/rust-quality.yml"
 
@@ -51,31 +57,26 @@ jobs:
             ~/.cargo/registry/index
             ~/.cargo/registry/cache
             ~/.cargo/git/db
-            crates/target
-          key: cargo-${{ runner.os }}-${{ hashFiles('crates/Cargo.toml', 'pillars/contacts/Cargo.toml') }}
+            target
+          key: cargo-${{ runner.os }}-${{ hashFiles('Cargo.toml', 'Cargo.lock', 'pillars/contacts/Cargo.toml') }}
           restore-keys: |
             cargo-${{ runner.os }}-
 
       - name: Format check
-        working-directory: crates
         run: cargo fmt --all --check
 
       - name: Clippy (deny warnings)
-        working-directory: crates
         run: cargo clippy --all-targets --all-features -- -D warnings
 
       - name: Build
-        working-directory: crates
         run: cargo build --all-targets
 
       - name: Test
-        working-directory: crates
         run: cargo test --all
 
       - name: OpenAPI spec is current (3.0 emission drift gate)
-        working-directory: crates
         run: |
-          spec="../pillars/contacts/openapi/contacts.openapi.json"
+          spec="pillars/contacts/openapi/contacts.openapi.json"
 
           # A missing or untracked spec must FAIL, not pass vacuously. `git
           # diff` alone ignores untracked files, so a never-committed spec

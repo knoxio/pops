@@ -1,10 +1,10 @@
 [package]
 name = "contacts"
 version = "0.1.0"
-# The workspace root lives at `crates/`, a sibling of `pillars/`. The crate is
-# colocated with its TS frontend under `pillars/contacts`, so it points back
-# at the workspace explicitly rather than relying on directory ancestry.
-workspace = "../../crates"
+# The workspace root lives at the repo root. The crate is colocated with its TS
+# frontend under `pillars/contacts`, so it points back at the workspace
+# explicitly rather than relying on directory ancestry.
+workspace = "../.."
 edition.workspace = true
 license.workspace = true
 publish.workspace = true

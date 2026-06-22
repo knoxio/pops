@@ -1,8 +1,9 @@
 [package]
 name = "pops-ai"
 version = "0.1.0"
-# A direct member of the `crates/` cargo workspace (a sibling of `pops-settings`
-# and of the `pillars/contacts` crate). 1:1 Rust mirror of the TS
+# A direct member of the cargo workspace, a shared library under `libs/`
+# (a sibling of `pops-settings` and of the `pillars/contacts` crate). 1:1 Rust
+# mirror of the TS
 # `@pops/ai-telemetry` wire contract — the cross-pillar AI-inference telemetry
 # sink. Standalone library: it has no in-tree consumer yet (the contacts Rust
 # pillar will adopt it), so it ships compiled + tested-but-unused, with a

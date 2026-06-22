@@ -3,8 +3,8 @@
 #
 # Build context is the REPO ROOT (publish-images.yml + pillar-quality.yml both
 # pass `context: .`), so COPY paths are repo-relative. The cargo workspace root
-# lives at `crates/` and the member crate at `pillars/contacts`; both must be
-# present for `cargo build -p contacts` to resolve the workspace.
+# lives at the repo root and the member crate at `pillars/contacts`; both must
+# be present for `cargo build -p contacts` to resolve the workspace.
 #
 # The contacts crate uses sqlx's RUNTIME query API (see
 # pillars/contacts/src/entities/repo.rs), so there is NO `.sqlx/` offline cache
@@ -26,9 +26,9 @@ RUN apt-get update \
 # copy their manifests too so `cargo` can parse the workspace graph (a member
 # missing its Cargo.toml fails workspace resolution even when we build only
 # `-p contacts`).
-COPY crates/Cargo.toml crates/Cargo.lock ./crates/
-COPY crates/pops-ai/Cargo.toml ./crates/pops-ai/
-COPY crates/pops-settings/Cargo.toml ./crates/pops-settings/
+COPY Cargo.toml Cargo.lock ./
+COPY libs/pops-ai/Cargo.toml ./libs/pops-ai/
+COPY libs/pops-settings/Cargo.toml ./libs/pops-settings/
 COPY pillars/contacts/Cargo.toml ./pillars/contacts/
 
 # Stub sources so the dependency layer compiles the third-party crate graph
@@ -38,15 +38,15 @@ COPY pillars/contacts/Cargo.toml ./pillars/contacts/
 # compiles every dependency (the slow part, cached via `--mount=type=cache`)
 # plus a trivial crate. No `|| true`: a broken dependency graph fails here
 # loudly instead of being masked.
-RUN mkdir -p crates/pops-ai/src crates/pops-settings/src \
+RUN mkdir -p libs/pops-ai/src libs/pops-settings/src \
         pillars/contacts/src pillars/contacts/src/bin \
-    && echo '' > crates/pops-ai/src/lib.rs \
-    && echo '' > crates/pops-settings/src/lib.rs \
+    && echo '' > libs/pops-ai/src/lib.rs \
+    && echo '' > libs/pops-settings/src/lib.rs \
     && echo '' > pillars/contacts/src/lib.rs \
     && echo 'fn main() {}' > pillars/contacts/src/main.rs \
     && echo 'fn main() {}' > pillars/contacts/src/bin/emit_openapi.rs
 RUN --mount=type=cache,target=/usr/local/cargo/registry \
-    cargo build --release --manifest-path crates/Cargo.toml -p contacts
+    cargo build --release --manifest-path Cargo.toml -p contacts
 
 # Real sources. The contacts crate's own artifacts from the stub layer compiled
 # the empty stub lib/main, and cargo fingerprints by mtime — so purge the
@@ -57,10 +57,10 @@ COPY pillars/contacts/migrations ./pillars/contacts/migrations
 COPY pillars/contacts/openapi ./pillars/contacts/openapi
 COPY pillars/contacts/src ./pillars/contacts/src
 RUN --mount=type=cache,target=/usr/local/cargo/registry \
-    rm -rf crates/target/release/contacts \
-        crates/target/release/deps/contacts-* \
-        crates/target/release/.fingerprint/contacts-* \
-    && cargo build --release --manifest-path crates/Cargo.toml -p contacts --bin contacts
+    rm -rf target/release/contacts \
+        target/release/deps/contacts-* \
+        target/release/.fingerprint/contacts-* \
+    && cargo build --release --manifest-path Cargo.toml -p contacts --bin contacts
 
 FROM debian:bookworm-slim AS runtime
 WORKDIR /app
@@ -76,7 +76,7 @@ RUN apt-get update \
     && mkdir -p /data/sqlite \
     && chown -R contacts:contacts /data
 
-COPY --from=builder /build/crates/target/release/contacts /app/contacts
+COPY --from=builder /build/target/release/contacts /app/contacts
 
 # Watchtower injects the git SHA as BUILD_VERSION; the binary coerces a
 # non-semver value to 0.0.0-sha.<7> for the manifest.
