@@ -158,8 +158,8 @@ describe('parseSoftUri', () => {
   });
 
   it('preserves slashes in the id segment (urn-style)', () => {
-    expect(parseSoftUri('pops://registry/user/joe@example.com')).toEqual({
-      pillar: 'registry',
+    expect(parseSoftUri('pops://core/user/joe@example.com')).toEqual({
+      pillar: 'core',
       type: 'user',
       id: 'joe@example.com',
     });
@@ -171,7 +171,7 @@ describe('runReconciliation — happy-path', () => {
     seedRow({
       id: 'row-1',
       purchaseTransactionUri: 'pops://finance/transaction/tx-1',
-      ownerUri: 'pops://registry/user/joao@example.com',
+      ownerUri: 'pops://core/user/joao@example.com',
     });
     crossPillarUrisService.markPurchaseTransactionUriStale(
       inventoryDb.db,
@@ -180,12 +180,12 @@ describe('runReconciliation — happy-path', () => {
     );
     crossPillarUrisService.markOwnerUriStale(
       inventoryDb.db,
-      'pops://registry/user/joao@example.com',
+      'pops://core/user/joao@example.com',
       '2026-06-14T00:00:00.000Z'
     );
 
     const finance = makeFinanceProxy({ 'tx-1': {} });
-    const registry = makeRegistryProxy({ 'pops://registry/user/joao@example.com': {} });
+    const registry = makeRegistryProxy({ 'pops://core/user/joao@example.com': {} });
     const info = vi.fn();
 
     const counters = await runReconciliation({
@@ -210,7 +210,7 @@ describe('runReconciliation — 404', () => {
     seedRow({
       id: 'row-2',
       purchaseTransactionUri: 'pops://finance/transaction/missing',
-      ownerUri: 'pops://registry/user/nobody@example.com',
+      ownerUri: 'pops://core/user/nobody@example.com',
     });
     const finance = makeFinanceProxy({});
     const registry = makeRegistryProxy({});
@@ -286,7 +286,7 @@ describe('runReconciliation — owning-pillar-unavailable', () => {
   it('treats a thrown non-Pillar error as unavailable (retry next tick)', async () => {
     seedRow({
       id: 'row-3b',
-      ownerUri: 'pops://registry/user/transient@example.com',
+      ownerUri: 'pops://core/user/transient@example.com',
     });
     const finance = makeFinanceProxy({});
     const registry: PillarHandle<RegistryRouter> = {
@@ -311,7 +311,7 @@ describe('runReconciliation — bad-URI', () => {
     seedRow({
       id: 'row-4',
       purchaseTransactionUri: 'not-a-valid-uri',
-      ownerUri: 'pops://registry/wrong-type/foo',
+      ownerUri: 'pops://core/wrong-type/foo',
     });
     const finance = makeFinanceProxy({});
     const registry = makeRegistryProxy({});

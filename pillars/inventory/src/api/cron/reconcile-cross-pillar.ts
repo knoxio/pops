@@ -154,7 +154,12 @@ export async function runReconciliation(options: {
     logger: options.logger,
     counters,
     uris: crossPillarUrisService.listDistinctOwnerUris(db),
-    expectedPillar: 'registry',
+    // The owner URI namespace stays `pops://core/user/...` (PRD-251 H7 wire
+    // contract) even though the pillar directory/id renamed to `registry`. The
+    // registry pillar's `/users` handler still resolves `pops://core/...` URIs,
+    // and the rows persisted on disk carry the `core` namespace — so the URI
+    // shape match MUST keep `expectedPillar: 'core'`, NOT `registry`.
+    expectedPillar: 'core',
     expectedType: 'user',
     parse: parseSoftUri,
     probe: (_parsed, uri) => safeCall(() => registry.callDynamic('users', 'get', { uri }, 'query')),

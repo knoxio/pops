@@ -216,19 +216,22 @@ describe('dispatchUri — remote leg', () => {
 
 describe('dispatchUri — self-pillar short-circuit', () => {
   it('resolves selfPillarId-owned URIs in-process even when registry has a self-entry', async () => {
-    process.env[ENV_KEY] = 'registry:http://registry-api:3000';
+    // The registry pillar serves the `pops:core/…` URI namespace (PRD-251),
+    // which is intentionally NOT renamed with the pillar id — so the default
+    // self URI namespace stays `core`.
+    process.env[ENV_KEY] = 'core:http://registry-api:3000';
     __resetPillarRegistryCache();
     const remote = vi.fn();
     const manifest: ModuleManifest = {
-      id: 'registry',
-      name: 'Registry',
+      id: 'core',
+      name: 'Core',
       surfaces: ['app'],
       uriHandler: {
         types: ['setting'],
         resolve: async (_type, id) => ({ kind: 'object', data: { id } }),
       },
     };
-    const result = await dispatchUri('pops:registry/setting/foo', {
+    const result = await dispatchUri('pops:core/setting/foo', {
       registry: [manifest],
       isInstalled: ALL_INSTALLED,
       remoteResolve: remote,
@@ -236,7 +239,7 @@ describe('dispatchUri — self-pillar short-circuit', () => {
     expect(remote).not.toHaveBeenCalled();
     expect(result).toEqual({
       kind: 'object',
-      moduleId: 'registry',
+      moduleId: 'core',
       type: 'setting',
       id: 'foo',
       data: { id: 'foo' },

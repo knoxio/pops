@@ -37,11 +37,12 @@ export interface DispatchUriOptions extends ResolveUriOptions {
   /** Timeout for the remote call in milliseconds. Default 5_000. */
   readonly remoteTimeoutMs?: number;
   /**
-   * Pillar id of the current process. URIs owned by this id are ALWAYS routed
-   * to the in-process resolver. Defaults to `'registry'` because this
-   * dispatcher lives inside the registry pillar (formerly `core`). Prevents
-   * self-recursion on a misconfigured `registry:http://registry-api:3000`
-   * env entry.
+   * URI-namespace id this process owns. URIs whose `pops:<id>/…` segment
+   * matches are ALWAYS routed to the in-process resolver. Defaults to `'core'`
+   * — the registry pillar (formerly named `core`) serves the `pops:core/…`
+   * URI namespace (PRD-251 wire contract), which is intentionally NOT renamed
+   * with the pillar's directory/registration id. Prevents self-recursion on a
+   * misconfigured `core:http://registry-api:3000` env entry.
    */
   readonly selfPillarId?: string;
   /**
@@ -54,7 +55,7 @@ export interface DispatchUriOptions extends ResolveUriOptions {
 }
 
 const DEFAULT_REMOTE_TIMEOUT_MS = 5_000;
-const DEFAULT_SELF_PILLAR_ID = 'registry';
+const DEFAULT_SELF_PILLAR_ID = 'core';
 
 /**
  * Known `UriResolverResult.kind` values. Centralised so the remote-leg parser
