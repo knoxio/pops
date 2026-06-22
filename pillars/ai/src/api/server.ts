@@ -11,7 +11,7 @@
 import { bootstrapPillar, type PillarBootstrapHandle } from '@pops/pillar-sdk/bootstrap';
 
 import { openAiDb } from '../db/index.js';
-import { buildAiManifest } from './ai-manifest.js';
+import { buildAiCapabilityReporter, buildAiManifest } from './ai-manifest.js';
 import { resolveAiSqlitePath } from './ai-sqlite-path.js';
 import { createAiApiApp } from './app.js';
 import { startAlertsScheduler } from './modules/ai-alerts/scheduler.js';
@@ -53,6 +53,7 @@ if (process.env['POPS_REGISTRY_ENABLED'] === 'true') {
   pillarHandle = await bootstrapPillar({
     manifest: buildAiManifest(version),
     baseUrl: selfBaseUrl,
+    capabilityReporter: buildAiCapabilityReporter(),
   });
 }
 

@@ -62,7 +62,7 @@ export function makeCorrectionsAiHandlers(db: FinanceDb) {
     rejectChangeSet: ({ body }: Req['rejectChangeSet']) =>
       runHttp(async () => {
         try {
-          await persistRejectedChangeSetFeedback({
+          await persistRejectedChangeSetFeedback(db, {
             signal: body.signal,
             changeSet: body.changeSet,
             feedback: body.feedback,

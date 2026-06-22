@@ -9,7 +9,7 @@ import { describe, expect, it } from 'vitest';
 import { ManifestPayloadSchema, validateManifestPayload } from '@pops/pillar-sdk/manifest-schema';
 
 import { cerebrumManifest, egoManifest } from '../../contract/settings/index.js';
-import { buildCerebrumManifest } from '../manifest.js';
+import { buildCerebrumCapabilityReporter, buildCerebrumManifest } from '../manifest.js';
 
 describe('buildCerebrumManifest', () => {
   it('produces a payload that validates against ManifestPayloadSchema', () => {
@@ -57,5 +57,22 @@ describe('buildCerebrumManifest', () => {
     const payload = buildCerebrumManifest('1.2.3');
     const result = validateManifestPayload(payload);
     expect(result.ok).toBe(true);
+  });
+});
+
+describe('buildCerebrumCapabilityReporter (P2 settings federation)', () => {
+  it('reports settings: true so the shell routes settings to cerebrum', () => {
+    expect(buildCerebrumCapabilityReporter(true)()['settings']).toBe(true);
+  });
+
+  it('preserves the live vectorSearch status alongside settings', () => {
+    expect(buildCerebrumCapabilityReporter(true)()).toEqual({
+      vectorSearch: true,
+      settings: true,
+    });
+    expect(buildCerebrumCapabilityReporter(false)()).toEqual({
+      vectorSearch: false,
+      settings: true,
+    });
   });
 });

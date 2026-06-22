@@ -10,6 +10,7 @@
  */
 import { financeManifest } from '../contract/settings/index.js';
 
+import type { CapabilityReporter } from '@pops/pillar-sdk/bootstrap';
 import type {
   ManifestPayload,
   NavConfigDescriptor,
@@ -17,6 +18,16 @@ import type {
 } from '@pops/pillar-sdk/manifest-schema';
 
 export const FINANCE_PILLAR_ID = 'finance' as const;
+
+/**
+ * Runtime capability heartbeat for finance. Advertises `settings: true` so the
+ * shell's live-registry settings discovery routes finance's settings reads and
+ * writes to finance's own federated `/settings/*` surface (capability-gated)
+ * rather than falling back to the registry pillar.
+ */
+export function buildFinanceCapabilityReporter(): CapabilityReporter {
+  return () => ({ settings: true });
+}
 
 const FINANCE_NAV: NavConfigDescriptor = {
   id: 'finance',

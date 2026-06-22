@@ -10,6 +10,8 @@ import { join } from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
+import { getBulk } from '@pops/pillar-settings/service';
+
 import {
   openFinanceDb,
   transactionCorrectionsService,
@@ -37,8 +39,8 @@ function completerReturning(byOp: Record<string, string | null>): ClaudeComplete
 
 function memoryFeedbackStore(map: Map<string, string>): FeedbackStore {
   return {
-    load: (k) => Promise.resolve(map.get(k) ?? null),
-    persist: (k, v) => {
+    load: (_db, k) => Promise.resolve(map.get(k) ?? null),
+    persist: (_db, k, v) => {
       map.set(k, v);
       return Promise.resolve();
     },
@@ -317,7 +319,7 @@ describe('corrections.rejectChangeSet', () => {
     __setClaudeCompleterForTests(completerReturning({}));
     __setFeedbackStoreForTests({
       load: () => Promise.resolve(null),
-      persist: () => Promise.reject(new Error('core unavailable')),
+      persist: () => Promise.reject(new Error('settings write failed')),
     });
     const res = await client().corrections.rejectChangeSet({
       signal: { descriptionPattern: 'WOOLWORTHS', matchType: 'contains' },
@@ -327,5 +329,23 @@ describe('corrections.rejectChangeSet', () => {
       feedback: 'too broad',
     });
     expect(res.message).toBe('ChangeSet rejected');
+  });
+
+  it('default (in-process) store persists feedback into finance’s local settings table', async () => {
+    __setClaudeCompleterForTests(completerReturning({}));
+    // Use the real default store (no mock) so the reject writes through
+    // @pops/pillar-settings into THIS finance.db, not the registry pillar.
+    __setFeedbackStoreForTests(null);
+    await client().corrections.rejectChangeSet({
+      signal: { descriptionPattern: 'WOOLWORTHS', matchType: 'contains' },
+      changeSet: {
+        ops: [{ op: 'add', data: { descriptionPattern: 'WOOLWORTHS', matchType: 'contains' } }],
+      },
+      feedback: 'too broad',
+    });
+    const key = feedbackKey({ matchType: 'contains', normalizedPattern: 'WOOLWORTHS' });
+    const stored = getBulk(financeDb.db, [key])[key];
+    expect(stored).toBeDefined();
+    expect(JSON.parse(stored ?? '{}')).toMatchObject({ feedback: 'too broad' });
   });
 });

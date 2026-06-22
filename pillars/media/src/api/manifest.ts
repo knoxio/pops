@@ -19,6 +19,7 @@ import {
 } from '../contract/settings/index.js';
 import { MEDIA_ROUTES } from './manifest-routes.js';
 
+import type { CapabilityReporter } from '@pops/pillar-sdk/bootstrap';
 import type {
   ManifestPayload,
   NavConfigDescriptor,
@@ -26,6 +27,16 @@ import type {
 } from '@pops/pillar-sdk/manifest-schema';
 
 export const MEDIA_PILLAR_ID = 'media' as const;
+
+/**
+ * Runtime capability heartbeat for media. Advertises `settings: true` so the
+ * shell's live-registry settings discovery routes media's settings reads and
+ * writes to media's own federated `/settings/*` surface (capability-gated)
+ * rather than falling back to the registry pillar.
+ */
+export function buildMediaCapabilityReporter(): CapabilityReporter {
+  return () => ({ settings: true });
+}
 
 const MEDIA_NAV: NavConfigDescriptor = {
   id: 'media',

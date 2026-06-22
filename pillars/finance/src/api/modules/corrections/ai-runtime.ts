@@ -1,20 +1,20 @@
 /**
  * Injectable runtime seams for the corrections AI cluster: the Claude text
- * completer and the cross-pillar rejection-feedback store. Both default to
- * real implementations (Anthropic via env key; core settings via the server
- * SDK, best-effort) and are swappable in tests so no test hits the network.
+ * completer and the rejection-feedback store. Both default to real
+ * implementations (Anthropic via env key; finance's LOCAL settings store
+ * in-process, best-effort) and are swappable in tests so no test hits the
+ * network.
  *
  * Mirrors the finance AI-categorizer's env-based key + the monolith's
- * best-effort feedback persistence (try/catch, degrade gracefully when core is
- * unavailable).
+ * best-effort feedback persistence (try/catch, degrade gracefully when the
+ * settings write fails).
  */
 import Anthropic from '@anthropic-ai/sdk';
-import { z } from 'zod';
 
 import { callWithLogging } from '@pops/ai-telemetry';
-import { isOk } from '@pops/pillar-sdk/client';
-import { pillar } from '@pops/pillar-sdk/server';
+import { getBulk, setBulk } from '@pops/pillar-settings/service';
 
+import { type FinanceDb } from '../../../db/index.js';
 import { ANTHROPIC_PROVIDER, FINANCE_DOMAIN, financeTelemetryDeps } from '../ai-telemetry-deps.js';
 
 const DEFAULT_MODEL = 'claude-haiku-4-5-20251001';
@@ -85,43 +85,30 @@ export function __setClaudeCompleterForTests(impl: ClaudeCompleter | null): void
 
 /**
  * Persistence for rejection feedback (dynamic `corrections.changeSetRejections:*`
- * keys). The default reaches core settings over the REST server SDK; both legs
- * are best-effort — a missing/unavailable core never throws into the AI flow.
+ * keys). The default reads/writes finance's LOCAL settings store in-process via
+ * the shared free-form bulk paths (these accept undeclared/dynamic keys); both
+ * legs are best-effort — a failed read/write never throws into the AI flow.
  */
 export interface FeedbackStore {
-  load(key: string): Promise<string | null>;
-  persist(key: string, value: string): Promise<void>;
+  load(db: FinanceDb, key: string): Promise<string | null>;
+  persist(db: FinanceDb, key: string, value: string): Promise<void>;
 }
 
-const SettingsManyResponseSchema = z.object({ settings: z.record(z.string(), z.string()) });
-
 const defaultFeedbackStore: FeedbackStore = {
-  async load(key) {
+  load(db, key) {
     try {
-      const result = await pillar('registry').callDynamic(
-        'settings',
-        'getMany',
-        { keys: [key] },
-        'query'
-      );
-      if (!isOk(result)) return null;
-      const parsed = SettingsManyResponseSchema.safeParse(result.value);
-      return parsed.success ? (parsed.data.settings[key] ?? null) : null;
+      return Promise.resolve(getBulk(db, [key])[key] ?? null);
     } catch {
-      return null;
+      return Promise.resolve(null);
     }
   },
-  async persist(key, value) {
+  persist(db, key, value) {
     try {
-      await pillar('registry').callDynamic(
-        'settings',
-        'setMany',
-        { entries: [{ key, value }] },
-        'mutation'
-      );
+      setBulk(db, [{ key, value }]);
     } catch {
-      // best-effort: the learning loop degrades silently when core is down.
+      // best-effort: the learning loop degrades silently when the write fails.
     }
+    return Promise.resolve();
   },
 };
 

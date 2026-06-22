@@ -22,7 +22,7 @@ import { bootstrapPillar, type PillarBootstrapHandle } from '@pops/pillar-sdk/bo
 import { openInventoryDb } from '../db/index.js';
 import { createInventoryApiApp } from './app.js';
 import { resolveInventorySqlitePath } from './inventory-sqlite-path.js';
-import { buildInventoryManifest } from './manifest.js';
+import { buildInventoryCapabilityReporter, buildInventoryManifest } from './manifest.js';
 import { parseBareOrigin } from './pillars/env.js';
 
 function resolvePort(): number {
@@ -67,6 +67,7 @@ if (process.env['POPS_REGISTRY_ENABLED'] === 'true') {
   pillarHandle = await bootstrapPillar({
     manifest: buildInventoryManifest(version),
     baseUrl: selfBaseUrl,
+    capabilityReporter: buildInventoryCapabilityReporter(),
   });
 }
 
