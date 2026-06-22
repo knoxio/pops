@@ -4,10 +4,17 @@
 
 [tools]
 node = "24.5.0"
+pnpm = "10.32.1"
+rust = "stable"
 
 [env]
 # Add common environment variables here if needed
 # Sensitive vars should still use .env files
+
+# Expose the pnpm-workspace-hoisted bin dir so per-unit mise tasks can call
+# bare `tsc`/`vitest`/`oxlint`/`tsx` (the §1 templates) without `pnpm exec`.
+# mise has no auto node_modules/.bin injection; this is the workspace glue.
+_.path = ["{{config_root}}/node_modules/.bin"]
 
 # ============================================================================
 # Development Servers

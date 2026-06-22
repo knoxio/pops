@@ -1,0 +1,8 @@
+[tasks.typecheck]
+run = "tsc --noEmit"
+
+[tasks.test]
+run = "vitest run"
+
+[tasks.lint]
+run = "oxlint src && oxfmt --check ."

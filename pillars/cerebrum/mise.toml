@@ -1,0 +1,32 @@
+[tasks.build]
+description = "verify manifest → tsc -b → copy template defaults → openapi snapshot → typed client"
+run = [
+  "tsx scripts/verify-manifest.ts",
+  "tsc -b tsconfig.build.json",
+  "cp -R src/api/modules/templates/defaults dist/api/modules/templates/",
+  "tsx scripts/generate-openapi.ts",
+  "tsx scripts/generate-api-types.ts",
+]
+sources = [
+  "src/**/*.ts",
+  "src/api/modules/templates/defaults/**",
+  "scripts/**/*.ts",
+  "tsconfig.build.json",
+]
+outputs = ["dist/**", "openapi/*.json", "src/**/api-types.generated.ts"]
+
+[tasks.typecheck]
+run = ["tsc --noEmit", "tsc --noEmit -p scripts/tsconfig.json"]
+
+[tasks.test]
+depends = ["build"]
+run = "vitest run"
+
+[tasks.lint]
+run = "oxlint src && oxfmt --check ."
+
+[tasks.dev]
+run = "tsx watch --clear-screen=false src/api/server.ts"
+
+[tasks.start]
+run = "node dist/api/server.js"

@@ -1,0 +1,19 @@
+[tasks.build]
+run = "tsc"
+sources = ["src/**/*.ts", "tsconfig.json", "package.json"]
+outputs = ["dist/**"]
+
+[tasks.typecheck]
+run = "tsc --noEmit"
+
+[tasks.test]
+run = "vitest run"
+
+[tasks.lint]
+run = "oxlint src && oxfmt --check ."
+
+[tasks.dev]
+run = "tsx watch --clear-screen=false src/server.ts"
+
+[tasks.start]
+run = "node dist/server.js"

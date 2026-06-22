@@ -1,0 +1,16 @@
+[tasks.build]
+run = "tsx scripts/collect-specs.ts"
+sources = ["src/**/*.ts", "scripts/**/*.ts", "tsconfig.json", "package.json"]
+outputs = ["dist/**"]
+
+[tasks.typecheck]
+run = "tsc --noEmit"
+
+[tasks.test]
+run = "vitest run"
+
+[tasks.lint]
+run = "oxlint src && oxfmt --check ."
+
+[tasks.dev]
+run = "tsx scripts/dev-serve.ts"
