@@ -24,6 +24,7 @@ import {
   type ClaudeCompleter,
   type FeedbackStore,
 } from '../modules/corrections/index.js';
+import { makeContactsFake } from './contacts-fake.js';
 import { makeClient } from './test-utils.js';
 
 let tmpDir: string;
@@ -60,7 +61,12 @@ afterEach(() => {
 
 function client() {
   return makeClient(
-    createFinanceApiApp({ financeDb, version: '0.0.1-test', selfBaseUrl: 'http://localhost:3004' })
+    createFinanceApiApp({
+      financeDb,
+      version: '0.0.1-test',
+      selfBaseUrl: 'http://localhost:3004',
+      contacts: makeContactsFake(),
+    })
   );
 }
 

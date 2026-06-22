@@ -15,6 +15,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { openFinanceDb, type OpenedFinanceDb } from '../../db/index.js';
 import { createFinanceApiApp } from '../app.js';
+import { makeContactsFake } from './contacts-fake.js';
 
 let tmpDir: string;
 let financeDb: OpenedFinanceDb;
@@ -40,6 +41,7 @@ describe('GET /openapi', () => {
       financeDb,
       version: '0.0.1-test',
       selfBaseUrl: 'http://localhost:3004',
+      contacts: makeContactsFake(),
     });
 
     const res = await request(app).get('/openapi');

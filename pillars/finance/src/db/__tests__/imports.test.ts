@@ -1,53 +1,29 @@
 /**
- * Invariant tests for the imports persistence helpers against an
- * in-memory SQLite seeded with the canonical `transactions` + `entities`
- * DDL. Pure DB + service layer — no transformers, no AI categoriser, no
- * tRPC, no Express.
+ * Invariant tests for the imports persistence helpers.
  *
- * Higher-level orchestration coverage (transformer pipeline, AI matching,
- * progress streaming, commit phase) stays in pops-api until later PRs of
- * the N6 sequence — Phase 1 PR 1 is scaffold-only.
- *
- * The DDL is inlined rather than read from the shared baseline migration
- * (`0000_naive_chameleon.sql`) because that migration creates the entire
- * pre-modular schema (hundreds of tables) and applying it for every test
- * here is wasted work. The byte-identical DDL is reproduced from
- * `packages/db-types/src/schema/{transactions,entities}.ts`.
+ * Entities are no longer mirrored in finance — `buildEntityMaps` and
+ * `buildDefaultTagsByEntity` are PURE transforms over a contact set fetched
+ * live from the contacts pillar, so they need no DB. `findExistingChecksums`
+ * and `insertImportTransaction` run against an in-memory `transactions` table
+ * (no entity FK — the column is plain text, matching the post-0057 schema).
  */
 import Database from 'better-sqlite3';
-import { eq } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { ImportTransactionPersistError } from '../errors.js';
-import { entities, transactions } from '../schema.js';
+import { transactions } from '../schema.js';
 import {
-  createImportEntity,
+  buildDefaultTagsByEntity,
+  buildEntityMaps,
   findExistingChecksums,
   insertImportTransaction,
-  loadEntityMaps,
 } from '../services/imports.js';
 
+import type { ContactEntity } from '../../api/contacts/client.js';
 import type { FinanceDb } from '../services/internal.js';
 
 const SCHEMA_DDL = `
-CREATE TABLE entities (
-  id text PRIMARY KEY NOT NULL,
-  notion_id text,
-  name text NOT NULL,
-  type text DEFAULT 'company' NOT NULL,
-  abn text,
-  aliases text,
-  default_transaction_type text,
-  default_tags text,
-  notes text,
-  last_edited_time text NOT NULL,
-  owner_uri text,
-  owner_uri_stale_at text
-);
-CREATE UNIQUE INDEX entities_notion_id_unique ON entities (notion_id);
-CREATE INDEX idx_entities_owner_uri ON entities (owner_uri);
-
 CREATE TABLE transactions (
   id text PRIMARY KEY NOT NULL,
   notion_id text,
@@ -65,8 +41,7 @@ CREATE TABLE transactions (
   notes text,
   checksum text,
   raw_row text,
-  last_edited_time text NOT NULL,
-  FOREIGN KEY (entity_id) REFERENCES entities(id) ON DELETE SET NULL
+  last_edited_time text NOT NULL
 );
 CREATE UNIQUE INDEX transactions_notion_id_unique ON transactions (notion_id);
 CREATE INDEX idx_transactions_date ON transactions (date);
@@ -89,20 +64,18 @@ function freshDb(): TestHarness {
   return { db: drizzle(raw), raw };
 }
 
-function seedEntity(
-  db: FinanceDb,
-  input: { id?: string; name: string; aliases?: string | null }
-): string {
-  const id = input.id ?? crypto.randomUUID();
-  db.insert(entities)
-    .values({
-      id,
-      name: input.name,
-      aliases: input.aliases ?? null,
-      lastEditedTime: new Date().toISOString(),
-    })
-    .run();
-  return id;
+function contact(over: Partial<ContactEntity> & { name: string }): ContactEntity {
+  return {
+    id: over.id ?? crypto.randomUUID(),
+    name: over.name,
+    type: over.type ?? 'company',
+    abn: over.abn ?? null,
+    aliases: over.aliases ?? [],
+    defaultTransactionType: over.defaultTransactionType ?? null,
+    defaultTags: over.defaultTags ?? [],
+    notes: over.notes ?? null,
+    lastEditedTime: over.lastEditedTime ?? '2026-01-01T00:00:00.000Z',
+  };
 }
 
 function seedTransaction(
@@ -137,14 +110,7 @@ describe('findExistingChecksums', () => {
   });
 
   it('returns an empty set without querying when the input is empty', () => {
-    const result = findExistingChecksums(harness.db, []);
-    expect(result.size).toBe(0);
-  });
-
-  it('returns an empty set when no checksums are present', () => {
-    seedTransaction(harness.db, { checksum: 'a' });
-    const result = findExistingChecksums(harness.db, ['b', 'c']);
-    expect(result.size).toBe(0);
+    expect(findExistingChecksums(harness.db, []).size).toBe(0);
   });
 
   it('returns only the checksums that already exist', () => {
@@ -160,17 +126,7 @@ describe('findExistingChecksums', () => {
   it('ignores transactions with a null checksum', () => {
     seedTransaction(harness.db, { checksum: null });
     seedTransaction(harness.db, { checksum: 'kept' });
-
-    const result = findExistingChecksums(harness.db, ['kept']);
-
-    expect([...result]).toEqual(['kept']);
-  });
-
-  it('deduplicates the result even if the same checksum is asked for twice', () => {
-    seedTransaction(harness.db, { checksum: 'shared' });
-    const result = findExistingChecksums(harness.db, ['shared', 'shared', 'other']);
-    expect(result.size).toBe(1);
-    expect(result.has('shared')).toBe(true);
+    expect([...findExistingChecksums(harness.db, ['kept'])]).toEqual(['kept']);
   });
 
   it('handles input larger than the 500-row batch size', () => {
@@ -180,7 +136,6 @@ describe('findExistingChecksums', () => {
       seedTransaction(harness.db, { checksum });
       present.push(checksum);
     }
-
     const absent: string[] = [];
     for (let i = 0; i < 1200; i++) absent.push(`absent-${i}`);
 
@@ -191,102 +146,56 @@ describe('findExistingChecksums', () => {
   });
 });
 
-describe('loadEntityMaps', () => {
-  let harness: TestHarness;
-  beforeEach(() => {
-    harness = freshDb();
-  });
-
-  it('returns empty maps when no entities exist', () => {
-    const { entityLookup, aliasMap } = loadEntityMaps(harness.db);
+describe('buildEntityMaps', () => {
+  it('returns empty maps for an empty contact set', () => {
+    const { entityLookup, aliasMap } = buildEntityMaps([]);
     expect(entityLookup.size).toBe(0);
     expect(aliasMap.size).toBe(0);
   });
 
   it('keys the lookup by lowercased name but stores the original case', () => {
-    const id = seedEntity(harness.db, { name: 'Coles Express' });
-
-    const { entityLookup } = loadEntityMaps(harness.db);
-
-    expect(entityLookup.get('coles express')).toEqual({ id, name: 'Coles Express' });
+    const { entityLookup } = buildEntityMaps([contact({ id: 'e1', name: 'Coles Express' })]);
+    expect(entityLookup.get('coles express')).toEqual({ id: 'e1', name: 'Coles Express' });
     expect(entityLookup.has('Coles Express')).toBe(false);
   });
 
   it('maps each lowercased alias to the entity name in original case', () => {
-    seedEntity(harness.db, { name: 'Woolworths', aliases: 'WW, Woolies, woolworths group' });
-
-    const { aliasMap } = loadEntityMaps(harness.db);
-
+    const { aliasMap } = buildEntityMaps([
+      contact({ name: 'Woolworths', aliases: ['WW', 'Woolies', 'woolworths group'] }),
+    ]);
     expect(aliasMap.get('ww')).toBe('Woolworths');
     expect(aliasMap.get('woolies')).toBe('Woolworths');
     expect(aliasMap.get('woolworths group')).toBe('Woolworths');
   });
 
-  it('skips entities with a null aliases column', () => {
-    seedEntity(harness.db, { name: 'Solo', aliases: null });
-
-    const { entityLookup, aliasMap } = loadEntityMaps(harness.db);
-
-    expect(entityLookup.size).toBe(1);
-    expect(aliasMap.size).toBe(0);
-  });
-
   it('drops whitespace-only alias entries', () => {
-    seedEntity(harness.db, { name: 'Aldi', aliases: 'ALDI, ,  ,aldi store' });
-
-    const { aliasMap } = loadEntityMaps(harness.db);
-
+    const { aliasMap } = buildEntityMaps([
+      contact({ name: 'Aldi', aliases: ['ALDI', ' ', '', 'aldi store'] }),
+    ]);
     expect(aliasMap.size).toBe(2);
     expect(aliasMap.get('aldi')).toBe('Aldi');
     expect(aliasMap.get('aldi store')).toBe('Aldi');
   });
 
-  it('keeps a single winner when two entities share an alias (insertion order not guaranteed)', () => {
-    seedEntity(harness.db, { name: 'Cafe One', aliases: 'shared' });
-    seedEntity(harness.db, { name: 'Cafe Two', aliases: 'shared' });
-
-    const { aliasMap } = loadEntityMaps(harness.db);
-
+  it('keeps a single winner when two contacts share an alias', () => {
+    const { aliasMap } = buildEntityMaps([
+      contact({ name: 'Cafe One', aliases: ['shared'] }),
+      contact({ name: 'Cafe Two', aliases: ['shared'] }),
+    ]);
     expect(aliasMap.size).toBe(1);
     const winner = aliasMap.get('shared');
     expect(winner === 'Cafe One' || winner === 'Cafe Two').toBe(true);
   });
 });
 
-describe('createImportEntity', () => {
-  let harness: TestHarness;
-  beforeEach(() => {
-    harness = freshDb();
-  });
-
-  it('inserts an entity with a generated UUID and returns the id + original name', () => {
-    const result = createImportEntity(harness.db, 'New Vendor');
-
-    expect(result.entityName).toBe('New Vendor');
-    expect(result.entityId).toMatch(
-      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
-    );
-
-    const row = harness.db.select().from(entities).where(eq(entities.id, result.entityId)).get();
-    expect(row?.name).toBe('New Vendor');
-    expect(row?.type).toBe('company');
-    expect(row?.aliases).toBeNull();
-  });
-
-  it('stamps lastEditedTime with an ISO-8601 string', () => {
-    const result = createImportEntity(harness.db, 'Timestamped');
-    const row = harness.db
-      .select({ lastEditedTime: entities.lastEditedTime })
-      .from(entities)
-      .where(eq(entities.id, result.entityId))
-      .get();
-    expect(row?.lastEditedTime).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/);
-  });
-
-  it('generates a distinct id per call even when names collide', () => {
-    const a = createImportEntity(harness.db, 'Same Name');
-    const b = createImportEntity(harness.db, 'Same Name');
-    expect(a.entityId).not.toBe(b.entityId);
+describe('buildDefaultTagsByEntity', () => {
+  it('maps contact id to its defaultTags, skipping contacts with none', () => {
+    const map = buildDefaultTagsByEntity([
+      contact({ id: 'a', name: 'A', defaultTags: ['food', 'rent'] }),
+      contact({ id: 'b', name: 'B', defaultTags: [] }),
+    ]);
+    expect(map.get('a')).toEqual(['food', 'rent']);
+    expect(map.has('b')).toBe(false);
   });
 });
 
@@ -296,9 +205,7 @@ describe('insertImportTransaction', () => {
     harness = freshDb();
   });
 
-  it('persists the supplied fields and round-trips them on the returned row', () => {
-    const entityId = seedEntity(harness.db, { name: 'Acme' });
-
+  it('persists the supplied fields and round-trips them, incl. a non-local entity id', () => {
     const row = insertImportTransaction(harness.db, {
       description: 'Espresso',
       account: 'amex',
@@ -306,29 +213,22 @@ describe('insertImportTransaction', () => {
       date: '2026-02-14',
       type: 'Expense',
       tags: ['Coffee', 'Outings'],
-      entityId,
+      // A contacts entity id with no local referent — the dropped FK lets it in.
+      entityId: 'contacts-entity-id',
       entityName: 'Acme',
       location: 'Sydney',
       rawRow: 'csv,row,here',
       checksum: 'chk-1',
     });
 
-    expect(row.description).toBe('Espresso');
-    expect(row.account).toBe('amex');
-    expect(row.amount).toBe(-4.5);
-    expect(row.date).toBe('2026-02-14');
-    expect(row.type).toBe('Expense');
     expect(row.tags).toBe('["Coffee","Outings"]');
-    expect(row.entityId).toBe(entityId);
+    expect(row.entityId).toBe('contacts-entity-id');
     expect(row.entityName).toBe('Acme');
-    expect(row.location).toBe('Sydney');
-    expect(row.rawRow).toBe('csv,row,here');
     expect(row.checksum).toBe('chk-1');
     expect(row.id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
-    expect(row.lastEditedTime).toMatch(/^\d{4}-\d{2}-\d{2}T/);
   });
 
-  it('serialises tags as a JSON array (empty array when no tags supplied)', () => {
+  it('serialises empty tags as a JSON array and defaults rawRow/checksum to null', () => {
     const row = insertImportTransaction(harness.db, {
       description: 'No tags',
       account: 'amex',
@@ -341,42 +241,12 @@ describe('insertImportTransaction', () => {
       location: null,
     });
     expect(row.tags).toBe('[]');
-  });
-
-  it('defaults optional rawRow and checksum to null when omitted', () => {
-    const row = insertImportTransaction(harness.db, {
-      description: 'Defaults',
-      account: 'amex',
-      amount: -2,
-      date: '2026-02-15',
-      type: 'Expense',
-      tags: [],
-      entityId: null,
-      entityName: null,
-      location: null,
-    });
     expect(row.rawRow).toBeNull();
     expect(row.checksum).toBeNull();
   });
 
-  it('coerces an empty `type` string to the empty string (does not throw)', () => {
-    const row = insertImportTransaction(harness.db, {
-      description: 'Untyped',
-      account: 'amex',
-      amount: -3,
-      date: '2026-02-15',
-      type: '',
-      tags: [],
-      entityId: null,
-      entityName: null,
-      location: null,
-    });
-    expect(row.type).toBe('');
-  });
-
   it('honours the transactions.checksum unique index', () => {
-    insertImportTransaction(harness.db, {
-      description: 'first',
+    const base = {
       account: 'amex',
       amount: -1,
       date: '2026-02-15',
@@ -386,22 +256,11 @@ describe('insertImportTransaction', () => {
       entityName: null,
       location: null,
       checksum: 'dup',
-    });
-
-    expect(() =>
-      insertImportTransaction(harness.db, {
-        description: 'second',
-        account: 'amex',
-        amount: -1,
-        date: '2026-02-15',
-        type: 'Expense',
-        tags: [],
-        entityId: null,
-        entityName: null,
-        location: null,
-        checksum: 'dup',
-      })
-    ).toThrow(/UNIQUE constraint failed/);
+    };
+    insertImportTransaction(harness.db, { ...base, description: 'first' });
+    expect(() => insertImportTransaction(harness.db, { ...base, description: 'second' })).toThrow(
+      /UNIQUE constraint failed/
+    );
   });
 
   it('rolls back when used inside a transaction that aborts', () => {
@@ -423,8 +282,7 @@ describe('insertImportTransaction', () => {
       })
     ).toThrow('abort');
 
-    const found = findExistingChecksums(harness.db, ['rb']);
-    expect(found.size).toBe(0);
+    expect(findExistingChecksums(harness.db, ['rb']).size).toBe(0);
   });
 });
 

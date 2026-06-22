@@ -78,18 +78,16 @@ describe('0054_finance_pillar_baseline_extension', () => {
     }
   });
 
-  it('preserves the transaction_tag_rules.entity_id → entities.id FK with ON DELETE SET NULL', () => {
+  it('has dropped the transaction_tag_rules.entity_id → entities FK (0057)', () => {
     const path = join(tmpDir, 'finance.db');
     const { raw } = openFinanceDb(path);
     try {
+      // 0057 rebuilt the table without the FK: entity_id now holds a contacts
+      // entity id with no local referent (PRD-163 US-03).
       const fks = raw
         .prepare('PRAGMA foreign_key_list(transaction_tag_rules)')
         .all() as ForeignKeyRow[];
-      const entityFk = fks.find((fk) => fk.from === 'entity_id');
-      expect(entityFk).toBeDefined();
-      expect(entityFk?.table).toBe('entities');
-      expect(entityFk?.to).toBe('id');
-      expect(entityFk?.on_delete).toBe('SET NULL');
+      expect(fks.find((fk) => fk.from === 'entity_id')).toBeUndefined();
     } finally {
       raw.close();
     }

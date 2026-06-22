@@ -22,6 +22,7 @@ const { openFinanceDb } = await import('../../db/index.js');
 type OpenedFinanceDb = Awaited<ReturnType<typeof openFinanceDb>>;
 const { createFinanceApiApp } = await import('../app.js');
 const { clearProgress } = await import('../modules/imports/index.js');
+const { makeContactsFake } = await import('./contacts-fake.js');
 const { makeClient, waitForImportCompletion } = await import('./test-utils.js');
 
 type ProcessImportOutput = import('../modules/imports/types.js').ProcessImportOutput;
@@ -47,7 +48,12 @@ afterEach(() => {
 
 function client() {
   return makeClient(
-    createFinanceApiApp({ financeDb, version: '0.0.1-test', selfBaseUrl: 'http://localhost:3004' })
+    createFinanceApiApp({
+      financeDb,
+      version: '0.0.1-test',
+      selfBaseUrl: 'http://localhost:3004',
+      contacts: makeContactsFake(),
+    })
   );
 }
 

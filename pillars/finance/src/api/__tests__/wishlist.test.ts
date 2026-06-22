@@ -13,6 +13,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { openFinanceDb, type OpenedFinanceDb } from '../../db/index.js';
 import { createFinanceApiApp } from '../app.js';
+import { makeContactsFake } from './contacts-fake.js';
 import { makeClient } from './test-utils.js';
 
 let tmpDir: string;
@@ -30,7 +31,12 @@ afterEach(() => {
 
 function client() {
   return makeClient(
-    createFinanceApiApp({ financeDb, version: '0.0.1-test', selfBaseUrl: 'http://localhost:3004' })
+    createFinanceApiApp({
+      financeDb,
+      version: '0.0.1-test',
+      selfBaseUrl: 'http://localhost:3004',
+      contacts: makeContactsFake(),
+    })
   );
 }
 
