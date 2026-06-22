@@ -13,7 +13,6 @@ import { extractReadable } from './web-llm-readability.js';
 
 import type { IngestJobData, IngestJobResult, IngestMeta } from '../../contract/queue/index.js';
 import type { AnthropicLike } from '../ai/web-llm-anthropic.js';
-import type { CallClaudeLogPayload } from '../ai/web-llm-log.js';
 import type { HandlerContext } from './types.js';
 import type { WebLlmExtractFailure, WebLlmExtractSuccess } from './web-llm-extract.js';
 import type { ReadableArticle } from './web-llm-readability.js';
@@ -27,8 +26,6 @@ export interface ProcessWithLlmOptions {
   ctx?: HandlerContext;
   /** Test seam — replaces the SDK call. */
   client?: AnthropicLike;
-  /** Test seam — observes the inference-log payload. */
-  onLog?: (payload: CallClaudeLogPayload) => void;
   /** Test seam — overrides the env-derived model. */
   model?: string;
 }
@@ -109,7 +106,6 @@ export async function processWithLlm(
     url: finalUrl,
     sourceId: data.sourceId,
     client: opts.client,
-    onLog: opts.onLog,
     model: opts.model,
   });
   recordExtractStage(meta, llmResult);

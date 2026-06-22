@@ -1411,6 +1411,9 @@ importers:
       '@mozilla/readability':
         specifier: ^0.6.0
         version: 0.6.0
+      '@pops/ai-telemetry':
+        specifier: workspace:*
+        version: link:../../packages/ai-telemetry
       '@pops/pillar-sdk':
         specifier: workspace:*
         version: link:../../packages/pillar-sdk

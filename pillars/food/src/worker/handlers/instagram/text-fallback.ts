@@ -8,6 +8,9 @@
  * Operation name in observability is `recipe-extract-ig-text-fallback`
  * to distinguish from PRD-128's `recipe-extract-web-llm`.
  */
+import { callWithLogging } from '@pops/ai-telemetry';
+
+import { ANTHROPIC_PROVIDER, FOOD_DOMAIN, foodTelemetryDeps } from '../../ai/ai-telemetry-deps.js';
 import { extractedRecipeSchema, type ExtractedRecipe } from './extracted-recipe.js';
 
 import type { AnthropicLike, AnthropicMessage } from './anthropic-client.js';
@@ -62,18 +65,45 @@ export interface TextFallbackResult {
   durationMs: number;
 }
 
+function callTextFallback(
+  input: ExtractTextFallbackInput,
+  opts: ExtractTextFallbackOptions,
+  model: string
+): Promise<AnthropicMessage> {
+  return callWithLogging<AnthropicMessage>(
+    {
+      provider: ANTHROPIC_PROVIDER,
+      model,
+      operation: TEXT_FALLBACK_OPERATION,
+      domain: FOOD_DOMAIN,
+      promptVersion: PROMPT_VERSION_TEXT_FALLBACK,
+      call: async () => {
+        const message = await opts.client.messages.create({
+          model,
+          max_tokens: MAX_TOKENS,
+          system: SYSTEM_PROMPT,
+          messages: [{ role: 'user', content: input.caption }],
+        });
+        return {
+          response: message,
+          usage: {
+            inputTokens: message.usage?.input_tokens ?? 0,
+            outputTokens: message.usage?.output_tokens ?? 0,
+          },
+        };
+      },
+    },
+    foodTelemetryDeps()
+  );
+}
+
 export async function extractWithTextFallback(
   input: ExtractTextFallbackInput,
   opts: ExtractTextFallbackOptions
 ): Promise<TextFallbackResult> {
   const model = opts.model ?? DEFAULT_TEXT_FALLBACK_MODEL;
   const start = Date.now();
-  const response = await opts.client.messages.create({
-    model,
-    max_tokens: MAX_TOKENS,
-    system: SYSTEM_PROMPT,
-    messages: [{ role: 'user', content: input.caption }],
-  });
+  const response = await callTextFallback(input, opts, model);
   const durationMs = Date.now() - start;
 
   const text = firstTextBlock(response);

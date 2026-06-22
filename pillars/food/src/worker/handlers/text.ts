@@ -13,7 +13,6 @@ import type { IngestHandler } from './types.js';
 
 export {
   __setTextIngestClientForTests,
-  __setTextIngestLogForTests,
   extractWithClaudeText,
   type TextExtractInput,
   type TextExtractResult,

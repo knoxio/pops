@@ -7,8 +7,10 @@
  */
 import { ZodError } from 'zod';
 
+import { callWithLogging } from '@pops/ai-telemetry';
+
+import { ANTHROPIC_PROVIDER, FOOD_DOMAIN, foodTelemetryDeps } from '../ai/ai-telemetry-deps.js';
 import { extractTextFromMessage, getAnthropicClient } from '../ai/web-llm-anthropic.js';
-import { callClaudeWithLogging } from '../ai/web-llm-log.js';
 import {
   PROMPT_VERSION_WEB_LLM,
   WEB_LLM_DEFAULT_MODEL,
@@ -17,9 +19,24 @@ import {
 } from '../prompts/web-llm.js';
 import { extractedRecipeSchema } from './web-llm-recipe.js';
 
-import type { AnthropicLike } from '../ai/web-llm-anthropic.js';
-import type { CallClaudeLogPayload } from '../ai/web-llm-log.js';
+import type { AnthropicLike, AnthropicMessage } from '../ai/web-llm-anthropic.js';
 import type { ExtractedRecipe } from './web-llm-recipe.js';
+
+export const WEB_LLM_OPERATION = 'recipe-extract-web-llm';
+
+const HAIKU_INPUT_USD_PER_MTOK = 0.25;
+const HAIKU_OUTPUT_USD_PER_MTOK = 1.25;
+
+/**
+ * Local Haiku 4.5 cost estimate persisted on the recipe meta (`total_cost_usd`,
+ * `cost_usd`). Independent of the cross-pillar telemetry cost, which is priced
+ * against the ai pillar's `ai_model_pricing` table inside `callWithLogging`.
+ */
+function localCostUsd(inputTokens: number, outputTokens: number): number {
+  return (
+    (inputTokens * HAIKU_INPUT_USD_PER_MTOK + outputTokens * HAIKU_OUTPUT_USD_PER_MTOK) / 1_000_000
+  );
+}
 
 export interface WebLlmExtractInputs {
   title: string;
@@ -28,8 +45,6 @@ export interface WebLlmExtractInputs {
   sourceId: number;
   /** Test seam — overrides the lazy SDK client. */
   client?: AnthropicLike;
-  /** Test seam — receives the inference-log payload. */
-  onLog?: (payload: CallClaudeLogPayload) => void;
   /** Test seam — overrides the env-derived model name. */
   model?: string;
 }
@@ -85,6 +100,59 @@ function resolveModel(override?: string): string {
 }
 
 /**
+ * Issues the single Claude call through `callWithLogging` (cross-pillar
+ * telemetry, fire-and-forget) and returns the raw message unchanged.
+ */
+function callWebLlm(
+  inputs: WebLlmExtractInputs,
+  model: string,
+  prompt: string
+): Promise<AnthropicMessage> {
+  return callWithLogging(
+    {
+      provider: ANTHROPIC_PROVIDER,
+      model,
+      operation: WEB_LLM_OPERATION,
+      domain: FOOD_DOMAIN,
+      contextId: `ingest_source:${inputs.sourceId}`,
+      promptVersion: PROMPT_VERSION_WEB_LLM,
+      call: async () => {
+        const client = inputs.client ?? getAnthropicClient();
+        const created = await client.messages.create({
+          model,
+          max_tokens: WEB_LLM_MAX_OUTPUT_TOKENS,
+          messages: [{ role: 'user', content: prompt }],
+        });
+        return {
+          response: created,
+          usage: {
+            inputTokens: created.usage.input_tokens,
+            outputTokens: created.usage.output_tokens,
+          },
+        };
+      },
+    },
+    foodTelemetryDeps()
+  );
+}
+
+function validatedRecipe(text: string): ExtractedRecipe {
+  const parsed = parseLlmJson(text);
+  if (!parsed.ok) {
+    throw Object.assign(new Error(parsed.message), {
+      __webLlm: { kind: 'parse', reason: parsed.reason, raw: text },
+    });
+  }
+  const validated = extractedRecipeSchema.safeParse(parsed.value);
+  if (!validated.success) {
+    throw Object.assign(new Error(validated.error.message), {
+      __webLlm: { kind: 'schema', raw: text },
+    });
+  }
+  return validated.data;
+}
+
+/**
  * Runs the single Claude call + strict parsing + zod validation. Never
  * throws on extraction-shape problems; surfaces them as
  * `WebLlmExtractFailure` so the caller can decide whether to fail the
@@ -100,51 +168,21 @@ export async function extractWithClaudeWebLlm(
     url: inputs.url,
     bodyText: inputs.bodyText,
   });
+  const start = Date.now();
   try {
-    const wrapped = await callClaudeWithLogging({
-      operation: 'recipe-extract-web-llm',
-      contextId: `ingest_source:${inputs.sourceId}`,
-      promptVersion: PROMPT_VERSION_WEB_LLM,
-      model,
-      onLog: inputs.onLog,
-      call: async () => {
-        const client = inputs.client ?? getAnthropicClient();
-        const message = await client.messages.create({
-          model,
-          max_tokens: WEB_LLM_MAX_OUTPUT_TOKENS,
-          messages: [{ role: 'user', content: prompt }],
-        });
-        const text = extractTextFromMessage(message);
-        const parsed = parseLlmJson(text);
-        if (!parsed.ok) {
-          throw Object.assign(new Error(parsed.message), {
-            __webLlm: { kind: 'parse', reason: parsed.reason, raw: text },
-          });
-        }
-        const validated = extractedRecipeSchema.safeParse(parsed.value);
-        if (!validated.success) {
-          throw Object.assign(new Error(validated.error.message), {
-            __webLlm: { kind: 'schema', raw: text },
-          });
-        }
-        return {
-          parsed: validated.data,
-          inputTokens: message.usage.input_tokens,
-          outputTokens: message.usage.output_tokens,
-          raw: text,
-        };
-      },
-    });
+    const message = await callWebLlm(inputs, model, prompt);
+    const latencyMs = Date.now() - start;
+    const text = extractTextFromMessage(message);
     return {
       ok: true,
-      parsed: wrapped.parsed,
-      raw: wrapped.raw,
+      parsed: validatedRecipe(text),
+      raw: text,
       promptVersion: PROMPT_VERSION_WEB_LLM,
       model,
-      inputTokens: wrapped.inputTokens,
-      outputTokens: wrapped.outputTokens,
-      costUsd: wrapped.costUsd,
-      latencyMs: wrapped.latencyMs,
+      inputTokens: message.usage.input_tokens,
+      outputTokens: message.usage.output_tokens,
+      costUsd: localCostUsd(message.usage.input_tokens, message.usage.output_tokens),
+      latencyMs,
     };
   } catch (err) {
     return classifyExtractError(err, model);
