@@ -29,12 +29,15 @@ RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
 # @pops/ai-telemetry
 COPY libs/ai-telemetry/src ./libs/ai-telemetry/src
 COPY libs/ai-telemetry/tsconfig.json ./libs/ai-telemetry/tsconfig.json
+COPY libs/ai-telemetry/tsconfig.build.json ./libs/ai-telemetry/tsconfig.build.json
 # @pops/pillar-sdk
 COPY libs/sdk/src ./libs/sdk/src
 COPY libs/sdk/tsconfig.json ./libs/sdk/tsconfig.json
+COPY libs/sdk/tsconfig.build.json ./libs/sdk/tsconfig.build.json
 # @pops/pillar-settings
 COPY libs/settings/src ./libs/settings/src
 COPY libs/settings/tsconfig.json ./libs/settings/tsconfig.json
+COPY libs/settings/tsconfig.build.json ./libs/settings/tsconfig.build.json
 # @pops/types
 COPY libs/types/src ./libs/types/src
 COPY libs/types/tsconfig.json ./libs/types/tsconfig.json
@@ -45,6 +48,7 @@ COPY pillars/cerebrum/scripts ./pillars/cerebrum/scripts
 COPY pillars/cerebrum/openapi ./pillars/cerebrum/openapi
 COPY pillars/cerebrum/migrations ./pillars/cerebrum/migrations
 COPY pillars/cerebrum/tsconfig.json ./pillars/cerebrum/tsconfig.json
+COPY pillars/cerebrum/tsconfig.build.json ./pillars/cerebrum/tsconfig.build.json
 
 # Phase 3: build shared deps in pnpm topology order, then the pillar.
 RUN pnpm --filter "@pops/cerebrum^..." build

@@ -27,6 +27,7 @@ RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
 # @pops/pillar-sdk
 COPY libs/sdk/src ./libs/sdk/src
 COPY libs/sdk/tsconfig.json ./libs/sdk/tsconfig.json
+COPY libs/sdk/tsconfig.build.json ./libs/sdk/tsconfig.build.json
 # @pops/types
 COPY libs/types/src ./libs/types/src
 COPY libs/types/tsconfig.json ./libs/types/tsconfig.json
@@ -37,6 +38,7 @@ COPY pillars/lists/scripts ./pillars/lists/scripts
 COPY pillars/lists/openapi ./pillars/lists/openapi
 COPY pillars/lists/migrations ./pillars/lists/migrations
 COPY pillars/lists/tsconfig.json ./pillars/lists/tsconfig.json
+COPY pillars/lists/tsconfig.build.json ./pillars/lists/tsconfig.build.json
 
 # Phase 3: build shared deps in pnpm topology order, then the pillar.
 RUN pnpm --filter "@pops/lists^..." build

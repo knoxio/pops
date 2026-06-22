@@ -35,7 +35,7 @@
     "./package.json": "./package.json"
   },
   "scripts": {
-    "build": "tsx scripts/verify-manifest.ts && tsc && tsx scripts/generate-openapi.ts && tsx scripts/generate-api-types.ts",
+    "build": "tsx scripts/verify-manifest.ts && tsc -b tsconfig.build.json && tsx scripts/generate-openapi.ts && tsx scripts/generate-api-types.ts",
     "dev:api": "tsx watch --clear-screen=false src/api/server.ts",
     "dev:worker": "tsx watch --clear-screen=false src/worker/worker.ts",
     "start:api": "node dist/api/server.js",

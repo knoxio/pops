@@ -1,0 +1,25 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "composite": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "outDir": "dist",
+    "rootDir": "src"
+  },
+  "include": ["src/**/*"],
+  "exclude": ["**/__tests__/**", "**/*.test.ts", "node_modules", "dist", "scripts"],
+  "references": [
+    {
+      "path": "../../libs/ai-telemetry/tsconfig.build.json"
+    },
+    {
+      "path": "../../libs/sdk/tsconfig.build.json"
+    },
+    {
+      "path": "../../libs/types/tsconfig.build.json"
+    }
+  ]
+}
