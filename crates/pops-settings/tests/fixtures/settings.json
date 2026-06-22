@@ -1,0 +1,23 @@
+{
+  "getResponse": { "data": { "key": "theme", "value": "dark" } },
+  "getResponseNull": { "data": null },
+  "listResponse": {
+    "data": [
+      { "key": "core.appName", "value": "POPS" },
+      { "key": "finance.apiToken", "value": "__redacted__" },
+      { "key": "theme", "value": "dark" }
+    ]
+  },
+  "mutationResponse": {
+    "data": { "key": "theme", "value": "dark" },
+    "message": "Setting saved"
+  },
+  "resetResponse": {
+    "reset": ["core.appName", "finance.apiToken", "theme"],
+    "settings": { "core.appName": "POPS", "finance.apiToken": "", "theme": "light" }
+  },
+  "setting": { "key": "theme", "value": "dark" },
+  "settingsMapResponse": {
+    "settings": { "core.appName": "POPS", "finance.apiToken": "__redacted__", "theme": "dark" }
+  }
+}

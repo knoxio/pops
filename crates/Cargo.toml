@@ -12,7 +12,7 @@
 # member by relative path.
 [workspace]
 resolver = "2"
-members = ["../pillars/contacts", "pops-ai"]
+members = ["../pillars/contacts", "pops-ai", "pops-settings"]
 
 [workspace.package]
 edition = "2021"
