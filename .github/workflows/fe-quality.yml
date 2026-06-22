@@ -10,22 +10,22 @@ on:
       # Globbed from disk so a new pillar (or `lists`, previously omitted)
       # is covered without editing this list.
       - "pillars/*/openapi/**"
-      - "packages/db-types/**"
-      - "packages/navigation/**"
-      - "packages/pillar-sdk/**"
-      - "packages/types/**"
-      - "packages/ui/**"
+      - "libs/db-types/**"
+      - "libs/navigation/**"
+      - "libs/sdk/**"
+      - "libs/types/**"
+      - "libs/ui/**"
       - ".github/workflows/fe-quality.yml"
   pull_request:
     paths:
       - "apps/pops-shell/**"
       - "pillars/*/app/**"
       - "pillars/*/openapi/**"
-      - "packages/db-types/**"
-      - "packages/navigation/**"
-      - "packages/pillar-sdk/**"
-      - "packages/types/**"
-      - "packages/ui/**"
+      - "libs/db-types/**"
+      - "libs/navigation/**"
+      - "libs/sdk/**"
+      - "libs/types/**"
+      - "libs/ui/**"
       - ".github/workflows/fe-quality.yml"
 
 jobs:
@@ -44,15 +44,15 @@ jobs:
             shell:
               - 'apps/pops-shell/**'
               - 'pillars/*/app/**'
-              - 'packages/db-types/**'
+              - 'libs/db-types/**'
               # Glob every pillar's OpenAPI projection so the filter can't
               # drift from the trigger paths (previously omitted inventory
               # + lists, silently skipping FE quality on those changes).
               - 'pillars/*/openapi/**'
-              - 'packages/navigation/**'
-              - 'packages/pillar-sdk/**'
-              - 'packages/types/**'
-              - 'packages/ui/**'
+              - 'libs/navigation/**'
+              - 'libs/sdk/**'
+              - 'libs/types/**'
+              - 'libs/ui/**'
               - '.github/workflows/fe-quality.yml'
 
   quality:

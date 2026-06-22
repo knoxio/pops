@@ -1,22 +1,21 @@
-name: AI Quality
+name: Pillar SDK Quality
+
+# Standalone scoped quality gate for the @pops/pillar-sdk shared library
+# (libs/sdk). The federation move renamed packages/pillar-sdk -> libs/sdk and
+# the S4 cutover leaned on the SDK without any gate running its own suite —
+# this closes that blind spot. Runs typecheck + vitest on every SDK change.
 
 on:
   push:
     branches: [main]
     paths:
-      - "pillars/ai/app/**"
-      - "libs/db-types/**"
-      - "libs/types/**"
-      - "libs/ui/**"
-      - ".github/workflows/ai-quality.yml"
+      - "libs/sdk/**"
+      - ".github/workflows/pillar-sdk-quality.yml"
       - ".github/workflows/_pkg-check.yml"
   pull_request:
     paths:
-      - "pillars/ai/app/**"
-      - "libs/db-types/**"
-      - "libs/types/**"
-      - "libs/ui/**"
-      - ".github/workflows/ai-quality.yml"
+      - "libs/sdk/**"
+      - ".github/workflows/pillar-sdk-quality.yml"
       - ".github/workflows/_pkg-check.yml"
 
 jobs:
@@ -33,11 +32,8 @@ jobs:
         with:
           filters: |
             relevant:
-              - 'pillars/ai/app/**'
-              - 'libs/db-types/**'
-              - 'libs/types/**'
-              - 'libs/ui/**'
-              - '.github/workflows/ai-quality.yml'
+              - 'libs/sdk/**'
+              - '.github/workflows/pillar-sdk-quality.yml'
               - '.github/workflows/_pkg-check.yml'
 
   quality:
@@ -45,6 +41,7 @@ jobs:
     if: always()
     uses: ./.github/workflows/_pkg-check.yml
     with:
-      package-path: pillars/ai/app
-      needs-db-build: true
+      package-path: libs/sdk
+      has-test: true
+      needs-db-build: false
       skip: ${{ github.event_name == 'pull_request' && needs.changes.outputs.relevant != 'true' }}
