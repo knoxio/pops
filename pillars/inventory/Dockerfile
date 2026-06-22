@@ -28,9 +28,11 @@ RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
 # @pops/pillar-sdk
 COPY libs/sdk/src ./libs/sdk/src
 COPY libs/sdk/tsconfig.json ./libs/sdk/tsconfig.json
+COPY libs/sdk/tsconfig.build.json ./libs/sdk/tsconfig.build.json
 # @pops/pillar-settings
 COPY libs/settings/src ./libs/settings/src
 COPY libs/settings/tsconfig.json ./libs/settings/tsconfig.json
+COPY libs/settings/tsconfig.build.json ./libs/settings/tsconfig.build.json
 # @pops/types
 COPY libs/types/src ./libs/types/src
 COPY libs/types/tsconfig.json ./libs/types/tsconfig.json
@@ -41,6 +43,7 @@ COPY pillars/inventory/scripts ./pillars/inventory/scripts
 COPY pillars/inventory/openapi ./pillars/inventory/openapi
 COPY pillars/inventory/migrations ./pillars/inventory/migrations
 COPY pillars/inventory/tsconfig.json ./pillars/inventory/tsconfig.json
+COPY pillars/inventory/tsconfig.build.json ./pillars/inventory/tsconfig.build.json
 
 # Phase 3: build shared deps in pnpm topology order, then the pillar.
 RUN pnpm --filter "@pops/inventory^..." build

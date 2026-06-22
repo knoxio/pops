@@ -26,12 +26,15 @@ RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
 
 COPY libs/ai-telemetry/src ./libs/ai-telemetry/src
 COPY libs/ai-telemetry/tsconfig.json ./libs/ai-telemetry/tsconfig.json
+COPY libs/ai-telemetry/tsconfig.build.json ./libs/ai-telemetry/tsconfig.build.json
 
 COPY libs/sdk/src ./libs/sdk/src
 COPY libs/sdk/tsconfig.json ./libs/sdk/tsconfig.json
+COPY libs/sdk/tsconfig.build.json ./libs/sdk/tsconfig.build.json
 
 COPY libs/settings/src ./libs/settings/src
 COPY libs/settings/tsconfig.json ./libs/settings/tsconfig.json
+COPY libs/settings/tsconfig.build.json ./libs/settings/tsconfig.build.json
 
 COPY libs/types/src ./libs/types/src
 COPY libs/types/tsconfig.json ./libs/types/tsconfig.json
@@ -42,6 +45,7 @@ COPY pillars/ai/scripts ./pillars/ai/scripts
 COPY pillars/ai/openapi ./pillars/ai/openapi
 COPY pillars/ai/migrations ./pillars/ai/migrations
 COPY pillars/ai/tsconfig.json ./pillars/ai/tsconfig.json
+COPY pillars/ai/tsconfig.build.json ./pillars/ai/tsconfig.build.json
 
 # Phase 3: build shared deps in pnpm topology order, then the pillar.
 RUN pnpm --filter "@pops/ai^..." build
