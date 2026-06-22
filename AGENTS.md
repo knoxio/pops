@@ -140,7 +140,6 @@ apps/
 ├── pops-mcp/              # MCP gateway
 ├── pops-cli/              # CLI tooling
 ├── pops-docs/             # OpenAPI docs browser (Stoplight Elements over each contract's snapshot)
-├── pops-storybook/        # Component workshop
 └── moltbot/               # Telegram bot config + skills
 
 packages/
