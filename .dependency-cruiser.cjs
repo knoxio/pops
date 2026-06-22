@@ -2,31 +2,30 @@
  * dependency-cruiser config — module import boundary enforcement.
  *
  * Rules:
- * - packages/app-<x>/** must not import from packages/app-<y>/** (x ≠ y)
- * - Non-owning code must not import @pops/<pillar>-db directly; consumers
- *   go through @pops/<pillar>-contract. Rules generated from
- *   scripts/contract/pillar-list.ts.
+ * - pillars/<x>/app/** must not import from pillars/<y>/app/** (x ≠ y).
+ *   Cross-pillar frontend communication goes through the pillar REST APIs
+ *   or shared workspace packages.
+ * - The retired per-pillar @pops/<pillar>-db / -contract / -api packages may
+ *   not be re-imported (tombstone rules below); consumers go through the
+ *   pillar's @pops/<pillar> entrypoint and its REST API.
  *
- * Allow-listed shared workspace packages for packages/app-*: @pops/ui,
- * @pops/api-client, @pops/navigation, @pops/db-types, @pops/types,
- * @pops/import-tools, @pops/auth, @pops/widgets, @pops/test-utils.
+ * Shared workspace packages available to pillar frontends: @pops/ui,
+ * @pops/navigation, @pops/types, @pops/db-types.
  *
  * See docs/themes/01-foundation/prds/097-module-import-boundaries/ and
  * docs/themes/13-pillar-finale/prds/156-consumer-import-discipline/.
  */
-const { contractBoundaryRules } = require('./.dependency-cruiser.rules.generated.cjs');
-
 module.exports = {
   forbidden: [
     {
       name: 'no-cross-app-import',
       severity: 'error',
       comment:
-        'packages/app-<x> may not import from another packages/app-<y>. Cross-app communication goes through tRPC or shared workspace packages (@pops/ui, @pops/api-client, @pops/navigation, @pops/db-types, @pops/types, @pops/import-tools, @pops/auth, @pops/widgets, @pops/test-utils).',
-      from: { path: '^packages/app-([^/]+)/src' },
+        'pillars/<x>/app may not import from another pillars/<y>/app. Cross-pillar frontend communication goes through the pillar REST APIs or shared workspace packages (@pops/ui, @pops/navigation, @pops/types, @pops/db-types).',
+      from: { path: '^pillars/([^/]+)/app/src' },
       to: {
-        path: '^packages/app-([^/]+)/',
-        pathNot: '^packages/app-$1/',
+        path: '^pillars/([^/]+)/app/',
+        pathNot: '^pillars/$1/app/',
       },
     },
     {
@@ -93,7 +92,6 @@ module.exports = {
       from: { path: '.*' },
       to: { path: '^@pops/shared-schema(/|$)' },
     },
-    ...contractBoundaryRules,
   ],
   options: {
     doNotFollow: {
