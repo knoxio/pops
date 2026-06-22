@@ -26,61 +26,151 @@ const IMPORT_PATTERNS = [
 ];
 
 /**
- * Replace the contents of `//` and block comments with spaces, preserving
- * every character offset and newline so downstream line/column math stays
- * accurate. String and template literals are kept intact (their `//` is not a
- * comment). This is why a commented-out `// import x from '@pops/foo/src/y'`
- * is not mistaken for a real import.
+ * Single code characters after which a `/` begins a regex literal (not
+ * division). Covers the contexts where regexes actually appear in this
+ * codebase (array elements, assignments, calls, returns).
+ */
+const REGEX_PREV_CHARS = new Set([
+  '',
+  '(',
+  ',',
+  '=',
+  ':',
+  '[',
+  '!',
+  '&',
+  '|',
+  '?',
+  '{',
+  '}',
+  ';',
+  '+',
+  '-',
+  '*',
+  '%',
+  '<',
+  '>',
+  '~',
+  '^',
+]);
+
+/** Keywords after which a `/` begins a regex literal. */
+const REGEX_PREV_KEYWORDS = new Set([
+  'return',
+  'typeof',
+  'instanceof',
+  'in',
+  'of',
+  'new',
+  'delete',
+  'void',
+  'do',
+  'else',
+  'yield',
+  'await',
+  'case',
+]);
+
+/**
+ * @param {string} s
+ * @returns {string}  `s` with every non-newline replaced by a space.
+ */
+function blank(s) {
+  return s.replace(/[^\n]/gu, ' ');
+}
+
+/**
+ * Replace `//` and block-comment contents with spaces, preserving every
+ * character offset and newline so downstream line math stays accurate.
+ *
+ * A correct strip requires a mini-lexer, not a regex: string/template literals
+ * are kept verbatim (the module specifier lives inside their quotes), while
+ * **regex literals are recognized and blanked** — otherwise the `'`/`"` inside
+ * a pattern like `/import\s+['"]([^'"]+)['"]/` would be mistaken for string
+ * delimiters, desync the scanner, and leave a following comment unstripped
+ * (e.g. a commented-out `// import x from '@pops/foo/src/y'` would then read as
+ * a real import). Regex-vs-division is disambiguated by the preceding token.
  *
  * @param {string} src
  * @returns {string}
  */
 export function stripComments(src) {
+  const n = src.length;
   let out = '';
-  /** @type {'' | "'" | '"' | '`' | '//' | '/*'} */
-  let mode = '';
-  for (let i = 0; i < src.length; i++) {
+  let i = 0;
+  /** last significant (non-whitespace) code char emitted */
+  let prevChar = '';
+  /** trailing identifier word, for keyword-before-regex detection */
+  let prevWord = '';
+
+  while (i < n) {
     const ch = src[i];
-    const next = i + 1 < src.length ? src[i + 1] : '';
-    if (mode === '//') {
-      if (ch === '\n') {
-        mode = '';
-        out += ch;
-      } else out += ' ';
-      continue;
-    }
-    if (mode === '/*') {
-      if (ch === '*' && next === '/') {
-        mode = '';
-        out += '  ';
-        i++;
-      } else out += ch === '\n' ? '\n' : ' ';
-      continue;
-    }
-    if (mode === "'" || mode === '"' || mode === '`') {
-      out += ch;
-      if (ch === '\\') {
-        out += next;
-        i++;
-        continue;
-      }
-      if (ch === mode) mode = '';
-      continue;
-    }
+    const next = i + 1 < n ? src[i + 1] : '';
+
     if (ch === '/' && next === '/') {
-      mode = '//';
-      out += '  ';
-      i++;
+      let j = i + 2;
+      while (j < n && src[j] !== '\n') j++;
+      out += blank(src.slice(i, j));
+      i = j;
       continue;
     }
     if (ch === '/' && next === '*') {
-      mode = '/*';
-      out += '  ';
-      i++;
+      let j = i + 2;
+      while (j < n && !(src[j] === '*' && src[j + 1] === '/')) j++;
+      j = Math.min(j + 2, n);
+      out += blank(src.slice(i, j));
+      i = j;
       continue;
     }
-    if (ch === "'" || ch === '"' || ch === '`') mode = ch;
+    if (ch === "'" || ch === '"' || ch === '`') {
+      let j = i + 1;
+      while (j < n) {
+        if (src[j] === '\\') {
+          j += 2;
+          continue;
+        }
+        if (src[j] === ch) {
+          j++;
+          break;
+        }
+        j++;
+      }
+      out += src.slice(i, j);
+      prevChar = ch;
+      prevWord = '';
+      i = j;
+      continue;
+    }
+    if (ch === '/' && (REGEX_PREV_CHARS.has(prevChar) || REGEX_PREV_KEYWORDS.has(prevWord))) {
+      let j = i + 1;
+      let inClass = false;
+      while (j < n) {
+        const c = src[j];
+        if (c === '\\') {
+          j += 2;
+          continue;
+        }
+        if (c === '\n') break;
+        if (c === '[') inClass = true;
+        else if (c === ']') inClass = false;
+        else if (c === '/' && !inClass) {
+          j++;
+          break;
+        }
+        j++;
+      }
+      out += blank(src.slice(i, j));
+      prevChar = '/';
+      prevWord = '';
+      i = j;
+      continue;
+    }
     out += ch;
+    if (!/\s/u.test(ch)) {
+      prevChar = ch;
+      prevWord = /[A-Za-z0-9_$]/u.test(ch) ? prevWord + ch : '';
+    }
+    i++;
   }
   return out;
 }

@@ -27,6 +27,28 @@ describe('extractSpecifiers', () => {
     expect(extractSpecifiers('// import x from "@pops/core"')).toEqual([]);
     expect(extractSpecifiers('/* see @pops/ui/dist/button */')).toEqual([]);
   });
+
+  it('handles a regex literal containing quotes followed by a comment-import', () => {
+    // Regression: a pattern like the scanner's own IMPORT_PATTERNS has `'`/`"`
+    // inside it; a naive stripper treats those as string starts, desyncs, and
+    // leaves the following comment unstripped.
+    const src = [
+      'const RE = [/(?:^|[\\s;])import\\s+from\\s+[\'"]([^\'"]+)[\'"]/gm];',
+      "// import x from '@pops/foo/src/y'",
+      "/* import z from '@pops/bar/dist/q' */",
+    ].join('\n');
+    expect(extractSpecifiers(src)).toEqual([]);
+  });
+
+  it('does not mistake a division operator for a regex (comment still stripped)', () => {
+    const src = ['const r = a / b / c;', "// import x from '@pops/foo/src/y'"].join('\n');
+    expect(extractSpecifiers(src)).toEqual([]);
+  });
+
+  it('still extracts a real import that follows a regex literal', () => {
+    const src = ['const RE = /[\'"]/g;', "import x from '@pops/finance/src/db';"].join('\n');
+    expect(extractSpecifiers(src)).toEqual(['@pops/finance/src/db']);
+  });
 });
 
 describe('extractSpecifiersWithLines', () => {
