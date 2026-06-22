@@ -10,6 +10,8 @@ pub mod config;
 pub mod db;
 pub mod entities;
 pub mod health;
+pub mod manifest;
 pub mod openapi;
+pub mod registry;
 pub mod search;
 pub mod time;
