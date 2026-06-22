@@ -18,6 +18,7 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json .oxfmtrc
 COPY pillars/finance/package.json ./pillars/finance/
 COPY packages/ai-telemetry/package.json ./packages/ai-telemetry/
 COPY packages/pillar-sdk/package.json ./packages/pillar-sdk/
+COPY packages/pillar-settings/package.json ./packages/pillar-settings/
 COPY packages/types/package.json ./packages/types/
 
 RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
@@ -31,6 +32,9 @@ COPY packages/ai-telemetry/tsconfig.json ./packages/ai-telemetry/tsconfig.json
 
 COPY packages/pillar-sdk/src ./packages/pillar-sdk/src
 COPY packages/pillar-sdk/tsconfig.json ./packages/pillar-sdk/tsconfig.json
+
+COPY packages/pillar-settings/src ./packages/pillar-settings/src
+COPY packages/pillar-settings/tsconfig.json ./packages/pillar-settings/tsconfig.json
 
 COPY packages/types/src ./packages/types/src
 COPY packages/types/tsconfig.json ./packages/types/tsconfig.json
