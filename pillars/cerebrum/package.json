@@ -43,6 +43,7 @@
     "@anthropic-ai/sdk": "^0.104.1",
     "@pops/ai-telemetry": "workspace:*",
     "@pops/pillar-sdk": "workspace:*",
+    "@pops/pillar-settings": "workspace:*",
     "@pops/types": "workspace:*",
     "@ts-rest/core": "3.53.0-rc.1",
     "@ts-rest/express": "3.53.0-rc.1",
