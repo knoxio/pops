@@ -65,7 +65,7 @@ describe('openCoreDb', () => {
       expect(tables.has('ai_model_pricing')).toBe(true);
       expect(tables.has('sync_job_results')).toBe(true);
       // The finance-categorizer ai_usage table re-homed to finance (gap #3489);
-      // 0065_drop_ai_usage drops it after the historical 0061 CREATE.
+      // 0070_drop_ai_usage drops it after the historical 0061 CREATE.
       expect(tables.has('ai_usage')).toBe(false);
 
       const indexes = new Set(

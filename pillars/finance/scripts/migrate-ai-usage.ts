@@ -16,6 +16,7 @@
  * Exits non-zero on any hard failure so a deploy pipeline can halt.
  */
 import { existsSync } from 'node:fs';
+import { pathToFileURL } from 'node:url';
 
 import Database from 'better-sqlite3';
 
@@ -36,8 +37,42 @@ interface AiUsageRow {
   created_at: string;
 }
 
-function resolveCoreSqlitePath(): string {
-  return process.env['CORE_SQLITE_PATH'] ?? DEFAULT_CORE_SQLITE_PATH;
+/**
+ * Decide what to do with the resolved core DB path, given whether
+ * `CORE_SQLITE_PATH` was set explicitly and whether the file is present.
+ *
+ * A missing source is only a benign no-op when the path is the unset/default
+ * fallback — i.e. nobody asked us to read from a specific place. When the
+ * operator explicitly set `CORE_SQLITE_PATH`, a missing file is an ERROR: it
+ * almost always means a typo or a misconfigured deploy, and silently skipping
+ * would let core's `DROP TABLE` roll out afterwards and destroy the history this
+ * script exists to preserve.
+ */
+function classifyCorePath(input: {
+  corePath: string;
+  explicit: boolean;
+  exists: boolean;
+}): { action: 'migrate' } | { action: 'skip'; reason: string } {
+  if (input.exists) return { action: 'migrate' };
+  if (input.explicit) {
+    throw new Error(
+      `CORE_SQLITE_PATH was set to "${input.corePath}" but no file exists there — ` +
+        `refusing to skip the ai_usage migration (a silent skip here risks core dropping ` +
+        `the table afterwards and losing history). Fix the path or unset CORE_SQLITE_PATH.`
+    );
+  }
+  return {
+    action: 'skip',
+    reason: `core DB not found at default ${input.corePath} (CORE_SQLITE_PATH unset) — nothing to migrate`,
+  };
+}
+
+function resolveCoreSqlitePath(): { corePath: string; explicit: boolean } {
+  const envPath = process.env['CORE_SQLITE_PATH'];
+  if (envPath !== undefined && envPath !== '') {
+    return { corePath: envPath, explicit: true };
+  }
+  return { corePath: DEFAULT_CORE_SQLITE_PATH, explicit: false };
 }
 
 function readCoreRows(corePath: string): AiUsageRow[] {
@@ -104,12 +139,23 @@ function copyRows(corePath: string, financePath: string): MigrationSummary {
 }
 
 function main(): void {
-  const corePath = resolveCoreSqlitePath();
+  const { corePath, explicit } = resolveCoreSqlitePath();
   const financePath = resolveFinanceSqlitePath();
-  if (!existsSync(corePath)) {
-    console.warn(`[migrate-ai-usage] core DB not found at ${corePath} — nothing to migrate`);
+
+  const decision = classifyCorePath({ corePath, explicit, exists: existsSync(corePath) });
+  if (decision.action === 'skip') {
+    console.warn(`[migrate-ai-usage] ${decision.reason}`);
     return;
   }
+
+  if (!existsSync(financePath)) {
+    throw new Error(
+      `finance DB not found at "${financePath}" — refusing to migrate into a freshly created ` +
+        `empty DB (this would land rows at the wrong path and leave the real DB un-migrated). ` +
+        `Check FINANCE_SQLITE_PATH / SQLITE_PATH.`
+    );
+  }
+
   const summary = copyRows(corePath, financePath);
   console.warn(
     `[migrate-ai-usage] done — total=${summary.total} inserted=${summary.inserted} ` +
@@ -117,9 +163,19 @@ function main(): void {
   );
 }
 
-try {
-  main();
-} catch (err: unknown) {
-  console.error('[migrate-ai-usage] FAILED:', err instanceof Error ? err.message : err);
-  process.exitCode = 1;
+export { classifyCorePath, resolveCoreSqlitePath };
+
+function isDirectRun(): boolean {
+  const entry = process.argv[1];
+  if (!entry) return false;
+  return import.meta.url === pathToFileURL(entry).href;
+}
+
+if (isDirectRun()) {
+  try {
+    main();
+  } catch (err: unknown) {
+    console.error('[migrate-ai-usage] FAILED:', err instanceof Error ? err.message : err);
+    process.exitCode = 1;
+  }
 }
