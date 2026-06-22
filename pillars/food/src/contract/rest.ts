@@ -14,7 +14,6 @@
  */
 import { initContract } from '@ts-rest/core';
 
-import { foodAiContract } from './rest-ai.js';
 import { foodAliasesContract } from './rest-aliases.js';
 import { foodBatchesContract } from './rest-batches.js';
 import { foodConversionsContract } from './rest-conversions.js';
@@ -39,7 +38,6 @@ const c = initContract();
 
 export const foodContract = c.router(
   {
-    ai: foodAiContract,
     aliases: foodAliasesContract,
     batches: foodBatchesContract,
     conversions: foodConversionsContract,

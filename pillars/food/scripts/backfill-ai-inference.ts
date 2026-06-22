@@ -2,11 +2,16 @@
  * One-shot, idempotent backfill of food's historical `ai_inference_log` rows
  * into the ai pillar's cross-pillar telemetry store.
  *
- * Reads every row from food's local `ai_inference_log` (the pre-migration
- * write path, kept in place — see PRD-055 / gap #3490), maps each to a
+ * Reads every row from food's local `ai_inference_log`, maps each to a
  * `@pops/ai-telemetry` `InferenceRecord` via the unit-tested
  * `foodRowToInferenceRecord`, and POSTs it to the ai pillar's internal
  * `POST /ai-usage/record` (gated by `x-pops-internal-token`).
+ *
+ * Deploy ordering (#3490): the table is dropped by migration
+ * `0063_drop_ai_inference_log`, so this backfill MUST run BEFORE the drop
+ * deploys. It opens the food SQLite with a raw `better-sqlite3` handle and a
+ * raw `SELECT` — deliberately NOT `openFoodDb`, which would apply the drop
+ * migration on open and erase the rows it is meant to read.
  *
  * Idempotency: each record carries a STABLE
  * `metadata.dedupe_key = 'food:ai_inference_log:<id>'` and
@@ -24,9 +29,13 @@
  */
 import { pathToFileURL } from 'node:url';
 
+import Database from 'better-sqlite3';
+
 import { resolveFoodSqlitePath } from '../src/api/food-sqlite-path.js';
-import { aiInferenceLog, openFoodDb } from '../src/db/index.js';
-import { foodRowToInferenceRecord } from '../src/worker/ai/backfill-mapping.js';
+import {
+  type AiInferenceLogRow,
+  foodRowToInferenceRecord,
+} from '../src/worker/ai/backfill-mapping.js';
 
 import type { InferenceRecord } from '@pops/ai-telemetry';
 
@@ -72,35 +81,79 @@ async function postRecord(config: BackfillConfig, record: InferenceRecord): Prom
   }
 }
 
-export async function runBackfill(config: BackfillConfig): Promise<BackfillSummary> {
-  const { db, raw } = openFoodDb(config.sqlitePath);
-  const summary: BackfillSummary = { total: 0, posted: 0, skipped: 0, failed: 0 };
+interface RawAiInferenceLogRow {
+  id: number;
+  provider: string;
+  model: string;
+  operation: string;
+  domain: string | null;
+  input_tokens: number;
+  output_tokens: number;
+  cost_usd: number;
+  latency_ms: number;
+  status: string;
+  cached: number;
+  context_id: string | null;
+  error_message: string | null;
+  metadata: string | null;
+  created_at: string;
+}
+
+const SELECT_ROWS = 'SELECT * FROM ai_inference_log';
+
+function toLogRow(raw: RawAiInferenceLogRow): AiInferenceLogRow {
+  return {
+    id: raw.id,
+    provider: raw.provider,
+    model: raw.model,
+    operation: raw.operation,
+    domain: raw.domain,
+    inputTokens: raw.input_tokens,
+    outputTokens: raw.output_tokens,
+    costUsd: raw.cost_usd,
+    latencyMs: raw.latency_ms,
+    status: raw.status,
+    cached: raw.cached,
+    contextId: raw.context_id,
+    errorMessage: raw.error_message,
+    metadata: raw.metadata,
+    createdAt: raw.created_at,
+  };
+}
+
+function readLogRows(sqlitePath: string): AiInferenceLogRow[] {
+  const handle = new Database(sqlitePath, { readonly: true });
   try {
-    const rows = db.select().from(aiInferenceLog).all();
-    summary.total = rows.length;
-    for (const row of rows) {
-      let record: InferenceRecord;
-      try {
-        record = foodRowToInferenceRecord(row);
-      } catch (err) {
-        summary.skipped += 1;
-        console.warn(`[backfill] skipping unmappable row id=${row.id}: ${String(err)}`);
-        continue;
-      }
-      if (config.dryRun) {
-        summary.posted += 1;
-        continue;
-      }
-      try {
-        await postRecord(config, record);
-        summary.posted += 1;
-      } catch (err) {
-        summary.failed += 1;
-        console.error(`[backfill] failed to post row id=${row.id}: ${String(err)}`);
-      }
-    }
+    const raw = handle.prepare(SELECT_ROWS).all() as RawAiInferenceLogRow[];
+    return raw.map(toLogRow);
   } finally {
-    raw.close();
+    handle.close();
+  }
+}
+
+export async function runBackfill(config: BackfillConfig): Promise<BackfillSummary> {
+  const rows = readLogRows(config.sqlitePath);
+  const summary: BackfillSummary = { total: rows.length, posted: 0, skipped: 0, failed: 0 };
+  for (const row of rows) {
+    let record: InferenceRecord;
+    try {
+      record = foodRowToInferenceRecord(row);
+    } catch (err) {
+      summary.skipped += 1;
+      console.warn(`[backfill] skipping unmappable row id=${row.id}: ${String(err)}`);
+      continue;
+    }
+    if (config.dryRun) {
+      summary.posted += 1;
+      continue;
+    }
+    try {
+      await postRecord(config, record);
+      summary.posted += 1;
+    } catch (err) {
+      summary.failed += 1;
+      console.error(`[backfill] failed to post row id=${row.id}: ${String(err)}`);
+    }
   }
   return summary;
 }

@@ -3,10 +3,9 @@
  *
  * The prompt is exported as a TS constant so PRD-133's `/food/prompts`
  * viewer can mirror it without round-tripping through git. Bump
- * `PROMPT_VERSION_SCREENSHOT` whenever the prompt body changes — today
- * the version is recorded in `meta.stages.vision.prompt_version`; once
- * the worker is wired into PRD-133's `callClaudeWithLogging` wrapper
- * it will additionally land on every `ai_inference_log` row.
+ * `PROMPT_VERSION_SCREENSHOT` whenever the prompt body changes — the version
+ * is recorded in `meta.stages.vision.prompt_version` and reported through
+ * `@pops/ai-telemetry` to the ai pillar.
  */
 
 /** Bump on every meaningful change to {@link SCREENSHOT_PROMPT}. */
