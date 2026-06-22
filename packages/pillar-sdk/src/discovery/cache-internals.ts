@@ -6,7 +6,7 @@ import {
 
 import type { RegistrySnapshot } from './types.js';
 
-export const DEFAULT_REGISTRY_URL = 'http://core-api:3001';
+export const DEFAULT_REGISTRY_URL = 'http://registry-api:3001';
 export const DEFAULT_CACHE_TTL_MS = 30_000;
 export const MIN_CACHE_TTL_MS = 5_000;
 export const REFRESH_LEAD_MS = 1_000;

@@ -56,7 +56,7 @@ export type HttpDiscoveryTransportOptions = {
   headers?: Record<string, string>;
 };
 
-const DEFAULT_REGISTRY_URL = 'http://core-api:3001';
+const DEFAULT_REGISTRY_URL = 'http://registry-api:3001';
 
 const DEFAULT_FETCH_TIMEOUT_MS = 5_000;
 

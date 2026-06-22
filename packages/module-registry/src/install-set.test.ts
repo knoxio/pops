@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { resolveInstalledIds } from './install-set.js';
 
 describe('resolveInstalledIds', () => {
-  const known = ['ai', 'cerebrum', 'core', 'finance', 'inventory', 'media'] as const;
+  const known = ['ai', 'cerebrum', 'finance', 'inventory', 'media', 'registry'] as const;
 
   it('returns every known id when POPS_APPS and POPS_OVERLAYS are both unset', () => {
     expect(resolveInstalledIds(known, {})).toEqual(known);
@@ -32,9 +32,9 @@ describe('resolveInstalledIds', () => {
   });
 
   it('keeps alwaysInstalled ids even when POPS_APPS would exclude them', () => {
-    expect(resolveInstalledIds(known, { POPS_APPS: 'finance' }, ['core'])).toEqual([
-      'core',
+    expect(resolveInstalledIds(known, { POPS_APPS: 'finance' }, ['registry'])).toEqual([
       'finance',
+      'registry',
     ]);
   });
 

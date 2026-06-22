@@ -18,48 +18,48 @@ describe('fetchPillarRegistry', () => {
       expect(url).toBe('/pillars');
       return jsonResponse({
         pillars: [
-          { id: 'core', baseUrl: '' },
+          { id: 'registry', baseUrl: '' },
           { id: 'food', baseUrl: 'http://food-api:3000' },
         ],
       });
     });
     const entries = await fetchPillarRegistry({ fetch: fetchStub });
     expect(entries).toEqual([
-      { id: 'core', baseUrl: '' },
+      { id: 'registry', baseUrl: '' },
       { id: 'food', baseUrl: 'http://food-api:3000' },
     ]);
   });
 
-  it('falls back to the synthetic core self-entry when /pillars returns an empty list', async () => {
+  it('falls back to the synthetic registry self-entry when /pillars returns an empty list', async () => {
     const fetchStub = vi.fn(async () => jsonResponse({ pillars: [] }));
     const entries = await fetchPillarRegistry({ fetch: fetchStub });
-    expect(entries).toEqual([{ id: 'core', baseUrl: '' }]);
+    expect(entries).toEqual([{ id: 'registry', baseUrl: '' }]);
   });
 
-  it('falls back to the synthetic core self-entry on network failure', async () => {
+  it('falls back to the synthetic registry self-entry on network failure', async () => {
     const fetchStub = vi.fn(async () => {
       throw new TypeError('fetch failed');
     });
     const entries = await fetchPillarRegistry({ fetch: fetchStub });
-    expect(entries).toEqual([{ id: 'core', baseUrl: '' }]);
+    expect(entries).toEqual([{ id: 'registry', baseUrl: '' }]);
   });
 
   it('falls back when the response is a 500', async () => {
     const fetchStub = vi.fn(async () => new Response('boom', { status: 500 }));
     const entries = await fetchPillarRegistry({ fetch: fetchStub });
-    expect(entries).toEqual([{ id: 'core', baseUrl: '' }]);
+    expect(entries).toEqual([{ id: 'registry', baseUrl: '' }]);
   });
 
   it('falls back when the response body is malformed', async () => {
     const fetchStub = vi.fn(async () => jsonResponse({ pillars: [{ id: 'food' }] }));
     const entries = await fetchPillarRegistry({ fetch: fetchStub });
-    expect(entries).toEqual([{ id: 'core', baseUrl: '' }]);
+    expect(entries).toEqual([{ id: 'registry', baseUrl: '' }]);
   });
 
   it('falls back when the body is not the {pillars: [...]} shape', async () => {
     const fetchStub = vi.fn(async () => jsonResponse({ entries: [] }));
     const entries = await fetchPillarRegistry({ fetch: fetchStub });
-    expect(entries).toEqual([{ id: 'core', baseUrl: '' }]);
+    expect(entries).toEqual([{ id: 'registry', baseUrl: '' }]);
   });
 
   it('aborts and falls back when the fetch exceeds timeoutMs', async () => {
@@ -72,7 +72,7 @@ describe('fetchPillarRegistry', () => {
       throw new Error('unreachable');
     });
     const entries = await fetchPillarRegistry({ fetch: fetchStub, timeoutMs: 5 });
-    expect(entries).toEqual([{ id: 'core', baseUrl: '' }]);
+    expect(entries).toEqual([{ id: 'registry', baseUrl: '' }]);
   });
 });
 

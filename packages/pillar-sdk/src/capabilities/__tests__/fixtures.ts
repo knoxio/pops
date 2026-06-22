@@ -93,7 +93,7 @@ export const contractConforms: AssertContractConforms = true;
 export const procedureConforms: AssertProcedureConforms = true;
 
 export type EmptyContract = {
-  readonly pillar: 'core';
+  readonly pillar: 'registry';
   readonly version: '0.0.0';
   readonly types: Record<string, never>;
   readonly schemas: Record<string, never>;

@@ -14,7 +14,7 @@ import { useQuery } from '@tanstack/react-query';
  */
 export function useFeatureEnabled(key: string, fallback = false): boolean {
   const { data, isError } = useQuery({
-    queryKey: ['core', 'features', 'isEnabled', key],
+    queryKey: ['registry', 'features', 'isEnabled', key],
     queryFn: async () => unwrap(await featuresIsEnabled({ path: { key } })),
   });
   if (isError) return fallback;

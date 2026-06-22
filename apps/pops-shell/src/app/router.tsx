@@ -68,10 +68,10 @@ function withSuspense(routes: readonly RouteObject[]): RouteObject[] {
  * the subtree renders the `PillarUnavailableRoute` placeholder when the
  * owning pillar's health is `'unavailable'` (ADR-026 P3).
  *
- * Today every module maps to the `core` pillar via `pillarIdForModule`;
- * the guard is a no-op for healthy/unknown statuses. As mature pillars
- * migrate, their module's mapping flips and routes start observing the
- * pillar's reported health.
+ * Unmigrated modules map to the platform `registry` pillar via
+ * `pillarIdForModule`; the guard is a no-op for healthy/unknown statuses. As
+ * mature pillars migrate, their module's mapping flips and routes start
+ * observing the pillar's reported health.
  */
 function appRouteEntries(): RouteObject[] {
   return installedAppManifests().map((manifest) => {

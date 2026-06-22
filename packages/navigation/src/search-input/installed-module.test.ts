@@ -13,8 +13,8 @@ import { ALL_MODULE_IDS } from '@pops/pillar-sdk';
 import { isInstalledModule } from './installed-module';
 
 describe('isInstalledModule', () => {
-  it('treats core as always installed (it is the shell module)', () => {
-    expect(isInstalledModule('core')).toBe(true);
+  it('treats registry as always installed (it is the platform module, formerly core)', () => {
+    expect(isInstalledModule('registry')).toBe(true);
   });
 
   it('returns true for every id in the canonical ALL_MODULE_IDS set', () => {

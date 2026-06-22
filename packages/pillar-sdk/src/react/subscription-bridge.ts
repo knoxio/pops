@@ -28,7 +28,7 @@ import type { QueryClient } from '@tanstack/react-query';
 /**
  * Event names emitted by `GET /registry/subscribe`. `pillar.snapshot` is
  * sent once on connect; the other three correspond to registry
- * mutations (see `apps/pops-core-api/src/modules/registry/event-bus.ts`).
+ * mutations (see `pillars/registry/src/api/modules/registry/`).
  */
 export type SubscriptionEventName =
   | 'pillar.snapshot'
@@ -67,7 +67,7 @@ export interface UsePillarSubscriptionBridgeOptions {
    * `EventSource` against `${registryUrl}${SUBSCRIBE_PATH}`.
    */
   readonly connect?: SubscriptionConnect;
-  /** Registry base URL. Defaults to the in-cluster core-api URL. */
+  /** Registry base URL. Defaults to the in-cluster registry-api URL. */
   readonly registryUrl?: string;
   /** Disable the bridge without unmounting the component. */
   readonly enabled?: boolean;

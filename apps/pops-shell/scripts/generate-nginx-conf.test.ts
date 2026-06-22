@@ -170,12 +170,19 @@ describe('generate-nginx-conf', () => {
       }
     });
 
-    it('routes /core-api specifically to the core pillar on :3001', () => {
-      const { host, port } = PILLAR_UPSTREAMS.core;
-      expect(host).toBe('core-api');
+    it('routes /registry-api specifically to the registry pillar on :3001', () => {
+      const { host, port } = PILLAR_UPSTREAMS.registry;
+      expect(host).toBe('registry-api');
       expect(port).toBe(3001);
+      expect(rendered).toContain('location /registry-api/ {');
+      expect(rendered).toContain('set $registry_api_upstream http://registry-api:3001;');
+    });
+
+    it('keeps a transitional /core-api alias proxying to the registry pillar', () => {
+      // An old shell bundle still posts to `/core-api/` during the
+      // core→registry rename window; the alias must resolve to registry-api.
       expect(rendered).toContain('location /core-api/ {');
-      expect(rendered).toContain('set $core_api_upstream http://core-api:3001;');
+      expect(rendered).toContain('set $core_api_upstream http://registry-api:3001;');
     });
 
     it('emits `set $<pillar>_api_upstream` BEFORE `rewrite ... break` in every pillar block', () => {
@@ -206,20 +213,20 @@ describe('generate-nginx-conf', () => {
       expect(setIdx, 'set must precede rewrite in /orchestrator-api/').toBeLessThan(rewriteIdx);
     });
 
-    it('routes the core /registry/subscribe SSE stream to the core pillar with buffering off', () => {
+    it('routes the registry /registry/subscribe SSE stream to the registry pillar with buffering off', () => {
       expect(rendered).toContain('location ~ ^/registry/subscribe/?$ {');
-      expect(rendered).toContain('set $registry_subscribe_upstream http://core-api:3001;');
+      expect(rendered).toContain('set $registry_subscribe_upstream http://registry-api:3001;');
       expect(rendered).toMatch(
         /location ~ \^\/registry\/subscribe\/\?\$ \{[\s\S]*?proxy_buffering off;/
       );
     });
 
-    it('keeps /pillars on core-api and moves /pillars/health onto core-api too', () => {
+    it('keeps /pillars on registry-api and moves /pillars/health onto registry-api too', () => {
       expect(rendered).toMatch(
-        /location ~ \^\/pillars\/\?\$ \{[\s\S]*?set \$pillars_upstream http:\/\/core-api:3001;/
+        /location ~ \^\/pillars\/\?\$ \{[\s\S]*?set \$pillars_upstream http:\/\/registry-api:3001;/
       );
       expect(rendered).toMatch(
-        /location ~ \^\/pillars\/health\/\?\$ \{[\s\S]*?set \$pillars_health_upstream http:\/\/core-api:3001;/
+        /location ~ \^\/pillars\/health\/\?\$ \{[\s\S]*?set \$pillars_health_upstream http:\/\/registry-api:3001;/
       );
     });
 
@@ -364,10 +371,10 @@ describe('generate-nginx-conf', () => {
         { pillarId: 'plugin-z', host: 'z', port: 1 },
         { pillarId: 'finance', host: 'finance-api', port: 3004 },
         { pillarId: 'plugin-a', host: 'a', port: 1 },
-        { pillarId: 'core', host: 'core-api', port: 3001 },
+        { pillarId: 'registry', host: 'registry-api', port: 3001 },
       ];
       const ordered = orderUpstreams(upstreams).map((u) => u.pillarId);
-      expect(ordered).toEqual(['core', 'finance', 'plugin-a', 'plugin-z']);
+      expect(ordered).toEqual(['registry', 'finance', 'plugin-a', 'plugin-z']);
     });
   });
 
@@ -404,8 +411,12 @@ describe('generate-nginx-conf', () => {
 
     it('emits zero pillar REST blocks for an empty registry but keeps the orchestrator block', () => {
       const rendered = renderNginxConfFromUpstreams([]);
+      // The per-pillar `/<id>-api/` blocks are absent for an empty registry.
+      // `/core-api/` is NOT a per-pillar block — it is the static transitional
+      // alias in the TAIL (proxying to registry-api during the rename window),
+      // so it is excluded from this assertion.
       expect(rendered).not.toMatch(
-        /location \/(?:core|inventory|media|finance|food|lists|cerebrum|contacts)-api\/ \{/
+        /location \/(?:registry|inventory|media|finance|food|lists|cerebrum|contacts)-api\/ \{/
       );
       expect(rendered).toContain('location /orchestrator-api/ {');
     });

@@ -24,7 +24,7 @@ type OptionsLoaders = Record<string, () => Promise<{ value: string; label: strin
  */
 function useBulkSettings(allKeys: string[], ownerPillar: string, hasFederatedSettings: boolean) {
   const queryClient = useQueryClient();
-  const transportKey = hasFederatedSettings ? ownerPillar : 'core';
+  const transportKey = hasFederatedSettings ? ownerPillar : 'registry';
   const queryKey = ['settings', transportKey, 'getMany', allKeys] as const;
   const client = useMemo(
     () => settingsClientFor(ownerPillar, hasFederatedSettings),

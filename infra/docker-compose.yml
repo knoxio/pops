@@ -18,39 +18,55 @@ services:
 
   # ── BACKEND ──────────────────────────────────────────────────────
 
-  # Core pillar API (ADR-026, Phase 3 PR 3). Sibling pillars treat the
-  # core container as the authoritative pillar registry: `GET /pillars`
-  # returns a snapshot derived from the `POPS_PILLARS` env plus a
-  # synthetic `core` entry — there is no dynamic register-on-boot step.
-  # Startup ordering is enforced by `depends_on: core-api` (below) so
+  # Registry pillar API (ADR-026, Phase 3 PR 3; the pillar formerly named
+  # `core`). Sibling pillars treat the registry container as the authoritative
+  # pillar registry: `GET /pillars` returns a snapshot derived from the
+  # `POPS_PILLARS` env plus a synthetic `registry` entry.
+  # Startup ordering is enforced by `depends_on: registry-api` (below) so
   # consumers can rely on the snapshot being available when they boot.
-  # Today the container only exposes /health + /pillars; subsequent
-  # pillar splits move settings, AI Ops, and URI dispatch behind it.
-  core-api:
+  #
+  # DUAL-ALIAS RENAME WINDOW: the service is named `registry-api` but carries
+  # the legacy `core-api` network alias on BOTH networks so a not-yet-rebuilt
+  # pillar image (whose baked-in SDK default still dials `http://core-api:3001`)
+  # keeps resolving to this same container. The `core-api` alias is removed
+  # only after every pillar (in-tree + external) has rolled over to the
+  # `registry-api` default — observed, not scheduled.
+  registry-api:
     build:
       context: ..
-      dockerfile: pillars/core/Dockerfile
+      dockerfile: pillars/registry/Dockerfile
       args:
         BUILD_VERSION: ${BUILD_VERSION:-dev}
-    image: ghcr.io/knoxio/pops-core:${POPS_IMAGE_TAG:-main}
-    container_name: pops-core
+    image: ghcr.io/knoxio/pops-registry:${POPS_IMAGE_TAG:-main}
+    container_name: pops-registry
     restart: unless-stopped
     labels:
       com.centurylinklabs.watchtower.enable: 'true'
     networks:
-      - frontend
-      - backend
+      frontend:
+        aliases:
+          - core-api
+          - registry-api
+      backend:
+        aliases:
+          - core-api
+          - registry-api
     volumes:
       - sqlite-data:/data/sqlite
     environment:
       NODE_ENV: production
       PORT: '3001'
+      # The on-disk SQLite filename stays `core.db` through the rename window:
+      # the deployer (homelab-infra) renames the live file to `registry.db`
+      # out of band and flips this path in the same change. Flipping it here
+      # before the file exists would boot the registry empty (mass
+      # deregistration), so it is intentionally left as `core.db` until then.
       CORE_SQLITE_PATH: /data/sqlite/core.db
-      CORE_SELF_BASE_URL: http://core-api:3001
-      # Cross-pillar registry — core-api hosts the authoritative
+      REGISTRY_SELF_BASE_URL: http://registry-api:3001
+      # Cross-pillar registry — registry-api hosts the authoritative
       # `/pillars` snapshot that the shell's nginx proxy fans out to,
       # so it MUST default to the full sibling list rather than empty.
-      POPS_PILLARS: ${POPS_PILLARS:-core:http://core-api:3001,inventory:http://inventory-api:3002,media:http://media-api:3003,finance:http://finance-api:3004,food:http://food-api:3005,lists:http://lists-api:3006}
+      POPS_PILLARS: ${POPS_PILLARS:-registry:http://registry-api:3001,inventory:http://inventory-api:3002,media:http://media-api:3003,finance:http://finance-api:3004,food:http://food-api:3005,lists:http://lists-api:3006}
     expose:
       - '3001'
     healthcheck:
@@ -91,11 +107,11 @@ services:
       PORT: '3002'
       INVENTORY_SQLITE_PATH: /data/sqlite/inventory.db
       INVENTORY_SELF_BASE_URL: http://inventory-api:3002
-      POPS_PILLARS: ${POPS_PILLARS:-core:http://core-api:3001,inventory:http://inventory-api:3002,media:http://media-api:3003,finance:http://finance-api:3004,food:http://food-api:3005,lists:http://lists-api:3006}
+      POPS_PILLARS: ${POPS_PILLARS:-registry:http://registry-api:3001,inventory:http://inventory-api:3002,media:http://media-api:3003,finance:http://finance-api:3004,food:http://food-api:3005,lists:http://lists-api:3006}
     expose:
       - '3002'
     depends_on:
-      core-api:
+      registry-api:
         condition: service_healthy
     healthcheck:
       test:
@@ -139,11 +155,11 @@ services:
       # it never collides with a self-pointing POPS_API_URL.
       AI_API_URL: http://ai-api:3008
       POPS_API_INTERNAL_TOKEN: ${POPS_API_INTERNAL_TOKEN:-}
-      POPS_PILLARS: ${POPS_PILLARS:-core:http://core-api:3001,inventory:http://inventory-api:3002,media:http://media-api:3003,finance:http://finance-api:3004,food:http://food-api:3005,lists:http://lists-api:3006}
+      POPS_PILLARS: ${POPS_PILLARS:-registry:http://registry-api:3001,inventory:http://inventory-api:3002,media:http://media-api:3003,finance:http://finance-api:3004,food:http://food-api:3005,lists:http://lists-api:3006}
     expose:
       - '3004'
     depends_on:
-      core-api:
+      registry-api:
         condition: service_healthy
     healthcheck:
       test:
@@ -182,11 +198,11 @@ services:
       PORT: '3003'
       MEDIA_SQLITE_PATH: /data/sqlite/media.db
       MEDIA_SELF_BASE_URL: http://media-api:3003
-      POPS_PILLARS: ${POPS_PILLARS:-core:http://core-api:3001,inventory:http://inventory-api:3002,media:http://media-api:3003,finance:http://finance-api:3004,food:http://food-api:3005,lists:http://lists-api:3006}
+      POPS_PILLARS: ${POPS_PILLARS:-registry:http://registry-api:3001,inventory:http://inventory-api:3002,media:http://media-api:3003,finance:http://finance-api:3004,food:http://food-api:3005,lists:http://lists-api:3006}
     expose:
       - '3003'
     depends_on:
-      core-api:
+      registry-api:
         condition: service_healthy
     healthcheck:
       test:
@@ -229,11 +245,11 @@ services:
       # self-pointing POPS_API_URL (see @pops/ai-telemetry report-sink).
       AI_API_URL: http://ai-api:3008
       POPS_API_INTERNAL_TOKEN: ${POPS_API_INTERNAL_TOKEN:-}
-      POPS_PILLARS: ${POPS_PILLARS:-core:http://core-api:3001,inventory:http://inventory-api:3002,media:http://media-api:3003,finance:http://finance-api:3004,food:http://food-api:3005,lists:http://lists-api:3006}
+      POPS_PILLARS: ${POPS_PILLARS:-registry:http://registry-api:3001,inventory:http://inventory-api:3002,media:http://media-api:3003,finance:http://finance-api:3004,food:http://food-api:3005,lists:http://lists-api:3006}
     expose:
       - '3005'
     depends_on:
-      core-api:
+      registry-api:
         condition: service_healthy
     healthcheck:
       test:
@@ -272,11 +288,11 @@ services:
       PORT: '3006'
       LISTS_SQLITE_PATH: /data/sqlite/lists.db
       LISTS_SELF_BASE_URL: http://lists-api:3006
-      POPS_PILLARS: ${POPS_PILLARS:-core:http://core-api:3001,inventory:http://inventory-api:3002,media:http://media-api:3003,finance:http://finance-api:3004,food:http://food-api:3005,lists:http://lists-api:3006}
+      POPS_PILLARS: ${POPS_PILLARS:-registry:http://registry-api:3001,inventory:http://inventory-api:3002,media:http://media-api:3003,finance:http://finance-api:3004,food:http://food-api:3005,lists:http://lists-api:3006}
     expose:
       - '3006'
     depends_on:
-      core-api:
+      registry-api:
         condition: service_healthy
     healthcheck:
       test:
@@ -320,11 +336,11 @@ services:
       # Validates `x-pops-internal-token` on `POST /ai-usage/record`. The
       # reporting pillars (finance/food/cerebrum) carry the same token.
       POPS_API_INTERNAL_TOKEN: ${POPS_API_INTERNAL_TOKEN:-}
-      POPS_PILLARS: ${POPS_PILLARS:-core:http://core-api:3001,inventory:http://inventory-api:3002,media:http://media-api:3003,finance:http://finance-api:3004,food:http://food-api:3005,lists:http://lists-api:3006}
+      POPS_PILLARS: ${POPS_PILLARS:-registry:http://registry-api:3001,inventory:http://inventory-api:3002,media:http://media-api:3003,finance:http://finance-api:3004,food:http://food-api:3005,lists:http://lists-api:3006}
     expose:
       - '3008'
     depends_on:
-      core-api:
+      registry-api:
         condition: service_healthy
     healthcheck:
       test:
@@ -445,13 +461,13 @@ services:
       EMBEDDING_API_KEY: ${EMBEDDING_API_KEY:-}
       EMBEDDING_MODEL: ${EMBEDDING_MODEL:-}
       EMBEDDING_DIMENSIONS: ${EMBEDDING_DIMENSIONS:-}
-      POPS_PILLARS: ${POPS_PILLARS:-core:http://core-api:3001,inventory:http://inventory-api:3002,media:http://media-api:3003,finance:http://finance-api:3004,food:http://food-api:3005,lists:http://lists-api:3006}
+      POPS_PILLARS: ${POPS_PILLARS:-registry:http://registry-api:3001,inventory:http://inventory-api:3002,media:http://media-api:3003,finance:http://finance-api:3004,food:http://food-api:3005,lists:http://lists-api:3006}
     expose:
       - '3007'
     depends_on:
       pops-redis:
         condition: service_healthy
-      core-api:
+      registry-api:
         condition: service_healthy
     healthcheck:
       test:
@@ -502,7 +518,7 @@ services:
       EMBEDDING_API_KEY: ${EMBEDDING_API_KEY:-}
       EMBEDDING_MODEL: ${EMBEDDING_MODEL:-}
       EMBEDDING_DIMENSIONS: ${EMBEDDING_DIMENSIONS:-}
-      POPS_PILLARS: ${POPS_PILLARS:-core:http://core-api:3001,inventory:http://inventory-api:3002,media:http://media-api:3003,finance:http://finance-api:3004,food:http://food-api:3005,lists:http://lists-api:3006}
+      POPS_PILLARS: ${POPS_PILLARS:-registry:http://registry-api:3001,inventory:http://inventory-api:3002,media:http://media-api:3003,finance:http://finance-api:3004,food:http://food-api:3005,lists:http://lists-api:3006}
     depends_on:
       pops-redis:
         condition: service_healthy
@@ -538,13 +554,13 @@ services:
       # Opt in to registry self-registration (the Rust lifecycle is gated on
       # this, mirroring the TS SDK's POPS_REGISTRY_ENABLED).
       POPS_REGISTRY_ENABLED: 'true'
-      POPS_REGISTRY_URL: ${POPS_REGISTRY_URL:-http://core-api:3001}
+      POPS_REGISTRY_URL: ${POPS_REGISTRY_URL:-http://registry-api:3001}
       POPS_API_INTERNAL_TOKEN: ${POPS_API_INTERNAL_TOKEN:-}
-      POPS_PILLARS: ${POPS_PILLARS:-core:http://core-api:3001,inventory:http://inventory-api:3002,media:http://media-api:3003,finance:http://finance-api:3004,food:http://food-api:3005,lists:http://lists-api:3006}
+      POPS_PILLARS: ${POPS_PILLARS:-registry:http://registry-api:3001,inventory:http://inventory-api:3002,media:http://media-api:3003,finance:http://finance-api:3004,food:http://food-api:3005,lists:http://lists-api:3006}
     expose:
       - '3010'
     depends_on:
-      core-api:
+      registry-api:
         condition: service_healthy
     healthcheck:
       test: ['CMD', 'curl', '-fsS', 'http://localhost:3010/health']
@@ -572,11 +588,11 @@ services:
       NODE_ENV: production
       PORT: '3009'
       ORCHESTRATOR_SELF_BASE_URL: http://pops-orchestrator:3009
-      POPS_PILLARS: ${POPS_PILLARS:-core:http://core-api:3001,inventory:http://inventory-api:3002,media:http://media-api:3003,finance:http://finance-api:3004,food:http://food-api:3005,lists:http://lists-api:3006}
+      POPS_PILLARS: ${POPS_PILLARS:-registry:http://registry-api:3001,inventory:http://inventory-api:3002,media:http://media-api:3003,finance:http://finance-api:3004,food:http://food-api:3005,lists:http://lists-api:3006}
     expose:
       - '3009'
     depends_on:
-      core-api:
+      registry-api:
         condition: service_healthy
     healthcheck:
       test:
@@ -603,8 +619,8 @@ services:
       # Registry-driven nginx (PRD-255). The entrypoint boot-renders the
       # conf from this URL and the watcher subscribes to its SSE feed; on a
       # registry outage the image falls back to the committed static conf.
-      # core-api shares the frontend network, so the in-cluster host wins.
-      POPS_REGISTRY_URL: ${POPS_REGISTRY_URL:-http://core-api:3001}
+      # registry-api shares the frontend network, so the in-cluster host wins.
+      POPS_REGISTRY_URL: ${POPS_REGISTRY_URL:-http://registry-api:3001}
       # Surfaces the watcher's `nginx_generator_last_error_at` health state
       # (degraded on a failed re-render). Internal-only; not in `expose`.
       POPS_NGINX_HEALTH_PORT: '9090'
@@ -729,7 +745,7 @@ services:
       TELEGRAM_BOT_TOKEN_FILE: /run/secrets/telegram_bot_token
       # NOTE: the moltbot skill prompts still describe the monolith's REST/tRPC
       # paths. Repointing the hosts is necessary but not sufficient — the finance
-      # skill must drop /budgets/summary + move entities to core-api, and the
+      # skill must drop /budgets/summary + move entities to registry-api, and the
       # cerebrum skill must switch to the pillar REST paths. Tracked as a gap.
       POPS_API_URL: http://cerebrum-api:3007
       POPS_API_KEY_FILE: /run/secrets/pops_api_key
@@ -768,7 +784,7 @@ services:
     ports:
       - '${MCP_BIND_ADDR:-0.0.0.0}:3002:3002'
     depends_on:
-      core-api:
+      registry-api:
         condition: service_healthy
     healthcheck:
       test:

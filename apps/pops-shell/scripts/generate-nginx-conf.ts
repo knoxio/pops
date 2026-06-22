@@ -6,7 +6,7 @@
  *
  *   - **Static** (default) — reads `PILLARS` from `@pops/pillar-sdk` and
  *     `PILLAR_UPSTREAMS` below. Used at image-build time so the committed
- *     `nginx.conf` is reproducible without a live core-api. The drift
+ *     `nginx.conf` is reproducible without a live registry-api. The drift
  *     test guards this output.
  *
  *   - **Dynamic** (`--dynamic`) — PRD-232, Wave 6 BE-lego. Reads the
@@ -30,13 +30,13 @@
  * The drift-detection test renders the static mode in-memory and
  * compares against the committed file. The dynamic mode is exercised
  * with an injected registry fetcher so the test suite never needs a
- * live core-api.
+ * live registry-api.
  *
  * Usage:
  *   pnpm gen:nginx                              # static, writes apps/pops-shell/nginx.conf
  *   pnpm gen:nginx:check                        # static, exits 1 on drift
  *   pnpm gen:nginx:dynamic                      # dynamic, renders from live registry
- *   tsx generate-nginx-conf.ts --dynamic --out … --registry-url=http://core-api:3001
+ *   tsx generate-nginx-conf.ts --dynamic --out … --registry-url=http://registry-api:3001
  *
  * The event-driven `nginx -s reload` wrapper that re-runs the dynamic
  * mode on each registry subscription event (`GET /registry/subscribe`) is
@@ -67,7 +67,7 @@ import { DEFAULT_REGISTRY_URL, resolveRegistryUrl } from './registry-url-env.ts'
  * typecheck.
  */
 export const PILLAR_UPSTREAMS: Record<KnownPillarId, { host: string; port: number }> = {
-  core: { host: 'core-api', port: 3001 },
+  registry: { host: 'registry-api', port: 3001 },
   inventory: { host: 'inventory-api', port: 3002 },
   media: { host: 'media-api', port: 3003 },
   finance: { host: 'finance-api', port: 3004 },
@@ -84,7 +84,7 @@ export const PILLAR_UPSTREAMS: Record<KnownPillarId, { host: string; port: numbe
  * first run produces a byte-identical (modulo header comment) file.
  */
 export const PILLAR_RENDER_ORDER: readonly KnownPillarId[] = [
-  'core',
+  'registry',
   'inventory',
   'media',
   'finance',

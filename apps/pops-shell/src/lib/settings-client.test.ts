@@ -17,7 +17,11 @@ function okJson(body: unknown): Response {
 }
 
 describe('settingsBaseFor', () => {
-  it('keeps core on its historic /core-api prefix', () => {
+  it('keeps the registry pillar on the historic /core-api prefix', () => {
+    expect(settingsBaseFor('registry')).toBe('/core-api');
+  });
+
+  it('keeps the legacy core id on the historic /core-api prefix', () => {
     expect(settingsBaseFor('core')).toBe('/core-api');
   });
 

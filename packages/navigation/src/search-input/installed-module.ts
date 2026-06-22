@@ -10,11 +10,12 @@
 import { isModuleId } from '@pops/pillar-sdk';
 
 /**
- * `core` is the always-mounted shell module (PRD-100). `isModuleId` checks
- * membership of the static `ALL_MODULE_IDS` superset (pillars plus the two
- * transitional sub-modules `ai`/`ego`), so `core` is already covered; the
- * explicit branch is kept for clarity at the call boundary.
+ * `registry` (formerly `core`) is the always-mounted platform module
+ * (PRD-100). `isModuleId` checks membership of the static `ALL_MODULE_IDS`
+ * superset (pillars plus the two transitional sub-modules `ai`/`ego`), so
+ * `registry` is already covered; the explicit branch is kept for clarity at
+ * the call boundary.
  */
 export function isInstalledModule(moduleId: string): boolean {
-  return moduleId === 'core' || isModuleId(moduleId);
+  return moduleId === 'registry' || isModuleId(moduleId);
 }

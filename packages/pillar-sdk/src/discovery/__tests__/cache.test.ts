@@ -71,7 +71,7 @@ describe('discovery cache singleton', () => {
     clock = fakeClock();
     warnings = [];
     configureCache({
-      registryUrl: 'http://core-api:3001',
+      registryUrl: 'http://registry-api:3001',
       ttlMs: 30_000,
       now: clock.now,
       setTimeoutImpl: clock.set,
@@ -86,7 +86,7 @@ describe('discovery cache singleton', () => {
 
   function withFetcher(fetcher: RegistryFetcher): void {
     configureCache({
-      registryUrl: 'http://core-api:3001',
+      registryUrl: 'http://registry-api:3001',
       ttlMs: 30_000,
       now: clock.now,
       setTimeoutImpl: clock.set,

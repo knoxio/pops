@@ -32,11 +32,14 @@ describe('OpenApiSourceCache.getRouteMap', () => {
   it('fetches and builds the route map on first call, hitting GET /openapi', async () => {
     const { fetchImpl, urls } = countingFetch(() => jsonResponse(OPENAPI));
     const cache = new OpenApiSourceCache({ fetchImpl });
-    const discovered = discoveredPillar({ pillarId: 'core', baseUrl: 'http://core-api:3001' });
+    const discovered = discoveredPillar({
+      pillarId: 'registry',
+      baseUrl: 'http://registry-api:3001',
+    });
 
-    const routeMap = await cache.getRouteMap('core', discovered);
+    const routeMap = await cache.getRouteMap('registry', discovered);
 
-    expect(urls).toEqual(['http://core-api:3001/openapi']);
+    expect(urls).toEqual(['http://registry-api:3001/openapi']);
     expect(routeMap.get('entities.get')).toEqual({
       method: 'GET',
       pathTemplate: '/entities/{id}',
@@ -52,10 +55,13 @@ describe('OpenApiSourceCache.getRouteMap', () => {
   it('serves the cached map on the second call without refetching', async () => {
     const { fetchImpl, urls } = countingFetch(() => jsonResponse(OPENAPI));
     const cache = new OpenApiSourceCache({ fetchImpl });
-    const discovered = discoveredPillar({ pillarId: 'core', baseUrl: 'http://core-api:3001' });
+    const discovered = discoveredPillar({
+      pillarId: 'registry',
+      baseUrl: 'http://registry-api:3001',
+    });
 
-    const first = await cache.getRouteMap('core', discovered);
-    const second = await cache.getRouteMap('core', discovered);
+    const first = await cache.getRouteMap('registry', discovered);
+    const second = await cache.getRouteMap('registry', discovered);
 
     expect(urls).toHaveLength(1);
     expect(second).toBe(first);
@@ -67,15 +73,18 @@ describe('OpenApiSourceCache.getRouteMap', () => {
     let now = 1_000;
     const { fetchImpl, urls } = countingFetch(() => jsonResponse(OPENAPI));
     const cache = new OpenApiSourceCache({ fetchImpl, ttlMs: 100, now: () => now });
-    const discovered = discoveredPillar({ pillarId: 'core', baseUrl: 'http://core-api:3001' });
+    const discovered = discoveredPillar({
+      pillarId: 'registry',
+      baseUrl: 'http://registry-api:3001',
+    });
 
-    await cache.getRouteMap('core', discovered);
+    await cache.getRouteMap('registry', discovered);
     now += 50;
-    await cache.getRouteMap('core', discovered);
+    await cache.getRouteMap('registry', discovered);
     expect(urls).toHaveLength(1);
 
     now += 100;
-    await cache.getRouteMap('core', discovered);
+    await cache.getRouteMap('registry', discovered);
     expect(urls).toHaveLength(2);
     expect(cache.refreshCount).toBe(2);
   });
@@ -84,10 +93,10 @@ describe('OpenApiSourceCache.getRouteMap', () => {
     const { fetchImpl, urls } = countingFetch(() => jsonResponse(OPENAPI));
     const cache = new OpenApiSourceCache({ fetchImpl });
 
-    await cache.getRouteMap('core', discoveredPillar({ baseUrl: 'http://core-api:3001' }));
+    await cache.getRouteMap('registry', discoveredPillar({ baseUrl: 'http://registry-api:3001' }));
     await cache.getRouteMap('finance', discoveredPillar({ baseUrl: 'http://finance-api:3004' }));
 
-    expect(urls).toEqual(['http://core-api:3001/openapi', 'http://finance-api:3004/openapi']);
+    expect(urls).toEqual(['http://registry-api:3001/openapi', 'http://finance-api:3004/openapi']);
   });
 
   it('shares one in-flight fetch across concurrent callers for the same pillar', async () => {
@@ -102,10 +111,13 @@ describe('OpenApiSourceCache.getRouteMap', () => {
       return jsonResponse(OPENAPI);
     });
     const cache = new OpenApiSourceCache({ fetchImpl });
-    const discovered = discoveredPillar({ pillarId: 'core', baseUrl: 'http://core-api:3001' });
+    const discovered = discoveredPillar({
+      pillarId: 'registry',
+      baseUrl: 'http://registry-api:3001',
+    });
 
-    const a = cache.getRouteMap('core', discovered);
-    const b = cache.getRouteMap('core', discovered);
+    const a = cache.getRouteMap('registry', discovered);
+    const b = cache.getRouteMap('registry', discovered);
     resolveFetch?.();
     const [ra, rb] = await Promise.all([a, b]);
 
@@ -118,9 +130,12 @@ describe('OpenApiSourceCache.getRouteMap', () => {
       throw new Error('connection refused');
     });
     const cache = new OpenApiSourceCache({ fetchImpl });
-    const discovered = discoveredPillar({ pillarId: 'core', baseUrl: 'http://core-api:3001' });
+    const discovered = discoveredPillar({
+      pillarId: 'registry',
+      baseUrl: 'http://registry-api:3001',
+    });
 
-    await expect(cache.getRouteMap('core', discovered)).rejects.toBeInstanceOf(PillarSdkError);
+    await expect(cache.getRouteMap('registry', discovered)).rejects.toBeInstanceOf(PillarSdkError);
   });
 
   it('does not cache a failed fetch — the next call retries', async () => {
@@ -131,10 +146,13 @@ describe('OpenApiSourceCache.getRouteMap', () => {
       return jsonResponse(OPENAPI);
     });
     const cache = new OpenApiSourceCache({ fetchImpl });
-    const discovered = discoveredPillar({ pillarId: 'core', baseUrl: 'http://core-api:3001' });
+    const discovered = discoveredPillar({
+      pillarId: 'registry',
+      baseUrl: 'http://registry-api:3001',
+    });
 
-    await expect(cache.getRouteMap('core', discovered)).rejects.toBeInstanceOf(PillarSdkError);
-    const routeMap = await cache.getRouteMap('core', discovered);
+    await expect(cache.getRouteMap('registry', discovered)).rejects.toBeInstanceOf(PillarSdkError);
+    const routeMap = await cache.getRouteMap('registry', discovered);
     expect(routeMap.get('entities.get')).toBeDefined();
     expect(attempt).toBe(2);
   });
@@ -142,44 +160,53 @@ describe('OpenApiSourceCache.getRouteMap', () => {
   it('throws PillarSdkError on a non-2xx openapi response', async () => {
     const fetchImpl = fakeFetch(() => jsonResponse({ message: 'nope' }, { status: 503 }));
     const cache = new OpenApiSourceCache({ fetchImpl });
-    const discovered = discoveredPillar({ pillarId: 'core', baseUrl: 'http://core-api:3001' });
+    const discovered = discoveredPillar({
+      pillarId: 'registry',
+      baseUrl: 'http://registry-api:3001',
+    });
 
-    await expect(cache.getRouteMap('core', discovered)).rejects.toBeInstanceOf(PillarSdkError);
+    await expect(cache.getRouteMap('registry', discovered)).rejects.toBeInstanceOf(PillarSdkError);
   });
 
   it('throws PillarSdkError on a non-JSON openapi body', async () => {
     const fetchImpl = fakeFetch(() => new Response('not json', { status: 200 }));
     const cache = new OpenApiSourceCache({ fetchImpl });
-    const discovered = discoveredPillar({ pillarId: 'core', baseUrl: 'http://core-api:3001' });
+    const discovered = discoveredPillar({
+      pillarId: 'registry',
+      baseUrl: 'http://registry-api:3001',
+    });
 
-    await expect(cache.getRouteMap('core', discovered)).rejects.toBeInstanceOf(PillarSdkError);
+    await expect(cache.getRouteMap('registry', discovered)).rejects.toBeInstanceOf(PillarSdkError);
   });
 
   it('throws PillarSdkError when the body is not an OpenAPI document', async () => {
     const fetchImpl = fakeFetch(() => jsonResponse(['not', 'a', 'doc']));
     const cache = new OpenApiSourceCache({ fetchImpl });
-    const discovered = discoveredPillar({ pillarId: 'core', baseUrl: 'http://core-api:3001' });
+    const discovered = discoveredPillar({
+      pillarId: 'registry',
+      baseUrl: 'http://registry-api:3001',
+    });
 
-    await expect(cache.getRouteMap('core', discovered)).rejects.toBeInstanceOf(PillarSdkError);
+    await expect(cache.getRouteMap('registry', discovered)).rejects.toBeInstanceOf(PillarSdkError);
   });
 
   it('invalidate(pillarId) drops only that pillar; invalidate() drops all', async () => {
     const { fetchImpl, urls } = countingFetch(() => jsonResponse(OPENAPI));
     const cache = new OpenApiSourceCache({ fetchImpl });
-    const core = discoveredPillar({ baseUrl: 'http://core-api:3001' });
+    const core = discoveredPillar({ baseUrl: 'http://registry-api:3001' });
     const finance = discoveredPillar({ baseUrl: 'http://finance-api:3004' });
 
-    await cache.getRouteMap('core', core);
+    await cache.getRouteMap('registry', core);
     await cache.getRouteMap('finance', finance);
     expect(urls).toHaveLength(2);
 
-    cache.invalidate('core');
-    await cache.getRouteMap('core', core);
+    cache.invalidate('registry');
+    await cache.getRouteMap('registry', core);
     await cache.getRouteMap('finance', finance);
     expect(urls).toHaveLength(3);
 
     cache.invalidate();
-    await cache.getRouteMap('core', core);
+    await cache.getRouteMap('registry', core);
     await cache.getRouteMap('finance', finance);
     expect(urls).toHaveLength(5);
   });
@@ -189,14 +216,17 @@ describe('getRouteMap (shared cache)', () => {
   it('caches across calls and resets with __resetSharedOpenApiCache', async () => {
     __resetSharedOpenApiCache();
     const { fetchImpl, urls } = countingFetch(() => jsonResponse(OPENAPI));
-    const discovered = discoveredPillar({ pillarId: 'core', baseUrl: 'http://core-api:3001' });
+    const discovered = discoveredPillar({
+      pillarId: 'registry',
+      baseUrl: 'http://registry-api:3001',
+    });
 
-    await getRouteMap('core', discovered, fetchImpl);
-    await getRouteMap('core', discovered, fetchImpl);
+    await getRouteMap('registry', discovered, fetchImpl);
+    await getRouteMap('registry', discovered, fetchImpl);
     expect(urls).toHaveLength(1);
 
     __resetSharedOpenApiCache();
-    await getRouteMap('core', discovered, fetchImpl);
+    await getRouteMap('registry', discovered, fetchImpl);
     expect(urls).toHaveLength(2);
   });
 });

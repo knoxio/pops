@@ -37,11 +37,12 @@ function applyDynamicOptions(
  * Renders one settings section and routes its read/write to the OWNING pillar
  * (capability-gated) via `useSectionState` (settings-federation S3). When the
  * owning pillar has not advertised the `settings` capability the transport
- * falls back to core, so an un-upgraded pillar keeps working.
+ * falls back to the platform `registry` pillar (formerly `core`), so an
+ * un-upgraded pillar keeps working.
  */
 export function SectionRenderer({
   manifest,
-  ownerPillar = 'core',
+  ownerPillar = 'registry',
   hasFederatedSettings = false,
   optionsLoaders,
   onTestAction,

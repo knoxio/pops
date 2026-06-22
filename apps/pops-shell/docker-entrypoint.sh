@@ -21,7 +21,7 @@ FALLBACK_CONF="/etc/nginx/fallback/default.conf"
 RENDER_BUNDLE="/opt/pops-shell/render-nginx-conf.mjs"
 WATCH_BUNDLE="/opt/pops-shell/watch-registry-and-reload.mjs"
 
-REGISTRY_URL="${POPS_REGISTRY_URL:-${CORE_REGISTRY_URL:-http://core-api:3001}}"
+REGISTRY_URL="${POPS_REGISTRY_URL:-${CORE_REGISTRY_URL:-http://registry-api:3001}}"
 
 log() { printf '[pops-shell-entrypoint] %s\n' "$*"; }
 warn() { printf '[pops-shell-entrypoint] WARN %s\n' "$*" >&2; }

@@ -8,9 +8,8 @@
  *   - For each contract package that declares a `./manifest` subpath in its
  *     `exports`, dynamically import its `./manifest` and collect every
  *     exported value that satisfies `ModuleManifest` (a package may export
- *     more than one — the collapsed `@pops/core` pillar carries both
- *     `coreManifest` and `aiManifest`; `@pops/cerebrum` carries
- *     `cerebrumManifest` and `egoManifest`).
+ *     more than one — `@pops/cerebrum` carries `cerebrumManifest` and
+ *     `egoManifest`).
  *   - Packages without a `./manifest` subpath (e.g. the legacy
  *     `@pops/food-contracts` plural variant, or contracts for surfaces not
  *     yet promoted to pillar) are skipped with a build-log info line.
@@ -280,7 +279,7 @@ export async function discoverManifestSources(
 
 /**
  * Module ids that are always present in `MODULES` regardless of `POPS_APPS` /
- * `POPS_OVERLAYS`. `core` is the always-mounted platform shell — env vars
- * gate *optional* modules only (PRD-100).
+ * `POPS_OVERLAYS`. `registry` (formerly `core`) is the always-mounted platform
+ * shell — env vars gate *optional* modules only (PRD-100).
  */
-export const ALWAYS_INSTALLED_IDS: readonly string[] = ['core'];
+export const ALWAYS_INSTALLED_IDS: readonly string[] = ['registry'];

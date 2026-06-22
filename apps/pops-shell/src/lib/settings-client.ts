@@ -43,14 +43,16 @@ export interface SettingsClient {
 const CORE_BASE = '/core-api';
 
 /**
- * The API base path for a pillar's settings surface. `core` keeps its historic
- * `/core-api` prefix; every other pillar is reached at `/<id>-api` through the
- * registry-driven nginx front door (and the dev Vite proxy). The `core` /
- * `core-api` literals ride the registry-rename dual-alias window
- * (crossPlanConflict #4).
+ * The API base path for a pillar's settings surface. The platform `registry`
+ * pillar (formerly `core`) keeps its historic `/core-api` prefix during the
+ * core→registry rename window — the shell's generated client and the
+ * transitional `/core-api/` nginx block both still serve it; every other
+ * pillar is reached at `/<id>-api` through the registry-driven nginx front
+ * door (and the dev Vite proxy). The legacy `core` id is still mapped for any
+ * un-rebuilt caller that has not yet observed the renamed snapshot.
  */
 export function settingsBaseFor(ownerPillar: string): string {
-  return ownerPillar === 'core' ? CORE_BASE : `/${ownerPillar}-api`;
+  return ownerPillar === 'registry' || ownerPillar === 'core' ? CORE_BASE : `/${ownerPillar}-api`;
 }
 
 class SettingsClientError extends Error {
@@ -112,7 +114,7 @@ export function settingsClientFor(
   hasFederatedSettings: boolean,
   fetchImpl: typeof fetch = fetch
 ): SettingsClient {
-  const base = settingsBaseFor(hasFederatedSettings ? ownerPillar : 'core');
+  const base = settingsBaseFor(hasFederatedSettings ? ownerPillar : 'registry');
   return {
     getMany: async (keys) =>
       parseBulk(await postJson(`${base}/settings/get-many`, { keys: [...keys] }, fetchImpl)),

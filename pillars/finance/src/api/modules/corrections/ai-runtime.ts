@@ -98,7 +98,7 @@ const SettingsManyResponseSchema = z.object({ settings: z.record(z.string(), z.s
 const defaultFeedbackStore: FeedbackStore = {
   async load(key) {
     try {
-      const result = await pillar('core').callDynamic(
+      const result = await pillar('registry').callDynamic(
         'settings',
         'getMany',
         { keys: [key] },
@@ -113,7 +113,7 @@ const defaultFeedbackStore: FeedbackStore = {
   },
   async persist(key, value) {
     try {
-      await pillar('core').callDynamic(
+      await pillar('registry').callDynamic(
         'settings',
         'setMany',
         { entries: [{ key, value }] },

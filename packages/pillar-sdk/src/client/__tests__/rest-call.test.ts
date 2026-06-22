@@ -68,8 +68,8 @@ function ctx(
   overrides: Partial<RestCallContext> = {}
 ): RestCallContext {
   return {
-    pillarId: 'core',
-    discovered: discoveredPillar({ pillarId: 'core', baseUrl: 'http://core-api:3001' }),
+    pillarId: 'registry',
+    discovered: discoveredPillar({ pillarId: 'registry', baseUrl: 'http://registry-api:3001' }),
     path,
     input,
     routes: OPENAPI,
@@ -92,7 +92,7 @@ describe('performRestCall — request building', () => {
 
     expect(result).toEqual({ kind: 'ok', value: { data: { id: 'ent-1' } } });
     expect(calls).toHaveLength(1);
-    expect(calls[0]?.url).toBe('http://core-api:3001/entities/ent-1');
+    expect(calls[0]?.url).toBe('http://registry-api:3001/entities/ent-1');
     expect(calls[0]?.method).toBe('GET');
     expect(calls[0]?.body).toBeUndefined();
   });
@@ -100,13 +100,13 @@ describe('performRestCall — request building', () => {
   it('url-encodes path param values', async () => {
     const { fetchImpl, calls } = recordingRest(() => jsonOk({ data: null }));
     await performRestCall(ctx(['entities', 'get'], { id: 'a/b c' }, fetchImpl));
-    expect(calls[0]?.url).toBe('http://core-api:3001/entities/a%2Fb%20c');
+    expect(calls[0]?.url).toBe('http://registry-api:3001/entities/a%2Fb%20c');
   });
 
   it('appends query params from input and omits null/undefined', async () => {
     const { fetchImpl, calls } = recordingRest(() => jsonOk({ data: null }));
     await performRestCall(ctx(['users', 'get'], { uri: 'urn:x:1' }, fetchImpl));
-    expect(calls[0]?.url).toBe('http://core-api:3001/users?uri=urn%3Ax%3A1');
+    expect(calls[0]?.url).toBe('http://registry-api:3001/users?uri=urn%3Ax%3A1');
     expect(calls[0]?.method).toBe('GET');
   });
 
@@ -115,13 +115,13 @@ describe('performRestCall — request building', () => {
     await performRestCall(
       ctx(['entities', 'list'], { type: 'company', tags: ['a', 'b'] }, fetchImpl)
     );
-    expect(calls[0]?.url).toBe('http://core-api:3001/entities?type=company&tags=a&tags=b');
+    expect(calls[0]?.url).toBe('http://registry-api:3001/entities?type=company&tags=a&tags=b');
   });
 
   it('sends the full input as the JSON body for a bodyless-param POST', async () => {
     const { fetchImpl, calls } = recordingRest(() => jsonOk({ values: [] }));
     await performRestCall(ctx(['settings', 'getMany'], { keys: ['a', 'b'] }, fetchImpl));
-    expect(calls[0]?.url).toBe('http://core-api:3001/settings/get-many');
+    expect(calls[0]?.url).toBe('http://registry-api:3001/settings/get-many');
     expect(calls[0]?.method).toBe('POST');
     expect(calls[0]?.body).toEqual({ keys: ['a', 'b'] });
   });
@@ -129,7 +129,7 @@ describe('performRestCall — request building', () => {
   it('strips path params from the body on a mixed PATCH', async () => {
     const { fetchImpl, calls } = recordingRest(() => jsonOk({ data: { id: 'ent-1' } }));
     await performRestCall(ctx(['entities', 'update'], { id: 'ent-1', name: 'Renamed' }, fetchImpl));
-    expect(calls[0]?.url).toBe('http://core-api:3001/entities/ent-1');
+    expect(calls[0]?.url).toBe('http://registry-api:3001/entities/ent-1');
     expect(calls[0]?.method).toBe('PATCH');
     expect(calls[0]?.body).toEqual({ name: 'Renamed' });
   });
@@ -138,10 +138,13 @@ describe('performRestCall — request building', () => {
     const { fetchImpl, calls } = recordingRest(() => jsonOk({ data: null }));
     await performRestCall(
       ctx(['entities', 'get'], { id: 'ent-1' }, fetchImpl, {
-        discovered: discoveredPillar({ pillarId: 'core', baseUrl: 'http://core-api:3001/' }),
+        discovered: discoveredPillar({
+          pillarId: 'registry',
+          baseUrl: 'http://registry-api:3001/',
+        }),
       })
     );
-    expect(calls[0]?.url).toBe('http://core-api:3001/entities/ent-1');
+    expect(calls[0]?.url).toBe('http://registry-api:3001/entities/ent-1');
   });
 
   it('accepts a pre-built RouteMap as the route source', async () => {
@@ -149,7 +152,7 @@ describe('performRestCall — request building', () => {
     await performRestCall(
       ctx(['entities', 'get'], { id: 'ent-1' }, fetchImpl, { routes: buildRouteMap(OPENAPI) })
     );
-    expect(calls[0]?.url).toBe('http://core-api:3001/entities/ent-1');
+    expect(calls[0]?.url).toBe('http://registry-api:3001/entities/ent-1');
   });
 
   it('merges authHeaders over the default content-type / accept headers', async () => {
@@ -174,7 +177,7 @@ describe('performRestCall — response / error mapping', () => {
   it('maps 404 → not-found with the envelope message', async () => {
     const { fetchImpl } = recordingRest(() => jsonOk({ message: 'no such entity' }, 404));
     const result = await performRestCall(ctx(['entities', 'get'], { id: 'missing' }, fetchImpl));
-    expect(result).toEqual({ kind: 'not-found', pillar: 'core', message: 'no such entity' });
+    expect(result).toEqual({ kind: 'not-found', pillar: 'registry', message: 'no such entity' });
   });
 
   it('maps 400 → bad-request with the envelope message', async () => {
@@ -182,7 +185,7 @@ describe('performRestCall — response / error mapping', () => {
       jsonOk({ message: 'bad keys', code: 'ValidationError' }, 400)
     );
     const result = await performRestCall(ctx(['settings', 'getMany'], {}, fetchImpl));
-    expect(result).toEqual({ kind: 'bad-request', pillar: 'core', message: 'bad keys' });
+    expect(result).toEqual({ kind: 'bad-request', pillar: 'registry', message: 'bad keys' });
   });
 
   it('maps 409 → conflict', async () => {
@@ -190,25 +193,25 @@ describe('performRestCall — response / error mapping', () => {
     const result = await performRestCall(
       ctx(['entities', 'update'], { id: 'ent-1', name: 'x' }, fetchImpl)
     );
-    expect(result).toEqual({ kind: 'conflict', pillar: 'core', message: 'already exists' });
+    expect(result).toEqual({ kind: 'conflict', pillar: 'registry', message: 'already exists' });
   });
 
   it('maps 401 → unauthorized with the envelope message', async () => {
     const { fetchImpl } = recordingRest(() => jsonOk({ message: 'denied' }, 401));
     const result = await performRestCall(ctx(['entities', 'get'], { id: 'ent-1' }, fetchImpl));
-    expect(result).toEqual({ kind: 'unauthorized', pillar: 'core', message: 'denied' });
+    expect(result).toEqual({ kind: 'unauthorized', pillar: 'registry', message: 'denied' });
   });
 
   it('maps 401 → unauthorized with no message when the body has none', async () => {
     const { fetchImpl } = recordingRest(() => jsonOk({}, 401));
     const result = await performRestCall(ctx(['entities', 'get'], { id: 'ent-1' }, fetchImpl));
-    expect(result).toEqual({ kind: 'unauthorized', pillar: 'core' });
+    expect(result).toEqual({ kind: 'unauthorized', pillar: 'registry' });
   });
 
   it('maps an unmapped 5xx → unavailable', async () => {
     const { fetchImpl } = recordingRest(() => jsonOk({ message: 'boom' }, 503));
     const result = await performRestCall(ctx(['entities', 'get'], { id: 'ent-1' }, fetchImpl));
-    expect(result).toEqual({ kind: 'unavailable', pillar: 'core' });
+    expect(result).toEqual({ kind: 'unavailable', pillar: 'registry' });
   });
 
   it('returns unavailable when fetch rejects (network/abort)', async () => {
@@ -216,7 +219,7 @@ describe('performRestCall — response / error mapping', () => {
       throw new Error('network down');
     });
     const result = await performRestCall(ctx(['entities', 'get'], { id: 'ent-1' }, fetchImpl));
-    expect(result).toEqual({ kind: 'unavailable', pillar: 'core' });
+    expect(result).toEqual({ kind: 'unavailable', pillar: 'registry' });
   });
 
   it('returns contract-mismatch when the operationId is not in the route map', async () => {
@@ -224,7 +227,7 @@ describe('performRestCall — response / error mapping', () => {
     const result = await performRestCall(ctx(['entities', 'doesNotExist'], {}, fetchImpl));
     expect(result).toEqual({
       kind: 'contract-mismatch',
-      pillar: 'core',
+      pillar: 'registry',
       expected: 'entities.doesNotExist',
     });
     expect(calls).toHaveLength(0);
@@ -233,6 +236,6 @@ describe('performRestCall — response / error mapping', () => {
   it('returns unavailable when a 2xx body is not valid JSON', async () => {
     const fetchImpl = fakeFetch(() => new Response('not json', { status: 200 }));
     const result = await performRestCall(ctx(['entities', 'get'], { id: 'ent-1' }, fetchImpl));
-    expect(result).toEqual({ kind: 'unavailable', pillar: 'core' });
+    expect(result).toEqual({ kind: 'unavailable', pillar: 'registry' });
   });
 });

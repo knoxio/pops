@@ -29,7 +29,7 @@ const DOMAIN_APP_MAP: Record<string, string> = {
   'inventory-items': 'inventory',
   finance: 'finance',
   inventory: 'inventory',
-  core: 'core',
+  registry: 'registry',
   contacts: 'contacts',
 };
 

@@ -31,6 +31,9 @@ import type {
   ServiceAccountsRevokeData,
   ServiceAccountsRevokeErrors,
   ServiceAccountsRevokeResponses,
+  SettingsAggregateData,
+  SettingsAggregateErrors,
+  SettingsAggregateResponses,
   SettingsDeleteData,
   SettingsDeleteErrors,
   SettingsDeleteResponses,
@@ -241,6 +244,18 @@ export const settingsList = <ThrowOnError extends boolean = false>(
     url: '/settings',
     ...options,
   });
+
+/**
+ * Unified admin settings view fanned out over the live pillar registry
+ */
+export const settingsAggregate = <ThrowOnError extends boolean = false>(
+  options?: Options<SettingsAggregateData, ThrowOnError>
+): RequestResult<SettingsAggregateResponses, SettingsAggregateErrors, ThrowOnError> =>
+  (options?.client ?? client).get<
+    SettingsAggregateResponses,
+    SettingsAggregateErrors,
+    ThrowOnError
+  >({ url: '/settings/aggregate', ...options });
 
 /**
  * Batch-read settings by key (missing omitted; sensitive redacted)

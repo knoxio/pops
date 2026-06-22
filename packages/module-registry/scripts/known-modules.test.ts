@@ -30,13 +30,13 @@ const PILLARS_ROOT = join(REPO_ROOT, 'pillars');
 const EXPECTED_IDS = [
   'ai',
   'cerebrum',
-  'core',
   'ego',
   'finance',
   'food',
   'inventory',
   'lists',
   'media',
+  'registry',
 ] as const;
 
 describe('discoverManifestSources', () => {
@@ -87,7 +87,7 @@ describe('discoverManifestSources', () => {
     const result = await discoverManifestSources({
       log: (msg) => messages.push(msg),
       importManifest: async (pkg) => {
-        if (pkg.name === '@pops/core') {
+        if (pkg.name === '@pops/registry') {
           return { unrelated: { foo: 'bar' } };
         }
         const { pathToFileURL } = await import('node:url');
@@ -98,11 +98,11 @@ describe('discoverManifestSources', () => {
       },
     });
     const ids = result.map((m) => m.id);
-    expect(ids).not.toContain('core');
-    // `ai` is no longer carried by `@pops/core` — it is a first-class pillar
-    // (PRD-055) discovered from `@pops/ai`, so mocking core's manifest
-    // empty no longer suppresses it.
-    expect(messages.some((m) => m.includes('@pops/core'))).toBe(true);
+    expect(ids).not.toContain('registry');
+    // `ai` is no longer carried by the registry pillar — it is a first-class
+    // pillar (PRD-055) discovered from `@pops/ai`, so mocking the registry's
+    // manifest empty no longer suppresses it.
+    expect(messages.some((m) => m.includes('@pops/registry'))).toBe(true);
   });
 
   it('every discovered contract package is pinned as a devDependency of @pops/module-registry', async () => {

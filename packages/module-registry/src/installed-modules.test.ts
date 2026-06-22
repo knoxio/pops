@@ -25,13 +25,13 @@ describe('INSTALLED_MODULES (runtime install-set shim, PRD-218 US-01)', () => {
   it('filters to the POPS_APPS subset when set', async () => {
     process.env.POPS_APPS = 'finance,media';
     const mod = await loadRegistry();
-    expect([...mod.INSTALLED_MODULES].toSorted()).toEqual(['core', 'finance', 'media']);
+    expect([...mod.INSTALLED_MODULES].toSorted()).toEqual(['finance', 'media', 'registry']);
   });
 
-  it('always includes core even when POPS_APPS excludes it', async () => {
+  it('always includes registry even when POPS_APPS excludes it', async () => {
     process.env.POPS_APPS = 'finance';
     const mod = await loadRegistry();
-    expect(mod.INSTALLED_MODULES).toContain('core');
+    expect(mod.INSTALLED_MODULES).toContain('registry');
     expect(mod.INSTALLED_MODULES).toContain('finance');
     expect(mod.INSTALLED_MODULES).not.toContain('media');
   });
@@ -51,10 +51,10 @@ describe('INSTALLED_MODULES (runtime install-set shim, PRD-218 US-01)', () => {
     expect(mod.INSTALLED_MODULES).toContain('ego');
   });
 
-  it('treats whitespace-only POPS_APPS as empty (only core remains)', async () => {
+  it('treats whitespace-only POPS_APPS as empty (only registry remains)', async () => {
     process.env.POPS_APPS = '   ';
     const mod = await loadRegistry();
-    expect([...mod.INSTALLED_MODULES]).toEqual(['core']);
+    expect([...mod.INSTALLED_MODULES]).toEqual(['registry']);
   });
 });
 
@@ -63,7 +63,7 @@ describe('isInstalledModule (runtime install-set predicate, PRD-218 US-01)', () 
     process.env.POPS_APPS = 'finance';
     const mod = await loadRegistry();
     expect(mod.isInstalledModule('finance')).toBe(true);
-    expect(mod.isInstalledModule('core')).toBe(true);
+    expect(mod.isInstalledModule('registry')).toBe(true);
   });
 
   it('returns false for ids excluded by POPS_APPS even when they are known at build time', async () => {

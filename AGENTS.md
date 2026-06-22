@@ -6,11 +6,13 @@ If another agent-specific file exists (e.g. `CLAUDE.md`), it should **only** poi
 
 ## Project Overview
 
-POPS (Personal Operations System) is a self-hosted personal operations platform built as a set of independent REST **pillars**. Each pillar is a standalone service that **owns its own SQLite database** (there is no shared store), serves a [ts-rest](https://ts-rest.com) contract built from zod, projects an OpenAPI document, exports a `./manifest`, and self-registers with the `core` registry on boot. Self-hosted services on a home server provide analytics, dashboards, and AI-powered automation. Cloudflare Tunnel exposes services with zero port forwarding.
+POPS (Personal Operations System) is a self-hosted personal operations platform built as a set of independent REST **pillars**. Each pillar is a standalone service that **owns its own SQLite database** (there is no shared store), serves a [ts-rest](https://ts-rest.com) contract built from zod, projects an OpenAPI document, exports a `./manifest`, and self-registers with the `registry` pillar on boot. Self-hosted services on a home server provide analytics, dashboards, and AI-powered automation. Cloudflare Tunnel exposes services with zero port forwarding.
 
-**Pillars (data) and their ports:** `core` :3001 (registry / settings / users / service-accounts / ai-ops / entities / features) | `inventory` :3002 (items, locations, warranties, insurance) | `media` :3003 (movies, TV, watchlist, watch history, Plex/TMDB/TVDB) | `finance` :3004 (transactions, budgets, wishlists, entities, CSV import) | `food` :3005 (food domain + ingest worker) | `lists` :3006 | `cerebrum` :3007 (memory / retrieval / ego + worker). The standalone `orchestrator` :3009 (federated search + AI-tool registry) owns no DB.
+> The `registry` pillar (`pillars/registry`, package `@pops/registry`, image `pops-registry`, container/DNS `registry-api`) was formerly named `core` (`pops-core` / `core-api`). The renamed container answers to BOTH the new `registry-api` name and the legacy `core-api` network alias during the rename rollout window, so older pillar images still resolve it.
 
-**Pillar kinds (ADR-035):** a pillar is any service registered with the `core` registry that exposes `/manifest.json`. **Data** pillars are the seven above; **bridge** pillars adapt external systems into the platform; **UI** pillars host frontend SPAs (`pops-shell` registers as `id: 'shell'`).
+**Pillars (data) and their ports:** `registry` :3001 (registry / settings / users / service-accounts / features; formerly `core`) | `inventory` :3002 (items, locations, warranties, insurance) | `media` :3003 (movies, TV, watchlist, watch history, Plex/TMDB/TVDB) | `finance` :3004 (transactions, budgets, wishlists, entities, CSV import) | `food` :3005 (food domain + ingest worker) | `lists` :3006 | `cerebrum` :3007 (memory / retrieval / ego + worker). The standalone `orchestrator` :3009 (federated search + AI-tool registry) owns no DB.
+
+**Pillar kinds (ADR-035):** a pillar is any service registered with the `registry` pillar that exposes `/manifest.json`. **Data** pillars are the seven above; **bridge** pillars adapt external systems into the platform; **UI** pillars host frontend SPAs (`pops-shell` registers as `id: 'shell'`).
 
 The frontend is **one SPA** (`pops-shell`) that lazy-loads per-domain feature apps (`packages/app-*`), each consuming its pillar over a generated **Hey API** REST client. Cross-pillar calls go through the REST `@pops/pillar-sdk` `pillar()` client. There is **no tRPC** and **no `pops-api` monolith** — both were removed.
 
@@ -128,8 +130,8 @@ Lives in private [`knoxio/homelab-infra`](https://github.com/knoxio/homelab-infr
 ```
 pillars/                   # One REST pillar per folder. Each: own SQLite DB (src/db),
 │                          # zod → ts-rest contract (src/contract), OpenAPI snapshot (openapi/<id>.openapi.json),
-│                          # ./manifest export (self-registers with core), Dockerfile, migrations/
-├── core/                  # Registry / platform: registry, settings, users, service-accounts, ai-ops, entities, features
+│                          # ./manifest export (self-registers with the registry pillar), Dockerfile, migrations/
+├── registry/              # Registry / platform: registry, settings, users, service-accounts, features (formerly `core`)
 ├── inventory/  media/  finance/  food/  lists/  cerebrum/   # Domain data pillars (food + cerebrum run workers)
 
 apps/
@@ -159,7 +161,7 @@ infra/
 └── litestream/            # One <id>.yml backup-stream config per pillar SQLite DB
 ```
 
-- `pillars/<id>/` — a REST pillar: zod-backed ts-rest contract over its own SQLite DB (Drizzle), OpenAPI projection, `./manifest`, self-registration with `core`
+- `pillars/<id>/` — a REST pillar: zod-backed ts-rest contract over its own SQLite DB (Drizzle), OpenAPI projection, `./manifest`, self-registration with the `registry` pillar
 - `apps/pops-shell/` — React SPA host with lazy-loaded `app-*` feature apps, served via nginx (the reverse proxy that fronts every public service)
 - `apps/pops-orchestrator/` — federated search + AI-tool registry (`GET /ai/tools`); stateless, owns no DB
 - `apps/moltbot/` — config + custom skills for Moltbot (no Dockerfile, uses upstream image)
@@ -193,8 +195,8 @@ pops-shell (UI pillar): React SPA, Vite + nginx reverse proxy — fronts every s
     lazy-loads app-* feature apps, each on a generated Hey API REST client
     │
 REST pillars (Docker Compose) — each owns its SQLite DB, serves a ts-rest contract + OpenAPI,
-    self-registers with core; cross-pillar calls via @pops/pillar-sdk pillar()
-    core :3001 (registry/platform) | inventory :3002 | media :3003 | finance :3004
+    self-registers with the registry pillar; cross-pillar calls via @pops/pillar-sdk pillar()
+    registry :3001 (registry/platform; formerly core) | inventory :3002 | media :3003 | finance :3004
     food :3005 (+worker) | lists :3006 | cerebrum :3007 (+worker)
     │
 Standalone services:
@@ -260,7 +262,7 @@ When a movie is added to the POPS library, automatically checks Plex Discover cl
 - **Runtime:** Node.js
 - **Database:** SQLite via Drizzle ORM — one database per pillar; each pillar is the source of truth for its own domain
 - **API:** Per-pillar REST. zod → [ts-rest](https://ts-rest.com) contracts → OpenAPI projection. The frontend consumes generated **Hey API** (`@hey-api/openapi-ts`) clients; cross-pillar calls use the `@pops/pillar-sdk` `pillar()` client. No tRPC.
-- **Registry:** the `core` pillar hosts the registry; every pillar self-registers via its `./manifest` on boot (ADR-035)
+- **Registry:** the `registry` pillar (formerly `core`) hosts the registry; every pillar self-registers via its `./manifest` on boot (ADR-035)
 - **Frontend:** one React SPA (`pops-shell`) lazy-loading per-domain feature apps (Vite, React Router, shadcn/ui)
 - **Dashboards:** Metabase (self-hosted, Docker)
 - **AI:** Claude API (categorization, retrieval, NL queries); orchestrator exposes an AI-tool registry at `GET /ai/tools`
@@ -270,7 +272,7 @@ When a movie is added to the POPS library, automatically checks Plex Discover cl
 - **Chat:** Moltbot (Telegram)
 - **Backup:** Backblaze B2 via rclone (encrypted)
 - **Litestream exclusions:** `MEDIA_IMAGES_DIR` and `FOOD_INGEST_DIR` are regeneratable media trees and must be excluded from Litestream replication in the homelab-infra repo's Litestream config. The SQLite rows that reference these paths stay backed up; only the bytes are skipped.
-- **Per-pillar SQLite (ADR-026):** each pillar's database streams independently. The core pillar's reference config lives at `infra/litestream/core.yml`, the finance pillar's at `infra/litestream/finance.yml`, the inventory pillar's at `infra/litestream/inventory.yml`, the media pillar's at `infra/litestream/media.yml`, the cerebrum pillar's at `infra/litestream/cerebrum.yml`, the food pillar's at `infra/litestream/food.yml`, and the lists pillar's at `infra/litestream/lists.yml`; the deployer mirrors them into the homelab-infra Litestream config alongside the existing `pops.db` stream. As subsequent pillars extract their own SQLite files, each adds a sibling YAML next to `core.yml`.
+- **Per-pillar SQLite (ADR-026):** each pillar's database streams independently. The registry pillar's reference config lives at `infra/litestream/registry.yml` (the db file on disk is still `core.db` during the rename window — the deployer renames it to `registry.db` out of band), the finance pillar's at `infra/litestream/finance.yml`, the inventory pillar's at `infra/litestream/inventory.yml`, the media pillar's at `infra/litestream/media.yml`, the cerebrum pillar's at `infra/litestream/cerebrum.yml`, the food pillar's at `infra/litestream/food.yml`, and the lists pillar's at `infra/litestream/lists.yml`; the deployer mirrors them into the homelab-infra Litestream config alongside the existing `pops.db` stream. As subsequent pillars extract their own SQLite files, each adds a sibling YAML next to `registry.yml`.
 
 ## Import Pipeline
 
@@ -531,17 +533,17 @@ Full design context lives in `.impeccable.md`. Key principles for all UI work:
 
 Each pillar is its own service on its own port. The shell is the SPA host; the orchestrator is stateless. For a full stack, prefer `docker compose -f infra/docker-compose.dev.yml up -d --build`.
 
-| Service                        | Port | Command                                 |
-| ------------------------------ | ---- | --------------------------------------- |
-| **core** (registry/platform)   | 3001 | `cd pillars/core && pnpm dev`           |
-| **inventory**                  | 3002 | `cd pillars/inventory && pnpm dev`      |
-| **media**                      | 3003 | `cd pillars/media && pnpm dev`          |
-| **finance**                    | 3004 | `cd pillars/finance && pnpm dev`        |
-| **food** (+ worker)            | 3005 | `cd pillars/food && pnpm dev`           |
-| **lists**                      | 3006 | `cd pillars/lists && pnpm dev`          |
-| **cerebrum** (+ worker)        | 3007 | `cd pillars/cerebrum && pnpm dev`       |
-| **orchestrator** (no DB)       | 3009 | `cd apps/pops-orchestrator && pnpm dev` |
-| **pops-shell** (Vite SPA host) | 5568 | `cd apps/pops-shell && pnpm dev`        |
+| Service                                         | Port | Command                                 |
+| ----------------------------------------------- | ---- | --------------------------------------- |
+| **registry** (registry/platform; formerly core) | 3001 | `cd pillars/registry && pnpm dev`       |
+| **inventory**                                   | 3002 | `cd pillars/inventory && pnpm dev`      |
+| **media**                                       | 3003 | `cd pillars/media && pnpm dev`          |
+| **finance**                                     | 3004 | `cd pillars/finance && pnpm dev`        |
+| **food** (+ worker)                             | 3005 | `cd pillars/food && pnpm dev`           |
+| **lists**                                       | 3006 | `cd pillars/lists && pnpm dev`          |
+| **cerebrum** (+ worker)                         | 3007 | `cd pillars/cerebrum && pnpm dev`       |
+| **orchestrator** (no DB)                        | 3009 | `cd apps/pops-orchestrator && pnpm dev` |
+| **pops-shell** (Vite SPA host)                  | 5568 | `cd apps/pops-shell && pnpm dev`        |
 
 ### Node.js version
 
@@ -550,7 +552,7 @@ Node.js 24.5.0 is managed via **mise** (see `mise.toml`). NVM must be disabled i
 ### Environment files
 
 - Each pillar has its own `.env` (copy from its `.env.example`). A pillar resolves its own SQLite path and `PORT` from its environment; only those are required for basic local dev. Media/AI API keys are optional and live with the pillar that uses them.
-- The shell consumes pillars over HTTP by port (`core :3001`, … `cerebrum :3007`, `orchestrator :3009`) — its dev proxy points at the running pillars.
+- The shell consumes pillars over HTTP by port (`registry :3001`, … `cerebrum :3007`, `orchestrator :3009`) — its dev proxy points at the running pillars.
 
 ### Database setup
 

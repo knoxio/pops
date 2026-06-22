@@ -2,7 +2,7 @@
  * SSE reconnection helper for the registry subscription transport
  * (Theme 13 PRD-164).
  *
- * When `pops-core-api` restarts (or any transient network drop), the
+ * When `pops-registry` restarts (or any transient network drop), the
  * SSE stream from `GET /registry/subscribe` closes. PRD-163 stops at
  * the server; the client side reconnection is PRD-164's job.
  *

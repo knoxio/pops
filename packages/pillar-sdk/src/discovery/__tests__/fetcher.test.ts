@@ -10,12 +10,12 @@ describe('fetchRegistrySnapshot', () => {
     const fetchImpl = vi.fn().mockResolvedValue(jsonResponse(wirePayload(fin, media)));
 
     const result = await fetchRegistrySnapshot({
-      registryUrl: 'http://core-api:3001',
+      registryUrl: 'http://registry-api:3001',
       fetchImpl,
     });
 
     expect(fetchImpl).toHaveBeenCalledWith(
-      'http://core-api:3001/registry/pillars',
+      'http://registry-api:3001/registry/pillars',
       expect.objectContaining({ method: 'GET' })
     );
     expect(result.pillars).toHaveLength(2);
@@ -41,7 +41,7 @@ describe('fetchRegistrySnapshot', () => {
     const fetchImpl = vi.fn().mockResolvedValue(jsonResponse(raw));
 
     const result = await fetchRegistrySnapshot({
-      registryUrl: 'http://core-api:3001',
+      registryUrl: 'http://registry-api:3001',
       fetchImpl,
     });
 
@@ -53,7 +53,7 @@ describe('fetchRegistrySnapshot', () => {
     const fetchImpl = vi.fn().mockResolvedValue(jsonResponse(wirePayload(fin)));
 
     const result = await fetchRegistrySnapshot({
-      registryUrl: 'http://core-api:3001',
+      registryUrl: 'http://registry-api:3001',
       fetchImpl,
     });
 
@@ -76,7 +76,7 @@ describe('fetchRegistrySnapshot', () => {
     const fetchImpl = vi.fn().mockResolvedValue(jsonResponse(raw));
 
     const result = await fetchRegistrySnapshot({
-      registryUrl: 'http://core-api:3001',
+      registryUrl: 'http://registry-api:3001',
       fetchImpl,
     });
 
@@ -86,11 +86,11 @@ describe('fetchRegistrySnapshot', () => {
   it('strips a trailing slash from the registry URL', async () => {
     const fetchImpl = vi.fn().mockResolvedValue(jsonResponse(wirePayload()));
     await fetchRegistrySnapshot({
-      registryUrl: 'http://core-api:3001/',
+      registryUrl: 'http://registry-api:3001/',
       fetchImpl,
     });
     expect(fetchImpl).toHaveBeenCalledWith(
-      'http://core-api:3001/registry/pillars',
+      'http://registry-api:3001/registry/pillars',
       expect.anything()
     );
   });
@@ -100,7 +100,7 @@ describe('fetchRegistrySnapshot', () => {
       .fn()
       .mockResolvedValue(new Response('boom', { status: 503, statusText: 'Service Unavailable' }));
     await expect(
-      fetchRegistrySnapshot({ registryUrl: 'http://core-api:3001', fetchImpl })
+      fetchRegistrySnapshot({ registryUrl: 'http://registry-api:3001', fetchImpl })
     ).rejects.toThrow(/HTTP 503/);
   });
 
@@ -112,7 +112,7 @@ describe('fetchRegistrySnapshot', () => {
       })
     );
     await expect(
-      fetchRegistrySnapshot({ registryUrl: 'http://core-api:3001', fetchImpl })
+      fetchRegistrySnapshot({ registryUrl: 'http://registry-api:3001', fetchImpl })
     ).rejects.toThrow(/malformed JSON/);
   });
 
@@ -132,7 +132,7 @@ describe('fetchRegistrySnapshot', () => {
     };
     const fetchImpl = vi.fn().mockResolvedValue(jsonResponse(bad));
     await expect(
-      fetchRegistrySnapshot({ registryUrl: 'http://core-api:3001', fetchImpl })
+      fetchRegistrySnapshot({ registryUrl: 'http://registry-api:3001', fetchImpl })
     ).rejects.toBeTruthy();
   });
 
@@ -149,7 +149,7 @@ describe('fetchRegistrySnapshot', () => {
 
     await expect(
       fetchRegistrySnapshot({
-        registryUrl: 'http://core-api:3001',
+        registryUrl: 'http://registry-api:3001',
         fetchImpl,
         timeoutMs: 5,
       })
@@ -171,7 +171,7 @@ describe('fetchRegistrySnapshot', () => {
     };
     const fetchImpl = vi.fn().mockResolvedValue(jsonResponse(raw));
     const result = await fetchRegistrySnapshot({
-      registryUrl: 'http://core-api:3001',
+      registryUrl: 'http://registry-api:3001',
       fetchImpl,
     });
     expect(result.pillars[0]!.registered).toBe(false);
@@ -201,7 +201,7 @@ describe('fetchRegistrySnapshot', () => {
       });
 
       const result = await fetchRegistrySnapshot({
-        registryUrl: 'http://core-api:3001',
+        registryUrl: 'http://registry-api:3001',
         fetchImpl,
       });
       expect(result.pillars[0]!.pillarId).toBe('finance');
@@ -216,7 +216,7 @@ describe('fetchRegistrySnapshot', () => {
       });
 
       await expect(
-        fetchRegistrySnapshot({ registryUrl: 'http://core-api:3001', fetchImpl })
+        fetchRegistrySnapshot({ registryUrl: 'http://registry-api:3001', fetchImpl })
       ).rejects.toThrow(/HTTP 503/);
       expect(paths).toEqual(['/registry/pillars']);
     });
@@ -234,14 +234,14 @@ describe('fetchRegistrySnapshot', () => {
       });
       const leg = createSnapshotResolverLeg();
 
-      await fetchRegistrySnapshot({ registryUrl: 'http://core-api:3001', fetchImpl, leg });
+      await fetchRegistrySnapshot({ registryUrl: 'http://registry-api:3001', fetchImpl, leg });
       // Second poll reuses the cached slash winner — single request.
-      await fetchRegistrySnapshot({ registryUrl: 'http://core-api:3001', fetchImpl, leg });
+      await fetchRegistrySnapshot({ registryUrl: 'http://registry-api:3001', fetchImpl, leg });
       expect(paths).toEqual(['/registry/pillars', '/registry/pillars']);
 
       // Core rolled back: cached slash 404s → in-call fallback to legacy + invalidate.
       live = new Set(['/core.registry.list']);
-      await fetchRegistrySnapshot({ registryUrl: 'http://core-api:3001', fetchImpl, leg });
+      await fetchRegistrySnapshot({ registryUrl: 'http://registry-api:3001', fetchImpl, leg });
       expect(paths).toEqual([
         '/registry/pillars',
         '/registry/pillars',
@@ -251,13 +251,13 @@ describe('fetchRegistrySnapshot', () => {
 
       // Legacy cached; steady single request, no thrash back to slash.
       paths.length = 0;
-      await fetchRegistrySnapshot({ registryUrl: 'http://core-api:3001', fetchImpl, leg });
+      await fetchRegistrySnapshot({ registryUrl: 'http://registry-api:3001', fetchImpl, leg });
       expect(paths).toEqual(['/core.registry.list']);
 
       // Phase-3 roll-forward: legacy removed → cached legacy 404s → re-resolve to slash.
       live = new Set(['/registry/pillars']);
       paths.length = 0;
-      await fetchRegistrySnapshot({ registryUrl: 'http://core-api:3001', fetchImpl, leg });
+      await fetchRegistrySnapshot({ registryUrl: 'http://registry-api:3001', fetchImpl, leg });
       expect(paths).toEqual(['/core.registry.list', '/registry/pillars']);
     });
   });
