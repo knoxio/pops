@@ -1,12 +1,20 @@
 /**
- * Theme 13 PRD-219 — collect every contract package's OpenAPI snapshot
- * into the pops-docs image build context.
+ * Theme 13 PRD-219 — collect every pillar's OpenAPI snapshot into the
+ * pops-docs image build context.
  *
- * Walks `packages/*-contract/` from the monorepo root. For each contract:
+ * Walks `pillars/*` from the monorepo root. For each pillar:
  *   - if `openapi/<pillar>.openapi.json` exists → emit a catalog entry,
  *     copy the spec into `apps/pops-docs/dist/openapi/<pillar>.json`
- *   - otherwise → log a warning and skip (the contract is in flight but
- *     hasn't generated its snapshot yet; that is not an error)
+ *   - otherwise → skip (the pillar ships no contract snapshot; that is
+ *     not an error)
+ *
+ * The contract snapshots used to live under `packages/<pillar>-contract/`
+ * but were folded into each pillar (`pillars/<id>/openapi/`) by the
+ * federation refactor, so discovery now keys off the pillar directory and
+ * the presence of its OpenAPI file rather than a `-contract` suffix. Pillar
+ * package metadata (`package.json`) is optional: Rust pillars (e.g.
+ * `contacts`) ship a `Cargo.toml` and no `package.json`, and still get a
+ * catalog entry sourced from the OpenAPI `info` block.
  *
  * The output `catalog.json` is what `src/index.html` reads at runtime to
  * populate Stoplight Elements' multi-spec navigation. There is no runtime
@@ -21,6 +29,7 @@
 import { execSync } from 'node:child_process';
 import {
   cpSync,
+  existsSync,
   mkdirSync,
   readFileSync,
   readdirSync,
@@ -41,7 +50,7 @@ import {
 const HERE = dirname(fileURLToPath(import.meta.url));
 const APP_ROOT = resolve(HERE, '..');
 const REPO_ROOT = resolve(APP_ROOT, '..', '..');
-const PACKAGES_DIR = resolve(REPO_ROOT, 'packages');
+const PILLARS_DIR = resolve(REPO_ROOT, 'pillars');
 const SRC_DIR = resolve(APP_ROOT, 'src');
 const OUT_DIR = resolve(APP_ROOT, 'dist');
 const OUT_OPENAPI_DIR = resolve(OUT_DIR, 'openapi');
@@ -61,48 +70,66 @@ function resolveGitSha(): string {
 }
 
 /**
- * Discover every `packages/*-contract` directory that ships an OpenAPI
- * snapshot. Pure filesystem walk — no workspace manifest required.
+ * Read a pillar's `package.json` for its npm name/version when present.
+ * Rust pillars ship a `Cargo.toml` and no `package.json`; callers fall
+ * back to the OpenAPI `info` block for those.
+ */
+function readPillarPackage(pkgJsonPath: string): ContractPackageJson | null {
+  if (!existsSync(pkgJsonPath)) return null;
+  try {
+    return readJson<ContractPackageJson>(pkgJsonPath);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Build a catalog entry for pillar `id` if it ships a readable
+ * `openapi/<id>.openapi.json`, otherwise `null` (the pillar has no
+ * contract snapshot yet — not an error). Package metadata falls back to
+ * the OpenAPI `info` block so Rust pillars without a `package.json` still
+ * get a usable name/version.
+ */
+function collectPillar(id: string): CollectedContract | null {
+  const pillarDir = resolve(PILLARS_DIR, id);
+  const openapiPath = resolve(pillarDir, 'openapi', `${id}.openapi.json`);
+
+  let snapshot: OpenApiSnapshot;
+  try {
+    statSync(openapiPath);
+    snapshot = readJson<OpenApiSnapshot>(openapiPath);
+  } catch {
+    return null;
+  }
+
+  const pkg = readPillarPackage(resolve(pillarDir, 'package.json'));
+
+  return {
+    id,
+    packageName: pkg?.name ?? snapshot.info?.title ?? `@pops/${id}`,
+    packageVersion: pkg?.version ?? snapshot.info?.version ?? '0.0.0',
+    sourcePath: openapiPath,
+    snapshot,
+  };
+}
+
+/**
+ * Discover every `pillars/<id>` directory that ships an OpenAPI snapshot
+ * at `openapi/<id>.openapi.json`. Pure filesystem walk — no workspace
+ * manifest required. A missing `pillars/` directory degrades to an empty
+ * catalog rather than throwing, so the build never dies on `ENOENT`.
  */
 function discoverContracts(): CollectedContract[] {
-  const entries = readdirSync(PACKAGES_DIR, { withFileTypes: true });
+  if (!existsSync(PILLARS_DIR)) {
+    console.warn(`[pops-docs] no pillars directory at ${PILLARS_DIR} — catalog will be empty`);
+    return [];
+  }
+
   const collected: CollectedContract[] = [];
-
-  for (const entry of entries) {
+  for (const entry of readdirSync(PILLARS_DIR, { withFileTypes: true })) {
     if (!entry.isDirectory()) continue;
-    if (!entry.name.endsWith('-contract')) continue;
-
-    const id = entry.name.replace(/-contract$/, '');
-    const pkgDir = resolve(PACKAGES_DIR, entry.name);
-    const pkgJsonPath = resolve(pkgDir, 'package.json');
-    const openapiPath = resolve(pkgDir, 'openapi', `${id}.openapi.json`);
-
-    let pkg: ContractPackageJson;
-    try {
-      pkg = readJson<ContractPackageJson>(pkgJsonPath);
-    } catch {
-      console.warn(`[pops-docs] skipping ${entry.name}: package.json unreadable`);
-      continue;
-    }
-
-    let snapshot: OpenApiSnapshot;
-    try {
-      statSync(openapiPath);
-      snapshot = readJson<OpenApiSnapshot>(openapiPath);
-    } catch {
-      console.warn(
-        `[pops-docs] skipping ${entry.name}: no openapi snapshot at openapi/${id}.openapi.json`
-      );
-      continue;
-    }
-
-    collected.push({
-      id,
-      packageName: pkg.name,
-      packageVersion: pkg.version,
-      sourcePath: openapiPath,
-      snapshot,
-    });
+    const contract = collectPillar(entry.name);
+    if (contract) collected.push(contract);
   }
 
   return collected.toSorted((a, b) => a.id.localeCompare(b.id));

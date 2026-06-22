@@ -12,14 +12,23 @@ const APP_ROOT = resolve(HERE, '..');
 const REPO_ROOT = resolve(APP_ROOT, '..', '..');
 const DIST_DIR = resolve(APP_ROOT, 'dist');
 
+/**
+ * Every pillar that ships a committed `openapi/<id>.openapi.json`. The
+ * federation refactor folded the old `packages/<id>-contract` snapshots
+ * into each pillar, renamed `core`→`registry`, and added the `ai` and
+ * (Rust) `contacts` pillars — so this set is the live source of truth, not
+ * the pre-move `packages/*-contract` list.
+ */
 const EXPECTED_PILLARS = [
+  'ai',
   'cerebrum',
-  'core',
+  'contacts',
   'finance',
   'food',
   'inventory',
   'lists',
   'media',
+  'registry',
 ] as const;
 
 describe('collect-specs', () => {
@@ -53,10 +62,7 @@ describe('collect-specs', () => {
         readFileSync(resolve(DIST_DIR, 'openapi', `${pillar}.json`), 'utf8')
       ) as { info?: { title?: string } };
       const sourceSpec = JSON.parse(
-        readFileSync(
-          resolve(REPO_ROOT, `packages/${pillar}-contract/openapi/${pillar}.openapi.json`),
-          'utf8'
-        )
+        readFileSync(resolve(REPO_ROOT, `pillars/${pillar}/openapi/${pillar}.openapi.json`), 'utf8')
       ) as { info?: { title?: string } };
       expect(copiedSpec.info?.title).toBe(sourceSpec.info?.title);
     }

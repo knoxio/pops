@@ -3,9 +3,9 @@
  *
  * Behaviour:
  *   1. Runs `collect-specs.ts` once to populate `dist/`
- *   2. Watches every discovered `packages/*-contract/openapi/` directory
- *      and re-runs the collector when an OpenAPI snapshot changes (so
- *      contract authors can preview docs without restarting the server)
+ *   2. Watches every discovered `pillars/<id>/openapi/` directory and
+ *      re-runs the collector when an OpenAPI snapshot changes (so contract
+ *      authors can preview docs without restarting the server)
  *   3. Serves `dist/` over a tiny Node http server on `POPS_DOCS_PORT`
  *      (default 4280) with the same URL layout that nginx serves in prod
  *
@@ -14,7 +14,7 @@
  * `http`/`fs.watch` are enough for a local preview.
  */
 import { spawnSync } from 'node:child_process';
-import { createReadStream, readdirSync, statSync, watch } from 'node:fs';
+import { createReadStream, existsSync, readdirSync, statSync, watch } from 'node:fs';
 import { createServer } from 'node:http';
 import { dirname, extname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -22,7 +22,7 @@ import { fileURLToPath } from 'node:url';
 const HERE = dirname(fileURLToPath(import.meta.url));
 const APP_ROOT = resolve(HERE, '..');
 const REPO_ROOT = resolve(APP_ROOT, '..', '..');
-const PACKAGES_DIR = resolve(REPO_ROOT, 'packages');
+const PILLARS_DIR = resolve(REPO_ROOT, 'pillars');
 const DIST_DIR = resolve(APP_ROOT, 'dist');
 const COLLECT_SCRIPT = resolve(HERE, 'collect-specs.ts');
 
@@ -44,10 +44,12 @@ function runCollect(): void {
 }
 
 function watchOpenapiDirs(): void {
+  if (!existsSync(PILLARS_DIR)) return;
+
   const dirs: string[] = [];
-  for (const entry of readdirSync(PACKAGES_DIR, { withFileTypes: true })) {
-    if (!entry.isDirectory() || !entry.name.endsWith('-contract')) continue;
-    const candidate = resolve(PACKAGES_DIR, entry.name, 'openapi');
+  for (const entry of readdirSync(PILLARS_DIR, { withFileTypes: true })) {
+    if (!entry.isDirectory()) continue;
+    const candidate = resolve(PILLARS_DIR, entry.name, 'openapi');
     try {
       if (statSync(candidate).isDirectory()) dirs.push(candidate);
     } catch {
