@@ -10,7 +10,7 @@ COPY apps/pops-mcp/package.json ./apps/pops-mcp/
 
 # Install pnpm and all workspace dependencies
 RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
-    corepack enable && pnpm install --frozen-lockfile
+    corepack enable && pnpm install --frozen-lockfile --filter "@pops/mcp..."
 
 # Copy shared package sources
 COPY packages/pillar-sdk/ ./packages/pillar-sdk/
