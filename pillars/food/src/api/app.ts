@@ -56,7 +56,7 @@ const openapiDocument: unknown = JSON.parse(
  * token. Everything else trusts the docker network (the dispatcher in front
  * authenticates user traffic).
  */
-const INTERNAL_PATHS = new Set(['/ai/log-inference', '/ingest/worker-complete']);
+const INTERNAL_PATHS = new Set(['/ingest/worker-complete']);
 
 function requireInternalToken(req: Request, res: Response, next: NextFunction): void {
   if (!INTERNAL_PATHS.has(req.path)) {

@@ -254,22 +254,6 @@ interface CreateWeightBody {
   notes?: string;
 }
 
-interface LogInferenceBody {
-  operation: string;
-  contextId: string;
-  provider: 'claude';
-  model: string;
-  promptVersion: string;
-  inputTokens: number;
-  outputTokens: number;
-  costUsd: number;
-  latencyMs: number;
-  status: 'success' | 'error';
-  cached: boolean;
-  errorMessage?: string;
-  metadata?: Record<string, unknown>;
-}
-
 type IngestStartBody =
   | { kind: 'url-web'; url: string }
   | { kind: 'url-instagram'; url: string }
@@ -415,13 +399,6 @@ export function makeClient(app: Express) {
         const req = r.post('/ingest/worker-complete');
         if (token !== undefined) req.set('x-pops-internal-token', token);
         return send<WorkerCompleteResult>(req.send(body));
-      },
-    },
-    ai: {
-      logInference: (body: LogInferenceBody, token?: string) => {
-        const req = r.post('/ai/log-inference');
-        if (token !== undefined) req.set('x-pops-internal-token', token);
-        return send<{ ok: true }>(req.send(body));
       },
     },
     conversions: {

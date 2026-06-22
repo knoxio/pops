@@ -29,7 +29,7 @@ This epic is pipeline-only. The review queue UI that promotes drafts to canonica
 ```
 125 ──► 126 ──► (127, 128, 129→130, 131, 132 in parallel)
                               ▲
-133 ──────────────────────────┘  (133 provides the callClaudeWithLogging wrapper
+133 ──────────────────────────┘  (133 uses the @pops/ai-telemetry callWithLogging wrapper
                                   that 128, 130, 131, 132 consume; can be built first
                                   or in parallel with the handlers)
 ```
@@ -38,7 +38,7 @@ This epic is pipeline-only. The review queue UI that promotes drafts to canonica
 - **126** second (container + daemon must exist before extraction paths can consume jobs).
 - **127–132** all consume the queue and write drafts independently. They can be built in parallel but each is a self-contained ingest kind.
 - **130** depends on **129** (yt-dlp must download the video before STT/vision can process it). The two PRDs are split because acquisition (auth, cookies, rate limits) is a distinct concern from STT/vision processing (CPU work, model loading, prompt design).
-- **133** is consumed by 127–132 but can be built first or in parallel — it provides the `logInference()` helper and the prompt-registration shape.
+- **133** is consumed by 127–132 but can be built first or in parallel — it wires the `@pops/ai-telemetry` `callWithLogging` wrapper and the prompt-registration shape.
 - IG cookie refresh runbook lives at `../runbooks/instagram-cookie-refresh.md` and is referenced from PRD-129's edge cases.
 
 PRD count is 9 (not 8 as the question batch hinted) — the splits asked for added up to 9 once Instagram became two PRDs. The extra PRD keeps each focused on a single concern.
@@ -46,7 +46,7 @@ PRD count is 9 (not 8 as the question batch hinted) — the splits asked for add
 ## Dependencies
 
 - **Requires:** Epic 00 (schema: `ingest_sources` from PRD-110; `recipe_versions` from PRD-107; DSL compile from PRDs 114-117). The pipeline writes drafts via the same `food.recipes.create` path Epic 01 exposes (PRD-119).
-- **Requires:** Existing `ai_inference_log` table and `app-ai` module (theme 05). New rows use `domain='food'` and operation strings specific to each ingest path.
+- **Requires:** The ai pillar's `ai_inference_log` telemetry store (theme 05 AI Operations) and the `@pops/ai-telemetry` wrapper. Reported records use `domain='food'` and operation strings specific to each ingest path.
 - **Requires:** Redis + BullMQ stack (already in use for finance imports and cerebrum).
 - **Unlocks:** Epic 03 (the review queue surfaces what this epic produces).
 

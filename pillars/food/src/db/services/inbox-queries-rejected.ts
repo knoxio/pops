@@ -12,13 +12,9 @@
  *                         can't reject manually-authored drafts)
  *   recipes              (slug for inspector navigation)
  *
- * `ai_inference_log` cost is read via a correlated subquery in the SELECT
- * list — `SUM(cost_usd) WHERE context_id = 'ingest_source:<id>'` per row.
- * A LEFT JOIN + GROUP BY would force a group-by-every-other-column shape
- * to keep the rest of the row scalar; the correlated subquery is simpler
- * and the per-row cost is bounded by the SQLite index on `context_id`.
- * PRD-133 uses string-namespaced context ids so the predicate is built
- * with concatenation rather than a numeric FK.
+ * `ingestCostUsd` is always `null`: food's local `ai_inference_log` was dropped
+ * once AI telemetry moved to the ai pillar via `@pops/ai-telemetry` (#3490), so
+ * per-source ingest cost is no longer tracked in the food DB.
  *
  * Pagination cursor: `(rejected_at DESC, version_id DESC)` — the rejected_at
  * default expression is `datetime('now')` which is unique per insert under
@@ -27,13 +23,7 @@
  */
 import { and, desc, eq, inArray, lt, or, sql, type SQL } from 'drizzle-orm';
 
-import {
-  aiInferenceLog,
-  ingestSources,
-  recipes,
-  recipeVersionRejections,
-  recipeVersions,
-} from '../schema.js';
+import { ingestSources, recipes, recipeVersionRejections, recipeVersions } from '../schema.js';
 import {
   encodeCursor,
   type ListPage,
@@ -86,11 +76,6 @@ interface JoinedRejectedRow {
 }
 
 function selectRejectedRows(db: FoodDb, filter: ListRejectedFilter): JoinedRejectedRow[] {
-  const costSubquery = sql<number | null>`(
-    SELECT COALESCE(SUM(${aiInferenceLog.costUsd}), NULL)
-    FROM ${aiInferenceLog}
-    WHERE ${aiInferenceLog.contextId} = 'ingest_source:' || ${ingestSources.id}
-  )`;
   return db
     .select({
       versionId: recipeVersions.id,
@@ -102,7 +87,7 @@ function selectRejectedRows(db: FoodDb, filter: ListRejectedFilter): JoinedRejec
       rejectedAt: recipeVersionRejections.rejectedAt,
       ingestKind: ingestSources.kind,
       sourceUrl: ingestSources.url,
-      ingestCostUsd: costSubquery,
+      ingestCostUsd: sql<number | null>`NULL`,
     })
     .from(recipeVersionRejections)
     .innerJoin(recipeVersions, eq(recipeVersions.id, recipeVersionRejections.versionId))

@@ -4,48 +4,6 @@ export type ClientOptions = {
   baseUrl: `${string}://${string}` | (string & {});
 };
 
-export type AiLogInferenceData = {
-  /**
-   * Body
-   */
-  body?: {
-    cached: boolean;
-    contextId: string;
-    costUsd: number;
-    errorMessage?: string;
-    inputTokens: number;
-    latencyMs: number;
-    metadata?: {
-      [key: string]: unknown;
-    };
-    model: string;
-    operation:
-      | 'recipe-extract-web-llm'
-      | 'recipe-extract-ig-vision'
-      | 'recipe-extract-ig-text-fallback'
-      | 'recipe-extract-screenshot'
-      | 'recipe-extract-text';
-    outputTokens: number;
-    promptVersion: string;
-    provider: 'claude';
-    status: 'success' | 'error';
-  };
-  path?: never;
-  query?: never;
-  url: '/ai/log-inference';
-};
-
-export type AiLogInferenceResponses = {
-  /**
-   * 200
-   */
-  200: {
-    ok: true;
-  };
-};
-
-export type AiLogInferenceResponse = AiLogInferenceResponses[keyof AiLogInferenceResponses];
-
 export type AliasesListData = {
   body?: never;
   path?: never;

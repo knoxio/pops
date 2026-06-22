@@ -13,11 +13,29 @@
  */
 import { InferenceRecordSchema, type InferenceRecord } from '@pops/ai-telemetry';
 
-import type { InferSelectModel } from 'drizzle-orm';
-
-import type { aiInferenceLog } from '../../db/schema/ai-inference-log.js';
-
-export type AiInferenceLogRow = InferSelectModel<typeof aiInferenceLog>;
+/**
+ * Shape of a historical food `ai_inference_log` row. The table itself was
+ * dropped (#3490) once telemetry moved to the ai pillar; this standalone type
+ * mirrors the legacy column set so the deploy-time backfill — which reads the
+ * still-present table via raw SQL before the drop migration runs — stays typed.
+ */
+export interface AiInferenceLogRow {
+  id: number;
+  provider: string;
+  model: string;
+  operation: string;
+  domain: string | null;
+  inputTokens: number;
+  outputTokens: number;
+  costUsd: number;
+  latencyMs: number;
+  status: string;
+  cached: number;
+  contextId: string | null;
+  errorMessage: string | null;
+  metadata: string | null;
+  createdAt: string;
+}
 
 export const BACKFILL_SOURCE = 'food';
 export const DEDUPE_KEY_PREFIX = 'food:ai_inference_log';

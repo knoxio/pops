@@ -92,7 +92,7 @@ worker-food:
     FOOD_IG_VISION_MODEL: ${FOOD_IG_VISION_MODEL:-claude-haiku-4-5-20251001}
     FOOD_SCREENSHOT_VISION_MODEL: ${FOOD_SCREENSHOT_VISION_MODEL:-claude-haiku-4-5-20251001}
     FOOD_TEXT_LLM_MODEL: ${FOOD_TEXT_LLM_MODEL:-claude-haiku-4-5-20251001}
-    # Cost observation (PRD-133's callClaudeWithLogging warns when exceeded)
+    # Cost observation (PRD-133's callWithLogging warns when exceeded)
     FOOD_INGEST_COST_CAP_PER_JOB_USD: ${FOOD_INGEST_COST_CAP_PER_JOB_USD:-0.05}
   healthcheck:
     test: ['CMD', 'curl', '-f', 'http://localhost:9090/healthz']

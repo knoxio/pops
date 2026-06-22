@@ -7,12 +7,9 @@
  * tags, slug registry, recipe-version rejections, prep states) live in
  * `./schema/food-*.ts` files in this directory.
  *
- * The AI inference surface is canonically owned by core; food keeps a
- * byte-compatible local copy (`./schema/ai-inference-log.ts`) of the
- * `ai_inference_log` table for the inference results its services persist,
- * so the pillar is self-contained with no cross-pillar dependency.
+ * AI inference telemetry is owned by the ai pillar (via `@pops/ai-telemetry`);
+ * food no longer keeps a local `ai_inference_log` table.
  */
-export { aiInferenceLog } from './schema/ai-inference-log.js';
 export { batchConsumptions, batches, recipeRuns } from './schema/food-batches.js';
 export { recipeLines, recipeSteps, recipeVersionProposedSlugs } from './schema/food-compile.js';
 export { ingredientWeights, unitConversions } from './schema/food-conversions.js';

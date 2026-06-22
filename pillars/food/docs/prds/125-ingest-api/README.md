@@ -181,13 +181,13 @@ Persisted as a JSON-encoded string in `ingest_sources.extracted_json` (existing 
 }
 ```
 
-Each ingest kind populates the stages it ran. Skipped stages have `skipped: true` and a `reason`. PRD-133 logs each LLM call to `ai_inference_log` separately; the meta JSON is a per-source rollup for observability and review.
+Each ingest kind populates the stages it ran. Skipped stages have `skipped: true` and a `reason`. PRD-133 reports each LLM call to the ai pillar's `ai_inference_log` separately (via `@pops/ai-telemetry`); the meta JSON is a per-source rollup for observability and review.
 
 **Stage names are owned by the per-kind PRDs.** PRD-125 lists illustrative values; the canonical set used in tests / UI grouping is the union of what PRDs 127-132 actually emit. See each handler PRD's §"Meta JSON additions" for its stage names.
 
 ## `food.ingest.workerComplete` (internal)
 
-Called by `pops-worker-food` (PRD-126) at the end of every job, success or failure. Auth'd via `POPS_API_INTERNAL_TOKEN` header (same mechanism as PRD-133's `food.ai.logInference`); NOT exposed via OpenAPI to user-facing clients.
+Called by `pops-worker-food` (PRD-126) at the end of every job, success or failure. Auth'd via `POPS_API_INTERNAL_TOKEN` header (same internal-token mechanism PRD-133's telemetry reporting uses against the ai pillar); NOT exposed via OpenAPI to user-facing clients.
 
 ```ts
 food.ingest.workerComplete: mutation({
@@ -223,7 +223,7 @@ This server-side ordering ensures `ingest_sources.draft_recipe_id` is FK-consist
 - **PRD-115** (DSL resolver `creations` flow) — invoked during compile when ingest produces unknown ingredient/variant slugs.
 - **PRD-116** (compile function) — invoked by `food.recipes.create` during workerComplete.
 - **PRD-119** (`food.recipes.create` mutation) — the creation path used by `workerComplete`.
-- **PRD-133** (AI usage logging) — every LLM call from handlers routes through `callClaudeWithLogging`.
+- **PRD-133** (AI usage logging) — every LLM call from handlers routes through `@pops/ai-telemetry`'s `callWithLogging`.
 - Existing Redis + BullMQ infrastructure (theme 01 / 02).
 
 ## Business Rules

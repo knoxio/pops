@@ -3,8 +3,9 @@
  *
  * The route serves the committed `openapi/food.openapi.json` projection
  * verbatim so the pillar SDK can build its operationId route map against the
- * live pillar. This asserts the document is reachable, is OpenAPI 3.x, and
- * carries a known operationId (`ai.logInference`) from the migrated surface.
+ * live pillar. This asserts the document is reachable, is OpenAPI 3.x, carries
+ * a known operationId from the migrated surface, and no longer carries the
+ * dropped `ai.logInference` route (#3490).
  */
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -35,7 +36,7 @@ type OpenApiBody = {
 };
 
 describe('GET /openapi', () => {
-  it('serves the committed projection as JSON (3.x + ai.logInference operationId)', async () => {
+  it('serves the committed projection as JSON (3.x; ai.logInference dropped)', async () => {
     const app = createFoodApiApp({
       foodDb,
       version: '0.0.1-test',
@@ -52,6 +53,7 @@ describe('GET /openapi', () => {
       .filter((item): item is Record<string, { operationId?: unknown }> => item !== undefined)
       .flatMap((item) => Object.values(item))
       .map((operation) => operation.operationId);
-    expect(operationIds).toContain('ai.logInference');
+    expect(operationIds).toContain('inbox.listRejected');
+    expect(operationIds).not.toContain('ai.logInference');
   });
 });

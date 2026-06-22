@@ -1,17 +1,20 @@
 /**
  * PRD-135 — source-side reads + state derivation for the inspector.
  *
- * Reads the `ingest_sources` row + `ai_inference_log` cost rollup. Derives
- * `InspectorIngestState` from the DB row only (no BullMQ): a row with an
- * `error_code` is `failed`; a row with a `draft_recipe_id` is `completed`
- * (or `partial` when `extracted_json.partialReason` is set); otherwise
- * `processing`. The inspector's 60s poll while non-terminal closes the
- * gap with the worker.
+ * Reads the `ingest_sources` row. Derives `InspectorIngestState` from the DB
+ * row only (no BullMQ): a row with an `error_code` is `failed`; a row with a
+ * `draft_recipe_id` is `completed` (or `partial` when
+ * `extracted_json.partialReason` is set); otherwise `processing`. The
+ * inspector's 60s poll while non-terminal closes the gap with the worker.
+ *
+ * AI inference cost is no longer surfaced here: food's local `ai_inference_log`
+ * was dropped once telemetry moved to the ai pillar via `@pops/ai-telemetry`
+ * (#3490). `readInferenceLogs` returns an empty set so `totalCostUsd` is 0.
  */
 import { eq } from 'drizzle-orm';
 
 import { extractPartialReasonFromExtractedJson } from '../../inbox/partial-reason.js';
-import { aiInferenceLog, ingestSources } from '../schema.js';
+import { ingestSources } from '../schema.js';
 import { parseExtractedMeta } from './inbox-inspector-parsers.js';
 import { type FoodDb } from './internal.js';
 
@@ -61,37 +64,8 @@ export function readSourceRow(db: FoodDb, sourceId: number): InspectorSourceRow 
   return rows[0] ?? null;
 }
 
-export function readInferenceLogs(db: FoodDb, sourceId: number): InspectorAiInferenceLogRow[] {
-  const namespaced = `ingest_source:${sourceId}`;
-  const rows = db
-    .select({
-      operation: aiInferenceLog.operation,
-      provider: aiInferenceLog.provider,
-      model: aiInferenceLog.model,
-      costUsd: aiInferenceLog.costUsd,
-      inputTokens: aiInferenceLog.inputTokens,
-      outputTokens: aiInferenceLog.outputTokens,
-      latencyMs: aiInferenceLog.latencyMs,
-      status: aiInferenceLog.status,
-      cached: aiInferenceLog.cached,
-      createdAt: aiInferenceLog.createdAt,
-    })
-    .from(aiInferenceLog)
-    .where(eq(aiInferenceLog.contextId, namespaced))
-    .orderBy(aiInferenceLog.createdAt)
-    .all();
-  return rows.map((r) => ({
-    operation: r.operation,
-    provider: r.provider,
-    model: r.model,
-    costUsd: r.costUsd,
-    inputTokens: r.inputTokens,
-    outputTokens: r.outputTokens,
-    latencyMs: r.latencyMs,
-    status: r.status,
-    cached: r.cached === 1,
-    createdAt: r.createdAt,
-  }));
+export function readInferenceLogs(_db: FoodDb, _sourceId: number): InspectorAiInferenceLogRow[] {
+  return [];
 }
 
 export function buildSourceView(

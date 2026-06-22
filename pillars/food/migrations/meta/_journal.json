@@ -36,6 +36,13 @@
       "when": 1781500777655,
       "tag": "0062_food_ai_inference_log",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1781500777656,
+      "tag": "0063_drop_ai_inference_log",
+      "breakpoints": true
     }
   ]
 }

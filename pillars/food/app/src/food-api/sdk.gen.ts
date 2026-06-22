@@ -4,8 +4,6 @@ import { client } from './client.gen';
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import type {
-  AiLogInferenceData,
-  AiLogInferenceResponses,
   AliasesBulkApproveData,
   AliasesBulkApproveResponses,
   AliasesCreateData,
@@ -260,21 +258,6 @@ export type Options<
    */
   meta?: keyof ClientMeta extends never ? Record<string, unknown> : ClientMeta;
 };
-
-/**
- * Record a food AI inference (internal; worker → ai_inference_log)
- */
-export const aiLogInference = <ThrowOnError extends boolean = false>(
-  options?: Options<AiLogInferenceData, ThrowOnError>
-): RequestResult<AiLogInferenceResponses, unknown, ThrowOnError> =>
-  (options?.client ?? client).post<AiLogInferenceResponses, unknown, ThrowOnError>({
-    url: '/ai/log-inference',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options?.headers,
-    },
-  });
 
 /**
  * List aliases (optionally filtered by search / source / target)
