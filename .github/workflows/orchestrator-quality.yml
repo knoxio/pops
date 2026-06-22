@@ -16,8 +16,8 @@ on:
     branches: [main]
     paths:
       - "apps/pops-orchestrator/**"
-      - "packages/pillar-sdk/**"
-      - "packages/types/**"
+      - "libs/sdk/**"
+      - "libs/types/**"
       - "pnpm-lock.yaml"
       - "pnpm-workspace.yaml"
       - "tsconfig.base.json"
@@ -27,8 +27,8 @@ on:
   pull_request:
     paths:
       - "apps/pops-orchestrator/**"
-      - "packages/pillar-sdk/**"
-      - "packages/types/**"
+      - "libs/sdk/**"
+      - "libs/types/**"
       - "pnpm-lock.yaml"
       - "pnpm-workspace.yaml"
       - "tsconfig.base.json"
