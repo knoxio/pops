@@ -103,6 +103,22 @@ describe('findViolations', () => {
     expect(findViolations(all, () => [], {})).toEqual([]);
   });
 
+  it('flags @pops/ui if storybook app-* are ever (re)added as a workspace devDep', () => {
+    // The storybook fold (P2-T04) consumes app-* via Vite source aliases in
+    // .storybook/main.ts, NOT via package.json devDeps — there is intentionally
+    // no `@pops/ui` allowlist entry. A naive re-add would both trip the guard
+    // and form a turbo `^build` cycle (every app-* depends on @pops/ui).
+    const all = [
+      pillar('@pops/app-food', 'pillars/food/app'),
+      lib('@pops/ui', { devDependencies: { '@pops/app-food': 'workspace:*' } }),
+    ];
+    expect(findViolations(all, () => [])).toContainEqual({
+      lib: '@pops/ui',
+      pillar: '@pops/app-food',
+      via: 'devDependencies',
+    });
+  });
+
   it('does not scan pillars themselves (a pillar may depend on a pillar)', () => {
     const all = [
       pillar('@pops/finance'),

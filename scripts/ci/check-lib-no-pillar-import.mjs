@@ -63,8 +63,12 @@ const repoRoot = resolve(here, '..', '..');
  * here in the same PR that drops the deps — leaving a stale allowlist entry
  * is itself a smell.
  *
- * Keyed by the lib's published `@pops/*` name → set of allowed pillar
- * `@pops/*` devDependency names.
+ * Note `@pops/ui` is deliberately NOT here: Storybook (its dev surface, P2-T04)
+ * consumes the `@pops/app-*` frontends through Vite source aliases in
+ * `.storybook/main.ts`, not through `package.json` devDependencies — so the
+ * workspace graph carries no `ui → app-*` edge (which would both trip this
+ * guard and form a turbo `^build` cycle, since every `app-*` depends on
+ * `@pops/ui`). The dev-surface reference lives in vite config, not the graph.
  *
  * @type {Record<string, Set<string>>}
  */

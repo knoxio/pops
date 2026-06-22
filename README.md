@@ -231,7 +231,6 @@ apps/
 ├── pops-mcp/              # MCP gateway
 ├── pops-cli/              # CLI tooling
 ├── pops-docs/             # OpenAPI docs browser
-├── pops-storybook/        # Component workshop
 └── moltbot/               # Telegram bot config + skills
 
 packages/

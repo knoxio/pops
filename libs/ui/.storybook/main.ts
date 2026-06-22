@@ -9,9 +9,9 @@ const __dirname = import.meta.dirname;
 
 const config: StorybookConfig = {
   stories: [
-    '../../../packages/ui/src/**/*.mdx',
-    '../../../packages/ui/src/**/*.stories.@(js|jsx|mjs|ts|tsx)',
-    '../../../packages/*/src/**/*.stories.@(js|jsx|mjs|ts|tsx)',
+    '../src/**/*.mdx',
+    '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)',
+    '../../*/src/**/*.stories.@(js|jsx|mjs|ts|tsx)',
     '../../../pillars/*/*/src/**/*.stories.@(js|jsx|mjs|ts|tsx)',
   ],
   addons: ['@storybook/addon-a11y', '@chromatic-com/storybook'],
@@ -26,13 +26,13 @@ const config: StorybookConfig = {
         alias: [
           {
             find: '@pops/ui/theme/graph-colors',
-            replacement: path.resolve(__dirname, '../../../packages/ui/src/theme/graph-colors.ts'),
+            replacement: path.resolve(__dirname, '../src/theme/graph-colors.ts'),
           },
           {
             find: '@pops/ui/theme',
-            replacement: path.resolve(__dirname, '../../../packages/ui/src/theme/globals.css'),
+            replacement: path.resolve(__dirname, '../src/theme/globals.css'),
           },
-          { find: '@pops/ui', replacement: path.resolve(__dirname, '../../../packages/ui/src') },
+          { find: '@pops/ui', replacement: path.resolve(__dirname, '../src') },
           {
             find: '@pops/app-ai',
             replacement: path.resolve(__dirname, '../../../pillars/registry/app/src'),
