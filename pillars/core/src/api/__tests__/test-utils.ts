@@ -1,8 +1,8 @@
 /**
  * Supertest-backed REST client for the core pillar integration tests.
  *
- * Preserves a caller-shaped API (`client.entities.create({...})`,
- * `client.entities.list()`) so per-test bodies stay readable — only the
+ * Preserves a caller-shaped API (`client.settings.set({...})`,
+ * `client.features.list()`) so per-test bodies stay readable — only the
  * transport changed. Non-2xx responses throw `HttpError` carrying the
  * parsed `{ status, body }` so tests assert on
  * `.rejects.toMatchObject({ status })`.
@@ -13,7 +13,6 @@ import type { Express } from 'express';
 
 import type { FeatureManifest, FeatureStatus } from '@pops/types';
 
-import type { Entity } from '../modules/entities/types.js';
 import type { CreatedServiceAccount, ServiceAccount } from '../modules/service-accounts/types.js';
 
 export class HttpError extends Error {
@@ -49,28 +48,6 @@ function withHeaders(req: supertest.Test, headers: ClientHeaders | undefined): s
   return out;
 }
 
-interface Pagination {
-  total: number;
-  limit: number;
-  offset: number;
-  hasMore: boolean;
-}
-
-export interface SearchHit {
-  uri: string;
-  score: number;
-  matchField: string;
-  matchType: 'exact' | 'prefix' | 'contains';
-  data: Record<string, unknown>;
-}
-
-export interface EntityQuery {
-  search?: string;
-  type?: string;
-  limit?: number;
-  offset?: number;
-}
-
 export function makeClient(app: Express, headers?: ClientHeaders) {
   const base = supertest(app);
   const r = {
@@ -81,20 +58,6 @@ export function makeClient(app: Express, headers?: ClientHeaders) {
     delete: (url: string) => withHeaders(base.delete(url), headers),
   };
   return {
-    search: {
-      run: (body: { query: { text: string; filters?: unknown[] }; context?: unknown }) =>
-        send<{ hits: SearchHit[] }>(r.post('/search').send(body)),
-    },
-    entities: {
-      list: (query: EntityQuery = {}) =>
-        send<{ data: Entity[]; pagination: Pagination }>(r.get('/entities').query(query)),
-      get: (id: string) => send<{ data: Entity }>(r.get(`/entities/${id}`)),
-      create: (body: Record<string, unknown>) =>
-        send<{ data: Entity; message: string }>(r.post('/entities').send(body)),
-      update: (id: string, data: Record<string, unknown>) =>
-        send<{ data: Entity; message: string }>(r.patch(`/entities/${id}`).send(data)),
-      delete: (id: string) => send<{ message: string }>(r.delete(`/entities/${id}`)),
-    },
     users: {
       get: (uri: string) => send<{ data: { uri: string } }>(r.get('/users').query({ uri })),
     },

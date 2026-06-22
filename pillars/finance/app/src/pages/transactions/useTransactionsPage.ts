@@ -3,8 +3,8 @@ import { useQuery } from '@tanstack/react-query';
 import { useCallback, useState } from 'react';
 import { useForm } from 'react-hook-form';
 
-import { unwrap as unwrapCore } from '../../core-api-helpers.js';
-import { entitiesList } from '../../core-api/index.js';
+import { unwrap as unwrapContacts } from '../../contacts-api-helpers.js';
+import { entitiesList } from '../../contacts-api/index.js';
 import { unwrap } from '../../finance-api-helpers.js';
 import { transactionsAvailableTags, transactionsList } from '../../finance-api/index.js';
 import {
@@ -118,8 +118,8 @@ function useTransactionsPageQueries() {
     queryFn: async () => unwrap(await transactionsAvailableTags()),
   });
   const entitiesQuery = useQuery({
-    queryKey: ['core', 'entities', 'list', ENTITIES_LIST_INPUT],
-    queryFn: async () => unwrapCore(await entitiesList({ query: ENTITIES_LIST_INPUT })),
+    queryKey: ['contacts', 'entities', 'list', ENTITIES_LIST_INPUT],
+    queryFn: async () => unwrapContacts(await entitiesList({ query: ENTITIES_LIST_INPUT })),
   });
   return { query, availableTags: availableTagsData?.tags ?? [], entitiesQuery };
 }

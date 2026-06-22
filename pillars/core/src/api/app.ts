@@ -160,7 +160,7 @@ export function createCoreApiApp(deps: CoreApiDeps): Express {
   app.use(createIdentityMiddleware(deps.coreDb.db));
 
   // ts-rest REST surface — the canonical wire for every domain. Mounted
-  // root-relative (e.g. `/entities`, `/settings/:key`, `/users`) AFTER the raw
+  // root-relative (e.g. `/settings/:key`, `/users`) AFTER the raw
   // registry routes. This is the only contract surface; the pillar serves no
   // tRPC.
   createExpressEndpoints(coreContract, makeCoreRestHandlers(deps), app);

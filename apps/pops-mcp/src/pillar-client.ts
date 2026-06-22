@@ -30,6 +30,7 @@ const INTERNAL_BASE_URLS: Readonly<Record<string, string>> = {
   core: process.env['POPS_CORE_API_URL'] ?? 'http://core-api:3001',
   media: process.env['POPS_MEDIA_API_URL'] ?? 'http://media-api:3005',
   cerebrum: process.env['POPS_CEREBRUM_API_URL'] ?? 'http://cerebrum-api:3006',
+  contacts: process.env['POPS_CONTACTS_API_URL'] ?? 'http://contacts-api:3010',
 };
 
 function resolveApiKey(): string | undefined {

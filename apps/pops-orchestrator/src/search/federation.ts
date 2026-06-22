@@ -63,9 +63,9 @@ export interface PillarSearchMeta {
  * section chrome (icon/color/domain) the manifest's `search` slot does not
  * express:
  *   - contacts → `contact` adapter (`Users`, blue) — the authoritative entity
- *     store (PRD-163); the section a contact search hit lands in.
- *   - core  → residual `entities` adapter (`Building2`, green) until the
- *     Stage 4a core-entities removal.
+ *     store (PRD-163); the section a contact search hit lands in. Core's
+ *     residual entities adapter was removed in Stage 4a (N5); contacts is now
+ *     the sole entities-search source.
  *   - finance → transactions/budgets/wishlist adapters, aggregated under one
  *     `/search`; decorated with the transactions descriptor (`ArrowRightLeft`,
  *     green) as the pillar-representative section.
@@ -76,7 +76,6 @@ export interface PillarSearchMeta {
  * pillar) is still federated, decorated with {@link DEFAULT_SECTION_META}.
  */
 export const SEARCH_SECTION_META: Readonly<Record<string, PillarSearchMeta>> = {
-  core: { domain: 'core', icon: 'Building2', color: 'green' },
   finance: { domain: 'finance', icon: 'ArrowRightLeft', color: 'green' },
   inventory: { domain: 'inventory', icon: 'Package', color: 'amber' },
   contacts: { domain: 'contacts', icon: 'Users', color: 'blue' },

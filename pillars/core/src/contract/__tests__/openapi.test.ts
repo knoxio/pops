@@ -8,7 +8,7 @@
  * `git diff --exit-code` drift check in `core-quality.yml` is the canonical
  * up-to-date guard; this suite locks in the structural invariants (3.x
  * version, info block, every operation has a summary + operationId) and the
- * shape of the migrated `entities` domain.
+ * shape of the migrated domains.
  */
 import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
@@ -56,18 +56,6 @@ describe('@pops/core REST openapi projection', () => {
   });
 
   it.each([
-    ['GET', '/entities', 'entities.list'],
-    ['POST', '/entities', 'entities.create'],
-    ['GET', '/entities/{id}', 'entities.get'],
-    ['PATCH', '/entities/{id}', 'entities.update'],
-    ['DELETE', '/entities/{id}', 'entities.delete'],
-  ])('describes the %s %s endpoint with operationId %s', (method, path, operationId) => {
-    const op = openapi.paths[path]?.[method.toLowerCase()];
-    expect(op, `${method} ${path} should be documented`).toBeDefined();
-    expect(op?.operationId).toBe(operationId);
-  });
-
-  it.each([
     ['GET', '/features/manifests', 'features.getManifests'],
     ['GET', '/features', 'features.list'],
     ['GET', '/features/{key}/enabled', 'features.isEnabled'],
@@ -105,12 +93,10 @@ describe('@pops/core REST openapi projection', () => {
     // a time as the core REST migration proceeds; every documented path must
     // live under one of these roots.
     const MIGRATED_DOMAIN_ROOTS = [
-      '/entities',
       '/users',
       '/shell',
       '/settings',
       '/service-accounts',
-      '/search',
       '/features',
       '/ai-usage',
     ];
@@ -124,5 +110,25 @@ describe('@pops/core REST openapi projection', () => {
     // The legacy tRPC-era `/core/*` snapshot must be gone — this ts-rest
     // projection describes only the migrated REST domains.
     expect(paths.some((p) => p.startsWith('/core/'))).toBe(false);
+  });
+
+  it('no longer exposes the entities surface or its search slice (contacts is authoritative — N5)', () => {
+    const paths = Object.keys(openapi.paths);
+    expect(paths.some((p) => p === '/entities' || p.startsWith('/entities/'))).toBe(false);
+    expect(paths).not.toContain('/search');
+
+    const operationIds = Object.values(openapi.paths).flatMap((methods) =>
+      Object.values(methods).map((op) => op.operationId)
+    );
+    for (const removed of [
+      'entities.list',
+      'entities.get',
+      'entities.create',
+      'entities.update',
+      'entities.delete',
+      'search.search',
+    ]) {
+      expect(operationIds).not.toContain(removed);
+    }
   });
 });

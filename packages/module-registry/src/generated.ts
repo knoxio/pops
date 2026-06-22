@@ -624,7 +624,7 @@ export const MODULES = [
     name: 'Core',
     version: '0.1.0',
     surfaces: ['app'] as const,
-    description: 'Cross-cutting platform services: entities, settings, features, search.',
+    description: 'Cross-cutting platform services: settings, features, registry.',
     hasBackend: false,
     hasFrontend: false,
     settings: [

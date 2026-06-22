@@ -130,8 +130,8 @@ export const mockPillarCerebrum = {
   },
 };
 
-export const mockPillarCore = {
-  core: {
+export const mockPillarContacts = {
+  contacts: {
     entities: {
       list: vi.fn().mockResolvedValue(callOk({ data: [], pagination: { total: 0 } })),
     },
@@ -143,7 +143,7 @@ const PILLAR_MOCKS = {
   finance: mockPillarFinance,
   media: mockPillarMedia,
   cerebrum: mockPillarCerebrum,
-  core: mockPillarCore,
+  contacts: mockPillarContacts,
 } as const;
 
 /** Used as the `getPillar` mock implementation in tool tests: dispatches by pillarId. */

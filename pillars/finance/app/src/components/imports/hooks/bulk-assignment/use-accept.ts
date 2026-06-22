@@ -3,8 +3,8 @@ import { useCallback } from 'react';
 import { useMemo } from 'react';
 import { toast } from 'sonner';
 
-import { unwrap } from '../../../../core-api-helpers.js';
-import { entitiesList } from '../../../../core-api/index.js';
+import { unwrap } from '../../../../contacts-api-helpers.js';
+import { entitiesList } from '../../../../contacts-api/index.js';
 import { computeMergedEntities } from '../../../../lib/merged-state';
 import { useImportStore } from '../../../../store/importStore';
 import { type LocalTxState, moveToMatched, pluralize, type UseBulkAssignmentArgs } from './types';
@@ -17,7 +17,7 @@ const ENTITIES_LIST_INPUT = {} as const;
 
 export function useEntities() {
   const { data: dbEntitiesData } = useQuery({
-    queryKey: ['core', 'entities', 'list', ENTITIES_LIST_INPUT],
+    queryKey: ['contacts', 'entities', 'list', ENTITIES_LIST_INPUT],
     queryFn: async () => unwrap(await entitiesList({ query: ENTITIES_LIST_INPUT })),
   });
   const pendingEntities = useImportStore((s) => s.pendingEntities);

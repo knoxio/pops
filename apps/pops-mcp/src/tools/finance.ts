@@ -51,26 +51,27 @@ const ENTITY_TYPES = [
 
 type EntityType = (typeof ENTITY_TYPES)[number];
 
-type CoreEntityListInput = {
+type ContactsEntityListInput = {
   search?: string;
   type?: EntityType;
   limit?: number;
   offset?: number;
 };
 
-// Entities live on the CORE pillar (the finance↔transactions usage rollup is
-// finance's, but the entity table itself is core's). Reached over the same REST
-// pillar SDK as the finance calls above.
-type CoreShape = {
-  core: {
+// Entities live on the CONTACTS pillar — the authoritative entity store
+// (PRD-163). The finance↔transactions usage rollup is finance's, but the entity
+// table itself is contacts'. Reached over the same REST pillar SDK as the
+// finance calls above.
+type ContactsShape = {
+  contacts: {
     entities: {
-      list: (input: CoreEntityListInput) => unknown;
+      list: (input: ContactsEntityListInput) => unknown;
     };
   };
 };
 
-function core(): PillarHandle<CoreShape>['core'] {
-  return getPillar<CoreShape>('core').core;
+function contacts(): PillarHandle<ContactsShape>['contacts'] {
+  return getPillar<ContactsShape>('contacts').contacts;
 }
 
 const transactionsList: ToolDef = {
@@ -126,7 +127,7 @@ const entitiesList: ToolDef = {
     },
   },
   handler: async (args) => {
-    const result = await core().entities.list({
+    const result = await contacts().entities.list({
       search: typeof args['search'] === 'string' ? args['search'] : undefined,
       type: (ENTITY_TYPES as readonly string[]).includes(args['type'] as string)
         ? (args['type'] as EntityType)

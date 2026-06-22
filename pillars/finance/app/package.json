@@ -10,7 +10,7 @@
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
     "generate:finance-client": "openapi-ts && oxfmt --write src/finance-api",
-    "generate:core-client": "openapi-ts -f openapi-ts.core.config.ts && oxfmt --write src/core-api"
+    "generate:contacts-client": "openapi-ts -f openapi-ts.contacts.config.ts && oxfmt --write src/contacts-api"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

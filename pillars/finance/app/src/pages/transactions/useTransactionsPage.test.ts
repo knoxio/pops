@@ -23,10 +23,10 @@ vi.mock('../../finance-api/index.js', () => ({
   transactionsRestore: (...args: unknown[]) => transactionsRestoreMock(...args),
 }));
 
-// The entity picker now reads `entities.list` over the generated core REST
+// The entity picker now reads `entities.list` over the generated contacts REST
 // client; the mock resolves the Hey API `{ data, error }` envelope so the
 // hook's `unwrap` returns the list payload.
-vi.mock('../../core-api/index.js', () => ({
+vi.mock('../../contacts-api/index.js', () => ({
   entitiesList: (...args: unknown[]) => entitiesListMock(...args),
 }));
 
@@ -276,7 +276,7 @@ describe('useTransactionsPage — onSubmit (create)', () => {
     const { wrapper } = makeWrapper();
     const { result } = renderHook(() => useTransactionsPage(), { wrapper });
 
-    // Entity-name resolution reads the async core entities list — wait for it.
+    // Entity-name resolution reads the async contacts entities list — wait for it.
     await waitFor(() => expect(result.current.entities).toHaveLength(2));
     act(() => {
       result.current.onSubmit(makeValues({ entityId: 'ent-1' }));
@@ -310,7 +310,7 @@ describe('useTransactionsPage — onSubmit (update)', () => {
     const { wrapper } = makeWrapper();
     const { result } = renderHook(() => useTransactionsPage(), { wrapper });
 
-    // Entity-name resolution reads the async core entities list — wait for it.
+    // Entity-name resolution reads the async contacts entities list — wait for it.
     await waitFor(() => expect(result.current.entities).toHaveLength(2));
     act(() => {
       result.current.handleEdit(makeTransaction({ id: 'txn-42' }));
