@@ -62,7 +62,6 @@ export type {
   EntityMaps,
   InsertImportTransactionInput,
   ImportTransactionRow,
-  CreateImportEntityResult,
 } from './services/imports.js';
 
 export * as budgetsService from './services/budgets.js';

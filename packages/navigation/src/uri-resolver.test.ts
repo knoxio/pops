@@ -18,12 +18,21 @@ describe('resolveUri', () => {
       expect(resolveUri('pops:finance/transaction/123')).toBe('/finance/transactions/123');
     });
 
-    it('resolves entity URI', () => {
+    it('still resolves the legacy entity URI during the rolling deploy', () => {
+      // Core keeps emitting `finance/entity` from its search adapter until the
+      // Stage 4a core-entities removal; the mapping must keep working so a hit
+      // from an un-rolled core never dead-ends.
       expect(resolveUri('pops:finance/entity/5')).toBe('/finance/entities/5');
     });
 
     it('resolves budget URI', () => {
       expect(resolveUri('pops:finance/budget/8')).toBe('/finance/budgets/8');
+    });
+  });
+
+  describe('contacts URIs', () => {
+    it('resolves the canonical contact URI to /contacts', () => {
+      expect(resolveUri('pops:contacts/contact/abc')).toBe('/contacts/abc');
     });
   });
 

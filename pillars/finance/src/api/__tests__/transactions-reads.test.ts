@@ -12,6 +12,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { openFinanceDb, type OpenedFinanceDb } from '../../db/index.js';
 import { createFinanceApiApp } from '../app.js';
+import { makeContactsFake, type ContactsFake } from './contacts-fake.js';
 import { makeClient } from './test-utils.js';
 
 let tmpDir: string;
@@ -27,9 +28,14 @@ afterEach(() => {
   rmSync(tmpDir, { recursive: true, force: true });
 });
 
-function client() {
+function client(contacts: ContactsFake = makeContactsFake()) {
   return makeClient(
-    createFinanceApiApp({ financeDb, version: '0.0.1-test', selfBaseUrl: 'http://localhost:3004' })
+    createFinanceApiApp({
+      financeDb,
+      version: '0.0.1-test',
+      selfBaseUrl: 'http://localhost:3004',
+      contacts,
+    })
   );
 }
 
@@ -61,6 +67,26 @@ describe('transactions.suggestTags', () => {
 
     const unmatched = await client().transactions.suggestTags({ description: 'ELECTRICITY BILL' });
     expect(unmatched.tags).toEqual([]);
+  });
+
+  it('pulls entity-default tags from the live contacts fetch for the given entityId', async () => {
+    const contacts = makeContactsFake({
+      seed: [{ id: 'ent-acme', name: 'Acme', defaultTags: ['supplier', 'recurring'] }],
+    });
+    const { tags } = await client(contacts).transactions.suggestTags({
+      description: 'ACME PURCHASE',
+      entityId: 'ent-acme',
+    });
+    expect(tags).toEqual(expect.arrayContaining(['supplier', 'recurring']));
+  });
+
+  it('contributes no entity tags when contacts is unavailable', async () => {
+    const contacts = makeContactsFake({ unavailable: true });
+    const { tags } = await client(contacts).transactions.suggestTags({
+      description: 'ACME PURCHASE',
+      entityId: 'ent-acme',
+    });
+    expect(tags).toEqual([]);
   });
 });
 

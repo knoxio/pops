@@ -7,32 +7,32 @@
  * Most of that is coordination logic, not data layer.
  *
  * This module scaffolds only the pure-persistence primitives the pipeline
- * uses against `transactions` and `entities`:
+ * uses against `transactions`:
  *
  *   - `findExistingChecksums` — checksum dedup probe (read-only)
- *   - `loadEntityMaps`        — name + alias lookup loader (read-only)
- *   - `createImportEntity`    — minimal entity insert (write)
+ *   - `buildEntityMaps`       — name + alias lookup builder over a fetched set
  *   - `insertImportTransaction` — low-level transactions insert (write)
  *
- * Crucially, the imports slice owns NO tables of its own — every write
- * lands in sibling-slice tables (`transactions` → N2, `entities` → core).
- * The migration journal split (PR 2) is therefore a no-op for this slice;
- * PRs 2-4 of N6 only re-route consumers and delete the in-tree shim.
+ * Crucially, the imports slice owns NO tables of its own. Entities are no
+ * longer mirrored in finance: the matcher fetches the contact set from the
+ * contacts pillar per import run and `buildEntityMaps` turns that fetched set
+ * into the lookup/alias maps in memory (PRD-163 US-03, contacts plan N3/OD-3).
  *
  * Mirrors the wish-list / budgets / tag-vocabulary pattern: db-arg
  * services, plain functions, typed domain errors, no HTTP concerns.
  */
-import { eq, inArray, isNotNull } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
 
 import { ImportTransactionPersistError } from '../errors.js';
-import { entities, transactions } from '../schema.js';
+import { transactions } from '../schema.js';
 
+import type { ContactEntity } from '../../api/contacts/client.js';
 import type { FinanceDb } from './internal.js';
 
 /** Single entry in the entity name lookup map. */
 export interface EntityLookupEntry {
   id: string;
-  /** Original-case entity name as stored in the database. */
+  /** Original-case entity name as stored in the contacts pillar. */
   name: string;
 }
 
@@ -61,12 +61,6 @@ export interface InsertImportTransactionInput {
 
 /** Raw drizzle row shape returned by `insertImportTransaction`. */
 export type ImportTransactionRow = typeof transactions.$inferSelect;
-
-/** Result of a successful `createImportEntity`. */
-export interface CreateImportEntityResult {
-  entityId: string;
-  entityName: string;
-}
 
 const CHECKSUM_BATCH_SIZE = 500;
 
@@ -99,34 +93,25 @@ export function findExistingChecksums(db: FinanceDb, checksums: string[]): Set<s
 
 /**
  * Build the entity lookup + alias maps consumed by the import matching
- * stages. Two-pass: one query for the full lookup, a second narrower query
- * for the alias map.
+ * stages from a contact set fetched live from the contacts pillar. Pure —
+ * no DB access; the caller fetches the set once per import run and feeds it
+ * here, so the maps reflect the live contacts data with no persistent mirror.
  *
  * - Lookup keys are lowercased for O(1) case-insensitive lookups.
  * - Values preserve the original-case name for display.
- * - Aliases are parsed from comma-separated strings; whitespace-only
- *   aliases are dropped.
+ * - Aliases arrive already split into arrays from the contacts wire shape;
+ *   whitespace-only aliases are dropped.
  */
-export function loadEntityMaps(db: FinanceDb): EntityMaps {
+export function buildEntityMaps(contacts: ContactEntity[]): EntityMaps {
   const entityLookup = new Map<string, EntityLookupEntry>();
   const aliasMap = new Map<string, string>();
 
-  const allRows = db.select({ name: entities.name, id: entities.id }).from(entities).all();
-  for (const row of allRows) {
-    entityLookup.set(row.name.toLowerCase(), { id: row.id, name: row.name });
-  }
-
-  const aliasRows = db
-    .select({ name: entities.name, aliases: entities.aliases })
-    .from(entities)
-    .where(isNotNull(entities.aliases))
-    .all();
-  for (const row of aliasRows) {
-    if (!row.aliases) continue;
-    for (const raw of row.aliases.split(',')) {
+  for (const contact of contacts) {
+    entityLookup.set(contact.name.toLowerCase(), { id: contact.id, name: contact.name });
+    for (const raw of contact.aliases) {
       const alias = raw.trim();
       if (alias.length === 0) continue;
-      aliasMap.set(alias.toLowerCase(), row.name);
+      aliasMap.set(alias.toLowerCase(), contact.name);
     }
   }
 
@@ -134,18 +119,17 @@ export function loadEntityMaps(db: FinanceDb): EntityMaps {
 }
 
 /**
- * Insert a minimal entity row (name only, defaults for type) and return
- * the generated id alongside the original-case name. The richer entity
- * CRUD surface (aliases, type overrides, ABN, notes) is owned by the
- * core entities module — this is the narrow path import commits take when
- * the user accepts a new entity during a session.
+ * Build the `entityId → defaultTags` map the tag-suggester's entity-default
+ * stage consumes, from the same fetched contact set. Pure — replaces the
+ * former per-transaction `entities.default_tags` read against the local mirror
+ * with one in-memory map per import run.
  */
-export function createImportEntity(db: FinanceDb, name: string): CreateImportEntityResult {
-  const entityId = crypto.randomUUID();
-  db.insert(entities)
-    .values({ id: entityId, name, lastEditedTime: new Date().toISOString() })
-    .run();
-  return { entityId, entityName: name };
+export function buildDefaultTagsByEntity(contacts: ContactEntity[]): Map<string, string[]> {
+  const map = new Map<string, string[]>();
+  for (const contact of contacts) {
+    if (contact.defaultTags.length > 0) map.set(contact.id, contact.defaultTags);
+  }
+  return map;
 }
 
 /**

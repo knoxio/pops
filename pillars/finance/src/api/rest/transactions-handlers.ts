@@ -12,6 +12,7 @@ import {
   TransactionNotFoundError,
   transactionsService,
 } from '../../db/index.js';
+import { type ContactsClient } from '../contacts/client.js';
 import { suggestTags as computeSuggestedTags } from '../modules/tag-suggester/index.js';
 import { toTransaction } from '../modules/transactions-types.js';
 import { ConflictError, NotFoundError } from '../shared/errors.js';
@@ -34,7 +35,7 @@ function translateTransactionError(err: unknown, id?: string): never {
   throw err;
 }
 
-export function makeTransactionsHandlers(db: FinanceDb) {
+export function makeTransactionsHandlers(db: FinanceDb, contacts: ContactsClient) {
   return {
     list: ({ query }: Req['list']) =>
       runHttp(() => {
@@ -63,10 +64,15 @@ export function makeTransactionsHandlers(db: FinanceDb) {
       }),
 
     suggestTags: ({ query }: Req['suggestTags']) =>
-      runHttp(() => {
+      runHttp(async () => {
+        const entityId = query.entityId ?? null;
+        const entityDefaultTags = entityId
+          ? new Map([[entityId, await contacts.fetchEntityDefaultTags(entityId)]])
+          : undefined;
         const suggested = computeSuggestedTags(db, {
           description: query.description,
-          entityId: query.entityId ?? null,
+          entityId,
+          entityDefaultTags,
         });
         return { status: 200 as const, body: { tags: suggested.map((s) => s.tag) } };
       }),

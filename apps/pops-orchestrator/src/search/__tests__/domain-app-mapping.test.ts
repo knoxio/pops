@@ -7,12 +7,14 @@ describe('getDomainApp', () => {
     expect(getDomainApp('finance')).toBe('finance');
     expect(getDomainApp('inventory')).toBe('inventory');
     expect(getDomainApp('core')).toBe('core');
+    expect(getDomainApp('contacts')).toBe('contacts');
   });
 
   it('keeps the monolith fine-grained adapter domains mapped', () => {
     expect(getDomainApp('transactions')).toBe('finance');
     expect(getDomainApp('budgets')).toBe('finance');
-    expect(getDomainApp('entities')).toBe('core');
+    // Entities are owned by the contacts pillar (PRD-163).
+    expect(getDomainApp('entities')).toBe('contacts');
     expect(getDomainApp('inventory-items')).toBe('inventory');
   });
 

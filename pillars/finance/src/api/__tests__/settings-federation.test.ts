@@ -20,6 +20,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { financeKeyDefaults } from '../../contract/settings/key-defaults.js';
 import { openFinanceDb, type OpenedFinanceDb } from '../../db/index.js';
 import { createFinanceApiApp } from '../app.js';
+import { makeContactsFake } from './contacts-fake.js';
 
 let tmpDir: string;
 let financeDb: OpenedFinanceDb;
@@ -29,6 +30,7 @@ function app() {
     financeDb,
     version: '0.0.1-test',
     selfBaseUrl: 'http://localhost:3004',
+    contacts: makeContactsFake(),
   });
 }
 

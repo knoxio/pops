@@ -23,8 +23,8 @@ import {
 let tmpDir: string;
 let opened: OpenedFinanceDb;
 
-const URI_ALICE = 'pops://core/entities/alice';
-const URI_BOB = 'pops://core/entities/bob';
+const URI_ALICE = 'pops://contacts/contact/alice';
+const URI_BOB = 'pops://contacts/contact/bob';
 const URI_BAD = 'not-a-uri';
 
 function seedBudget(category: string, ownerUri: string | null): string {

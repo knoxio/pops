@@ -6,7 +6,15 @@
  * clicking a search result navigates to the right page.
  */
 
-/** Map of {app}/{type} → route prefix. */
+/**
+ * Map of {app}/{type} → route prefix.
+ *
+ * Entities moved to the contacts pillar: a contact search hit is
+ * `pops:contacts/contact/<id>` → `/contacts`. The legacy `finance/entity`
+ * mapping is KEPT during the rolling deploy (core still emits it from its
+ * search adapter until the Stage 4a core-entities removal); both resolve so a
+ * shell/orchestrator rolling at its own cadence never produces a dead link.
+ */
 const URI_ROUTE_MAP: Record<string, string> = {
   'media/movie': '/media/movies',
   'media/tv-show': '/media/tv',
@@ -14,6 +22,7 @@ const URI_ROUTE_MAP: Record<string, string> = {
   'finance/entity': '/finance/entities',
   'finance/budget': '/finance/budgets',
   'inventory/item': '/inventory/items',
+  'contacts/contact': '/contacts',
 };
 
 /**

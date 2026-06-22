@@ -55,6 +55,8 @@ export interface ProcessContext {
   aliases: EntityMaps['aliasMap'];
   knownTags: string[];
   importBatchId: string;
+  /** `contactId → defaultTags` from the per-run contacts fetch (entity tag source). */
+  entityDefaultTags: ReadonlyMap<string, string[]>;
 }
 
 export function createAiCounters(): AiCounters {

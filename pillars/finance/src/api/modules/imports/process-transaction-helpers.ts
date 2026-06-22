@@ -25,6 +25,7 @@ export interface MatchedFromEntityArgs {
   aiTags?: string[];
   category?: string | null;
   knownTags: string[];
+  entityDefaultTags: ReadonlyMap<string, string[]>;
 }
 
 export function buildMatchedFromEntity(
@@ -42,6 +43,7 @@ export function buildMatchedFromEntity(
       aiTags: args.aiTags,
       aiCategory: args.category ?? null,
       knownTags: args.knownTags,
+      entityDefaultTags: args.entityDefaultTags,
     }),
   };
 }

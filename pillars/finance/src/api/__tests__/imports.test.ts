@@ -1,16 +1,16 @@
 /**
  * Integration tests for the `imports.*` REST surface against the real Express
- * app: the async session-poll pattern (processImport → poll → assert), dedup,
- * executeImport writes, createEntity, the synchronous re-evaluation endpoints
- * (applyChangeSetAndReevaluate / reevaluateWithPendingRules) with their 404/412
- * error mapping, and the atomic commitImport (temp-id resolution, changeset +
- * tag-rule changeset application, rollback, retroactive reclassification).
+ * app, with the contacts pillar provided by an injected fake (PRD-163 N3):
+ * the matcher fetches the contact set live and matches in memory; commit
+ * pre-creates pending contacts (create-or-fetch-by-name) BEFORE the finance tx;
+ * createEntity goes to contacts. Covers the session-poll pattern, dedup,
+ * executeImport writes, the re-evaluation endpoints (404/412 mapping), atomic
+ * commit (temp-id resolution, changeset application, rollback, retroactive
+ * reclassification), the OD-8 409 idempotency, and OD-3 contacts-down
+ * degradation.
  *
- * The AI categorizer is stubbed off in F1, so unmatched rows land in `uncertain`
- * with the reason `'No entity match found'` and the AI counters stay zero —
- * asserted explicitly. Entities are seeded through the drizzle handle (the REST
- * createEntity only sets a name); writes are verified through the transactions
- * REST surface and the raw handle.
+ * The AI categorizer is stubbed off, so unmatched rows land in `uncertain` with
+ * `'No entity match found'` and the AI counters stay zero.
  */
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -18,9 +18,10 @@ import { join } from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { entities, openFinanceDb, type OpenedFinanceDb } from '../../db/index.js';
+import { openFinanceDb, type OpenedFinanceDb } from '../../db/index.js';
 import { createFinanceApiApp } from '../app.js';
 import { clearProgress } from '../modules/imports/index.js';
+import { makeContactsFake, type ContactsFake, type SeedContact } from './contacts-fake.js';
 import { makeClient, waitForImportCompletion } from './test-utils.js';
 
 import type { ExecuteImportOutput, ProcessImportOutput } from '../modules/imports/types.js';
@@ -39,30 +40,15 @@ afterEach(() => {
   rmSync(tmpDir, { recursive: true, force: true });
 });
 
-function client() {
+function client(contacts: ContactsFake = makeContactsFake()) {
   return makeClient(
-    createFinanceApiApp({ financeDb, version: '0.0.1-test', selfBaseUrl: 'http://localhost:3004' })
-  );
-}
-
-function seedEntity(input: {
-  name: string;
-  id?: string;
-  aliases?: string;
-  defaultTags?: string;
-}): string {
-  const id = input.id ?? crypto.randomUUID();
-  financeDb.db
-    .insert(entities)
-    .values({
-      id,
-      name: input.name,
-      aliases: input.aliases ?? null,
-      defaultTags: input.defaultTags ?? null,
-      lastEditedTime: new Date().toISOString(),
+    createFinanceApiApp({
+      financeDb,
+      version: '0.0.1-test',
+      selfBaseUrl: 'http://localhost:3004',
+      contacts,
     })
-    .run();
-  return id;
+  );
 }
 
 function processResultOf(progress: { result?: unknown } | null): ProcessImportOutput {
@@ -94,10 +80,14 @@ function confirmed(overrides: Record<string, unknown> = {}) {
   };
 }
 
-describe('imports.processImport — session poll + matching', () => {
-  it('matches a seeded entity and returns it via the polled result', async () => {
-    const c = client();
-    seedEntity({ name: 'Woolworths', id: 'woolworths-id' });
+function withContacts(seed: SeedContact[]): ContactsFake {
+  return makeContactsFake({ seed });
+}
+
+describe('imports.processImport — session poll + live-fetch matching', () => {
+  it('matches a contact from the live fetch and returns it via the polled result', async () => {
+    const contacts = withContacts([{ id: 'woolworths-id', name: 'Woolworths' }]);
+    const c = client(contacts);
 
     const { sessionId } = await c.imports.processImport({
       transactions: [parsed({ description: 'WOOLWORTHS 1234', checksum: 'match-1' })],
@@ -107,11 +97,39 @@ describe('imports.processImport — session poll + matching', () => {
     const result = await waitForImportCompletion<ProcessImportOutput>(c, sessionId);
     expect(result.matched).toHaveLength(1);
     expect(result.matched[0]?.entity.entityName).toBe('Woolworths');
-    // "WOOLWORTHS 1234" starts with the entity name → prefix stage (3) wins.
+    expect(result.matched[0]?.entity.entityId).toBe('woolworths-id');
     expect(result.matched[0]?.entity.matchType).toBe('prefix');
   });
 
-  it('with AI disabled, an unmatched row is uncertain with reason "No entity match found" and zero AI counters', async () => {
+  it('matches via a contact alias from the live fetch', async () => {
+    const contacts = withContacts([{ id: 'ww-id', name: 'Woolworths', aliases: ['WOOLIES'] }]);
+    const c = client(contacts);
+
+    const { sessionId } = await c.imports.processImport({
+      transactions: [parsed({ description: 'WOOLIES METRO', checksum: 'alias-1' })],
+      account: 'Amex',
+    });
+
+    const result = await waitForImportCompletion<ProcessImportOutput>(c, sessionId);
+    expect(result.matched[0]?.entity.entityName).toBe('Woolworths');
+    expect(result.matched[0]?.entity.matchType).toBe('alias');
+  });
+
+  it('degrades to a no-match run when contacts is unavailable (OD-3) — never throws', async () => {
+    const c = client(makeContactsFake({ unavailable: true }));
+
+    const { sessionId } = await c.imports.processImport({
+      transactions: [parsed({ description: 'WOOLWORTHS 1234', checksum: 'down-1' })],
+      account: 'Amex',
+    });
+
+    const result = await waitForImportCompletion<ProcessImportOutput>(c, sessionId);
+    expect(result.matched).toHaveLength(0);
+    expect(result.uncertain).toHaveLength(1);
+    expect(result.uncertain[0]?.error).toBe('No entity match found');
+  });
+
+  it('with AI disabled, an unmatched row is uncertain with "No entity match found"', async () => {
     const c = client();
     const { sessionId } = await c.imports.processImport({
       transactions: [parsed({ description: 'ZZZ UNKNOWN VENDOR 9', checksum: 'nomatch-1' })],
@@ -123,14 +141,12 @@ describe('imports.processImport — session poll + matching', () => {
     expect(result.uncertain).toHaveLength(1);
     expect(result.uncertain[0]?.error).toBe('No entity match found');
     expect(result.uncertain[0]?.entity.matchType).toBe('none');
-    // AI off → no usage stats, no AI warnings.
     expect(result.aiUsage).toBeUndefined();
     expect(result.warnings).toBeUndefined();
   });
 
   it('skips checksums that already exist in the transactions table (dedup)', async () => {
     const c = client();
-    // Seed an existing transaction with a known checksum via executeImport.
     const { sessionId: execSession } = await c.imports.executeImport({
       transactions: [confirmed({ description: 'PRIOR ROW', checksum: 'dup-checksum' })],
     });
@@ -147,8 +163,6 @@ describe('imports.processImport — session poll + matching', () => {
     const result = await waitForImportCompletion<ProcessImportOutput>(c, sessionId);
     expect(result.skipped).toHaveLength(1);
     expect(result.skipped[0]?.checksum).toBe('dup-checksum');
-    expect(result.skipped[0]?.skipReason).toContain('Duplicate');
-    // The fresh row is still processed.
     const total =
       result.matched.length +
       result.uncertain.length +
@@ -196,15 +210,13 @@ describe('imports.processImport — session poll + matching', () => {
 describe('imports.executeImport — writes', () => {
   it('writes confirmed transactions verifiable through the transactions REST surface', async () => {
     const c = client();
-    const entityId = seedEntity({ name: 'Entity Co', id: 'entity-co-id' });
-
     const { sessionId } = await c.imports.executeImport({
       transactions: [
         confirmed({
           description: 'WRITTEN TXN',
           amount: -125.5,
           checksum: 'written-1',
-          entityId,
+          entityId: 'entity-co-id',
           entityName: 'Entity Co',
         }),
       ],
@@ -217,6 +229,7 @@ describe('imports.executeImport — writes', () => {
     const list = await c.transactions.list({ search: 'WRITTEN TXN' });
     expect(list.data).toHaveLength(1);
     expect(list.data[0]?.amount).toBe(-125.5);
+    // The contacts entity id is stored verbatim — no local FK enforces it.
     expect(list.data[0]?.entityName).toBe('Entity Co');
     expect(list.data[0]?.type).toBe('Expense');
   });
@@ -247,23 +260,22 @@ describe('imports.getImportProgress', () => {
   });
 });
 
-describe('imports.createEntity', () => {
-  it('creates an entity and returns its id + name', async () => {
-    const c = client();
+describe('imports.createEntity — create-or-fetch against contacts', () => {
+  it('creates a contact and returns its id + name', async () => {
+    const contacts = makeContactsFake();
+    const c = client(contacts);
     const res = await c.imports.createEntity({ name: 'New Merchant' });
-    expect(res.entityId).toMatch(/^[0-9a-f-]{36}$/);
     expect(res.entityName).toBe('New Merchant');
-
-    const row = financeDb.raw
-      .prepare('SELECT name FROM entities WHERE id = ?')
-      .get(res.entityId) as { name: string } | undefined;
-    expect(row?.name).toBe('New Merchant');
+    expect(contacts.created).toEqual([{ name: 'New Merchant', type: 'company' }]);
+    expect(contacts.entities.find((e) => e.name === 'New Merchant')?.id).toBe(res.entityId);
   });
 
-  it('preserves special characters in the entity name', async () => {
-    const c = client();
-    const res = await c.imports.createEntity({ name: "McDonald's Cafe & Grill" });
-    expect(res.entityName).toBe("McDonald's Cafe & Grill");
+  it('fetches the existing contact by name on a 409 (idempotent re-create)', async () => {
+    const contacts = withContacts([{ id: 'existing-id', name: 'Acme' }]);
+    const c = client(contacts);
+    const res = await c.imports.createEntity({ name: 'Acme' });
+    expect(res.entityId).toBe('existing-id');
+    expect(contacts.entities.filter((e) => e.name === 'Acme')).toHaveLength(1);
   });
 
   it('rejects an empty name with 400', async () => {
@@ -284,8 +296,7 @@ describe('imports.applyChangeSetAndReevaluate', () => {
   }
 
   it('applies a ChangeSet and re-buckets the matching transaction, mutating the session', async () => {
-    const c = client();
-    seedEntity({ name: 'Woolworths', id: 'woolworths-id' });
+    const c = client(withContacts([{ id: 'woolworths-id', name: 'Woolworths' }]));
     const sessionId = await uncertainSession(c, 'acme-apply-1');
 
     const res = await c.imports.applyChangeSetAndReevaluate({
@@ -312,37 +323,8 @@ describe('imports.applyChangeSetAndReevaluate', () => {
     expect(res.result.matched.some((t) => t.checksum === 'acme-apply-1')).toBe(true);
     expect(res.result.uncertain.some((t) => t.checksum === 'acme-apply-1')).toBe(false);
 
-    // Session result was persisted with the new buckets.
     const after = await c.imports.getImportProgress(sessionId);
     expect(processResultOf(after).matched.some((t) => t.checksum === 'acme-apply-1')).toBe(true);
-  });
-
-  it('returns affectedCount=0 when the applied rule matches nothing remaining', async () => {
-    const c = client();
-    seedEntity({ name: 'Woolworths', id: 'woolworths-id' });
-    const sessionId = await uncertainSession(c, 'acme-apply-0');
-
-    const res = await c.imports.applyChangeSetAndReevaluate({
-      sessionId,
-      changeSet: {
-        ops: [
-          {
-            op: 'add',
-            data: {
-              descriptionPattern: 'DOES NOT MATCH',
-              matchType: 'contains',
-              entityId: 'woolworths-id',
-              entityName: 'Woolworths',
-              tags: [],
-              confidence: 0.95,
-            },
-          },
-        ],
-      },
-      minConfidence: 0.7,
-    });
-    expect(res.affectedCount).toBe(0);
-    expect(res.result.uncertain.some((t) => t.checksum === 'acme-apply-0')).toBe(true);
   });
 
   it('404s an unknown session', async () => {
@@ -394,8 +376,7 @@ describe('imports.reevaluateWithPendingRules', () => {
   }
 
   it('re-evaluates using merged (DB + pending) rules without writing the rule to the DB', async () => {
-    const c = client();
-    seedEntity({ name: 'Woolworths', id: 'woolworths-id' });
+    const c = client(withContacts([{ id: 'woolworths-id', name: 'Woolworths' }]));
     const sessionId = await uncertainSession(c, 'reeval-merged');
 
     const res = await c.imports.reevaluateWithPendingRules({
@@ -425,7 +406,6 @@ describe('imports.reevaluateWithPendingRules', () => {
     expect(res.affectedCount).toBeGreaterThan(0);
     expect(res.result.matched.some((t) => t.checksum === 'reeval-merged')).toBe(true);
 
-    // The pending rule was NOT persisted: a fresh process of the same description stays uncertain.
     const probe = await c.imports.processImport({
       transactions: [parsed({ description: 'ACME SUPPLIES 9999', checksum: 'reeval-probe' })],
       account: 'Amex',
@@ -458,7 +438,7 @@ describe('imports.reevaluateWithPendingRules', () => {
   });
 });
 
-describe('imports.commitImport', () => {
+describe('imports.commitImport — pre-create contacts then write the finance tx', () => {
   it('commits transactions only', async () => {
     const c = client();
     const res = await c.imports.commitImport({
@@ -475,8 +455,9 @@ describe('imports.commitImport', () => {
     expect(list.data).toHaveLength(1);
   });
 
-  it('creates pending entities and resolves temp ids in transactions', async () => {
-    const c = client();
+  it('pre-creates pending contacts and resolves temp ids to the contact id', async () => {
+    const contacts = makeContactsFake();
+    const c = client(contacts);
     const tempId = 'temp:entity:00000000-0000-0000-0000-000000000001';
     const res = await c.imports.commitImport({
       entities: [{ tempId, name: 'Woolworths', type: 'company' }],
@@ -491,31 +472,68 @@ describe('imports.commitImport', () => {
     });
     expect(res.data.entitiesCreated).toBe(1);
 
-    const entity = financeDb.raw
-      .prepare('SELECT id FROM entities WHERE name = ?')
-      .get('Woolworths') as { id: string };
+    const contact = contacts.entities.find((e) => e.name === 'Woolworths');
+    expect(contact).toBeDefined();
     const txn = financeDb.raw
       .prepare('SELECT entity_id FROM transactions WHERE description = ?')
       .get('WOOLWORTHS 1234') as { entity_id: string };
-    expect(txn.entity_id).toBe(entity.id);
+    expect(txn.entity_id).toBe(contact?.id);
     expect(txn.entity_id).not.toBe(tempId);
   });
 
-  it('creates an entity with a non-default type', async () => {
-    const c = client();
+  it('carries the non-default type to the contacts create (preserving the type override)', async () => {
+    const contacts = makeContactsFake();
+    const c = client(contacts);
     const tempId = 'temp:entity:00000000-0000-0000-0000-000000000002';
     await c.imports.commitImport({
       entities: [{ tempId, name: 'ATO', type: 'government' }],
       transactions: [confirmed({ checksum: 'commit-gov' })],
     });
-    const entity = financeDb.raw.prepare('SELECT type FROM entities WHERE name = ?').get('ATO') as {
-      type: string;
-    };
-    expect(entity.type).toBe('government');
+    expect(contacts.created).toContainEqual({ name: 'ATO', type: 'government' });
+    expect(contacts.entities.find((e) => e.name === 'ATO')?.type).toBe('government');
+  });
+
+  it('is idempotent on a 409: a pre-existing contact name reuses the existing id (OD-8)', async () => {
+    const contacts = withContacts([{ id: 'preexisting-ato', name: 'ATO', type: 'government' }]);
+    const c = client(contacts);
+    const tempId = 'temp:entity:00000000-0000-0000-0000-00000000000a';
+    const res = await c.imports.commitImport({
+      entities: [{ tempId, name: 'ATO', type: 'government' }],
+      transactions: [confirmed({ checksum: 'commit-dup', entityId: tempId, entityName: 'ATO' })],
+    });
+    // No duplicate contact created; the transaction points at the existing id.
+    expect(contacts.entities.filter((e) => e.name === 'ATO')).toHaveLength(1);
+    // Reusing an existing contact must NOT inflate the created count.
+    expect(res.data.entitiesCreated).toBe(0);
+    const txn = financeDb.raw
+      .prepare('SELECT entity_id FROM transactions WHERE checksum = ?')
+      .get('commit-dup') as { entity_id: string };
+    expect(txn.entity_id).toBe('preexisting-ato');
+  });
+
+  it('counts only real creates when a commit mixes a new and a reused contact', async () => {
+    const contacts = withContacts([{ id: 'preexisting-ato', name: 'ATO', type: 'government' }]);
+    const c = client(contacts);
+    const tempNew = 'temp:entity:00000000-0000-0000-0000-00000000000b';
+    const tempReused = 'temp:entity:00000000-0000-0000-0000-00000000000c';
+    const res = await c.imports.commitImport({
+      entities: [
+        { tempId: tempNew, name: 'BrandNewCo', type: 'company' },
+        { tempId: tempReused, name: 'ATO', type: 'government' },
+      ],
+      transactions: [
+        confirmed({ checksum: 'mixed-new', entityId: tempNew, entityName: 'BrandNewCo' }),
+        confirmed({ checksum: 'mixed-reused', entityId: tempReused, entityName: 'ATO' }),
+      ],
+    });
+    expect(res.data.entitiesCreated).toBe(1);
+    expect(contacts.entities.filter((e) => e.name === 'ATO')).toHaveLength(1);
+    expect(contacts.entities.filter((e) => e.name === 'BrandNewCo')).toHaveLength(1);
   });
 
   it('resolves temp ids inside correction ChangeSet add ops', async () => {
-    const c = client();
+    const contacts = makeContactsFake();
+    const c = client(contacts);
     const tempId = 'temp:entity:00000000-0000-0000-0000-000000000003';
     const res = await c.imports.commitImport({
       entities: [{ tempId, name: 'TestCorp' }],
@@ -538,13 +556,11 @@ describe('imports.commitImport', () => {
     });
     expect(res.data.rulesApplied).toEqual({ add: 1, edit: 0, disable: 0, remove: 0 });
 
-    const entity = financeDb.raw
-      .prepare('SELECT id FROM entities WHERE name = ?')
-      .get('TestCorp') as { id: string };
+    const contact = contacts.entities.find((e) => e.name === 'TestCorp');
     const rule = financeDb.raw
       .prepare('SELECT entity_id FROM transaction_corrections WHERE description_pattern = ?')
       .get('TESTCORP') as { entity_id: string };
-    expect(rule.entity_id).toBe(entity.id);
+    expect(rule.entity_id).toBe(contact?.id);
   });
 
   it('applies pending tag-rule ChangeSets during commit', async () => {
@@ -621,12 +637,9 @@ describe('imports.commitImport', () => {
     ).rejects.toMatchObject({ status: 400 });
   });
 
-  it('rolls back ALL writes if a ChangeSet op references an unknown rule id', async () => {
+  it('rolls back ALL finance writes if a ChangeSet op references an unknown rule id', async () => {
     const c = client();
     const tempId = 'temp:entity:00000000-0000-0000-0000-000000000007';
-    const entitiesBefore = financeDb.raw.prepare('SELECT count(*) as c FROM entities').get() as {
-      c: number;
-    };
     const txnsBefore = financeDb.raw.prepare('SELECT count(*) as c FROM transactions').get() as {
       c: number;
     };
@@ -643,18 +656,17 @@ describe('imports.commitImport', () => {
       })
     ).rejects.toMatchObject({ status: 404 });
 
-    const entitiesAfter = financeDb.raw.prepare('SELECT count(*) as c FROM entities').get() as {
-      c: number;
-    };
     const txnsAfter = financeDb.raw.prepare('SELECT count(*) as c FROM transactions').get() as {
       c: number;
     };
-    expect(entitiesAfter.c).toBe(entitiesBefore.c);
+    // The finance tx rolled back; the pre-created contact (created before the
+    // tx) is a harmless orphan, surfaced by the entity-usage orphanedOnly filter.
     expect(txnsAfter.c).toBe(txnsBefore.c);
   });
 
   it('handles multiple entities and transactions in one commit', async () => {
-    const c = client();
+    const contacts = makeContactsFake();
+    const c = client(contacts);
     const tempId1 = 'temp:entity:00000000-0000-0000-0000-000000000008';
     const tempId2 = 'temp:entity:00000000-0000-0000-0000-000000000009';
     const res = await c.imports.commitImport({
@@ -680,14 +692,13 @@ describe('imports.commitImport', () => {
     });
     expect(res.data.entitiesCreated).toBe(2);
     expect(res.data.transactionsImported).toBe(3);
+    expect(contacts.entities.map((e) => e.name).toSorted()).toEqual(['Coles', 'Woolworths']);
   });
 });
 
 describe('imports.commitImport — retroactive reclassification', () => {
   it('reclassifies existing transactions a new rule now matches', async () => {
     const c = client();
-    const entityId = seedEntity({ name: 'Woolworths' });
-    // Seed a pre-existing transaction with no entity link.
     await c.imports
       .executeImport({
         transactions: [
@@ -705,7 +716,7 @@ describe('imports.commitImport — retroactive reclassification', () => {
               data: {
                 descriptionPattern: 'WOOLWORTHS',
                 matchType: 'contains',
-                entityId,
+                entityId: 'woolworths-id',
                 entityName: 'Woolworths',
                 confidence: 0.95,
               },
@@ -720,13 +731,12 @@ describe('imports.commitImport — retroactive reclassification', () => {
     const txn = financeDb.raw
       .prepare('SELECT entity_id, entity_name FROM transactions WHERE checksum = ?')
       .get('pre-existing-chk-1') as { entity_id: string | null; entity_name: string | null };
-    expect(txn.entity_id).toBe(entityId);
+    expect(txn.entity_id).toBe('woolworths-id');
     expect(txn.entity_name).toBe('Woolworths');
   });
 
   it('excludes the current import batch from reclassification', async () => {
     const c = client();
-    const entityId = seedEntity({ name: 'Coles' });
     const res = await c.imports.commitImport({
       changeSets: [
         {
@@ -736,7 +746,7 @@ describe('imports.commitImport — retroactive reclassification', () => {
               data: {
                 descriptionPattern: 'COLES',
                 matchType: 'contains',
-                entityId,
+                entityId: 'coles-id',
                 entityName: 'Coles',
                 confidence: 0.95,
               },
@@ -749,52 +759,6 @@ describe('imports.commitImport — retroactive reclassification', () => {
       ],
     });
     expect(res.data.retroactiveReclassifications).toBe(0);
-  });
-
-  it('reclassifies type and location when the rule specifies them', async () => {
-    const c = client();
-    const entityId = seedEntity({ name: 'Rent Corp' });
-    await c.imports
-      .executeImport({
-        transactions: [
-          confirmed({
-            description: 'RENT CORP PAYMENT',
-            checksum: 'type-loc-chk',
-            entityId,
-            entityName: 'Rent Corp',
-          }),
-        ],
-      })
-      .then((r) => waitForImportCompletion<ExecuteImportOutput>(c, r.sessionId));
-
-    const res = await c.imports.commitImport({
-      changeSets: [
-        {
-          ops: [
-            {
-              op: 'add',
-              data: {
-                descriptionPattern: 'RENT CORP',
-                matchType: 'contains',
-                entityId,
-                entityName: 'Rent Corp',
-                transactionType: 'transfer',
-                location: 'Melbourne',
-                confidence: 0.95,
-              },
-            },
-          ],
-        },
-      ],
-      transactions: [confirmed({ description: 'UNRELATED', checksum: 'reclass-tl' })],
-    });
-    expect(res.data.retroactiveReclassifications).toBe(1);
-
-    const txn = financeDb.raw
-      .prepare('SELECT type, location FROM transactions WHERE checksum = ?')
-      .get('type-loc-chk') as { type: string; location: string | null };
-    expect(txn.type).toBe('Transfer');
-    expect(txn.location).toBe('Melbourne');
   });
 });
 

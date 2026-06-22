@@ -60,6 +60,7 @@ function tryEntityMatch(
     entry,
     matchType: match.matchType,
     knownTags: context.knownTags,
+    entityDefaultTags: context.entityDefaultTags,
   });
 }
 
@@ -110,6 +111,7 @@ function resolveAiResult(
       aiTags: ai.aiTags,
       category: ai.aiCategory,
       knownTags: context.knownTags,
+      entityDefaultTags: context.entityDefaultTags,
     });
   }
   return buildUncertainFromAi(db, {
@@ -130,6 +132,7 @@ async function classifyTransaction(
     transaction,
     minConfidence: 0.7,
     knownTags: context.knownTags,
+    entityDefaultTags: context.entityDefaultTags,
   });
   if (correctionApplied) {
     return {

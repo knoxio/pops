@@ -146,6 +146,14 @@ describe('sectionMetaFor', () => {
     expect(sectionMetaFor('core')).toEqual({ domain: 'core', icon: 'Building2', color: 'green' });
   });
 
+  it('returns the configured contacts chrome, not the gray default', () => {
+    expect(sectionMetaFor('contacts')).toEqual({
+      domain: 'contacts',
+      icon: 'Users',
+      color: 'blue',
+    });
+  });
+
   it('keys the default domain to the pillar id for an unmapped pillar', () => {
     expect(sectionMetaFor('photos')).toEqual({ domain: 'photos', icon: 'Circle', color: 'gray' });
   });

@@ -46,7 +46,7 @@ describe('openFinanceDb', () => {
     }
   });
 
-  it('applies the package journal — finance tables exist post-open', () => {
+  it('applies the package journal — finance tables exist post-open, entities dropped', () => {
     const path = join(tmpDir, 'finance.db');
     const { raw } = openFinanceDb(path);
     try {
@@ -55,14 +55,35 @@ describe('openFinanceDb', () => {
           "SELECT name FROM sqlite_master WHERE type='table' AND name IN ('wish_list', 'entities', 'transaction_corrections', 'budgets', 'tag_vocabulary', 'transaction_tag_rules') ORDER BY name"
         )
         .all() as { name: string }[];
+      // `entities` is intentionally absent — the mirror was dropped in 0057 once
+      // entities moved to the contacts pillar (PRD-163 US-03).
       expect(tables.map((t) => t.name)).toEqual([
         'budgets',
-        'entities',
         'tag_vocabulary',
         'transaction_corrections',
         'transaction_tag_rules',
         'wish_list',
       ]);
+    } finally {
+      raw.close();
+    }
+  });
+
+  it('drops the entities mirror table and its FK constraints (0057)', () => {
+    const path = join(tmpDir, 'finance.db');
+    const { raw } = openFinanceDb(path);
+    try {
+      const entities = raw
+        .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name = 'entities'")
+        .get();
+      expect(entities).toBeUndefined();
+
+      // The entity_id FK on transactions/corrections/tag-rules is gone — a row
+      // referencing a non-local (contacts) entity id now inserts cleanly.
+      for (const table of ['transactions', 'transaction_corrections', 'transaction_tag_rules']) {
+        const fks = raw.prepare(`PRAGMA foreign_key_list(${table})`).all();
+        expect(fks).toEqual([]);
+      }
     } finally {
       raw.close();
     }

@@ -22,6 +22,8 @@ export interface ApplyLearnedCorrectionArgs {
   minConfidence: number;
   knownTags: string[];
   rules?: CorrectionRow[];
+  /** `contactId → defaultTags` from the per-run contacts fetch (entity tag source). */
+  entityDefaultTags?: ReadonlyMap<string, string[]>;
 }
 
 export interface ApplyLearnedCorrectionResult {
@@ -84,6 +86,7 @@ interface EntityMatchArgs {
   status: 'matched' | 'uncertain';
   entityId: string;
   knownTags: string[];
+  entityDefaultTags: ReadonlyMap<string, string[]>;
 }
 
 function buildEntityMatch(args: EntityMatchArgs): ProcessedTransaction {
@@ -113,6 +116,7 @@ function buildEntityMatch(args: EntityMatchArgs): ProcessedTransaction {
       aiCategory: null,
       knownTags,
       correctionPattern: correction.descriptionPattern,
+      entityDefaultTags: args.entityDefaultTags,
     }),
   };
 }
@@ -168,6 +172,7 @@ export function applyLearnedCorrection(
       status,
       entityId,
       knownTags,
+      entityDefaultTags: args.entityDefaultTags ?? new Map(),
     }),
     bucket: status === 'matched' ? 'matched' : 'uncertain',
   };
