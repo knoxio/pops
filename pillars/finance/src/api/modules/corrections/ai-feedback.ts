@@ -2,10 +2,11 @@ import { ChangeSetSchema, type ChangeSet } from '../../../contract/rest-correcti
 /**
  * Rejection-feedback persistence + AI interpretation. The store keys are
  * dynamic (`corrections.changeSetRejections:<matchType>:<pattern>`) and live in
- * core settings, reached via the injectable `FeedbackStore` (`ai-runtime.ts`).
+ * finance's LOCAL settings store, reached in-process via the injectable
+ * `FeedbackStore` (`ai-runtime.ts`).
  * Ported from the monolith `core/corrections/handlers/ai-inference.ts`.
  */
-import { transactionCorrectionsService } from '../../../db/index.js';
+import { type FinanceDb, transactionCorrectionsService } from '../../../db/index.js';
 import { getClaudeCompleter, getFeedbackStore } from './ai-runtime.js';
 import {
   AdaptedSignalSchema,
@@ -60,21 +61,27 @@ function parseFeedbackRecord(value: string): RejectedChangeSetFeedbackRecord | n
   };
 }
 
-export async function loadLatestRejectedFeedback(args: {
-  matchType: 'exact' | 'contains' | 'regex';
-  normalizedPattern: string;
-}): Promise<RejectedChangeSetFeedbackRecord | null> {
-  const raw = await getFeedbackStore().load(feedbackKey(args));
+export async function loadLatestRejectedFeedback(
+  db: FinanceDb,
+  args: {
+    matchType: 'exact' | 'contains' | 'regex';
+    normalizedPattern: string;
+  }
+): Promise<RejectedChangeSetFeedbackRecord | null> {
+  const raw = await getFeedbackStore().load(db, feedbackKey(args));
   return raw ? parseFeedbackRecord(raw) : null;
 }
 
-export async function persistRejectedChangeSetFeedback(args: {
-  signal: CorrectionSignal;
-  changeSet: ChangeSet;
-  feedback: string;
-  impactSummary: ChangeSetImpactSummary | null;
-  userEmail: string;
-}): Promise<void> {
+export async function persistRejectedChangeSetFeedback(
+  db: FinanceDb,
+  args: {
+    signal: CorrectionSignal;
+    changeSet: ChangeSet;
+    feedback: string;
+    impactSummary: ChangeSetImpactSummary | null;
+    userEmail: string;
+  }
+): Promise<void> {
   const normalizedPattern = normalizeDescription(args.signal.descriptionPattern);
   const record: RejectedChangeSetFeedbackRecord = {
     createdAt: new Date().toISOString(),
@@ -84,6 +91,7 @@ export async function persistRejectedChangeSetFeedback(args: {
     impactSummary: args.impactSummary,
   };
   await getFeedbackStore().persist(
+    db,
     feedbackKey({ matchType: args.signal.matchType, normalizedPattern }),
     JSON.stringify(record)
   );

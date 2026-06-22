@@ -9,7 +9,7 @@ import { describe, expect, it } from 'vitest';
 import { ManifestPayloadSchema, validateManifestPayload } from '@pops/pillar-sdk/manifest-schema';
 
 import { inventoryManifest } from '../../contract/settings/index.js';
-import { buildInventoryManifest } from '../manifest.js';
+import { buildInventoryCapabilityReporter, buildInventoryManifest } from '../manifest.js';
 
 describe('buildInventoryManifest', () => {
   it('produces a payload that validates against ManifestPayloadSchema', () => {
@@ -78,5 +78,11 @@ describe('buildInventoryManifest', () => {
       const result = validateManifestPayload(payload);
       expect(result.ok).toBe(true);
     });
+  });
+});
+
+describe('buildInventoryCapabilityReporter (P2 settings federation)', () => {
+  it('reports settings: true so the shell routes settings to inventory', () => {
+    expect(buildInventoryCapabilityReporter()()).toEqual({ settings: true });
   });
 });

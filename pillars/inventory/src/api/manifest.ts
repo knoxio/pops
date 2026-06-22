@@ -11,11 +11,22 @@
  */
 import { inventoryManifest } from '../contract/settings/index.js';
 
+import type { CapabilityReporter } from '@pops/pillar-sdk/bootstrap';
 import type {
   ManifestPayload,
   NavConfigDescriptor,
   PageDescriptor,
 } from '@pops/pillar-sdk/manifest-schema';
+
+/**
+ * Runtime capability heartbeat for inventory. Advertises `settings: true` so
+ * the shell's live-registry settings discovery routes inventory's settings
+ * reads and writes to inventory's own federated `/settings/*` surface
+ * (capability-gated) rather than falling back to the registry pillar.
+ */
+export function buildInventoryCapabilityReporter(): CapabilityReporter {
+  return () => ({ settings: true });
+}
 
 const INVENTORY_NAV: NavConfigDescriptor = {
   id: 'inventory',

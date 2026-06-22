@@ -19,7 +19,7 @@ import { createContactsClient } from './contacts/client.js';
 import { createPillarOwnerUriLookup } from './cron/pillar-lookup.js';
 import { startReconcileCrossPillarWorker } from './cron/reconcile-cross-pillar.js';
 import { resolveFinanceSqlitePath } from './finance-sqlite-path.js';
-import { buildFinanceManifest } from './manifest.js';
+import { buildFinanceCapabilityReporter, buildFinanceManifest } from './manifest.js';
 import { parseBareOrigin } from './pillars/env.js';
 
 function resolvePort(): number {
@@ -75,6 +75,7 @@ if (process.env['POPS_REGISTRY_ENABLED'] === 'true') {
   pillarHandle = await bootstrapPillar({
     manifest: buildFinanceManifest(version),
     baseUrl: selfBaseUrl,
+    capabilityReporter: buildFinanceCapabilityReporter(),
   });
 }
 

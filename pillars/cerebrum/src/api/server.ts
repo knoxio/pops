@@ -19,7 +19,7 @@ import { bootstrapPillar, type PillarBootstrapHandle } from '@pops/pillar-sdk/bo
 import { openCerebrumDb } from '../db/index.js';
 import { createCerebrumApiApp } from './app.js';
 import { resolveCerebrumSqlitePath } from './cerebrum-sqlite-path.js';
-import { buildCerebrumManifest } from './manifest.js';
+import { buildCerebrumCapabilityReporter, buildCerebrumManifest } from './manifest.js';
 import { AnthropicEgoLlm } from './modules/ego/llm.js';
 import { AnthropicGenerationLlm } from './modules/emit/llm.js';
 import { resolveEngramRoot } from './modules/engrams/instance.js';
@@ -97,11 +97,12 @@ if (process.env['POPS_REGISTRY_ENABLED'] === 'true') {
   pillarHandle = await bootstrapPillar({
     manifest: buildCerebrumManifest(version),
     baseUrl: selfBaseUrl,
-    // Cerebrum owns the `cerebrum.vectorSearch` capability. Its live status is
-    // whether sqlite-vec loaded on this connection (probed once at open). The
-    // value is stable for the process lifetime, but reporting it per heartbeat
-    // keeps the contract uniform and lets a future hot-reload surface here.
-    capabilityReporter: () => ({ vectorSearch: cerebrumDb.vecAvailable }),
+    // Cerebrum's `vectorSearch` status is whether sqlite-vec loaded on this
+    // connection (probed once at open). The value is stable for the process
+    // lifetime, but reporting it per heartbeat keeps the contract uniform and
+    // lets a future hot-reload surface here. `settings: true` advertises the
+    // federated settings surface (P2 settings federation).
+    capabilityReporter: buildCerebrumCapabilityReporter(cerebrumDb.vecAvailable),
   });
 }
 

@@ -9,7 +9,19 @@
  */
 import { cerebrumManifest, egoManifest } from '../contract/settings/index.js';
 
+import type { CapabilityReporter } from '@pops/pillar-sdk/bootstrap';
 import type { ManifestPayload } from '@pops/pillar-sdk/manifest-schema';
+
+/**
+ * Runtime capability heartbeat for cerebrum. Reports the live
+ * `cerebrum.vectorSearch` status (whether sqlite-vec loaded on this
+ * connection) alongside `settings: true`, which advertises cerebrum's own
+ * federated `/settings/*` surface so the shell routes settings reads/writes to
+ * it (capability-gated) rather than falling back to the registry pillar.
+ */
+export function buildCerebrumCapabilityReporter(vecAvailable: boolean): CapabilityReporter {
+  return () => ({ vectorSearch: vecAvailable, settings: true });
+}
 
 export function buildCerebrumManifest(version: string): ManifestPayload {
   return {

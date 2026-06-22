@@ -14,7 +14,18 @@
  */
 import { aiConfigManifest } from '../contract/settings/ai-manifest.js';
 
+import type { CapabilityReporter } from '@pops/pillar-sdk/bootstrap';
 import type { ManifestPayload } from '@pops/pillar-sdk/manifest-schema';
+
+/**
+ * Runtime capability heartbeat for ai. Advertises `settings: true` so the
+ * shell's live-registry settings discovery routes ai's settings reads and
+ * writes to ai's own federated `/settings/*` surface (capability-gated) rather
+ * than falling back to the registry pillar.
+ */
+export function buildAiCapabilityReporter(): CapabilityReporter {
+  return () => ({ settings: true });
+}
 
 export function buildAiManifest(version: string): ManifestPayload {
   return {

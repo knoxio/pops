@@ -17,7 +17,7 @@ import { openMediaDb } from '../db/index.js';
 import { createMediaApiApp } from './app.js';
 import { plexScheduler } from './cron/plex-scheduler.js';
 import { rotationScheduler } from './cron/rotation-scheduler.js';
-import { buildMediaManifest } from './manifest.js';
+import { buildMediaCapabilityReporter, buildMediaManifest } from './manifest.js';
 import { resolveMediaSqlitePath } from './media-sqlite-path.js';
 import { parseBareOrigin } from './pillars/env.js';
 
@@ -86,6 +86,7 @@ if (process.env['POPS_REGISTRY_ENABLED'] === 'true') {
   pillarHandle = await bootstrapPillar({
     manifest: buildMediaManifest(version),
     baseUrl: selfBaseUrl,
+    capabilityReporter: buildMediaCapabilityReporter(),
   });
 }
 

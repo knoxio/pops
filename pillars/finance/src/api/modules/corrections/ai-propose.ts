@@ -31,9 +31,10 @@ interface FeedbackInfo {
 }
 
 async function resolveEffectiveSignal(
+  db: FinanceDb,
   signal: CorrectionSignal
 ): Promise<{ effectiveSignal: CorrectionSignal; feedback: FeedbackInfo | null }> {
-  const latest = await loadLatestRejectedFeedback({
+  const latest = await loadLatestRejectedFeedback(db, {
     matchType: signal.matchType,
     normalizedPattern: normalizeDescription(signal.descriptionPattern),
   });
@@ -85,7 +86,7 @@ export async function proposeChangeSetFromCorrectionSignal(
   db: FinanceDb,
   args: ProposeArgs
 ): Promise<ChangeSetProposal> {
-  const { effectiveSignal, feedback } = await resolveEffectiveSignal(args.signal);
+  const { effectiveSignal, feedback } = await resolveEffectiveSignal(db, args.signal);
   const normalizedPattern = normalizeDescription(effectiveSignal.descriptionPattern);
   const matchType = effectiveSignal.matchType;
   const existing = findExistingRule(db, matchType, normalizedPattern);
