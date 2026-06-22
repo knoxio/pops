@@ -11,6 +11,7 @@ import {
   importsService,
   transactionCorrectionsService,
 } from '../../../db/index.js';
+import { type ContactsClient } from '../../contacts/client.js';
 import { applyChangeSetToRules, type CorrectionRow } from '../corrections/index.js';
 import { applyLearnedCorrection } from './apply-learned-correction.js';
 import { matchEntity } from './entity-matcher.js';
@@ -28,6 +29,7 @@ interface ReevaluateContext {
   knownTags: string[];
   entityLookup: EntityMaps['entityLookup'];
   aliases: EntityMaps['aliasMap'];
+  entityDefaultTags: ReadonlyMap<string, string[]>;
 }
 
 interface RemainingItem {
@@ -56,6 +58,7 @@ function tryApplyCorrectionStage(
     minConfidence: ctx.minConfidence,
     knownTags: ctx.knownTags,
     rules: ctx.rules,
+    entityDefaultTags: ctx.entityDefaultTags,
   });
   if (!correctionApplied) return { handled: false, changed: false };
 
@@ -94,6 +97,7 @@ function tryEntityMatchStage(
       correctionTags: [],
       aiCategory: null,
       knownTags: ctx.knownTags,
+      entityDefaultTags: ctx.entityDefaultTags,
     }),
   };
 
@@ -147,12 +151,14 @@ function runReevaluate(
 }
 
 /** Re-evaluate against the persisted DB rule set (post-apply). */
-export function reevaluateImportSessionResult(args: {
+export async function reevaluateImportSessionResult(args: {
   db: FinanceDb;
+  contacts: ContactsClient;
   result: ProcessImportOutput;
   minConfidence: number;
-}): { nextResult: ProcessImportOutput; affectedCount: number } {
-  const { entityLookup, aliasMap: aliases } = importsService.loadEntityMaps(args.db);
+}): Promise<{ nextResult: ProcessImportOutput; affectedCount: number }> {
+  const contactSet = await args.contacts.fetchAllEntities();
+  const { entityLookup, aliasMap: aliases } = importsService.buildEntityMaps(contactSet);
   return runReevaluate(
     args.result,
     {
@@ -161,18 +167,20 @@ export function reevaluateImportSessionResult(args: {
       knownTags: loadKnownTags(args.db),
       entityLookup,
       aliases,
+      entityDefaultTags: importsService.buildDefaultTagsByEntity(contactSet),
     },
     false
   );
 }
 
 /** Re-evaluate against merged rules (DB rules + un-persisted pending ChangeSets). */
-export function reevaluateImportSessionWithRules(args: {
+export async function reevaluateImportSessionWithRules(args: {
   db: FinanceDb;
+  contacts: ContactsClient;
   result: ProcessImportOutput;
   minConfidence: number;
   pendingChangeSets: { changeSet: ChangeSet }[];
-}): { nextResult: ProcessImportOutput; affectedCount: number } {
+}): Promise<{ nextResult: ProcessImportOutput; affectedCount: number }> {
   const dbRules = transactionCorrectionsService.listTransactionCorrections(args.db, {
     limit: 50_000,
     offset: 0,
@@ -185,7 +193,8 @@ export function reevaluateImportSessionWithRules(args: {
         )
       : dbRules;
 
-  const { entityLookup, aliasMap: aliases } = importsService.loadEntityMaps(args.db);
+  const contactSet = await args.contacts.fetchAllEntities();
+  const { entityLookup, aliasMap: aliases } = importsService.buildEntityMaps(contactSet);
   return runReevaluate(
     args.result,
     {
@@ -195,6 +204,7 @@ export function reevaluateImportSessionWithRules(args: {
       knownTags: loadKnownTags(args.db),
       entityLookup,
       aliases,
+      entityDefaultTags: importsService.buildDefaultTagsByEntity(contactSet),
     },
     true
   );

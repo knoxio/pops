@@ -1,21 +1,22 @@
 /**
- * Atomic import commit: create pending entities, apply correction + tag-rule
- * ChangeSets, write transactions, and retroactively re-classify existing rows —
- * all inside one SQLite transaction so a failure anywhere rolls the lot back.
+ * Atomic import commit: apply correction + tag-rule ChangeSets, write
+ * transactions, and retroactively re-classify existing rows — all inside one
+ * SQLite transaction so a failure anywhere rolls the lot back.
+ *
+ * Pending contacts are pre-created against the contacts pillar BEFORE the
+ * SQLite transaction opens (network can't live inside a better-sqlite3 sync
+ * transaction). Each pre-create carries `{ name, type }` and is idempotent —
+ * a 409 dup-name fetches the existing contact id so a retry after a rolled-back
+ * finance tx reuses the contact (PRD-163 OD-8/S1). The resolved tempId→id map
+ * is threaded into the synchronous transaction.
  *
  * Ported from the monolith `lib/transaction-persistence.ts` (the commit half).
  * Db-injected: the outer `db.transaction` handle (`tx`) is threaded into every
  * inner service so the correction/tag-rule ChangeSet applies nest as savepoints
  * rather than opening independent transactions.
  */
-import { eq } from 'drizzle-orm';
-
-import {
-  type FinanceDb,
-  entities,
-  importsService,
-  tagVocabularyService,
-} from '../../../db/index.js';
+import { type FinanceDb, importsService, tagVocabularyService } from '../../../db/index.js';
+import { type ContactsClient } from '../../contacts/client.js';
 import { applyChangeSet } from '../corrections/index.js';
 import { applyTagRuleChangeSet } from '../tag-rules/service.js';
 import {
@@ -35,19 +36,23 @@ interface RuleApplyCounts {
   remove: number;
 }
 
-function createEntitiesPhase(
-  tx: FinanceDb,
+/**
+ * Pre-create every pending contact against the contacts pillar BEFORE the
+ * finance transaction opens, returning the tempId→contact-id map. Each create
+ * carries `{ name, type }` (preserving the type override the old in-tx
+ * `UPDATE entities SET type` performed) and is create-or-fetch-by-name, so a
+ * retry after a rolled-back finance tx reuses the existing contact (OD-8).
+ */
+async function preCreatePendingContacts(
+  contacts: ContactsClient,
   payload: CommitPayload
-): { tempIdMap: Map<string, string>; entitiesCreated: number } {
+): Promise<{ tempIdMap: Map<string, string>; entitiesCreated: number }> {
   const tempIdMap = new Map<string, string>();
   let entitiesCreated = 0;
   for (const pending of payload.entities) {
-    const { entityId } = importsService.createImportEntity(tx, pending.name);
-    tempIdMap.set(pending.tempId, entityId);
+    const { id } = await contacts.createOrFetchByName(pending.name, pending.type);
+    tempIdMap.set(pending.tempId, id);
     entitiesCreated++;
-    if (pending.type !== 'company') {
-      tx.update(entities).set({ type: pending.type }).where(eq(entities.id, entityId)).run();
-    }
   }
   return { tempIdMap, entitiesCreated };
 }
@@ -144,12 +149,23 @@ function writeTransactionsPhase(
   return { imported, failed, failedDetails };
 }
 
-/** Atomically commit an import inside a single SQLite transaction. */
-export function commitImport(db: FinanceDb, payload: CommitPayload): CommitResult {
+/**
+ * Atomically commit an import. Pending contacts are pre-created against the
+ * contacts pillar first (network, outside the tx); the resolved tempId→id map
+ * then feeds the synchronous SQLite transaction that writes transactions +
+ * applies ChangeSets + reclassifies. A pre-create failure (contacts down)
+ * throws BEFORE the transaction opens, so nothing is half-committed.
+ */
+export async function commitImport(
+  db: FinanceDb,
+  contacts: ContactsClient,
+  payload: CommitPayload
+): Promise<CommitResult> {
   validateCommitPayload(payload);
 
+  const { tempIdMap, entitiesCreated } = await preCreatePendingContacts(contacts, payload);
+
   return db.transaction((tx) => {
-    const { tempIdMap, entitiesCreated } = createEntitiesPhase(tx, payload);
     const rulesApplied = applyChangeSetsPhase(tx, payload, tempIdMap);
     const tagRulesApplied = applyTagRuleChangeSetsPhase(tx, payload, tempIdMap);
     const writeResult = writeTransactionsPhase(tx, payload, tempIdMap);

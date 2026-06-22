@@ -1,20 +1,25 @@
 /**
- * Entity-usage rollup — entities enriched with their per-entity
- * `transactionCount` via a LEFT JOIN onto finance `transactions`.
+ * Entity-usage rollup — contacts enriched with their per-entity
+ * `transactionCount`, computed by joining the live contact set against finance
+ * `transactions.entityId` IN MEMORY (PRD-163 US-06, contacts plan OD-4).
  *
- * The `entities` table is core-owned (finance keeps a byte-compatible local
- * copy), but this join is finance-domain: only the finance pillar can count
- * `finance.transactions` per entity. Ported from the monolith
- * `core/entities/service.ts` `fetchEntitiesPage`/`countEntities`, rewritten to
- * take a `FinanceDb` handle (core's REST `entities` contract deliberately omits
- * `transactionCount`).
+ * Entities are owned by the contacts pillar; finance keeps no mirror table.
+ * The rollup is still finance-served because only finance can count
+ * `finance.transactions` per entity — but the entity attributes (name, type,
+ * abn, aliases, …) come from a per-request `pillar('contacts').entities.list`
+ * fetch, NOT a local join. The fetched set is held only for the request.
+ *
+ * Contacts-down degrades gracefully: the injected client returns an empty set
+ * (OD-3 / S4), so the list renders empty rather than throwing.
  */
-import { and, count, eq, like, sql, type SQL } from 'drizzle-orm';
+import { isNotNull, sql } from 'drizzle-orm';
 
-import { entities, transactions } from '../schema.js';
+import { transactions } from '../schema.js';
 import { type FinanceDb } from './internal.js';
 
-export type EntityUsageRow = typeof entities.$inferSelect & { transactionCount: number };
+import type { ContactEntity, ContactsClient } from '../../api/contacts/client.js';
+
+export type EntityUsageRow = ContactEntity & { transactionCount: number };
 
 export interface ListEntityUsageOptions {
   search?: string;
@@ -29,70 +34,59 @@ export interface EntityUsageListResult {
   total: number;
 }
 
-function buildEntityFilter(opts: ListEntityUsageOptions): SQL | undefined {
-  const conditions: SQL[] = [];
-  if (opts.search) conditions.push(like(entities.name, `%${opts.search}%`));
-  if (opts.type) conditions.push(eq(entities.type, opts.type));
-  if (conditions.length === 0) return undefined;
-  return and(...conditions);
-}
-
-function fetchEntitiesPage(
-  db: FinanceDb,
-  where: SQL | undefined,
-  opts: ListEntityUsageOptions
-): EntityUsageRow[] {
-  let query = db
+/**
+ * Count finance transactions per `entityId` in a single grouped query.
+ * Returns a map keyed by entity id; entities absent from the map have zero
+ * transactions (orphans).
+ */
+function transactionCountsByEntity(db: FinanceDb): Map<string, number> {
+  const rows = db
     .select({
-      id: entities.id,
-      notionId: entities.notionId,
-      name: entities.name,
-      type: entities.type,
-      abn: entities.abn,
-      aliases: entities.aliases,
-      defaultTransactionType: entities.defaultTransactionType,
-      defaultTags: entities.defaultTags,
-      notes: entities.notes,
-      lastEditedTime: entities.lastEditedTime,
-      ownerUri: entities.ownerUri,
-      ownerUriStaleAt: entities.ownerUriStaleAt,
-      transactionCount: sql<number>`CAST(COUNT(${transactions.id}) AS INTEGER)`,
+      entityId: transactions.entityId,
+      count: sql<number>`CAST(COUNT(${transactions.id}) AS INTEGER)`,
     })
-    .from(entities)
-    .leftJoin(transactions, eq(entities.id, transactions.entityId))
-    .where(where)
-    .groupBy(entities.id)
-    .orderBy(sql`${entities.name} COLLATE NOCASE`)
-    .$dynamic();
+    .from(transactions)
+    .where(isNotNull(transactions.entityId))
+    .groupBy(transactions.entityId)
+    .all();
 
-  if (opts.orphanedOnly) query = query.having(sql`COUNT(${transactions.id}) = 0`);
-  return query.limit(opts.limit).offset(opts.offset).all();
-}
-
-function countEntities(db: FinanceDb, where: SQL | undefined, orphanedOnly?: boolean): number {
-  if (orphanedOnly) {
-    return db
-      .select({ id: entities.id })
-      .from(entities)
-      .leftJoin(transactions, eq(entities.id, transactions.entityId))
-      .where(where)
-      .groupBy(entities.id)
-      .having(sql`COUNT(${transactions.id}) = 0`)
-      .all().length;
+  const counts = new Map<string, number>();
+  for (const row of rows) {
+    if (row.entityId !== null) counts.set(row.entityId, row.count);
   }
-  let countQuery = db.select({ total: count() }).from(entities).$dynamic();
-  if (where) countQuery = countQuery.where(where);
-  return countQuery.all()[0]?.total ?? 0;
+  return counts;
 }
 
-/** List entities with optional search / type / orphaned filters, including `transactionCount`. */
-export function listEntityUsage(
+function compareByNameNoCase(a: EntityUsageRow, b: EntityUsageRow): number {
+  return a.name.toLowerCase().localeCompare(b.name.toLowerCase());
+}
+
+/**
+ * List contacts with their per-entity `transactionCount`, joining the live
+ * contact set against finance transactions in memory. The `search`/`type`
+ * filters are applied by the contacts `entities.list` fetch; `orphanedOnly`
+ * and the COLLATE-NOCASE order + pagination are applied here over the joined
+ * rows so the wire shape is byte-identical to the former SQL rollup.
+ */
+export async function listEntityUsage(
   db: FinanceDb,
+  contacts: ContactsClient,
   opts: ListEntityUsageOptions
-): EntityUsageListResult {
-  const where = buildEntityFilter(opts);
-  return {
-    rows: fetchEntitiesPage(db, where, opts),
-    total: countEntities(db, where, opts.orphanedOnly),
-  };
+): Promise<EntityUsageListResult> {
+  const fetched = await contacts.fetchAllEntities({ search: opts.search, type: opts.type });
+  const counts = transactionCountsByEntity(db);
+
+  let joined: EntityUsageRow[] = fetched.map((entity) => ({
+    ...entity,
+    transactionCount: counts.get(entity.id) ?? 0,
+  }));
+
+  if (opts.orphanedOnly) {
+    joined = joined.filter((row) => row.transactionCount === 0);
+  }
+  joined.sort(compareByNameNoCase);
+
+  const total = joined.length;
+  const rows = joined.slice(opts.offset, opts.offset + opts.limit);
+  return { rows, total };
 }

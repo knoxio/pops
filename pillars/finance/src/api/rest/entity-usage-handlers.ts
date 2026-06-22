@@ -1,10 +1,12 @@
 /**
- * Handler for the `entityUsage.*` sub-router — the entities + `transactionCount`
- * rollup over the finance-owned join. Projects the entity row to
- * core's `EntitySchema` shape (aliases comma-split, defaultTags JSON-parsed),
- * plus the joined `transactionCount`.
+ * Handler for the `entityUsage.*` sub-router — contacts enriched with their
+ * per-entity `transactionCount`, joined in memory against finance transactions
+ * (PRD-163 US-06). The contact attributes arrive from the live
+ * `pillar('contacts').entities.list` fetch already in wire shape (aliases /
+ * defaultTags as arrays), so the handler only attaches the count and shape.
  */
 import { type EntityUsageRow, type FinanceDb, listEntityUsage } from '../../db/index.js';
+import { type ContactsClient } from '../contacts/client.js';
 import { paginationMeta } from '../shared/pagination.js';
 import { runHttp } from './error-mapping.js';
 
@@ -17,46 +19,28 @@ type Req = ServerInferRequest<typeof financeEntityUsageContract>;
 const DEFAULT_LIMIT = 50;
 const DEFAULT_OFFSET = 0;
 
-function parseAliases(raw: string | null): string[] {
-  if (!raw) return [];
-  return raw
-    .split(',')
-    .map((s) => s.trim())
-    .filter((s) => s.length > 0);
-}
-
-function parseDefaultTags(raw: string | null): string[] {
-  if (!raw) return [];
-  try {
-    const parsed: unknown = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed.filter((t): t is string => typeof t === 'string') : [];
-  } catch {
-    return [];
-  }
-}
-
 function toEntityUsage(row: EntityUsageRow) {
   return {
     id: row.id,
     name: row.name,
     type: row.type,
     abn: row.abn,
-    aliases: parseAliases(row.aliases),
+    aliases: row.aliases,
     defaultTransactionType: row.defaultTransactionType,
-    defaultTags: parseDefaultTags(row.defaultTags),
+    defaultTags: row.defaultTags,
     notes: row.notes,
     lastEditedTime: row.lastEditedTime,
     transactionCount: row.transactionCount,
   };
 }
 
-export function makeEntityUsageHandlers(db: FinanceDb) {
+export function makeEntityUsageHandlers(db: FinanceDb, contacts: ContactsClient) {
   return {
     list: ({ query }: Req['list']) =>
-      runHttp(() => {
+      runHttp(async () => {
         const limit = query.limit ?? DEFAULT_LIMIT;
         const offset = query.offset ?? DEFAULT_OFFSET;
-        const { rows, total } = listEntityUsage(db, {
+        const { rows, total } = await listEntityUsage(db, contacts, {
           search: query.search,
           type: query.type,
           orphanedOnly: query.orphanedOnly === 'true',

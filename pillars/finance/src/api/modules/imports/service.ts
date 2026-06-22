@@ -6,7 +6,8 @@
  * Ported from the monolith `service.ts`, db-injected. The handler kicks these
  * off (returning a session id immediately) and the FE polls `getImportProgress`.
  */
-import { type FinanceDb, importsService } from '../../../db/index.js';
+import { type FinanceDb } from '../../../db/index.js';
+import { type ContactsClient } from '../../contacts/client.js';
 import { executeImportCore } from './execute-service.js';
 import { formatImportError } from './format-error.js';
 import { processImportCore } from './process-service.js';
@@ -17,9 +18,17 @@ import type { ConfirmedTransaction, CreateEntityOutput, ParsedTransaction } from
 export { commitImport } from './commit.js';
 export { reevaluateImportSessionResult, reevaluateImportSessionWithRules } from './reevaluate.js';
 
-/** Create a new entity during an import session. */
-export function createEntity(db: FinanceDb, name: string): CreateEntityOutput {
-  return importsService.createImportEntity(db, name);
+/**
+ * Create a new contact during an import session via the contacts pillar
+ * (create-or-fetch-by-name). The `type` defaults to `company`, matching the
+ * former minimal insert. Returns the contact id + original-case name.
+ */
+export async function createEntity(
+  contacts: ContactsClient,
+  name: string
+): Promise<CreateEntityOutput> {
+  const { id, name: created } = await contacts.createOrFetchByName(name, 'company');
+  return { entityId: id, entityName: created };
 }
 
 function newImportBatchId(): string {
@@ -39,13 +48,20 @@ function reportBackgroundFailure(sessionId: string, error: unknown): void {
   });
 }
 
+/** Arguments for {@link processImportWithProgress}. */
+export interface ProcessImportWithProgressArgs {
+  db: FinanceDb;
+  contacts: ContactsClient;
+  sessionId: string;
+  transactions: ParsedTransaction[];
+  account: string;
+}
+
 /** Run a process import with progress updates, then mark the session completed/failed. */
 export async function processImportWithProgress(
-  db: FinanceDb,
-  sessionId: string,
-  transactions: ParsedTransaction[],
-  account: string
+  args: ProcessImportWithProgressArgs
 ): Promise<void> {
+  const { db, contacts, sessionId, transactions, account } = args;
   try {
     const {
       output: result,
@@ -53,6 +69,7 @@ export async function processImportWithProgress(
       processedNewCount,
     } = await processImportCore({
       db,
+      contacts,
       transactions,
       account,
       importBatchId: newImportBatchId(),

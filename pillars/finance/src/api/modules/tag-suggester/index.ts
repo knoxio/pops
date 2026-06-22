@@ -5,16 +5,16 @@
  *   1. Correction rules — tags from matching `transaction_corrections` (source: "rule")
  *   2. Tag rules — tags from `transaction_tag_rules` (source: "rule")
  *   3. AI tags — returned directly by AI or a validated category string (source: "ai")
- *   4. Entity defaults — from `entities.default_tags` (source: "entity")
+ *   4. Entity defaults — the contact's `defaultTags`, supplied by the caller
+ *      from the live contacts fetch (source: "entity")
  *
  * Ported from `apps/pops-api/src/modules/finance/tag-suggester/index.ts`.
- * Finance-owned: reads only finance-db tables. The injected `FinanceDb`
- * handle replaces the monolith's `getFinanceDrizzle()`; the correction-match
- * helpers come from `@pops/finance`'s own `transactionCorrectionsService`.
+ * Finance-owned: the rule/correction sources read finance-db tables via the
+ * injected `FinanceDb` handle. The entity-default tags no longer read a local
+ * mirror — they come from `entityDefaultTags`, a `contactId → tags` map the
+ * caller builds from the contacts pillar (PRD-163 US-03).
  */
-import { eq } from 'drizzle-orm';
-
-import { entities, type FinanceDb, transactionCorrectionsService } from '../../../db/index.js';
+import { type FinanceDb, transactionCorrectionsService } from '../../../db/index.js';
 import { findMatchingTagRules } from './tag-rule-matching.js';
 
 export type TagSuggestionSource = 'rule' | 'ai' | 'entity';
@@ -34,6 +34,11 @@ export interface SuggestTagsOptions {
   knownTags?: string[];
   correctionTags?: string[];
   correctionPattern?: string;
+  /**
+   * `contactId → defaultTags`, sourced from the live contacts fetch by the
+   * caller. Absent/empty ⇒ the entity-default tag stage contributes nothing.
+   */
+  entityDefaultTags?: ReadonlyMap<string, string[]>;
 }
 
 function parseTags(json: string | null | undefined): string[] {
@@ -50,6 +55,7 @@ interface TagPass {
   db: FinanceDb;
   description: string;
   entityId: string | null;
+  entityDefaultTags: ReadonlyMap<string, string[]>;
   seen: Set<string>;
   result: SuggestedTag[];
 }
@@ -120,15 +126,11 @@ function addAiTags(args: AddAiTagsArgs): void {
 }
 
 function addEntityTags(pass: TagPass): void {
-  const { db, entityId, seen, result } = pass;
+  const { entityId, entityDefaultTags, seen, result } = pass;
   if (!entityId) return;
-  const entity = db
-    .select({ defaultTags: entities.defaultTags })
-    .from(entities)
-    .where(eq(entities.id, entityId))
-    .get();
-  if (!entity?.defaultTags) return;
-  for (const tag of parseTags(entity.defaultTags)) {
+  const tags = entityDefaultTags.get(entityId);
+  if (!tags) return;
+  for (const tag of tags) {
     if (seen.has(tag)) continue;
     seen.add(tag);
     result.push({ tag, source: 'entity' });
@@ -140,6 +142,7 @@ export function suggestTags(db: FinanceDb, opts: SuggestTagsOptions): SuggestedT
     db,
     description: opts.description,
     entityId: opts.entityId,
+    entityDefaultTags: opts.entityDefaultTags ?? new Map(),
     seen: new Set<string>(),
     result: [],
   };

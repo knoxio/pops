@@ -57,6 +57,13 @@
       "when": 1781913600001,
       "tag": "0056_settings_baseline",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1781913600002,
+      "tag": "0057_drop_entities_mirror",
+      "breakpoints": true
     }
   ]
 }

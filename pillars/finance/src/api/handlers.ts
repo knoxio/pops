@@ -9,6 +9,7 @@ import { getPillarRegistry } from './pillars/registry.js';
 import type { PillarRegistryEntry } from '@pops/types';
 
 import type { OpenedFinanceDb } from '../db/index.js';
+import type { ContactsClient } from './contacts/client.js';
 
 export interface FinanceApiDeps {
   /** Open handle to the finance pillar's SQLite. */
@@ -21,6 +22,12 @@ export interface FinanceApiDeps {
    * special-case the host pillar.
    */
   selfBaseUrl: string;
+  /**
+   * Live client for the contacts pillar. The import matcher and entity-usage
+   * rollup fetch the contact set through it per request (no local mirror).
+   * Defaults to a `pillar('contacts')`-backed impl; tests inject a fake.
+   */
+  contacts: ContactsClient;
 }
 
 export interface HealthResponse {

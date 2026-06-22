@@ -15,6 +15,7 @@ import { bootstrapPillar, type PillarBootstrapHandle } from '@pops/pillar-sdk/bo
 
 import { openFinanceDb } from '../db/index.js';
 import { createFinanceApiApp } from './app.js';
+import { createContactsClient } from './contacts/client.js';
 import { createPillarOwnerUriLookup } from './cron/pillar-lookup.js';
 import { startReconcileCrossPillarWorker } from './cron/reconcile-cross-pillar.js';
 import { resolveFinanceSqlitePath } from './finance-sqlite-path.js';
@@ -51,7 +52,12 @@ function resolveSelfBaseUrl(): string {
 const selfBaseUrl = resolveSelfBaseUrl();
 
 const financeDb = openFinanceDb(resolveFinanceSqlitePath());
-const app = createFinanceApiApp({ financeDb, version, selfBaseUrl });
+const app = createFinanceApiApp({
+  financeDb,
+  version,
+  selfBaseUrl,
+  contacts: createContactsClient(),
+});
 
 // Nightly cross-pillar URI reconciliation (PRD-251 US-03). Reads peer
 // pillars over HTTP via the pillar SDK proxy — no compile-time coupling.

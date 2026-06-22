@@ -1,11 +1,13 @@
 /**
  * Import processing core — dedup + entity matching (pure read flow, no writes).
  *
- * Ported from the monolith `process-service.ts`, db-injected. Dedup +
- * entity-map loading route through the pillar's `importsService`; per-row
- * classification through `process-transaction.ts`.
+ * Ported from the monolith `process-service.ts`, db-injected. Dedup routes
+ * through the pillar's `importsService`; the entity-match maps are built from
+ * the contact set fetched live from the contacts pillar per run (no mirror,
+ * PRD-163 US-03); per-row classification through `process-transaction.ts`.
  */
 import { type FinanceDb, importsService } from '../../../db/index.js';
+import { type ContactsClient } from '../../contacts/client.js';
 import { processTransactionSafely } from './process-transaction.js';
 import {
   appendBatchItem,
@@ -33,6 +35,7 @@ type ImportProgressCallback = (update: ImportProgressUpdate) => void;
 
 export interface ProcessCoreInput {
   db: FinanceDb;
+  contacts: ContactsClient;
   transactions: ParsedTransaction[];
   account: string;
   importBatchId: string;
@@ -119,20 +122,28 @@ async function runProcessLoop(args: ProcessLoopArgs): Promise<{ errors: ErrorEnt
 }
 
 export async function processImportCore(args: ProcessCoreInput): Promise<ProcessCoreOutput> {
-  const { db, transactions, importBatchId, onProgress } = args;
+  const { db, contacts, transactions, importBatchId, onProgress } = args;
 
   onProgress?.({ currentStep: 'deduplicating', processedCount: 0 });
   const { newTransactions, duplicates } = partitionByChecksum(db, transactions);
 
   onProgress?.({ currentStep: 'matching', processedCount: 0 });
-  const { entityLookup, aliasMap: aliases } = importsService.loadEntityMaps(db);
+  const contactSet = await contacts.fetchAllEntities();
+  const { entityLookup, aliasMap: aliases } = importsService.buildEntityMaps(contactSet);
+  const entityDefaultTags = importsService.buildDefaultTagsByEntity(contactSet);
   const knownTags = loadKnownTags(db);
 
   const buckets = makeBuckets();
   buckets.skipped = buildSkippedBucket(duplicates);
 
   const counters = createAiCounters();
-  const context: ProcessContext = { entityLookup, aliases, knownTags, importBatchId };
+  const context: ProcessContext = {
+    entityLookup,
+    aliases,
+    knownTags,
+    importBatchId,
+    entityDefaultTags,
+  };
 
   const { errors } = await runProcessLoop({
     db,

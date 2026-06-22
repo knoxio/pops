@@ -15,6 +15,7 @@
 import { randomUUID } from 'node:crypto';
 
 import { type FinanceDb } from '../../db/index.js';
+import { type ContactsClient } from '../contacts/client.js';
 import { applyChangeSet } from '../modules/corrections/index.js';
 import {
   commitImport,
@@ -74,7 +75,7 @@ function requireProcessSession(sessionId: string): {
   return { progress, result };
 }
 
-export function makeImportsHandlers(db: FinanceDb) {
+export function makeImportsHandlers(db: FinanceDb, contacts: ContactsClient) {
   return {
     processImport: ({ body }: Req['processImport']) =>
       runHttp(() => {
@@ -89,7 +90,13 @@ export function makeImportsHandlers(db: FinanceDb) {
           errors: [],
           startedAt: new Date().toISOString(),
         });
-        processImportWithProgress(db, sessionId, body.transactions, body.account).catch((error) => {
+        processImportWithProgress({
+          db,
+          contacts,
+          sessionId,
+          transactions: body.transactions,
+          account: body.account,
+        }).catch((error) => {
           console.error(`[Import] Background processing failed: ${String(error)}`);
         });
         return { status: 200 as const, body: { sessionId } };
@@ -116,14 +123,18 @@ export function makeImportsHandlers(db: FinanceDb) {
       runHttp(() => ({ status: 200 as const, body: getProgress(query.sessionId) })),
 
     createEntity: ({ body }: Req['createEntity']) =>
-      runHttp(() => ({ status: 200 as const, body: createEntity(db, body.name) })),
+      runHttp(async () => ({
+        status: 200 as const,
+        body: await createEntity(contacts, body.name),
+      })),
 
     applyChangeSetAndReevaluate: ({ body }: Req['applyChangeSetAndReevaluate']) =>
-      runHttp(() => {
+      runHttp(async () => {
         const { result } = requireProcessSession(body.sessionId);
         applyChangeSet(db, body.changeSet);
-        const { nextResult, affectedCount } = reevaluateImportSessionResult({
+        const { nextResult, affectedCount } = await reevaluateImportSessionResult({
           db,
+          contacts,
           result,
           minConfidence: body.minConfidence,
         });
@@ -132,16 +143,17 @@ export function makeImportsHandlers(db: FinanceDb) {
       }),
 
     commitImport: ({ body }: Req['commitImport']) =>
-      runHttp(() => ({
+      runHttp(async () => ({
         status: 200 as const,
-        body: { data: commitImport(db, body), message: 'Import committed' },
+        body: { data: await commitImport(db, contacts, body), message: 'Import committed' },
       })),
 
     reevaluateWithPendingRules: ({ body }: Req['reevaluateWithPendingRules']) =>
-      runHttp(() => {
+      runHttp(async () => {
         const { result } = requireProcessSession(body.sessionId);
-        const { nextResult, affectedCount } = reevaluateImportSessionWithRules({
+        const { nextResult, affectedCount } = await reevaluateImportSessionWithRules({
           db,
+          contacts,
           result,
           minConfidence: body.minConfidence,
           pendingChangeSets: body.pendingChangeSets,

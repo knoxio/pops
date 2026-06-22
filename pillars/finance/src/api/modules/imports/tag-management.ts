@@ -61,6 +61,8 @@ export interface BuildSuggestedTagsOptions {
   aiCategory: string | null;
   knownTags: string[];
   correctionPattern?: string;
+  /** `contactId → defaultTags` from the per-run contacts fetch (entity source). */
+  entityDefaultTags?: ReadonlyMap<string, string[]>;
 }
 
 /**
@@ -76,5 +78,6 @@ export function buildSuggestedTags(db: FinanceDb, opts: BuildSuggestedTagsOption
     knownTags: opts.knownTags,
     correctionTags: opts.correctionTags,
     correctionPattern: opts.correctionPattern,
+    entityDefaultTags: opts.entityDefaultTags,
   });
 }
