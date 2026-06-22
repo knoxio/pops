@@ -16,11 +16,11 @@ import { join } from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { SETTINGS_KEYS } from '@pops/types';
-
 import { openCoreDb, type OpenedCoreDb } from '../../db/index.js';
 import { createCoreApiApp } from '../app.js';
 import { makeClient, type ClientHeaders } from './test-utils.js';
+
+const CORE_DEFAULT_LIMIT = 'core.defaultLimit';
 
 let tmpDir: string;
 let coreDb: OpenedCoreDb;
@@ -66,7 +66,6 @@ describe('GET /settings/aggregate', () => {
   });
 
   it('includes registry read in-process even with an empty registry (no remote pillars)', async () => {
-    const CORE_DEFAULT_LIMIT = SETTINGS_KEYS.CORE_DEFAULT_LIMIT;
     await client().settings.set(CORE_DEFAULT_LIMIT, '12');
 
     const res = await client().settings.aggregate();
@@ -78,7 +77,6 @@ describe('GET /settings/aggregate', () => {
   });
 
   it('resolves the manifest default for an unset core key in the aggregate', async () => {
-    const CORE_DEFAULT_LIMIT = SETTINGS_KEYS.CORE_DEFAULT_LIMIT;
     const res = await client().settings.aggregate();
     const core = res.pillars.find((p) => p.pillarId === 'registry');
     expect(core?.settings.find((s) => s.key === CORE_DEFAULT_LIMIT)?.value).toBe('50');

@@ -20,16 +20,20 @@ import { z } from 'zod';
  *   tell from the return value whether insert or no-op ran.
  * - `setMany` is transactional — all-or-nothing.
  * - Single-key procs (`get`, `set`, `ensure`, `delete`) constrain `key`
- *   to `SETTINGS_KEY_VALUES` (matches the in-monolith router). `getMany`
- *   and `setMany` accept `z.string()` keys (matches the existing
- *   `getBulkSettings`/`setBulkSettings` service-layer shape).
+ *   to the registry's own manifest key set (derived from
+ *   `coreOperationalManifest`). `getMany` and `setMany` accept `z.string()`
+ *   keys (matches the existing `getBulkSettings`/`setBulkSettings`
+ *   service-layer shape).
  */
-import { SETTINGS_KEY_VALUES } from '@pops/types';
+import { deriveKeySet, keyValuesFor } from '@pops/pillar-settings';
 
+import { coreOperationalManifest } from '../settings/index.js';
 import { SettingSchema } from './setting.js';
 
+const registryKeyValues = keyValuesFor(deriveKeySet([coreOperationalManifest]));
+
 export const SettingsGetInputSchema = z.object({
-  key: z.enum(SETTINGS_KEY_VALUES),
+  key: z.enum(registryKeyValues),
 });
 
 export const SettingsGetOutputSchema = z.object({
@@ -37,7 +41,7 @@ export const SettingsGetOutputSchema = z.object({
 });
 
 export const SettingsSetInputSchema = z.object({
-  key: z.enum(SETTINGS_KEY_VALUES),
+  key: z.enum(registryKeyValues),
   value: z.string(),
 });
 
@@ -47,7 +51,7 @@ export const SettingsSetOutputSchema = z.object({
 });
 
 export const SettingsEnsureInputSchema = z.object({
-  key: z.enum(SETTINGS_KEY_VALUES),
+  key: z.enum(registryKeyValues),
   value: z.string(),
 });
 
@@ -56,7 +60,7 @@ export const SettingsEnsureOutputSchema = z.object({
 });
 
 export const SettingsDeleteInputSchema = z.object({
-  key: z.enum(SETTINGS_KEY_VALUES),
+  key: z.enum(registryKeyValues),
 });
 
 export const SettingsDeleteOutputSchema = z.object({

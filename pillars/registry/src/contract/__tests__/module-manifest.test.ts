@@ -12,11 +12,11 @@ describe('registry /manifest — ModuleManifest exports (PRD-241 US-01)', () => 
     expect(coreManifest.surfaces).toEqual(['app']);
   });
 
-  // The registry pillar still carries the `ai.config` settings section during
-  // the settings-federation S1 wire-compat window (PRD-055); the `ai` MODULE
-  // manifest itself now lives in the extracted ai pillar.
-  it('coreManifest contributes the registry settings sections', () => {
+  // The registry pillar no longer carries the `ai.config` settings section:
+  // the extracted `ai` pillar (PRD-055) owns and advertises `ai.config`, and
+  // the registry's settings surface is its own `core.operational` only.
+  it('coreManifest contributes only the registry-owned settings section', () => {
     const sectionIds = (coreManifest.settings ?? []).map((s) => s.id);
-    expect(sectionIds).toEqual(['ai.config', 'core.operational']);
+    expect(sectionIds).toEqual(['core.operational']);
   });
 });

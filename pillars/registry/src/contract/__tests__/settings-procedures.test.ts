@@ -32,8 +32,10 @@ import type {
   SettingsSetOutput,
 } from '../types/settings-procedures.js';
 
-const KNOWN_KEY = 'plex_token';
-const OTHER_KEY = 'plex_username';
+// Real keys from the registry's own `coreOperationalManifest` — the
+// single-key schemas constrain `key` to that manifest-derived enum.
+const KNOWN_KEY = 'core.defaultLimit';
+const OTHER_KEY = 'core.search.showMoreLimit';
 const UNKNOWN_KEY = 'totally.made.up';
 
 describe('@pops/core-contract core.settings.* procedure schemas — round trip', () => {
