@@ -34,6 +34,8 @@ import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { extractSpecifiersWithLines, isTestPath } from './import-scan.mjs';
+
 const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(here, '..', '..');
 
@@ -41,10 +43,10 @@ const repoRoot = resolve(here, '..', '..');
 const SOURCE_EXT = /\.(?:ts|tsx|mts|cts|js|jsx|mjs|cjs)$/u;
 
 /**
- * Matches a deep import into another `@pops/*` package's build internals.
- * Group 1 = package name, group 2 = the internal segment reached.
+ * A specifier that reaches behind another `@pops/*` package's contract into
+ * its build internals (`/src`, `/dist`, `/internal`).
  */
-const REACH_BEHIND_RE = /['"](@pops\/[a-z0-9-]+)\/(src|dist|internal)\b[^'"]*['"]/gu;
+const REACH_BEHIND_SPEC = /^@pops\/[a-z0-9-]+\/(?:src|dist|internal)\b/u;
 
 /**
  * @typedef {object} ReachBehind
@@ -55,6 +57,9 @@ const REACH_BEHIND_RE = /['"](@pops\/[a-z0-9-]+)\/(src|dist|internal)\b[^'"]*['"
 
 /**
  * Find reach-behind specifiers in a single source string. Exported for tests.
+ * Only real import/export/require statements are inspected (a specifier inside
+ * a string literal — e.g. a test fixture or self-test — is not a real import
+ * and is ignored).
  *
  * @param {string} src
  * @param {string} file
@@ -63,15 +68,8 @@ const REACH_BEHIND_RE = /['"](@pops\/[a-z0-9-]+)\/(src|dist|internal)\b[^'"]*['"
 export function findReachBehindInSource(src, file) {
   /** @type {ReachBehind[]} */
   const out = [];
-  const lines = src.split('\n');
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-    // Cheap skip: only lines that could carry a module specifier.
-    if (!line.includes('@pops/')) continue;
-    if (!/\b(?:import|export|require)\b/u.test(line)) continue;
-    for (const m of line.matchAll(REACH_BEHIND_RE)) {
-      out.push({ file, line: i + 1, specifier: m[0].slice(1, -1) });
-    }
+  for (const { specifier, line } of extractSpecifiersWithLines(src)) {
+    if (REACH_BEHIND_SPEC.test(specifier)) out.push({ file, line, specifier });
   }
   return out;
 }
@@ -97,7 +95,7 @@ function changedSourceFiles(base) {
   return diff
     .split('\n')
     .map((l) => l.trim())
-    .filter((l) => l.length > 0 && SOURCE_EXT.test(l));
+    .filter((l) => l.length > 0 && SOURCE_EXT.test(l) && !isTestPath(l));
 }
 
 /**

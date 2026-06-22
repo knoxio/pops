@@ -48,6 +48,10 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { extractSpecifiers } from './import-scan.mjs';
+
+export { extractSpecifiers };
+
 const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(here, '..', '..');
 
@@ -183,30 +187,6 @@ function walkSource(absDir) {
     out.push(join(absDir, name));
   }
   return out;
-}
-
-/**
- * Extract module specifiers referenced by real import/export/require forms in
- * a source string. Comments and unrelated string literals are not matched —
- * each form is anchored to its keyword so a bare `'@pops/x'` in a comment
- * (e.g. a JSDoc example) is ignored.
- *
- * @param {string} src
- * @returns {string[]}
- */
-export function extractSpecifiers(src) {
-  /** @type {string[]} */
-  const specs = [];
-  const patterns = [
-    /(?:^|[\s;])import\s+(?:type\s+)?(?:[^'";]+?\s+from\s+)?['"]([^'"]+)['"]/gm,
-    /(?:^|[\s;])export\s+(?:type\s+)?(?:[^'";]+?\s+)?from\s+['"]([^'"]+)['"]/gm,
-    /\bimport\s*\(\s*['"]([^'"]+)['"]\s*\)/g,
-    /\brequire\s*\(\s*['"]([^'"]+)['"]\s*\)/g,
-  ];
-  for (const re of patterns) {
-    for (const m of src.matchAll(re)) specs.push(m[1]);
-  }
-  return specs;
 }
 
 /**
