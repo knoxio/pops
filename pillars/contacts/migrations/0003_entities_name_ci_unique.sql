@@ -1,0 +1,12 @@
+-- Case-insensitive uniqueness on entity `name`.
+--
+-- The contact store is the authoritative source finance's import matcher reads,
+-- and that matcher is case-insensitive: `ACME` and `Acme` collide downstream
+-- even though the original schema only had an exact-case `notion_id` UNIQUE and
+-- no constraint on `name` at all. This index makes the database itself reject a
+-- case-variant duplicate, so a create racing past the pre-check still fails
+-- closed rather than inserting a second colliding row. `COLLATE NOCASE` is
+-- SQLite's built-in ASCII-case-folding collation; the create pre-check and the
+-- by-name fetch use the same collation so the application and storage layers
+-- agree on what "already exists" means.
+CREATE UNIQUE INDEX idx_entities_name_nocase ON entities (name COLLATE NOCASE);

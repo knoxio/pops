@@ -128,6 +128,28 @@ async fn duplicate_name_create_is_a_409() {
 }
 
 #[tokio::test]
+async fn case_variant_name_create_is_a_409() {
+    let app = app().await;
+    create_contact(&app, json!({ "name": "Acme" })).await;
+
+    let (status, body) = send(&app, post("/entities", json!({ "name": "ACME" }))).await;
+    assert_eq!(
+        status,
+        StatusCode::CONFLICT,
+        "a case-variant create collides with the existing contact: {body}"
+    );
+    assert_eq!(body["code"], "ConflictError");
+
+    let (status, list) = send(&app, get("/entities")).await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(
+        list["pagination"]["total"], 1,
+        "no second row was created for the case variant"
+    );
+    assert_eq!(list["data"][0]["name"], "Acme");
+}
+
+#[tokio::test]
 async fn empty_name_create_is_a_400() {
     let app = app().await;
     let (status, _) = send(&app, post("/entities", json!({ "name": "   " }))).await;
