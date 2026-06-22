@@ -20,7 +20,7 @@ import type { AiInferenceLogRow } from '../../src/worker/ai/backfill-mapping.js'
 let tmpDir: string;
 let dbPath: string;
 
-const CREATE_TABLE = `CREATE TABLE ai_inference_log (
+const CREATE_TABLE = `CREATE TABLE IF NOT EXISTS ai_inference_log (
   id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
   provider text NOT NULL,
   model text NOT NULL,
@@ -175,6 +175,43 @@ describe('runBackfill', () => {
       dryRun: true,
       sqlitePath: dbPath,
     });
-    expect(summary).toMatchObject({ total: 0, posted: 0, skipped: 0, failed: 0 });
+    expect(summary).toMatchObject({
+      total: 0,
+      posted: 0,
+      skipped: 0,
+      failed: 0,
+      tableDropped: false,
+    });
+  });
+
+  it('is a clean no-op when ai_inference_log has already been dropped', async () => {
+    const handle = new Database(dbPath);
+    handle.exec('CREATE TABLE recipes (id integer PRIMARY KEY)');
+    handle.close();
+    const captured: CapturedPost[] = [];
+    vi.stubGlobal('fetch', fakeFetch(captured));
+
+    const summary = await runBackfill({
+      aiApiUrl: 'http://ai',
+      token: 't',
+      dryRun: false,
+      sqlitePath: dbPath,
+    });
+
+    expect(summary).toMatchObject({
+      total: 0,
+      posted: 0,
+      skipped: 0,
+      failed: 0,
+      tableDropped: true,
+    });
+    expect(captured).toHaveLength(0);
+  });
+
+  it('tolerates repeated seeding without throwing table-already-exists', () => {
+    expect(() => {
+      seedRows([{ contextId: 'ingest_source:1' }]);
+      seedRows([{ contextId: 'ingest_source:2' }]);
+    }).not.toThrow();
   });
 });

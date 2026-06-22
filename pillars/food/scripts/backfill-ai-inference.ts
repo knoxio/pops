@@ -54,6 +54,7 @@ interface BackfillSummary {
   posted: number;
   skipped: number;
   failed: number;
+  tableDropped: boolean;
 }
 
 function readConfig(argv: readonly string[]): BackfillConfig {
@@ -99,7 +100,10 @@ interface RawAiInferenceLogRow {
   created_at: string;
 }
 
-const SELECT_ROWS = 'SELECT * FROM ai_inference_log';
+const SELECT_ROWS = 'SELECT * FROM ai_inference_log ORDER BY id';
+
+const TABLE_EXISTS =
+  "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'ai_inference_log'";
 
 function toLogRow(raw: RawAiInferenceLogRow): AiInferenceLogRow {
   return {
@@ -121,9 +125,20 @@ function toLogRow(raw: RawAiInferenceLogRow): AiInferenceLogRow {
   };
 }
 
-function readLogRows(sqlitePath: string): AiInferenceLogRow[] {
+function tableExists(handle: Database.Database): boolean {
+  return handle.prepare(TABLE_EXISTS).get() !== undefined;
+}
+
+/**
+ * Reads every legacy `ai_inference_log` row, ordered by `id` for deterministic
+ * runs. Returns `null` when the table no longer exists — the expected state
+ * once migration `0063_drop_ai_inference_log` has deployed — so a post-drop
+ * re-run is a clean no-op instead of a raw `no such table` stack trace.
+ */
+function readLogRows(sqlitePath: string): AiInferenceLogRow[] | null {
   const handle = new Database(sqlitePath, { readonly: true });
   try {
+    if (!tableExists(handle)) return null;
     const raw = handle.prepare(SELECT_ROWS).all() as RawAiInferenceLogRow[];
     return raw.map(toLogRow);
   } finally {
@@ -133,7 +148,16 @@ function readLogRows(sqlitePath: string): AiInferenceLogRow[] {
 
 export async function runBackfill(config: BackfillConfig): Promise<BackfillSummary> {
   const rows = readLogRows(config.sqlitePath);
-  const summary: BackfillSummary = { total: rows.length, posted: 0, skipped: 0, failed: 0 };
+  if (rows === null) {
+    return { total: 0, posted: 0, skipped: 0, failed: 0, tableDropped: true };
+  }
+  const summary: BackfillSummary = {
+    total: rows.length,
+    posted: 0,
+    skipped: 0,
+    failed: 0,
+    tableDropped: false,
+  };
   for (const row of rows) {
     let record: InferenceRecord;
     try {
@@ -165,6 +189,13 @@ async function main(): Promise<void> {
       (config.dryRun ? ' (dry-run)' : ` -> ${config.aiApiUrl}${RECORD_PATH}`)
   );
   const summary = await runBackfill(config);
+  if (summary.tableDropped) {
+    console.warn(
+      '[backfill] ai_inference_log already dropped — nothing to backfill ' +
+        '(migration 0063_drop_ai_inference_log has deployed). No-op.'
+    );
+    return;
+  }
   console.warn(
     `[backfill] done: total=${summary.total} posted=${summary.posted} ` +
       `skipped=${summary.skipped} failed=${summary.failed}`

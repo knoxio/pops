@@ -163,7 +163,7 @@ PRD-133 also logs the call to `ai_inference_log` with `domain='food'`, `operatio
 - Single LLM call per ingest. No retry-with-different-prompt; if the call fails or returns invalid JSON, the ingest fails with `LlmExtractFailed`.
 - Response parsing is strict JSON.parse (no markdown fences allowed). If the model wraps in fences, treat as malformed and fail. The prompt explicitly says "Output ONLY the JSON".
 - Output validated against the JSON schema via zod (or similar) before mapping. Any schema violation → fail with details in error message.
-- Cost cap: enforced by PRD-133's `callClaudeWithLogging` wrapper — when a single Claude call exceeds `FOOD_INGEST_COST_CAP_PER_JOB_USD` (default 0.05 USD), a warning is logged to `ai_inference_log.metadata.over_cost_cap`. v1 does NOT abort on overrun — observation only.
+- Cost cap: enforced by PRD-133's `callWithLogging` wrapper — when a single Claude call exceeds `FOOD_INGEST_COST_CAP_PER_JOB_USD` (default 0.05 USD), a warning is reported to the ai pillar's `ai_inference_log.metadata.over_cost_cap`. v1 does NOT abort on overrun — observation only.
 - The prompt instructs the model to use whatever slug the source uses ("rocket" not "arugula"). Alias reconciliation happens in the review queue (Epic 03) where the user can mark "rocket" as an alias for the canonical "arugula".
 - If the LLM returns 0 ingredients OR 0 steps, the ingest succeeds but with `state='partial'` and `partialReason='empty-extraction'`. Review queue surfaces these for the user to either fix or reject.
 - Cancellation: checked between fetch + LLM + build steps. Mid-LLM-call cancellation is not supported (HTTP request runs to completion).

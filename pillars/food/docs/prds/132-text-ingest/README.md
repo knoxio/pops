@@ -116,7 +116,7 @@ Inline per theme protocol.
 - [ ] `runTextIngest(data)` exported from `apps/pops-worker-food/src/handlers/text.ts`.
 - [ ] Validates body length (≥10 chars; truncates >20K).
 - [ ] Single Claude API call per ingest.
-- [ ] Exports `extractWithClaudeText(input: { body: string; source?: 'text' | 'ig-text-fallback' }): Promise<ExtractedRecipe | null>` from `apps/pops-worker-food/src/handlers/text.ts`. The `source` field changes only the `ai_inference_log.operation` value written by `callClaudeWithLogging`; the prompt template + JSON output schema are identical regardless of caller.
+- [ ] Exports `extractWithClaudeText(input: { body: string; source?: 'text' | 'ig-text-fallback' }): Promise<ExtractedRecipe | null>` from `apps/pops-worker-food/src/handlers/text.ts`. The `source` field changes only the `ai_inference_log.operation` value reported by `callWithLogging`; the prompt template + JSON output schema are identical regardless of caller.
 - [ ] PRD-130's vision-fallback path calls `extractWithClaudeText({ body: acq.caption, source: 'ig-text-fallback' })` — same signature.
 
 ### Prompt
