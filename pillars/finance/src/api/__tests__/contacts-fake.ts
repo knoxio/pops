@@ -82,10 +82,10 @@ export function makeContactsFake(options: ContactsFakeOptions = {}): ContactsFak
       created.push({ name, type });
       if (unavailable) throw new ContactsUnavailableError('unavailable');
       const existing = entities.find((e) => e.name.toLowerCase() === name.toLowerCase());
-      if (existing) return { id: existing.id, name: existing.name };
+      if (existing) return { id: existing.id, name: existing.name, created: false };
       const fresh = toEntity({ name, type });
       entities.push(fresh);
-      return { id: fresh.id, name: fresh.name };
+      return { id: fresh.id, name: fresh.name, created: true };
     },
   };
 }

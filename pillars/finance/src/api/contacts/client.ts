@@ -15,8 +15,13 @@
  * `CallResult` whose `kind !== 'ok'` and the helpers substitute an EMPTY set
  * plus a logged warning rather than throwing — an import does a no-match run
  * and the usage list renders empty (OD-3 / S4). The pre-create path is
- * create-or-fetch-by-name: a 409 dup-name fetches the existing contact id so a
- * retry after a rolled-back finance transaction reuses the contact (OD-8).
+ * create-or-fetch-by-name: it fetches by name FIRST (case-insensitively) and
+ * only creates when absent, then tolerates a 409 dup-name from a concurrent
+ * create — so a retry after a rolled-back finance transaction reuses the
+ * contact (OD-8). The fetch-first step is load-bearing: contacts enforces name
+ * uniqueness only case-SENSITIVELY (no UNIQUE constraint, `WHERE name = ?`), so
+ * a 409 alone would let a case-variant (`ACME` vs `Acme`) slip through as a
+ * duplicate that finance's case-insensitive matcher then collides on.
  */
 import { isOk, pillar, type CallResult, type PillarHandle } from '@pops/pillar-sdk/client';
 
@@ -36,7 +41,8 @@ export interface ContactEntity {
   lastEditedTime: string;
 }
 
-interface ListResponse {
+/** The contacts `entities.list` envelope (page of contacts + pagination cursor). */
+export interface ListResponse {
   data: ContactEntity[];
   pagination: { total: number; limit: number; offset: number; hasMore: boolean };
 }
@@ -45,9 +51,10 @@ interface ListResponse {
  * Typed handle over the subset of the contacts router the finance backend
  * calls. Declared as a `type` (not `interface`) so it satisfies the SDK proxy's
  * `Record<string, unknown>` constraint — an interface does not (see the same
- * note in the orchestrator's `PillarSearchRouter`).
+ * note in the orchestrator's `PillarSearchRouter`). Exported for unit tests
+ * that drive `createContactsClient` against a stub handle.
  */
-type ContactsRouter = {
+export type ContactsRouter = {
   entities: {
     list: (input: {
       search?: string;
@@ -67,6 +74,8 @@ type ContactsRouter = {
 export interface CreateOrFetchResult {
   id: string;
   name: string;
+  /** True only when this call inserted a NEW contact; false when it reused an existing one. */
+  created: boolean;
 }
 
 /**
@@ -87,8 +96,10 @@ export interface ContactsClient {
    */
   fetchEntityDefaultTags(entityId: string): Promise<string[]>;
   /**
-   * Create a contact carrying `{ name, type }`, or fetch the existing one by
-   * name on a 409 dup-name (idempotent). Throws only on a genuine failure
+   * Resolve a contact for `name`, creating it only when absent. Fetches by
+   * (case-insensitive) name FIRST, creates when none matches, and tolerates a
+   * 409 from a racing concurrent create by re-fetching. `created` reports
+   * whether THIS call inserted a new contact. Throws only on a genuine failure
    * (contacts down / contract-mismatch) — the commit path cannot silently
    * drop a pending entity.
    */
@@ -105,8 +116,14 @@ export class ContactsUnavailableError extends Error {
 
 /** Per-page size for the bulk list sweep — matches the contacts list `MAX_LIMIT`. */
 const PAGE_SIZE = 200;
-/** Stop the paging sweep well before a runaway loop on a misbehaving peer. */
-const MAX_PAGES = 100;
+/**
+ * Safety cap on the paging sweep: a backstop against a runaway loop on a
+ * misbehaving peer, NOT a dataset cap. At `PAGE_SIZE` per page this is 1M
+ * contacts — comfortably above any personal dataset. The matcher needs the
+ * FULL set, so hitting this cap is treated as a visible truncation (warned),
+ * never a silent partial fetch.
+ */
+const MAX_PAGES = 5000;
 
 function warnDegraded(operation: string, result: CallResult<unknown>): void {
   if (isOk(result)) return;
@@ -117,10 +134,11 @@ function warnDegraded(operation: string, result: CallResult<unknown>): void {
 
 async function pageThroughEntities(
   handle: PillarHandle<ContactsRouter>,
-  query: { search?: string; type?: string }
+  query: { search?: string; type?: string },
+  maxPages: number
 ): Promise<ContactEntity[]> {
   const all: ContactEntity[] = [];
-  for (let page = 0; page < MAX_PAGES; page++) {
+  for (let page = 0; page < maxPages; page++) {
     const result = await handle.entities.list({
       search: query.search,
       type: query.type,
@@ -132,9 +150,20 @@ async function pageThroughEntities(
       return [];
     }
     all.push(...result.value.data);
-    if (!result.value.pagination.hasMore) break;
+    if (!result.value.pagination.hasMore) return all;
   }
+  console.warn(
+    `[contacts] entities.list sweep hit the ${maxPages}-page safety cap with more rows ` +
+      `still available — returning a TRUNCATED set of ${all.length} contacts; matches/usage ` +
+      `for the tail will be missed`
+  );
   return all;
+}
+
+/** Test-only knobs; production omits these and takes the module defaults. */
+export interface ContactsClientOptions {
+  /** Override the paging safety cap (default {@link MAX_PAGES}) for cap-behavior tests. */
+  maxPages?: number;
 }
 
 /**
@@ -144,11 +173,13 @@ async function pageThroughEntities(
  */
 export function createContactsClient(
   handleFactory: () => PillarHandle<ContactsRouter> = () =>
-    pillar<ContactsRouter>(CONTACTS_PILLAR_ID)
+    pillar<ContactsRouter>(CONTACTS_PILLAR_ID),
+  options: ContactsClientOptions = {}
 ): ContactsClient {
+  const maxPages = options.maxPages ?? MAX_PAGES;
   return {
     fetchAllEntities(query: { search?: string; type?: string } = {}): Promise<ContactEntity[]> {
-      return pageThroughEntities(handleFactory(), query);
+      return pageThroughEntities(handleFactory(), query, maxPages);
     },
 
     async fetchEntityDefaultTags(entityId: string): Promise<string[]> {
@@ -162,30 +193,36 @@ export function createContactsClient(
 
     async createOrFetchByName(name: string, type: string): Promise<CreateOrFetchResult> {
       const handle = handleFactory();
+      const preexisting = await fetchByExactName(handle, name, maxPages);
+      if (preexisting) return { id: preexisting.id, name: preexisting.name, created: false };
+
       const created = await handle.entities.create({ name, type });
       if (isOk(created)) {
-        return { id: created.value.data.id, name: created.value.data.name };
+        return { id: created.value.data.id, name: created.value.data.name, created: true };
       }
       if (created.kind !== 'conflict') {
         throw new ContactsUnavailableError(created.kind);
       }
-      const existing = await fetchByExactName(handle, name);
-      if (existing) return { id: existing.id, name: existing.name };
+      const raced = await fetchByExactName(handle, name, maxPages);
+      if (raced) return { id: raced.id, name: raced.name, created: false };
       throw new ContactsUnavailableError(`409 for "${name}" but no existing contact found`);
     },
   };
 }
 
 /**
- * Resolve a single contact by exact (case-insensitive) name for the
- * create-or-fetch 409 path. The list `search` is a substring filter, so the
- * exact match is re-checked client-side over the matching page.
+ * Resolve a single contact by exact (case-insensitive) name. The list `search`
+ * is a substring filter, so the exact match is re-checked client-side over the
+ * matching page. Backs the fetch-first leg of create-or-fetch: contacts does
+ * NOT enforce name uniqueness case-insensitively, so finance must dedupe here
+ * to avoid creating a case-variant duplicate.
  */
 async function fetchByExactName(
   handle: PillarHandle<ContactsRouter>,
-  name: string
+  name: string,
+  maxPages: number
 ): Promise<ContactEntity | null> {
-  const matches = await pageThroughEntities(handle, { search: name });
+  const matches = await pageThroughEntities(handle, { search: name }, maxPages);
   const target = name.toLowerCase();
   return matches.find((e) => e.name.toLowerCase() === target) ?? null;
 }

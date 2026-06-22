@@ -497,16 +497,38 @@ describe('imports.commitImport — pre-create contacts then write the finance tx
     const contacts = withContacts([{ id: 'preexisting-ato', name: 'ATO', type: 'government' }]);
     const c = client(contacts);
     const tempId = 'temp:entity:00000000-0000-0000-0000-00000000000a';
-    await c.imports.commitImport({
+    const res = await c.imports.commitImport({
       entities: [{ tempId, name: 'ATO', type: 'government' }],
       transactions: [confirmed({ checksum: 'commit-dup', entityId: tempId, entityName: 'ATO' })],
     });
     // No duplicate contact created; the transaction points at the existing id.
     expect(contacts.entities.filter((e) => e.name === 'ATO')).toHaveLength(1);
+    // Reusing an existing contact must NOT inflate the created count.
+    expect(res.data.entitiesCreated).toBe(0);
     const txn = financeDb.raw
       .prepare('SELECT entity_id FROM transactions WHERE checksum = ?')
       .get('commit-dup') as { entity_id: string };
     expect(txn.entity_id).toBe('preexisting-ato');
+  });
+
+  it('counts only real creates when a commit mixes a new and a reused contact', async () => {
+    const contacts = withContacts([{ id: 'preexisting-ato', name: 'ATO', type: 'government' }]);
+    const c = client(contacts);
+    const tempNew = 'temp:entity:00000000-0000-0000-0000-00000000000b';
+    const tempReused = 'temp:entity:00000000-0000-0000-0000-00000000000c';
+    const res = await c.imports.commitImport({
+      entities: [
+        { tempId: tempNew, name: 'BrandNewCo', type: 'company' },
+        { tempId: tempReused, name: 'ATO', type: 'government' },
+      ],
+      transactions: [
+        confirmed({ checksum: 'mixed-new', entityId: tempNew, entityName: 'BrandNewCo' }),
+        confirmed({ checksum: 'mixed-reused', entityId: tempReused, entityName: 'ATO' }),
+      ],
+    });
+    expect(res.data.entitiesCreated).toBe(1);
+    expect(contacts.entities.filter((e) => e.name === 'ATO')).toHaveLength(1);
+    expect(contacts.entities.filter((e) => e.name === 'BrandNewCo')).toHaveLength(1);
   });
 
   it('resolves temp ids inside correction ChangeSet add ops', async () => {

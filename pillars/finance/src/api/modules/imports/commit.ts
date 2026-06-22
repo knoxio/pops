@@ -42,6 +42,8 @@ interface RuleApplyCounts {
  * carries `{ name, type }` (preserving the type override the old in-tx
  * `UPDATE entities SET type` performed) and is create-or-fetch-by-name, so a
  * retry after a rolled-back finance tx reuses the existing contact (OD-8).
+ * `entitiesCreated` counts ONLY real inserts — a reused (already-existing)
+ * contact must not inflate the commit result's "Entities Created" card.
  */
 async function preCreatePendingContacts(
   contacts: ContactsClient,
@@ -50,9 +52,9 @@ async function preCreatePendingContacts(
   const tempIdMap = new Map<string, string>();
   let entitiesCreated = 0;
   for (const pending of payload.entities) {
-    const { id } = await contacts.createOrFetchByName(pending.name, pending.type);
+    const { id, created } = await contacts.createOrFetchByName(pending.name, pending.type);
     tempIdMap.set(pending.tempId, id);
-    entitiesCreated++;
+    if (created) entitiesCreated++;
   }
   return { tempIdMap, entitiesCreated };
 }

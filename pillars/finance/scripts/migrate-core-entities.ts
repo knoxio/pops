@@ -22,7 +22,14 @@ import {
 } from '../src/api/contacts/migrate-core-entities.js';
 
 const PAGE_SIZE = 200;
-const MAX_PAGES = 1000;
+/**
+ * Safety cap on the read sweep — a backstop against a runaway loop, NOT a
+ * dataset cap. At `PAGE_SIZE` per page this is 1M entities. The migrator must
+ * copy the FULL core set, so hitting this cap with rows still available is a
+ * hard failure (throws → non-zero exit) rather than a silent tail-drop, letting
+ * deploy automation halt safely.
+ */
+const MAX_PAGES = 5000;
 
 type CoreRouter = {
   entities: {
@@ -49,9 +56,13 @@ async function readAllCoreEntities(): Promise<CoreEntity[]> {
       throw new Error(`core entities.list failed: ${describe(result)}`);
     }
     all.push(...result.value.data);
-    if (!result.value.pagination.hasMore) break;
+    if (!result.value.pagination.hasMore) return all;
   }
-  return all;
+  throw new Error(
+    `core entities.list sweep hit the ${MAX_PAGES}-page safety cap with more rows still ` +
+      `available after ${all.length} entities — refusing to migrate a TRUNCATED set; raise ` +
+      `MAX_PAGES and re-run`
+  );
 }
 
 /** Create a contact, mapping a 409 dup-name to an idempotent skip. */
