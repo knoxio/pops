@@ -1,0 +1,1 @@
+{"provider":"anthropic","model":"claude-haiku-4-5","operation":"imports.categorize","domain":"finance","inputTokens":1280,"outputTokens":640,"costUsd":0.0048,"latencyMs":742,"status":"budget-blocked","cached":true,"contextId":"import_batch:42","promptVersion":"v3","errorMessage":"upstream 529 overloaded","metadata":{"backfilled_from":"food","prompt_version":"v3"}}
