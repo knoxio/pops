@@ -15,24 +15,24 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json .oxfmtrc
 
 # Phase 1: package.json of @pops/registry + its transitive @pops/* deps.
 COPY pillars/registry/package.json ./pillars/registry/
-COPY packages/pillar-sdk/package.json ./packages/pillar-sdk/
-COPY packages/pillar-settings/package.json ./packages/pillar-settings/
-COPY packages/types/package.json ./packages/types/
+COPY libs/sdk/package.json ./libs/sdk/
+COPY libs/settings/package.json ./libs/settings/
+COPY libs/types/package.json ./libs/types/
 
 RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
     corepack enable && pnpm install --frozen-lockfile --filter "@pops/registry..."
 
 # Phase 2: source for the transitive @pops/* deps, then the pillar itself.
 
-COPY packages/pillar-sdk/src ./packages/pillar-sdk/src
-COPY packages/pillar-sdk/tsconfig.json ./packages/pillar-sdk/tsconfig.json
+COPY libs/sdk/src ./libs/sdk/src
+COPY libs/sdk/tsconfig.json ./libs/sdk/tsconfig.json
 
-COPY packages/pillar-settings/src ./packages/pillar-settings/src
-COPY packages/pillar-settings/tsconfig.json ./packages/pillar-settings/tsconfig.json
+COPY libs/settings/src ./libs/settings/src
+COPY libs/settings/tsconfig.json ./libs/settings/tsconfig.json
 
-COPY packages/types/src ./packages/types/src
-COPY packages/types/tsconfig.json ./packages/types/tsconfig.json
-COPY packages/types/tsconfig.build.json ./packages/types/tsconfig.build.json
+COPY libs/types/src ./libs/types/src
+COPY libs/types/tsconfig.json ./libs/types/tsconfig.json
+COPY libs/types/tsconfig.build.json ./libs/types/tsconfig.build.json
 
 COPY pillars/registry/src ./pillars/registry/src
 COPY pillars/registry/scripts ./pillars/registry/scripts

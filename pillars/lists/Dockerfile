@@ -16,8 +16,8 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json .oxfmtrc
 # resolution to that subgraph; unrelated pillars never need to exist
 # in this image's build context.
 COPY pillars/lists/package.json ./pillars/lists/
-COPY packages/pillar-sdk/package.json ./packages/pillar-sdk/
-COPY packages/types/package.json ./packages/types/
+COPY libs/sdk/package.json ./libs/sdk/
+COPY libs/types/package.json ./libs/types/
 
 # Install pnpm + only the deps of the @pops/lists subgraph.
 RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
@@ -25,12 +25,12 @@ RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
 
 # Phase 2: source for the transitive @pops/* deps of @pops/lists.
 # @pops/pillar-sdk
-COPY packages/pillar-sdk/src ./packages/pillar-sdk/src
-COPY packages/pillar-sdk/tsconfig.json ./packages/pillar-sdk/tsconfig.json
+COPY libs/sdk/src ./libs/sdk/src
+COPY libs/sdk/tsconfig.json ./libs/sdk/tsconfig.json
 # @pops/types
-COPY packages/types/src ./packages/types/src
-COPY packages/types/tsconfig.json ./packages/types/tsconfig.json
-COPY packages/types/tsconfig.build.json ./packages/types/tsconfig.build.json
+COPY libs/types/src ./libs/types/src
+COPY libs/types/tsconfig.json ./libs/types/tsconfig.json
+COPY libs/types/tsconfig.build.json ./libs/types/tsconfig.build.json
 # @pops/lists (the pillar itself)
 COPY pillars/lists/src ./pillars/lists/src
 COPY pillars/lists/scripts ./pillars/lists/scripts

@@ -14,28 +14,28 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json .oxfmtrc
 
 # Phase 1: package.json of @pops/ai + its transitive @pops/* deps.
 COPY pillars/ai/package.json ./pillars/ai/
-COPY packages/ai-telemetry/package.json ./packages/ai-telemetry/
-COPY packages/pillar-sdk/package.json ./packages/pillar-sdk/
-COPY packages/pillar-settings/package.json ./packages/pillar-settings/
-COPY packages/types/package.json ./packages/types/
+COPY libs/ai-telemetry/package.json ./libs/ai-telemetry/
+COPY libs/sdk/package.json ./libs/sdk/
+COPY libs/settings/package.json ./libs/settings/
+COPY libs/types/package.json ./libs/types/
 
 RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
     corepack enable && pnpm install --frozen-lockfile --filter "@pops/ai..."
 
 # Phase 2: source for the transitive @pops/* deps, then the pillar itself.
 
-COPY packages/ai-telemetry/src ./packages/ai-telemetry/src
-COPY packages/ai-telemetry/tsconfig.json ./packages/ai-telemetry/tsconfig.json
+COPY libs/ai-telemetry/src ./libs/ai-telemetry/src
+COPY libs/ai-telemetry/tsconfig.json ./libs/ai-telemetry/tsconfig.json
 
-COPY packages/pillar-sdk/src ./packages/pillar-sdk/src
-COPY packages/pillar-sdk/tsconfig.json ./packages/pillar-sdk/tsconfig.json
+COPY libs/sdk/src ./libs/sdk/src
+COPY libs/sdk/tsconfig.json ./libs/sdk/tsconfig.json
 
-COPY packages/pillar-settings/src ./packages/pillar-settings/src
-COPY packages/pillar-settings/tsconfig.json ./packages/pillar-settings/tsconfig.json
+COPY libs/settings/src ./libs/settings/src
+COPY libs/settings/tsconfig.json ./libs/settings/tsconfig.json
 
-COPY packages/types/src ./packages/types/src
-COPY packages/types/tsconfig.json ./packages/types/tsconfig.json
-COPY packages/types/tsconfig.build.json ./packages/types/tsconfig.build.json
+COPY libs/types/src ./libs/types/src
+COPY libs/types/tsconfig.json ./libs/types/tsconfig.json
+COPY libs/types/tsconfig.build.json ./libs/types/tsconfig.build.json
 
 COPY pillars/ai/src ./pillars/ai/src
 COPY pillars/ai/scripts ./pillars/ai/scripts

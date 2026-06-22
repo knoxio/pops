@@ -5,7 +5,7 @@ WORKDIR /app
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json .oxfmtrc.json ./
 
 # Copy workspace package.json files (for dep resolution)
-COPY packages/pillar-sdk/package.json ./packages/pillar-sdk/
+COPY libs/sdk/package.json ./libs/sdk/
 COPY apps/pops-mcp/package.json ./apps/pops-mcp/
 
 # Install pnpm and all workspace dependencies
@@ -13,14 +13,14 @@ RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
     corepack enable && pnpm install --frozen-lockfile --filter "@pops/mcp..."
 
 # Copy shared package sources
-COPY packages/pillar-sdk/ ./packages/pillar-sdk/
+COPY libs/sdk/ ./libs/sdk/
 
 # Copy pops-mcp source
 COPY apps/pops-mcp/tsconfig.json ./apps/pops-mcp/
 COPY apps/pops-mcp/src ./apps/pops-mcp/src
 
 # Build shared packages first (pops-mcp consumes @pops/pillar-sdk).
-WORKDIR /app/packages/pillar-sdk
+WORKDIR /app/libs/sdk
 RUN pnpm build
 
 # Build pops-mcp
