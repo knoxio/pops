@@ -44,11 +44,35 @@ if [[ ! -f "$abs_unit/package.json" ]]; then
 fi
 
 has_build="$(node -e "const s=require('$abs_unit/package.json').scripts||{}; process.stdout.write(s.build?'1':'')")"
-if [[ -z "$has_build" ]]; then
-  echo "sandbox: $unit has no build script — nothing to prove, skipping." >&2
+has_typecheck="$(node -e "const s=require('$abs_unit/package.json').scripts||{}; process.stdout.write(s.typecheck?'1':'')")"
+has_test="$(node -e "const s=require('$abs_unit/package.json').scripts||{}; process.stdout.write((s['test:coverage']||s.test)?'1':'')")"
+
+# What proof do we owe this unit? Three honest cases — never a silent skip when
+# there IS a surface to prove:
+#
+#   * build present            -> emit-build is the proof (a consumer could
+#                                 `tsc -b` against the published .d.ts).
+#   * no build, typecheck/test -> a SHELL-BUNDLED app unit (ADR-002): the 7
+#                                 `pillars/*/app` React FE fragments have no
+#                                 standalone `build` because they are compiled
+#                                 into the shell's single Vite SPA, not emitted
+#                                 as a library. A standalone bundle is therefore
+#                                 meaningless for them. Their extraction proof
+#                                 is "installs in isolation against packed
+#                                 @pops/* tarballs, then typechecks (+ tests)" —
+#                                 which is exactly what this sandbox runs below.
+#                                 So we DO prove them; we just skip emit-build.
+#                                 (Mirrors app-quality.yml, which type+tests the
+#                                 app units but never `pnpm build`s them.)
+#   * none of the three        -> genuinely nothing to prove (config/data-only
+#                                 package); skip with a reason.
+if [[ -z "$has_build" && -z "$has_typecheck" && -z "$has_test" ]]; then
+  echo "sandbox: $unit has no build/typecheck/test script — nothing to prove, skipping." >&2
   exit 0
 fi
-has_typecheck="$(node -e "const s=require('$abs_unit/package.json').scripts||{}; process.stdout.write(s.typecheck?'1':'')")"
+if [[ -z "$has_build" ]]; then
+  echo "sandbox: $unit has no build script — shell-bundled app unit (ADR-002); proving extraction via isolated typecheck/test, not a standalone bundle." >&2
+fi
 
 work="$(mktemp -d "${TMPDIR:-/tmp}/ex2-sandbox.XXXXXX")"
 cleanup() { [[ "$keep" == "--keep" ]] || rm -rf "$work"; }
@@ -78,17 +102,46 @@ node "$repo_root/scripts/extractability/rewrite-deps.mjs" "$work/u/package.json"
 #     resolved values are just frozen — exactly what an extracted repo carries).
 node "$repo_root/scripts/extractability/materialize-tsconfig.mjs" "$work/u" "$abs_unit"
 
-# 4) Install + build with NO workspace resolution — the proof.
+# 4) Install + prove with NO workspace resolution — the litmus.
+#
+# Lint is deliberately NOT run here. oxlint/oxfmt and their rule config live
+# ONLY at the repo root (by design — no per-unit lint configs; lint stays
+# monorepo-only), so an extracted unit cannot lint standalone. Running it in
+# this isolated sandbox would either fail (no config) or silently no-op, and
+# either way it would NOT be an honest claim of "lint-clean extraction". Lint
+# is a monorepo-wide gate (`pnpm lint`), not part of the extraction proof; the
+# sandbox proves only what an extracted repo could genuinely run on its own:
+# install + build (or typecheck/test for shell-bundled app units).
 cd "$work/u"
 echo "sandbox: installing (isolated, --ignore-workspace) …" >&2
 pnpm install --ignore-workspace --no-frozen-lockfile
 
-echo "sandbox: building …" >&2
-pnpm run build
+if [[ -n "$has_build" ]]; then
+  echo "sandbox: building …" >&2
+  pnpm run build
+fi
 
 if [[ -n "$has_typecheck" ]]; then
   echo "sandbox: typecheck …" >&2
   pnpm run typecheck
 fi
 
-echo "✔ EX-2: $unit builds in isolation." >&2
+# Shell-bundled app units (no build script) prove extraction via their own
+# test suite too — it exercises the packed @pops/* contracts at runtime, the
+# strongest evidence the unit needs nothing behind a contract. For units that
+# DO emit a build, the build + typecheck above is the proof and tests stay in
+# the dedicated test lanes (kept out here to keep EX-2 fast).
+if [[ -z "$has_build" && -n "$has_test" ]]; then
+  echo "sandbox: test (isolated) …" >&2
+  if node -e "process.exit((require('./package.json').scripts||{})['test:coverage']?0:1)"; then
+    pnpm run test:coverage
+  else
+    pnpm run test
+  fi
+fi
+
+if [[ -n "$has_build" ]]; then
+  echo "✔ EX-2: $unit builds in isolation." >&2
+else
+  echo "✔ EX-2: $unit typechecks/tests in isolation (shell-bundled app unit; no standalone build by design)." >&2
+fi

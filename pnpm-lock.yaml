@@ -614,6 +614,9 @@ importers:
       '@hey-api/openapi-ts':
         specifier: ^0.98.2
         version: 0.98.2(magicast@0.5.3)(typescript@6.0.3)
+      '@pops/finance':
+        specifier: workspace:*
+        version: link:../../finance
       '@pops/locales':
         specifier: workspace:*
         version: link:../../../libs/locales
@@ -1229,6 +1232,9 @@ importers:
       '@lezer/generator':
         specifier: ^1.8.0
         version: 1.8.0
+      '@pops/lists':
+        specifier: workspace:*
+        version: link:../../lists
       '@pops/locales':
         specifier: workspace:*
         version: link:../../../libs/locales

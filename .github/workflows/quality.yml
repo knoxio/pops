@@ -170,3 +170,22 @@ jobs:
         run: node scripts/check-bundle-map-coverage.mjs --self-test
       - name: Every pillar app is referenced by the shell bundle map
         run: node scripts/check-bundle-map-coverage.mjs
+
+  vendored-contracts:
+    name: Vendored contract drift (ADR-033)
+    # A consumer that vendors a producer pillar's OpenAPI snapshot (because the
+    # producer has no npm package to depend on — e.g. the Rust `contacts`
+    # pillar) must keep its copy byte-identical to the canonical source, or the
+    # generated client silently lags the contract. This guard reads the source
+    # tree directly and pulls in no third-party deps, so it skips
+    # `pnpm install`. See scripts/ci/check-vendored-contracts.mjs and ADR-033.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+      - name: Gate self-test (proves the guard catches drift + orphan)
+        run: node scripts/ci/check-vendored-contracts.mjs --self-test
+      - name: Every vendored contract matches its canonical source
+        run: node scripts/ci/check-vendored-contracts.mjs

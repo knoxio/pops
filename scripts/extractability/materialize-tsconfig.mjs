@@ -140,6 +140,11 @@ function serialisableCompilerOptions(options, _baseDir) {
   const out = {};
   const drop = new Set([
     'configFilePath',
+    // `pathsBasePath` is an INTERNAL field TS injects alongside a resolved
+    // `paths`/`baseUrl` — it is not a writable tsconfig option, so emitting it
+    // makes tsc reject the materialised config (TS5023 "Unknown compiler
+    // option"). Dropped together with the path-bearing options below.
+    'pathsBasePath',
     'outDir',
     'rootDir',
     'baseUrl',

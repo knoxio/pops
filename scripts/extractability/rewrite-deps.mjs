@@ -62,6 +62,27 @@ function main(argv) {
     }
   }
 
+  // Force the TRANSITIVE @pops/* edges to resolve from the packed tarballs too.
+  // A packed dep's own manifest declares its @pops/* deps as concrete versions
+  // (`@pops/types: 0.1.0` — pnpm pack froze the `workspace:*`), which the
+  // isolated `--ignore-workspace` install would chase to the public registry
+  // and 404 on. A pnpm `overrides` block keyed on each packed name pins the
+  // whole tree to the tarballs, so the closure resolves entirely offline — the
+  // faithful stand-in for "every @pops/* dep comes from a published artifact".
+  if (Object.keys(manifest).length > 0) {
+    const pnpmField =
+      pkg.pnpm && typeof pkg.pnpm === 'object'
+        ? /** @type {Record<string, unknown>} */ (pkg.pnpm)
+        : (pkg.pnpm = {});
+    const overrides =
+      pnpmField.overrides && typeof pnpmField.overrides === 'object'
+        ? /** @type {Record<string, string>} */ (pnpmField.overrides)
+        : (pnpmField.overrides = {});
+    for (const [name, tgz] of Object.entries(manifest)) {
+      overrides[name] = `file:${tgz}`;
+    }
+  }
+
   writeFileSync(pkgPath, `${JSON.stringify(pkg, null, 2)}\n`);
   process.stdout.write(
     `rewrote ${pkgPath} (${Object.keys(manifest).length} @pops dep(s) -> file:)\n`
