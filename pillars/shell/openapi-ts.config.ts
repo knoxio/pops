@@ -7,7 +7,9 @@
  * all read/write the registry's `settings.*`, `shell.manifest` and
  * `features.*` surface over REST. Per-consumer client (not a shared SDK): the
  * shell owns its slice of the registry surface via the wire contract.
- * `pillars/registry/openapi/registry.openapi.json` is the source of truth.
+ * Consumed via the published `@pops/registry/openapi` contract export (a
+ * declared devDependency), NOT a `../../pillars/registry/...` sibling-folder
+ * path — so the shell carries nothing from the registry pillar's folder.
  *
  * The generated client posts to the shell's `/registry-api` proxy prefix
  * (see `src/registry-api-runtime-config.ts`), stripped by the generated
@@ -15,10 +17,14 @@
  *
  * Regenerate: pnpm --filter @pops/shell generate:registry-client
  */
+import { createRequire } from 'node:module';
+
 import { defineConfig } from '@hey-api/openapi-ts';
 
+const require = createRequire(import.meta.url);
+
 export default defineConfig({
-  input: '../../pillars/registry/openapi/registry.openapi.json',
+  input: require.resolve('@pops/registry/openapi'),
   output: {
     path: 'src/registry-api',
   },

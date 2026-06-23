@@ -2007,6 +2007,9 @@ importers:
       '@playwright/test':
         specifier: ^1.60.0
         version: 1.60.0
+      '@pops/registry':
+        specifier: workspace:*
+        version: link:../registry
       '@tanstack/react-query-devtools':
         specifier: ^5.101.0
         version: 5.101.0(@tanstack/react-query@5.101.0(react@19.2.7))(react@19.2.7)
