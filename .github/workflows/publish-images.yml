@@ -1,10 +1,13 @@
 name: Publish Images
 
-# Triggers gated to workflow_dispatch only during the pillar-colocation work
-# so Watchtower on capivara doesn't roll forward to a half-migrated image.
-# Restore `push: branches: [main]` + `tags: ["v*"]` once the colocation
-# series stabilises.
+# The pillar-colocation / federation series is complete, so auto-publish is
+# restored: every push to `main` (and `v*` tags) rebuilds + pushes the full
+# fleet, and Watchtower on capivara rolls the live containers forward. Use the
+# `workflow_dispatch` `only` input to rebuild a single image on demand.
 on:
+  push:
+    branches: [main]
+    tags: ['v*']
   workflow_dispatch:
     inputs:
       only:
