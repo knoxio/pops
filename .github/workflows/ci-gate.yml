@@ -1,0 +1,138 @@
+name: CI Gate
+
+# Single static-named required gate over the quality workflows whose own jobs
+# carry DYNAMIC matrix names (`finance (pillar) — ts`, `@pops/app-food`, …) and
+# so cannot be listed individually in the branch ruleset. Before this gate the
+# ruleset required only Lint / Format / Module boundaries / Duplication +
+# agent-review, leaving every typecheck / test / build / clippy / exports /
+# extractability / bundle-map / cargo-deny / drift job NON-required — a red
+# typecheck could still merge. This job is the ONE static context the ruleset
+# can require to make all of that load-bearing.
+#
+# WHY workflow_run (not needs:): the gated jobs live across SIX separate
+# workflows, each with its OWN path filters. `needs:` only sees jobs in the
+# same run, and folding them into one workflow would (a) double-run every job
+# or (b) rename the existing required `Lint`/`Format`/… contexts and break the
+# ruleset. `workflow_run` OBSERVES the sibling workflows' results without re-
+# executing anything, so it adds zero CI cost and touches none of them.
+#
+# CONVERGENCE: this fires on EACH listed workflow's completion and reads the
+# CURRENT conclusion of every gated workflow at the same head SHA via the API.
+# GitHub keeps the most-recent check-run per context as the gate state, so the
+# verdict converges on the authoritative one:
+#   - a failure is sticky: the failed run stays at the SHA, so any later re-
+#     evaluation (triggered by a slower sibling finishing) still sees it -> RED;
+#   - all-pass: the last sibling to finish triggers a run that sees every gated
+#     workflow success/skipped -> GREEN;
+#   - docs-only PR: the path-filtered siblings never run, so workflow_run never
+#     fires and `CI Gate` never reports. With the ruleset's
+#     strict_required_status_checks_policy:false, a required check that never
+#     reports is non-blocking -> docs PRs are not blocked (skipped != failure).
+#
+# A sibling workflow that did not run at this SHA (path-filtered out) is ABSENT
+# from the API result and treated as non-failing — NOT a missing-required
+# error. Only an OBSERVED failure / cancelled / timed-out / startup-failure
+# conclusion fails the gate.
+
+on:
+  workflow_run:
+    workflows:
+      - "Unit Quality"
+      - "FE Quality"
+      - "Rust Quality"
+      - "App Quality"
+      - "Quality"
+      - "Registry Generated Quality"
+    types: [completed]
+
+# Key on the observed head SHA, not the gate's own ref: every sibling
+# completion for the same commit collapses onto one evaluation lane, and a
+# newer commit's evaluation cancels a stale in-flight one.
+concurrency:
+  group: ci-gate-${{ github.event.workflow_run.head_sha }}
+  cancel-in-progress: true
+
+permissions:
+  actions: read
+  checks: read
+  contents: read
+
+jobs:
+  gate:
+    name: CI Gate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Aggregate gated workflow conclusions at this commit
+        uses: actions/github-script@v8
+        env:
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+          TRIGGERING_WORKFLOW: ${{ github.event.workflow_run.name }}
+          TRIGGERING_CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+        with:
+          script: |
+            const headSha = process.env.HEAD_SHA;
+            const gated = [
+              "Unit Quality",
+              "FE Quality",
+              "Rust Quality",
+              "App Quality",
+              "Quality",
+              "Registry Generated Quality",
+            ];
+            const failing = new Set(["failure", "cancelled", "timed_out", "startup_failure", "action_required", "stale"]);
+
+            core.info(`Triggered by "${process.env.TRIGGERING_WORKFLOW}" (conclusion=${process.env.TRIGGERING_CONCLUSION}) at ${headSha}`);
+
+            const runs = await github.paginate(github.rest.actions.listWorkflowRunsForRepo, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              head_sha: headSha,
+              per_page: 100,
+            });
+
+            // Keep the newest run per gated workflow name (a re-run supersedes
+            // an earlier attempt for the same workflow at this SHA).
+            const latest = new Map();
+            for (const run of runs) {
+              if (!gated.includes(run.name)) continue;
+              const prev = latest.get(run.name);
+              if (!prev || run.run_number > prev.run_number || (run.run_number === prev.run_number && run.run_attempt > prev.run_attempt)) {
+                latest.set(run.name, run);
+              }
+            }
+
+            const lines = [];
+            const failed = [];
+            const pending = [];
+            for (const name of gated) {
+              const run = latest.get(name);
+              if (!run) {
+                lines.push(`  - ${name}: (did not run — path-filtered, treated as pass)`);
+                continue;
+              }
+              if (run.status !== "completed") {
+                pending.push(name);
+                lines.push(`  - ${name}: ${run.status} (not yet completed)`);
+                continue;
+              }
+              const c = run.conclusion;
+              lines.push(`  - ${name}: ${c}`);
+              if (failing.has(c)) failed.push(`${name} (${c})`);
+            }
+
+            core.info("Gated workflow states at this commit:");
+            for (const l of lines) core.info(l);
+
+            if (failed.length > 0) {
+              core.setFailed(`Quality gate FAILED — ${failed.length} gated workflow(s) did not pass: ${failed.join(", ")}`);
+              return;
+            }
+
+            // A sibling still in flight is NOT a failure: a later completion re-
+            // triggers this gate and produces the authoritative final verdict.
+            // Reporting success here is safe because any subsequent failure is
+            // sticky (its run stays at the SHA) and re-evaluates this context red.
+            if (pending.length > 0) {
+              core.info(`No failures observed; still in flight: ${pending.join(", ")}. A later completion will re-evaluate.`);
+            }
+            core.info("Quality gate PASSED — no gated workflow reported a failure at this commit.");
