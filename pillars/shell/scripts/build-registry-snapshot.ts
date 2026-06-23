@@ -37,13 +37,13 @@ import { dirname, resolve } from 'node:path';
 import {
   ALWAYS_INSTALLED_IDS,
   discoverManifestSources,
-} from '../../../packages/module-registry/scripts/known-modules.ts';
+} from '../../../libs/module-registry/scripts/known-modules.ts';
 import {
   project,
   resolveInstalledIds,
   validateManifests,
   type SerialisableModule,
-} from '../../../packages/module-registry/scripts/lib.ts';
+} from '../../../libs/module-registry/scripts/lib.ts';
 
 function renderSnapshot(
   projected: readonly SerialisableModule[],
