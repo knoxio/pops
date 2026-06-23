@@ -1,0 +1,159 @@
+name: App Quality
+
+# Runs each `pillars/*/app` frontend unit's OWN typecheck + test suite.
+#
+# These 7 members (`@pops/app-{ai,cerebrum,finance,food,inventory,lists,
+# media}`, real pnpm workspace members per `pnpm-workspace.yaml`'s
+# `pillars/*/*`) live at maxdepth 2 and collide on basename `app`, so they are
+# deliberately OUT of `unit-quality.yml`'s `find -maxdepth 1` disk-discovery.
+# Before this workflow they were only type+built TRANSITIVELY by the shell in
+# `fe-quality.yml`, which never runs their ~180 standalone vitest files — so
+# their unit tests never ran in CI. This closes that gap: a dedicated, disk-
+# discovered matrix that runs each app's `typecheck` + `test` script directly.
+#
+# App units have NO standalone `build` script (they build via the shell), so
+# this lane is typecheck + test only — there is nothing to `pnpm build` on the
+# unit itself. The dependency closure IS built (`^...`) so the app's compiled
+# deps (`@pops/types`, `@pops/db-types`, `@pops/ui`, the owning pillar's
+# generated client, …) resolve before typecheck/test import them. This
+# generalises the former single-app `ai-quality.yml` (now retired — app-ai is
+# just another row in this matrix) to all 7 app units.
+#
+# Selectors use the manifest `name` (`@pops/app-<id>`) discovered from disk,
+# never a hardcoded list, so a newly added pillar app is covered with no edit.
+# `assert-app-coverage` in `_discover-units.yml` keeps every app routed to a
+# covering FE workflow; this workflow now ALSO gives each its own unit lane.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "pillars/*/app/**"
+      - "pillars/*/openapi/**"
+      - "libs/db-types/**"
+      - "libs/navigation/**"
+      - "libs/sdk/**"
+      - "libs/types/**"
+      - "libs/ui/**"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "tsconfig.base.json"
+      - "tsconfig.build.json"
+      - "mise.toml"
+      - "mise.ci.toml"
+      - ".github/workflows/app-quality.yml"
+  pull_request:
+    paths:
+      - "pillars/*/app/**"
+      - "pillars/*/openapi/**"
+      - "libs/db-types/**"
+      - "libs/navigation/**"
+      - "libs/sdk/**"
+      - "libs/types/**"
+      - "libs/ui/**"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "tsconfig.base.json"
+      - "tsconfig.build.json"
+      - "mise.toml"
+      - "mise.ci.toml"
+      - ".github/workflows/app-quality.yml"
+
+concurrency:
+  group: app-quality-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  MISE_ENV: ci
+
+jobs:
+  discover:
+    name: Discover app units from disk
+    runs-on: ubuntu-latest
+    outputs:
+      apps: ${{ steps.scan.outputs.apps }}
+      count: ${{ steps.scan.outputs.count }}
+    steps:
+      - uses: actions/checkout@v6
+      - id: scan
+        name: Walk pillars/*/app/package.json for the manifest name
+        # An app unit is any `pillars/*/app` carrying a package.json. Emit the
+        # manifest `name` (the only valid `pnpm --filter` selector — basenames
+        # all collide on `app`) plus its dir as a display key. Disk-derived so
+        # adding a pillar app needs no edit here. The names MUST be @pops/app-*
+        # (enforced by assert-app-coverage); fail loud on a stray name so a
+        # mis-named member can't silently drop out of the matrix.
+        run: |
+          set -euo pipefail
+          apps=$(find pillars -mindepth 2 -maxdepth 2 -type d -name app | sort | while read -r d; do
+            [ -f "$d/package.json" ] || continue
+            pkg=$(jq -r '.name' "$d/package.json")
+            case "$pkg" in
+              @pops/app-*) : ;;
+              *) echo "::error::$d is named '$pkg' (expected @pops/app-*) — fix the name or this unit drops out of app-quality" >&2; exit 1 ;;
+            esac
+            jq -n --arg pkg "$pkg" --arg dir "$d" '{pkg:$pkg,dir:$dir}'
+          done | jq -s -c '.')
+          count=$(echo "$apps" | jq 'length')
+          echo "apps=$apps" >> "$GITHUB_OUTPUT"
+          echo "count=$count" >> "$GITHUB_OUTPUT"
+          echo "Discovered $count app unit(s):"
+          echo "$apps" | jq .
+
+  app:
+    name: ${{ matrix.app.pkg }}
+    needs: [discover]
+    if: needs.discover.outputs.count != '0'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        app: ${{ fromJson(needs.discover.outputs.apps) }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: jdx/mise-action@v2
+
+      - name: Expose bundled node-gyp on PATH
+        # `better-sqlite3` (a transitive dep of every app's pillar closure) has
+        # an install script `prebuild-install || node-gyp rebuild`. The prebuilt
+        # path normally wins on ubuntu-latest, but mise-installed node bundles
+        # node-gyp under npm WITHOUT putting it on PATH, so any prebuild miss
+        # would fail with `node-gyp: not found`. Add npm's node-gyp-bin dir to
+        # PATH so the fallback works — mirrors unit-quality.yml.
+        run: |
+          set -euo pipefail
+          gyp_bin="$(dirname "$(mise which node)")/../lib/node_modules/npm/bin/node-gyp-bin"
+          [ -x "$gyp_bin/node-gyp" ] || { echo "::error::bundled node-gyp not found at $gyp_bin"; exit 1; }
+          echo "$gyp_bin" >> "$GITHUB_PATH"
+
+      - name: Assert --filter matches exactly one package
+        # pnpm --filter exits 0 on zero matches (a warning, not an error), so a
+        # dir-name != pkg-name skew would silently run nothing. Fail loud.
+        run: |
+          set -euo pipefail
+          n=$(pnpm ls -r --depth -1 --filter "${{ matrix.app.pkg }}" --json | jq 'length')
+          [ "$n" = 1 ] || { echo "::error::--filter ${{ matrix.app.pkg }} matched $n packages (expected 1)"; exit 1; }
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Build dependency closure
+        # App units have no own `build` script — they build via the shell — so
+        # only the deps (`^...`) are built here, never the unit itself. This
+        # materialises the compiled .d.ts the app's typecheck + test import.
+        run: pnpm --filter "${{ matrix.app.pkg }}^..." build
+
+      - name: Typecheck
+        run: pnpm --filter "${{ matrix.app.pkg }}" typecheck
+
+      - name: Test
+        # Prefer `test:coverage` when the unit defines it.
+        run: |
+          set -euo pipefail
+          dir='${{ matrix.app.dir }}'
+          if node -e "process.exit((require('./$dir/package.json').scripts||{})['test:coverage']?0:1)"; then
+            pnpm --filter "${{ matrix.app.pkg }}" test:coverage
+          else
+            pnpm --filter "${{ matrix.app.pkg }}" test
+          fi
