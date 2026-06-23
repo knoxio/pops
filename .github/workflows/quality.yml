@@ -104,3 +104,41 @@ jobs:
       # counting it as duplication penalises codegen, not authored code,
       # the same reason `**/generated.ts` is already ignored.
       - run: npx jscpd@^4 --threshold 5 --min-lines 8 --min-tokens 70 --ignore "**/*.test.{ts,tsx},**/*.spec.{ts,tsx},**/dist/**,**/node_modules/**,**/*.snap,**/*.d.ts,**/generated.ts,**/src/*-api/**,**/db/schema.ts,**/db/seeder.ts" --reporters "console" --exitCode 0 .
+
+  # --- Extractability fast gates (EX-1 / EX-3) -------------------------------
+  # NON-REQUIRED by design: these jobs are deliberately kept out of the branch
+  # ruleset's required-checks set during the federation migration. They surface
+  # phantom-dependency and baseline-growth regressions as signal without
+  # blocking merges while units are still being normalised. Promote to required
+  # once the tree is clean. EX-2 (full sandbox) is heavy and runs nightly, not
+  # here.
+  extractability-deps:
+    name: Extractability — declared deps (EX-1)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v5
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm extractability:deps:self-test
+      - run: pnpm extractability:deps
+
+  extractability-baseline:
+    name: Extractability — baseline monotonicity (EX-3)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v5
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm extractability:baseline
