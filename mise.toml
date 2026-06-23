@@ -17,93 +17,137 @@ rust = "stable"
 _.path = ["{{config_root}}/node_modules/.bin"]
 
 # ============================================================================
+# Root aggregate — graph-aware orchestration (replaces all `turbo X` scripts)
+# ============================================================================
+
+[tasks.install]
+description = "Install all dependencies"
+run = "pnpm install"
+
+[tasks.build]
+description = "Build the whole compiled TS graph in one ordered pass (^build replacement)"
+run = "tsc -b tsconfig.build.json"
+
+[tasks."build:rust"]
+description = "Build the cargo workspace"
+run = "cargo build --workspace"
+
+[tasks."build:all"]
+description = "Build the TS compiled graph and the Rust workspace"
+depends = ["build", "build:rust"]
+
+# Disk-discovery fan-out wrapper. mise has NO `--all` flag (verified mise
+# 2026.6.x: only -C/--cd, -j/--jobs, etc.), so the matrix is this explicit
+# task: it discovers every unit dir from disk and runs <task> in each.
+# This mirrors the CI `find … -maxdepth 1` discovery matrix, extended one
+# level to the `pillars/*/app` source-FE units so they are covered too.
+#
+# The source guard is load-bearing: mise merges configs UP the tree, so
+# `mise run -C <unit> <task>` for a unit whose own mise.toml lacks <task>
+# resolves to the ROOT task instead — and the root `typecheck`/`test` tasks
+# re-invoke run-all, recursing infinitely. We therefore only run a unit's
+# task when `mise tasks info` reports its Source as that unit's own
+# mise.toml (i.e. the task is locally defined, not inherited).
+[tasks.run-all]
+description = "Run <task> in every disk-discovered unit that locally defines it"
+usage = 'arg "<task>"'
+run = '''
+units="$(
+  find pillars libs -mindepth 1 -maxdepth 1 -type d -exec test -f '{}/mise.toml' ';' -print
+  find pillars -mindepth 2 -maxdepth 2 -type d -name app -exec test -f '{}/mise.toml' ';' -print
+)"
+for d in $(echo "$units" | sort); do
+  src="$(mise tasks info "$usage_task" -C "$d" 2>/dev/null | sed -n 's/^Source: //p')"
+  case "$src" in
+    */"$d"/mise.toml) mise run -C "$d" "$usage_task" || exit 1 ;;
+    *) : ;;  # task absent or inherited from an ancestor — skip this unit
+  esac
+done
+'''
+
+[tasks.test]
+description = "Run every unit's test suite (fan-out; each unit's test depends on its own build)"
+run = "mise run run-all test"
+
+[tasks."test:coverage"]
+description = "Run every unit's coverage suite (fan-out)"
+run = "mise run run-all test:coverage"
+
+[tasks.typecheck]
+description = "Typecheck the compiled graph (tsc -b --noEmit) then fan out to source units"
+run = "tsc -b tsconfig.build.json --noEmit && mise run run-all typecheck"
+
+[tasks.dev]
+description = "Build compiled-lib deps once, then start every unit's watcher in parallel"
+run = "mise run build && mise run -j 99 run-all dev"
+
+[tasks.lint]
+description = "Lint all units (oxlint is workspace-wide, turbo-independent)"
+run = "oxlint --type-aware"
+
+[tasks.registry]
+description = "Regenerate the module-registry static manifest (src/generated.ts)"
+run = "tsx libs/module-registry/scripts/build.ts"
+
+[tasks."openapi:generate"]
+description = "Regenerate every pillar's OpenAPI snapshot + typed client (fans out to each pillar's build codegen)"
+run = "mise run run-all build"
+
+# ============================================================================
 # Development Servers
 # ============================================================================
 
 [tasks."dev:pillars"]
-description = "Run every pillar API in watch mode (turbo across pillars/*)"
-run = "pnpm exec turbo run dev dev:api --filter='./pillars/*'"
+description = "Run every pillar API in watch mode (fan-out across pillars/*)"
+run = "mise run -j 99 run-all dev"
 
 [tasks."dev:shell"]
 description = "Run pops-shell Vite dev server"
-dir = "apps/pops-shell"
+dir = "pillars/shell"
 run = """
 pnpm install
 pnpm dev
 """
 
-[tasks."dev"]
-description = "Run all dev servers (using turbo)"
-run = "pnpm dev"
-
-[tasks."cli"]
-description = "Run the pops CLI from source (e.g. `mise cli cerebrum capture \"a thought\"`)"
-dir = "apps/pops-cli"
-run = "pnpm dev"
-
-[tasks."cli:build"]
-description = "Build the pops CLI to apps/pops-cli/dist"
-dir = "apps/pops-cli"
-run = "pnpm build"
-
 [tasks."dev:mcp"]
 description = "Run pops-mcp HTTP MCP server in dev mode (talks to the pillar APIs over REST)"
-dir = "apps/pops-mcp"
+dir = "pillars/mcp"
 run = """
 pnpm install
 pnpm dev
 """
 
 [tasks."dev:storybook"]
-description = "Run unified Storybook for all packages and apps"
-dir = "apps/pops-storybook"
-run = "pnpm storybook"
+description = "Run unified Storybook for the UI library"
+dir = "libs/ui"
+run = "mise run storybook"
 
 # ============================================================================
 # Quality Checks
 # ============================================================================
 
-[tasks.typecheck]
-description = "Type check all packages"
-run = "pnpm typecheck"
-
 [tasks."typecheck:pillars"]
-description = "Type check every pillar API (turbo across pillars/*)"
-run = "pnpm exec turbo run typecheck --filter='./pillars/*'"
+description = "Type check every pillar (fan-out across pillars/*)"
+run = "mise run run-all typecheck"
 
 [tasks."typecheck:shell"]
 description = "Type check pops-shell"
-dir = "apps/pops-shell"
-run = "pnpm typecheck"
-
-[tasks.test]
-description = "Run all tests"
-run = "pnpm test"
+dir = "pillars/shell"
+run = "mise run typecheck"
 
 [tasks."test:watch"]
-description = "Run all tests in watch mode"
+description = "Run shell tests in watch mode"
+dir = "pillars/shell"
 run = "pnpm run test:watch"
 
 [tasks."test:pillars"]
-description = "Run every pillar API's test suite (turbo across pillars/*)"
-run = "pnpm exec turbo run test --filter='./pillars/*'"
+description = "Run every pillar's test suite (fan-out across pillars/*)"
+run = "mise run run-all test"
 
 [tasks."test:shell"]
 description = "Run pops-shell tests"
-dir = "apps/pops-shell"
-run = "pnpm test"
-
-[tasks.lint]
-description = "Lint all packages"
-run = "pnpm lint"
-
-[tasks.build]
-description = "Build all packages"
-run = "pnpm build"
-
-[tasks."openapi:generate"]
-description = "Regenerate every pillar's OpenAPI snapshot + typed client (turbo across pillars/*)"
-run = "pnpm exec turbo run generate:openapi generate:api-types --filter='./pillars/*'"
+dir = "pillars/shell"
+run = "mise run test"
 
 # ============================================================================
 # Database Management
@@ -128,7 +172,7 @@ run = "pnpm db:seed:food"
 
 [tasks."food:dsl:generate"]
 description = "Regenerate the Lezer parser for the recipe DSL grammar (PRD-120)"
-dir = "packages/app-food"
+dir = "pillars/food/app"
 run = """
 # lezer-generator writes BOTH `dsl-parser.ts` (parser tables) and
 # `dsl-parser.terms.ts` (numeric term ids) alongside the -o target so we
@@ -240,14 +284,11 @@ git worktree remove "../$BRANCH" && git branch -d "$BRANCH"
 description = "Clean build artifacts and dependencies"
 run = """
 echo "Cleaning build artifacts..."
-rm -rf dist/ .turbo/
+rm -rf dist/
 find . -name 'node_modules' -type d -prune -exec rm -rf '{}' +
+find . -name '*.tsbuildinfo' -type f -delete
 echo "Done. Run 'pnpm install' to reinstall dependencies."
 """
-
-[tasks.install]
-description = "Install all dependencies"
-run = "pnpm install"
 
 [tasks.setup]
 description = "Initial project setup (install deps + typecheck)"
@@ -255,6 +296,6 @@ run = """
 echo "Installing dependencies..."
 pnpm install
 echo "Type checking..."
-pnpm typecheck
+mise run typecheck
 echo "Setup complete! Run 'mise dev' to start development."
 """
