@@ -1,49 +1,16 @@
 import { describe, expect, expectTypeOf, it } from 'vitest';
 
-import { PILLARS, type KnownPillarId } from '../known-pillar-id.js';
-import {
-  ALL_MODULE_IDS,
-  MODULE_PARENT_PILLAR,
-  isKnownPillarId,
-  isModuleId,
-  type ModuleId,
-} from '../module-id.js';
-
-describe('ALL_MODULE_IDS', () => {
-  it('is a superset of PILLARS plus the transitional ego id', () => {
-    // `ai` is now a first-class pillar (PRD-055), so it lives in PILLARS; only
-    // `ego` remains a transitional sub-module id beyond the pillar set.
-    expect(ALL_MODULE_IDS).toHaveLength(PILLARS.length + 1);
-    for (const pillar of PILLARS) {
-      expect(ALL_MODULE_IDS).toContain(pillar);
-    }
-    expect(ALL_MODULE_IDS).toContain('ai');
-    expect(ALL_MODULE_IDS).toContain('ego');
-  });
-
-  it('includes contacts (the first Rust pillar)', () => {
-    expect(ALL_MODULE_IDS).toContain('contacts');
-    expect(MODULE_PARENT_PILLAR.contacts).toBe('contacts');
-  });
-
-  it('contains no duplicates', () => {
-    const unique = new Set<string>(ALL_MODULE_IDS);
-    expect(unique.size).toBe(ALL_MODULE_IDS.length);
-  });
-
-  it('typed as readonly tuple narrowing to ModuleId', () => {
-    expectTypeOf<(typeof ALL_MODULE_IDS)[number]>().toEqualTypeOf<ModuleId>();
-  });
-});
+import { type KnownPillarId, type PillarId, PILLARS } from '../known-pillar-id.js';
+import { isKnownPillarId, type ModuleId } from '../module-id.js';
 
 describe('isKnownPillarId', () => {
-  it('returns true for every entry in PILLARS', () => {
+  it('returns true for every entry in the curated PILLARS value', () => {
     for (const pillar of PILLARS) {
       expect(isKnownPillarId(pillar)).toBe(true);
     }
   });
 
-  it('returns true for ai (now a first-class pillar) and false for the transitional ego id', () => {
+  it('returns true for ai (now a first-class pillar) and false for the transitional ego sub-module', () => {
     expect(isKnownPillarId('ai')).toBe(true);
     expect(isKnownPillarId('ego')).toBe(false);
   });
@@ -54,6 +21,13 @@ describe('isKnownPillarId', () => {
     expect(isKnownPillarId('CORE')).toBe(false);
   });
 
+  it('returns false for a hypothetical not-yet-curated pillar id', () => {
+    // RD-9: a pillar the build has never heard of is NOT in the curated
+    // PILLARS value, so the runtime seam still rejects it — even though it is
+    // a valid `KnownPillarId` at the type level (see the type test below).
+    expect(isKnownPillarId('weather')).toBe(false);
+  });
+
   it('narrows the input to KnownPillarId when true', () => {
     const value: string = 'finance';
     if (isKnownPillarId(value)) {
@@ -62,52 +36,23 @@ describe('isKnownPillarId', () => {
   });
 });
 
-describe('isModuleId', () => {
-  it('returns true for every pillar', () => {
-    for (const pillar of PILLARS) {
-      expect(isModuleId(pillar)).toBe(true);
-    }
+describe('KnownPillarId / ModuleId are open (RD-9)', () => {
+  it('KnownPillarId resolves to string, not a closed literal union', () => {
+    expectTypeOf<KnownPillarId>().toEqualTypeOf<string>();
+    expectTypeOf<KnownPillarId>().toEqualTypeOf<PillarId>();
   });
 
-  it('returns true for ai and the transitional ego id', () => {
-    expect(isModuleId('ai')).toBe(true);
-    expect(isModuleId('ego')).toBe(true);
+  it('ModuleId resolves to string, not a closed literal union', () => {
+    expectTypeOf<ModuleId>().toEqualTypeOf<string>();
   });
 
-  it('returns false for unrelated strings', () => {
-    expect(isModuleId('')).toBe(false);
-    expect(isModuleId('shopping')).toBe(false);
-    expect(isModuleId('Core')).toBe(false);
-  });
-
-  it('narrows the input to ModuleId when true', () => {
-    const value: string = 'ai';
-    if (isModuleId(value)) {
-      expectTypeOf(value).toEqualTypeOf<ModuleId>();
-    }
-  });
-});
-
-describe('MODULE_PARENT_PILLAR', () => {
-  it('maps every pillar to itself', () => {
-    for (const pillar of PILLARS) {
-      expect(MODULE_PARENT_PILLAR[pillar]).toBe(pillar);
-    }
-  });
-
-  it('maps ai to itself (first-class pillar, PRD-055) and ego to cerebrum per ADR-026', () => {
-    expect(MODULE_PARENT_PILLAR.ai).toBe('ai');
-    expect(MODULE_PARENT_PILLAR.ego).toBe('cerebrum');
-  });
-
-  it('has an entry for every ModuleId', () => {
-    for (const id of ALL_MODULE_IDS) {
-      expect(MODULE_PARENT_PILLAR[id]).toBeDefined();
-      expect(isKnownPillarId(MODULE_PARENT_PILLAR[id])).toBe(true);
-    }
-  });
-
-  it('value type is exactly KnownPillarId', () => {
-    expectTypeOf(MODULE_PARENT_PILLAR).toEqualTypeOf<Record<ModuleId, KnownPillarId>>();
+  it('a hypothetical new pillar / module id is assignable with NO type edit', () => {
+    // The whole point of RD-9: adding `pillars/weather/` requires no edit to
+    // the SDK type — its id is already a valid KnownPillarId / ModuleId. If
+    // either of these stopped compiling, the union closed back up.
+    const newPillar: KnownPillarId = 'weather';
+    const newModule: ModuleId = 'weather-overlay';
+    expect(newPillar).toBe('weather');
+    expect(newModule).toBe('weather-overlay');
   });
 });

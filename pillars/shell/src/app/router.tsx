@@ -15,7 +15,7 @@
 import { Suspense } from 'react';
 import { createBrowserRouter, Link, Navigate, Outlet, useLocation } from 'react-router';
 
-import { ALL_MODULE_IDS } from '@pops/pillar-sdk';
+import { KNOWN_MODULES } from '@pops/module-registry';
 
 import { IndexRedirect } from './IndexRedirect';
 import { filterAppManifests, type FrontendManifest } from './installed-modules';
@@ -29,20 +29,22 @@ import { PillarGuard, pillarIdForModule } from './pillars';
 import type { RouteObject } from 'react-router';
 
 /**
- * Catch-all element: if the URL's first path segment names a routable
- * module id (`ALL_MODULE_IDS`) that isn't installed in this build,
+ * Catch-all element: if the URL's first path segment names a module the
+ * codebase could ship (`KNOWN_MODULES`) that isn't installed in this build,
  * render `NotInstalledPage`. Otherwise fall through to `NotFoundPage`.
  *
- * Using the full `ALL_MODULE_IDS` set (rather than just `MODULES`) here
- * means the "not installed" message fires for any module the codebase
- * could ship — including ones excluded by `POPS_APPS` — while truly
- * unknown paths still get a proper 404. The superset includes the two
- * transitional sub-module ids (`ai`, `ego`) so they remain routable.
+ * `KNOWN_MODULES` is `@pops/module-registry`'s disk-discovered superset of
+ * every in-repo pillar manifest — the right "could-ship" set, broader than
+ * the per-deploy install set (`POPS_APPS`-gated) so the "not installed"
+ * message fires for an excluded-but-buildable module while truly unknown
+ * paths still get a proper 404. RD-9 re-sourced this off the SDK's frozen
+ * `ALL_MODULE_IDS` tuple onto this runtime set so adding a pillar needs no
+ * SDK type edit.
  */
 function UnmatchedRoute() {
   const { pathname } = useLocation();
   const first = pathname.split('/').find((s) => s.length > 0) ?? '';
-  const knownModules: readonly string[] = ALL_MODULE_IDS;
+  const knownModules: readonly string[] = KNOWN_MODULES;
   if (first.length > 0 && knownModules.includes(first)) {
     return <NotInstalledPage />;
   }
@@ -133,8 +135,8 @@ export function buildRouter(
         { path: 'cerebrum/admin/cache', element: <Navigate to="/ai/cache" replace /> },
         { path: 'settings', element: <SettingsPage /> },
         { path: 'features', element: <FeaturesPage /> },
-        // Catch-all: if the first path segment names a routable module id
-        // (`ALL_MODULE_IDS`) the operator excluded via `POPS_APPS`, render
+        // Catch-all: if the first path segment names a buildable module
+        // (`KNOWN_MODULES`) the operator excluded via `POPS_APPS`, render
         // NotInstalledPage. Genuinely unknown paths render NotFoundPage.
         // Both decisions happen inside `UnmatchedRoute` so the route table
         // stays free of inline module-id literals.
