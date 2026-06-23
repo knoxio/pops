@@ -17,7 +17,7 @@ rust = "stable"
 _.path = ["{{config_root}}/node_modules/.bin"]
 
 # ============================================================================
-# Root aggregate — graph-aware orchestration (replaces all `turbo X` scripts)
+# Root aggregate — graph-aware orchestration via `tsc -b` + pnpm filters
 # ============================================================================
 
 [tasks.install]
@@ -82,7 +82,7 @@ description = "Build compiled-lib deps once, then start every unit's watcher in 
 run = "mise run build && mise run -j 99 run-all dev"
 
 [tasks.lint]
-description = "Lint all units (oxlint is workspace-wide, turbo-independent)"
+description = "Lint all units (oxlint is workspace-wide, no per-unit orchestration)"
 run = "oxlint --type-aware"
 
 [tasks.registry]

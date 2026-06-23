@@ -67,8 +67,9 @@ const repoRoot = resolve(here, '..', '..');
  * consumes the `@pops/app-*` frontends through Vite source aliases in
  * `.storybook/main.ts`, not through `package.json` devDependencies — so the
  * workspace graph carries no `ui → app-*` edge (which would both trip this
- * guard and form a turbo `^build` cycle, since every `app-*` depends on
- * `@pops/ui`). The dev-surface reference lives in vite config, not the graph.
+ * guard and form a `tsc -b` project-reference cycle, since every `app-*`
+ * depends on `@pops/ui`). The dev-surface reference lives in vite config,
+ * not the graph.
  *
  * @type {Record<string, Set<string>>}
  */

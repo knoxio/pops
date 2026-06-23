@@ -5,7 +5,7 @@ name: Rust Quality
 #
 # ADDITIVE by design: it is path-filtered to the Rust tree and is NOT part of
 # the TS `pillar-quality` / `_pkg-check` matrices. Rust pillars carry no
-# `package.json`, so the turbo/pnpm pillar discovery never sees them — this
+# `package.json`, so the pnpm pillar discovery never sees them — this
 # workflow is their only gate. Adding a Rust crate to the workspace
 # `Cargo.toml` (e.g. `pops-ai`, `pops-settings`) is covered here with no
 # workflow edit because every step operates on the whole workspace.

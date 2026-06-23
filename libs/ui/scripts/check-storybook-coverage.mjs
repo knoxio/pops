@@ -8,8 +8,9 @@
  * through to each pillar's `app/src` via Vite `resolve.alias`. The alias —
  * not a `package.json` devDependency — is how the dev surface consumes the
  * frontends: a `ui → app-*` workspace edge would both trip the federation
- * isolation guard (scripts/ci/check-lib-no-pillar-import.mjs) and form a turbo
- * `^build` cycle, since every `@pops/app-*` depends on `@pops/ui`.
+ * isolation guard (scripts/ci/check-lib-no-pillar-import.mjs) and form a
+ * `tsc -b` project-reference cycle, since every `@pops/app-*` depends on
+ * `@pops/ui`.
  *
  * A package is considered a frontend surface (and therefore eligible for
  * Storybook) if its name is `@pops/app-*` and it has `src/routes.tsx`.

@@ -373,7 +373,6 @@
     "coverage",
     "playwright-report",
     "test-results",
-    ".turbo",
     "storybook-static",
     "**/*.config.js",
     "**/*.config.mjs",

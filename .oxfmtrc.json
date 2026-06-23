@@ -46,7 +46,6 @@
     "**/*.map",
     "**/__snapshots__/**",
     "**/*.snap",
-    "**/.turbo/**",
     "**/.vercel/**",
     ".github/**",
     ".vscode/**",

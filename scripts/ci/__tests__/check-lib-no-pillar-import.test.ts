@@ -107,7 +107,7 @@ describe('findViolations', () => {
     // The storybook fold (P2-T04) consumes app-* via Vite source aliases in
     // .storybook/main.ts, NOT via package.json devDeps — there is intentionally
     // no `@pops/ui` allowlist entry. A naive re-add would both trip the guard
-    // and form a turbo `^build` cycle (every app-* depends on @pops/ui).
+    // and form a `tsc -b` project-reference cycle (every app-* depends on @pops/ui).
     const all = [
       pillar('@pops/app-food', 'pillars/food/app'),
       lib('@pops/ui', { devDependencies: { '@pops/app-food': 'workspace:*' } }),
