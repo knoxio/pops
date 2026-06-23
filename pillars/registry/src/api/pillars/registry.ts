@@ -73,7 +73,7 @@ export interface PillarRegistryOptions {
   readonly db: CoreDb;
   /**
    * HTTP origin core-api is reachable at. Required — `server.ts` derives
-   * it from `CORE_SELF_BASE_URL` (or falls back to `http://localhost:PORT`)
+   * it from `REGISTRY_SELF_BASE_URL` (or falls back to `http://localhost:PORT`)
    * before passing it in. The registry returns this as the synthetic
    * `core` entry's `baseUrl` after normalising it through
    * `parseBareOrigin` so callers can always append `/uri/resolve` etc.

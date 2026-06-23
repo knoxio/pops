@@ -47,10 +47,7 @@ const version = process.env['BUILD_VERSION'] ?? 'dev';
 // shared bare-origin parser so a misconfigured env crashes boot loudly
 // instead of publishing an invalid PillarRegistryEntry.baseUrl that
 // breaks downstream consumers appending `/uri/resolve`, `/health`, etc.
-// `CORE_SELF_BASE_URL` is honoured as a deprecated legacy alias for the
-// duration of the core→registry rename window so an un-updated deployer
-// env keeps working; it is dropped once the rename has fully rolled out.
-const selfBaseUrlEnv = process.env['REGISTRY_SELF_BASE_URL'] ?? process.env['CORE_SELF_BASE_URL'];
+const selfBaseUrlEnv = process.env['REGISTRY_SELF_BASE_URL'];
 const selfBaseUrl = parseBareOrigin(
   'REGISTRY_SELF_BASE_URL',
   selfBaseUrlEnv ?? `http://localhost:${port}`
