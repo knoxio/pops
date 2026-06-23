@@ -120,21 +120,26 @@ jobs:
         run: pnpm --filter "${{ matrix.unit.pkg }}^..." build
 
       - if: ${{ matrix.unit.lang == 'ts' }}
-        name: Build (own mise build task only)
-        # mise merges configs UP the tree: `mise run -C <dir> build` for a unit
-        # whose own mise.toml lacks `build` (source libs ui/navigation/
-        # overlay-ego/locales) would resolve the ROOT build task (`tsc -b`
-        # tsconfig.build.json — the whole graph). Run the unit's OWN build ONLY
-        # when Source == its own mise.toml. Mirrors the root run-all Source
-        # guard. Source libs skip this (deps already built above); their
-        # typecheck/lint/test still run.
+        name: Build own unit (only when it owns a build task)
+        # mise merges configs UP the tree: a `build` resolved from -C <dir> for a
+        # unit whose own mise.toml lacks `build` (source libs ui/navigation/
+        # overlay-ego/locales) is the inherited ROOT build (`tsc -b`
+        # tsconfig.build.json — the whole graph). Use `mise tasks info` Source as
+        # the ownership gate ONLY (the canonical "does this unit define build"
+        # check, mirroring the root run-all guard); a unit owning a mise build
+        # task always has a package.json `build` script (1:1, verified). EXECUTE
+        # via `pnpm --filter`, not `mise run -C`: pnpm puts the unit's local
+        # node_modules/.bin on PATH so bins like `vite` (shell) resolve, whereas
+        # mise's `_.path` only exposes the ROOT bin, which a subgraph install
+        # does not populate. Source libs skip this; their typecheck/lint/test
+        # still run against the deps built above.
         run: |
           set -euo pipefail
           src=$(mise tasks info build -C "${{ matrix.unit.dir }}" 2>/dev/null | sed -n 's/^Source: //p')
           case "$src" in
             */"${{ matrix.unit.dir }}"/mise.toml)
-              echo "own build task — building ${{ matrix.unit.dir }}"
-              mise run -C "${{ matrix.unit.dir }}" build
+              echo "own build task — building ${{ matrix.unit.pkg }}"
+              pnpm --filter "${{ matrix.unit.pkg }}" build
               ;;
             *)
               echo "no own build task for ${{ matrix.unit.dir }} (source lib) — skip build"
