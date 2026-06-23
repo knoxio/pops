@@ -2,17 +2,12 @@
 
 ## What This Repository Is
 
-POPS (Personal Operations System) is a self-hosted personal command center for finance, media, inventory, and AI operations. It is a pnpm/Turborepo monorepo running on Node.js (24 locally via `mise`, 22 in CI/production) with SQLite (Drizzle ORM), tRPC + Express, React 19 + Vite, and Tailwind v4. AI categorization and entity matching use the Claude API; embeddings use an OpenAI-compatible client (configurable via `EMBEDDING_API_URL`, defaulting to `https://api.openai.com/v1`). Jobs run on BullMQ + Redis. The system deploys via Docker Compose + Ansible to a home server behind Cloudflare Tunnel.
+POPS (Personal Operations System) is a self-hosted personal command center for finance, media, inventory, and AI operations. It is a pnpm workspace running on Node.js (24 locally via `mise`, 22 in CI/production) built as a set of independent REST **pillars** — each a standalone service that owns its own SQLite database (Drizzle ORM), serves a zod → [ts-rest](https://ts-rest.com) contract projected to OpenAPI, exports a `./manifest`, and self-registers with the `registry` pillar on boot. There is **no tRPC** and **no `pops-api` monolith** — both were removed. The frontend is one React SPA (`pops-shell`) that lazy-loads per-domain feature apps over generated Hey API REST clients; cross-pillar calls go through the `@pops/pillar-sdk` `pillar()` client. AI categorization and entity matching use the Claude API; embeddings use an OpenAI-compatible client (configurable via `EMBEDDING_API_URL`, defaulting to `https://api.openai.com/v1`). Jobs run on BullMQ + Redis. The system deploys via Docker Compose to a home server behind Cloudflare Tunnel (host provisioning lives in the private `knoxio/homelab-infra` repo).
 
-**Monorepo layout:**
-- `apps/pops-api/` — Express + tRPC backend
-- `apps/pops-shell/` — React PWA shell (React Router 7)
-- `apps/moltbot/` — Telegram bot
-- `packages/app-{finance,media,inventory,ai}/` — Domain UI packages
-- `packages/db-types/` — Drizzle schema + all database types
-- `packages/ui/` — Shared component library (shadcn/Radix primitives + composites)
-- `packages/api-client/` — tRPC client setup
-- `infra/` — Ansible playbooks + Docker Compose
+**Repo layout:**
+- `pillars/<id>/` — one REST pillar per folder (registry, inventory, media, finance, food, lists, cerebrum, ai, contacts, orchestrator, shell, docs, mcp, moltbot). Each owns its SQLite DB (`src/db`), zod → ts-rest contract (`src/contract`), OpenAPI snapshot (`openapi/<id>.openapi.json`), `./manifest`, and Dockerfile.
+- `libs/<name>/` — shared workspace libraries (types, db-types, sdk, settings, ai-telemetry, ui, navigation, module-registry, overlay-ego, locales, pops-ai, pops-settings)
+- `infra/` — Docker Compose (`docker-compose.yml` prod, `docker-compose.dev.yml` dev) + Litestream stream configs
 - `docs/` — PRDs, epics, user stories, ADRs, roadmap
 
 **Documentation hierarchy (strictly maintained):** Theme → Epic → PRD → User Story (status flows upward: US done → PRD → Epic → Theme → `docs/roadmap.md`)
@@ -28,18 +23,17 @@ Prefer `mise` for cross-package tasks. Some checks have no `mise` wrapper and mu
 mise lint          # oxlint (type-aware) — zero tolerance for warnings
 mise typecheck     # Full TypeScript strict check across all packages
 mise test          # Vitest unit tests
-mise build         # Turbo build — must produce zero errors
+mise build         # Build all packages — must produce zero errors
 
 # Via pnpm (no mise wrapper — run from repo root or package dir)
 pnpm format:check                                    # oxfmt formatting check
-cd apps/pops-api && pnpm openapi:validate            # Required after any API changes
-cd apps/pops-api && pnpm test:integration            # Integration tests (also run in CI)
-cd apps/pops-shell && pnpm test:e2e                  # Playwright E2E (also run in CI)
+cd pillars/<id> && pnpm test                         # A pillar's unit tests (real in-memory SQLite)
+cd pillars/shell && pnpm test:e2e                    # Playwright E2E (also run in CI)
 ```
 
 Git hooks (enforced via Husky): pre-commit runs `lint-staged` (oxlint + oxfmt on staged files) and `pnpm typecheck`; pre-push checks for merge conflicts with `origin/main`. Recommended to also run `mise lint && mise typecheck && mise test` manually before pushing.
 
-GitHub Actions runs: lint, typecheck, format, unit tests, integration tests, E2E, OpenAPI validation, and Docker build — all must be green.
+GitHub Actions runs: lint, typecheck, format, unit tests, E2E, and Docker build — all must be green.
 
 ---
 
@@ -80,7 +74,7 @@ Do not soften or hedge. Do not say "you might want to consider" or "this is just
 **4. Type safety**
 
 - TypeScript `strict` mode is always on. No `any`, no `as unknown as X`, no `@ts-ignore` without a comment explaining an upstream library bug.
-- Every tRPC procedure input must have a Zod schema. Every response must be typed.
+- Every ts-rest route input must have a Zod schema. Every response must be typed.
 - No implicit `any` from missing type annotations on function parameters.
 
 **5. Conventions (from `CONVENTIONS.md`)**
@@ -128,10 +122,11 @@ Do not batch small issues into a single comment. File a separate review comment 
 | Design system | `.impeccable.md` |
 | Documentation standards | `docs/CLAUDE.md` |
 | Roadmap & phase tracker | `docs/roadmap.md` |
-| DB schema | `packages/db-types/src/schema/` |
-| tRPC routers | `apps/pops-api/src/modules/*/router.ts` |
-| Business logic | `apps/pops-api/src/modules/*/service.ts` |
-| UI components | `packages/ui/src/components/` |
+| Per-pillar DB schema | `pillars/<id>/src/db/schema/` |
+| Shared DB type helpers | `libs/db-types/src/` |
+| Pillar ts-rest contract | `pillars/<id>/src/contract/` |
+| Business logic | `pillars/<id>/src/db/services/` |
+| UI components | `libs/ui/src/components/` |
 | Task runner | `mise.toml` |
 | CI workflows | `.github/workflows/` |
 

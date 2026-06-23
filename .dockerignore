@@ -15,6 +15,7 @@ coverage
 *.csv
 *.jsonl
 *.md
-!packages/*/package.json
+!pillars/*/package.json
+!libs/*/package.json
 
 docs

@@ -10,10 +10,8 @@ repos:
     hooks:
       - id: trailing-whitespace
         name: Trim Trailing Whitespace
-        exclude: ^apps/
       - id: end-of-file-fixer
         name: Fix End of Files
-        exclude: ^apps/
       - id: check-yaml
         name: Check YAML Syntax
         args: [--allow-multiple-documents]

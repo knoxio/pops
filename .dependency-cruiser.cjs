@@ -61,7 +61,7 @@ module.exports = {
       name: 'lib-layering',
       severity: 'error',
       comment:
-        'ISO-R4: leaf libs (types, db-types, sdk, settings, ai-telemetry) must not import any other @pops/* lib — they are the extraction floor.',
+        'ISO-R5: leaf libs (types, db-types, sdk, settings, ai-telemetry) must not import any other @pops/* lib — they are the extraction floor.',
       from: { path: '^libs/(types|db-types|sdk|settings|ai-telemetry)/' },
       to: {
         path: '^@pops/',

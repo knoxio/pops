@@ -4,12 +4,12 @@ package-lock.json
 
 # Build output
 dist/
-# Bundled nginx render + watcher CLIs (apps/pops-shell, built in-image)
+# Bundled nginx render + watcher CLIs (pillars/shell, built in-image)
 dist-scripts/
 # tsc -b project-reference incremental build state
 *.tsbuildinfo
 
-# Rust build output (crates/ cargo workspace + pillars/<id> Rust pillars).
+# Rust build output (repo-root cargo workspace; members under pillars/ + libs/).
 # Cargo.lock IS committed for the workspace (reproducible bin builds).
 target/
 
@@ -66,7 +66,7 @@ coverage/
 # Per-project module-registry snapshots emitted by the install-set
 # switching harness (PRD-101 US-11 follow-up). Regenerated on every
 # Playwright run; never committed.
-apps/pops-shell/.e2e/
+pillars/shell/.e2e/
 
 # Temporary files
 tmp/
@@ -74,6 +74,8 @@ tmp/
 .room-sandbox/
 .room-agent.json
 data/
-!packages/**/src/**/data/
-!packages/**/src/**/data/**
+!pillars/**/src/**/data/
+!pillars/**/src/**/data/**
+!libs/**/src/**/data/
+!libs/**/src/**/data/**
 secrets
