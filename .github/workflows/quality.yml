@@ -58,6 +58,31 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm lint:boundaries
 
+  exports:
+    name: Exports discipline
+    # NON-required gate (P6-T02 / ISO-EXPORTS): proves every unit's
+    # exports/files whitelist is self-consistent — every exports/main/types
+    # target exists and falls under `files`. The compiled units' targets live
+    # in `dist/`, so it builds before checking. Intentionally NOT added to the
+    # required-checks ruleset; it reports a result without blocking merges while
+    # the federation isolation phase lands.
+    # See docs/plans/repo-federation/04-isolation-enforcement.md §3.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v5
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Gate self-test (proves the gate catches broken manifests)
+        run: node scripts/check-exports.mjs --self-test
+      - name: Build (exports/main/types targets resolve to compiled dist/)
+        run: pnpm build
+      - name: Exports/files whitelist self-consistency
+        run: pnpm exports:check
+
   duplication:
     name: Duplication check
     runs-on: ubuntu-latest

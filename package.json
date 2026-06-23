@@ -19,6 +19,7 @@
     "isolation:check": "pnpm lint:boundaries && pnpm extractability:baseline && pnpm extractability:deps && bash scripts/extractability/optional-gates.sh",
     "format": "oxfmt --write .",
     "format:check": "oxfmt --check .",
+    "exports:check": "node scripts/check-exports.mjs",
     "ci:fix": "pnpm lint:fix && pnpm format && pnpm typecheck",
     "registry:build": "pnpm --filter @pops/module-registry registry:build",
     "prepare": "husky"
