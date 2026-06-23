@@ -6,6 +6,12 @@ name: Publish Images
 # series stabilises.
 on:
   workflow_dispatch:
+    inputs:
+      only:
+        description: 'Build only this image (e.g. pops-registry or registry); empty = all (full fleet)'
+        required: false
+        default: ''
+        type: string
 
 permissions:
   packages: write
@@ -52,6 +58,7 @@ jobs:
             type=semver,pattern=v{{major}}
 
       - name: Build and push ${{ matrix.app.image }}
+        if: ${{ inputs.only == '' || inputs.only == matrix.app.image }}
         uses: docker/build-push-action@v7
         with:
           context: .
@@ -90,6 +97,10 @@ jobs:
               | while read -r p; do [ -f "pillars/$p/Dockerfile" ] && echo "$p"; done
           )
           json=$(printf '%s\n' "${pillars[@]}" | jq -R -s -c 'split("\n") | map(select(length > 0))')
+          only='${{ inputs.only }}'
+          if [ -n "$only" ]; then
+            json=$(echo "$json" | jq -c --arg p "${only#pops-}" 'map(select(. == $p))')
+          fi
           count=$(echo "$json" | jq 'length')
           echo "pillars=$json" >> "$GITHUB_OUTPUT"
           echo "count=$count" >> "$GITHUB_OUTPUT"
