@@ -1,23 +1,23 @@
-# @pops/app-lists
+# lists — frontend module
 
-Generic lists module — hosts the `lists` and `list_items` tables, a pure
-service layer over them, and the shell-side frontend scaffold (`/lists`).
-Domain-agnostic: shopping lists, packing lists, todo lists. Food is the first
-consumer (its shopping list is a row in `lists` with `kind='shopping'`); future
-themes (travel packing, generic todos) compose the same surface.
+The shell-side frontend for the lists pillar — the `/lists` index and
+`/lists/:id` detail pages plus the `kind='shopping'` specialisation. Talks to
+the lists pillar over its generated REST client. Domain-agnostic: shopping,
+packing, todo, generic. Food is the first consumer (its shopping list is a row
+in `lists` with `kind='shopping'`); future surfaces (travel packing, generic
+todos) compose the same pages.
 
 ## Status
 
-Schema + service layer (PRD-112), frontend shell module (PRD-139), tRPC
-router (PRD-140 part API), and the `/lists` index page (PRD-140 part B).
-List detail page is PRD-140 part C; shopping-list specialisation lands in
-PRD-141; food → shopping-list send action in PRD-142.
+Built: the index page, the generic detail page, and the shopping specialisation
+(uncheck-all, clear-checked, sort modes, touch-tuned rows). Backed by the lists
+pillar's REST contract.
 
-- Schema spec: [PRD-112](../../pillars/food/docs/prds/112-lists-schema/README.md)
-- Shell module spec: [PRD-139](../../pillars/food/docs/prds/139-app-lists-shell-module/README.md)
-- Theme: [`pillars/food/docs/`](../../pillars/food/docs/) — note the lists
-  module itself is theme-agnostic; the food theme just happens to be the first
-  driver.
+- Domain overview: [`pillars/lists/docs/`](../../docs/README.md)
+- Schema spec: [lists schema](../../docs/prds/schema/README.md)
+- Shell module spec: [lists shell module](../../docs/prds/shell-module/README.md)
+- CRUD UI spec: [generic lists CRUD UI](../../docs/prds/crud-ui/README.md)
+- Shopping specialisation: [shopping list specialisation](../../docs/prds/shopping-specialisation/README.md)
 
 ## Layout
 

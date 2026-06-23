@@ -59,7 +59,7 @@ Epics 0-3 form Phase 1 (MVP): store, index, ingest, retrieve. Epics 4-5 form Pha
 | Curation autonomy     | Three-phase trust graduation    | Earns trust incrementally, per-action-type, with automatic demotion (ADR-021)  |
 | Vector storage        | sqlite-vec                      | Same database, same backup pipeline, sufficient at scale (ADR-018)             |
 | Job processing        | BullMQ + Redis                  | Durable, retryable, dashboard-ready (ADR-016)                                  |
-| External API contract | OpenAPI via trpc-openapi        | Non-TS consumers get a contract, tRPC stays primary (ADR-017)                  |
+| External API contract | ts-rest + zod, OpenAPI emitted  | Typed REST contract; non-TS consumers get an OpenAPI document (ADR-017)        |
 | Engram security       | Server-side, encrypted backups  | Never in git, mandatory encrypted backup, localhost-only MCP                   |
 | Content typing        | Soft templates with typed hints | Templates suggest structure, types are classification hints not constraints    |
 

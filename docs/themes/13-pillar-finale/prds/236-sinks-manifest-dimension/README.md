@@ -1,6 +1,6 @@
 # PRD-236: Sinks as a first-class manifest dimension
 
-> Epic: [Bridge pillars](../../epics/13-bridge-pillars.md)
+> Epic: [Bridge pillars (idea)](../../../../ideas/bridge-pillars.md)
 
 > Status: In progress — US-01 done, US-02 done, US-03 done; US-04 (cross-field validation) pending
 
@@ -10,7 +10,7 @@
 
 [ADR-034](../../../../architecture/adr-034-sinks-manifest-dimension.md) introduces `sinks` as a first-class manifest dimension alongside `searchAdapters` and `aiTools`. A sink is a typed declaration that a pillar will receive a named event type from any other pillar in the federation — the inverse of every existing dimension, which all describe inbound traffic.
 
-This PRD ships the scaffold: the manifest schema field, the orchestrator dispatcher, the `/_sinks/<eventType>` HTTP endpoint convention, and the `publishEvent(eventType, payload)` SDK method. With this in place, [PRD-229](../229-ha-bridge-pillar/README.md) (HA bridge) can declare its outbound sinks and [PRD-237](../237-pops-to-ha-event-publisher) (future) wires the first real publisher.
+This PRD ships the scaffold: the manifest schema field, the orchestrator dispatcher, the `/_sinks/<eventType>` HTTP endpoint convention, and the `publishEvent(eventType, payload)` SDK method. With this in place, the [HA bridge pillar](../../../../ideas/ha-bridge-pillar.md) (idea) can declare its outbound sinks and the [pops → HA event publisher](../../../../ideas/pops-to-ha-event-publisher.md) (idea) wires the first real publisher.
 
 ## Data Model
 

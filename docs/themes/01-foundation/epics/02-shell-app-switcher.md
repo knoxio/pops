@@ -8,11 +8,11 @@ Build `pops-shell` — the application shell that hosts all app packages. Handle
 
 ## PRDs
 
-| #   | PRD                                                                                | Summary                                                                                      | Status |
-| --- | ---------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- | ------ |
-| 005 | [Shell](../prds/005-shell/README.md)                                               | Root layout, routing, lazy loading, providers, responsive layout                             | Done   |
-| 006 | [App Switcher](../prds/006-app-switcher/README.md)                                 | AppRail (Discord-style icon strip), two-level navigation                                     | Done   |
-| 007 | [App Theme Colour Propagation](../prds/007-app-theme-colour-propagation/README.md) | App declares colour once, shell propagates as CSS variable, components consume automatically | Done   |
+| #   | PRD                                                                                                        | Summary                                                                                      | Status |
+| --- | ---------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- | ------ |
+| 005 | [Shell](../../../../pillars/shell/docs/prds/shell/README.md)                                               | Root layout, routing, lazy loading, providers, responsive layout                             | Done   |
+| 006 | [App Switcher](../../../../pillars/shell/docs/prds/app-switcher/README.md)                                 | AppRail (Discord-style icon strip), two-level navigation                                     | Done   |
+| 007 | [App Theme Colour Propagation](../../../../pillars/shell/docs/prds/app-theme-colour-propagation/README.md) | App declares colour once, shell propagates as CSS variable, components consume automatically | Done   |
 
 PRD-005 first, then PRD-006. PRD-007 can be done independently after PRD-005.
 

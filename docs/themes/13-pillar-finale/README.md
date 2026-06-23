@@ -23,23 +23,23 @@ Theme 13 finishes the architecture. Every pillar registers itself on boot with a
 
 ## Epics
 
-| #   | Epic                                                                            | Summary                                                                                                | Status      |
-| --- | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ | ----------- |
-| 00  | [Contract packages](epics/00-contract-packages.md)                              | `@pops/contract-<pillar>` packages + semver CI                                                         | Not started |
-| 01  | [Pillar SDK](epics/01-pillar-sdk.md)                                            | `@pops/pillar-sdk` — the boot helper + discovery client every pillar implements                        | Not started |
-| 02  | [Central registry](epics/02-central-registry.md)                                | core-api hosts the runtime pillar directory: register, heartbeat, snapshot, subscribe                  | Not started |
-| 03  | [Remaining data migrations](epics/03-remaining-data-migrations.md)              | ~22 N-style slice migrations across media / inventory / cerebrum / core                                | Not started |
-| 04  | [Batching fix](epics/04-batching-fix.md)                                        | Solve the `httpBatchLink` problem so legacy router mounts can be deleted                               | Not started |
-| 05  | [Unified consumption SDK](epics/05-unified-consumption-sdk.md)                  | `pillar('media').movies.get(id)` — type-safe, registry-routed, async-graceful                          | Not started |
-| 06  | [Search registry](epics/06-search-registry.md)                                  | Replace build-time `ADAPTER_BINDINGS` with discovery-driven federated search                           | Not started |
-| 07  | [AI registry](epics/07-ai-registry.md)                                          | AI tools published per-pillar; dynamically discovered                                                  | Not started |
-| 08a | [Reclaim misnamed finance code](epics/08a-reclaim-misnamed-finance.md)          | Move corrections + tag-rules + commitImport + tag-suggester into finance-api; rename tRPC namespaces   | Not started |
-| 08b | [Cross-pillar code placement](epics/08b-cross-pillar-code-placement.md)         | Decide per-concern (search orchestrator / AI ops / worker / URI dispatcher) where the code lives       | Not started |
-| 09  | [Drop pops.db](epics/09-drop-pops-db.md)                                        | Audit, drop, retire the shared DB and its boot-time backfill                                           | Not started |
-| 10  | [FE pillar SDK + dispatcher generator](epics/10-fe-sdk-dispatcher-generator.md) | React hooks against the registry; PillarGuard rewrite; nginx config generated from registry            | Not started |
-| 12  | [CI leanness](epics/12-ci-leanness.md)                                          | Path-filter audit, affected-rebuild orchestrator, docs fast-path, pillar isolation, budget enforcement | In progress |
-| 13  | [Bridge pillars (HA, MQTT, ESPHome)](epics/13-bridge-pillars.md)                | Bridge-pillar pattern per ADR-032 — `pops-ha-bridge-api` first, MQTT + ESPHome follow                  | Not started |
-| 14  | [Cross-language interop](epics/14-cross-language-interop.md)                    | Wire-format spec + conformance suite that lets non-TS pillars (Rust, Go, Python) drop in as peers      | Not started |
+| #   | Epic                                                                            | Summary                                                                                                     | Status      |
+| --- | ------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- | ----------- |
+| 00  | [Contract packages](epics/00-contract-packages.md)                              | `@pops/contract-<pillar>` packages + semver CI                                                              | Not started |
+| 01  | [Pillar SDK](epics/01-pillar-sdk.md)                                            | `@pops/pillar-sdk` — the boot helper + discovery client every pillar implements                             | Not started |
+| 02  | [Central registry](epics/02-central-registry.md)                                | core-api hosts the runtime pillar directory: register, heartbeat, snapshot, subscribe                       | Not started |
+| 03  | [Remaining data migrations](epics/03-remaining-data-migrations.md)              | ~22 N-style slice migrations across media / inventory / cerebrum / core                                     | Not started |
+| 04  | [Batching fix](epics/04-batching-fix.md)                                        | Solve the `httpBatchLink` problem so legacy router mounts can be deleted                                    | Not started |
+| 05  | [Unified consumption SDK](epics/05-unified-consumption-sdk.md)                  | `pillar('media').movies.get(id)` — type-safe, registry-routed, async-graceful                               | Not started |
+| 06  | [Search registry](epics/06-search-registry.md)                                  | Replace build-time `ADAPTER_BINDINGS` with discovery-driven federated search                                | Not started |
+| 07  | [AI registry](epics/07-ai-registry.md)                                          | AI tools published per-pillar; dynamically discovered                                                       | Not started |
+| 08a | [Reclaim misnamed finance code](epics/08a-reclaim-misnamed-finance.md)          | Move corrections + tag-rules + commitImport + tag-suggester into finance-api; rename tRPC namespaces        | Not started |
+| 08b | [Cross-pillar code placement](epics/08b-cross-pillar-code-placement.md)         | Decide per-concern (search orchestrator / AI ops / worker / URI dispatcher) where the code lives            | Not started |
+| 09  | [Drop pops.db](epics/09-drop-pops-db.md)                                        | Audit, drop, retire the shared DB and its boot-time backfill                                                | Not started |
+| 10  | [FE pillar SDK + dispatcher generator](epics/10-fe-sdk-dispatcher-generator.md) | React hooks against the registry; PillarGuard rewrite; nginx config generated from registry                 | Not started |
+| 12  | [CI leanness](epics/12-ci-leanness.md)                                          | Path-filter audit, affected-rebuild orchestrator, docs fast-path, pillar isolation, budget enforcement      | In progress |
+| 13  | [Bridge pillars (HA, MQTT, ESPHome)](../../ideas/bridge-pillars.md)             | Bridge-pillar pattern per ADR-032 — HA `ha-bridge` pillar first, MQTT + ESPHome follow (idea — no code yet) | Not started |
+| 14  | [Cross-language interop](epics/14-cross-language-interop.md)                    | Wire-format spec + conformance suite that lets non-TS pillars (Rust, Go, Python) drop in as peers           | Not started |
 
 **Dependencies:** E00 → E01 → E02 → E05 is the critical foundation path. E03 (slice migrations) can run in parallel against the foundation. E04 (batching) gates legacy router deletion. E08a is independent and can ship as a Theme 12 postscript before Theme 13 starts proper. E08b is gated on ADR-029. E09 + E10 are finishing moves. E13 is a follow-on that depends on E00 / E01 / E02 / E06 / E07 — it implements the additive integration story ADR-032 declared, not part of Theme 13's main critical path. E14 is the Wave 6 cross-language enabler — it documents the wire format ADR-033 commits to and gates any future non-TS pillar.
 

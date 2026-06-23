@@ -4,18 +4,25 @@
 
 ## Scope
 
-Build the entity registry — the merchant/payee database that transactions match against. Supports CRUD, aliases (multiple names mapping to one entity), default transaction types and tags per entity.
+The entity registry — the merchant/payee directory that transactions match
+against — is **owned by the `contacts` pillar**, not finance. finance consumes it
+read-only via `pillar('contacts').entities.list`; it keeps no entities table of
+its own.
 
 ## PRDs
 
-| #   | PRD                                        | Summary                                                                                  | Status |
-| --- | ------------------------------------------ | ---------------------------------------------------------------------------------------- | ------ |
-| 023 | [Entities](../prds/023-entities/README.md) | Entity data model, registry page with CRUD, aliases, default tags, type (company/person) | Done   |
+The entities domain (data model, CRUD, search, aliases, default tags, types)
+lives with the `contacts` pillar:
+
+| Domain   | Docs                                                                                    |
+| -------- | --------------------------------------------------------------------------------------- |
+| Entities | [`pillars/contacts/docs/prds/entities`](../../../contacts/docs/prds/entities/README.md) |
 
 ## Dependencies
 
-- **Requires:** Foundation (shared entity table lives in `core/` module per ADR-005)
-- **Unlocks:** Epic 01 (entity matching needs the registry), all other domains that reference entities
+- **Requires:** the `contacts` pillar being a live registry member.
+- **Unlocks:** Epic 01 (entity matching reads the contacts directory), all other
+  domains that reference entities.
 
 ## Out of Scope
 

@@ -1,50 +1,60 @@
-# Lists API Pillar Verification Runbook
+# Lists pillar verification runbook
 
-Verification drill for the **lists pillar** container after the ADR-026 Phase 3 migration. Run this before flipping Track K of the migration roadmap to ✅ Done.
+Verification drill for the **lists pillar** container: confirm it boots, owns
+its data, self-registers with the registry pillar, and that the rest of the
+fleet degrades gracefully when it goes down.
 
-## What lists-api owns today
+## What the lists pillar owns
 
-After lists pillar Phase 3:
-
-- `apps/pops-lists-api/` ships as `ghcr.io/knoxio/pops-lists-api`, listens on port 3006 inside the container network (3001=core, 3002=inventory, 3003=media, 3004=finance, 3005=food, 3006=lists, 3007=cerebrum).
-- Endpoints exposed: `GET /health` (touches the DB so a closed handle fails closed with a 500) and `GET /pillars` (passive snapshot of `POPS_PILLARS` with the synthetic `lists` entry merged in / overriding any stale row in the env).
-- `lists.db` (separate SQLite file from `pops.db`, `core.db`, `inventory.db`, `media.db`, `finance.db`, `food.db`, and `cerebrum.db`) holds the `lists` and `list_items` tables today. Phase 2 PR 3 cut pops-api over to `getListsDrizzle()` for every lists module read/write (`lists.list.*` + `lists.items.*`).
-- The shell talks to lists **indirectly** via pops-api's tRPC routers (which now route through `lists.db`). The shell never opens a direct browser-to-lists-api connection; cross-pillar HTTP fan-out runs on the `/pillars/health` aggregator already proxied to pops-api.
-- `pops-api`, `pops-worker`, and `pops-shell` (via nginx → core-api) all read pillar registry data that includes the lists entry, because `POPS_PILLARS` in docker-compose lists `lists:http://lists-api:3006`.
+- The `lists-api` service (image `ghcr.io/knoxio/pops-lists-api`, container port
+  `3006`) is an independent REST pillar. It serves `/health`, `/pillars`, and
+  the lists REST contract (`list.*` + `items.*`) projected from
+  `src/contract/rest-*.ts`. No tRPC, no shared monolith.
+- It owns `lists.db` — its own SQLite file on the shared `sqlite-data` volume,
+  separate from every other pillar's DB. The process opens this handle directly
+  via `openListsDb` in `src/api/server.ts`; nothing else writes it.
+- On boot, when `POPS_REGISTRY_ENABLED=true`, it self-registers with the
+  **registry** pillar (`registry-api`, port `3001`) via `bootstrapPillar`
+  (`@pops/pillar-sdk/bootstrap`). The handshake publishes the pillar's identity,
+  `/health` probe, and contract pin, and starts a heartbeat. `SIGTERM` calls
+  `pillarHandle.stop()` so the registry sees an explicit deregister.
+- Cross-pillar consumers reach lists over the wire only: TS callers use
+  `pillar('lists').list.*` / `pillar('lists').items.*` via `@pops/pillar-sdk`;
+  non-TS callers read `openapi/lists.openapi.json` and call HTTP directly. Lists
+  exports no router type — the wire contract is the boundary.
 
 ## Drill: simulate a lists-api outage
 
-The Phase 4 verification per the roadmap: stop the lists container and confirm the rest of the stack behaves as documented.
-
 ### Step 1 — capture the healthy baseline
 
-`lists-api` is exposed inside the compose network (`expose: 3006`), not
-bound to a host port. Run the probes from inside the network — either
-via `docker compose exec` on a sibling service or with an ad-hoc curl
-container:
+`lists-api` is exposed inside the compose network (`expose: 3006`), not bound to
+a host port. Run the probes from inside the network — either via
+`docker compose exec` on a sibling service or with an ad-hoc curl container:
 
 ```sh
 docker compose -f infra/docker-compose.yml ps
-# cerebrum-api, core-api, finance-api, food-api, inventory-api,
-# lists-api, media-api, pops-api, pops-shell, pops-worker should all be
-# "running (healthy)".
+# registry-api, inventory-api, media-api, finance-api, food-api, lists-api,
+# cerebrum-api, ai-api, contacts-api, pops-orchestrator, pops-shell should all
+# be "running (healthy)".
 
-# Probe from inside the compose network.
-docker compose -f infra/docker-compose.yml exec pops-api \
+# Health probe from inside the compose network.
+docker compose -f infra/docker-compose.yml exec registry-api \
   node -e "fetch('http://lists-api:3006/health').then(r=>r.json()).then(j=>console.log(JSON.stringify(j)))"
 # {"ok":true,"pillar":"lists","version":"<git-sha>"}
 
-docker compose -f infra/docker-compose.yml exec pops-api \
+# The pillar's own /pillars view merges its synthetic self entry over the
+# POPS_PILLARS snapshot.
+docker compose -f infra/docker-compose.yml exec registry-api \
   node -e "fetch('http://lists-api:3006/pillars').then(r=>r.json()).then(j=>console.log(JSON.stringify(j)))"
 # {"pillars":[{"id":"lists","baseUrl":"http://lists-api:3006"}, ...]}
 
-# The shell's /pillars proxy is wired to core-api, which surfaces lists
-# in its registry response too via POPS_PILLARS:
-curl -sS http://localhost:80/pillars
-# {"pillars":[{"id":"core","baseUrl":"http://core-api:3001"},
+# The registry pillar is the authoritative source of truth: it lists lists
+# because lists self-registered on boot.
+docker compose -f infra/docker-compose.yml exec registry-api \
+  node -e "fetch('http://localhost:3001/pillars').then(r=>r.json()).then(j=>console.log(JSON.stringify(j)))"
+# {"pillars":[{"id":"registry","baseUrl":"http://registry-api:3001"},
 #   ...,
-#   {"id":"lists","baseUrl":"http://lists-api:3006"},
-#   ...]}
+#   {"id":"lists","baseUrl":"http://lists-api:3006"}, ...]}
 ```
 
 ### Step 2 — stop lists-api and observe
@@ -55,9 +65,19 @@ docker compose -f infra/docker-compose.yml stop lists-api
 
 Expected behaviour:
 
-- `pops-api` was started behind `depends_on: lists-api (service_healthy)` — it keeps running, but **every lists tRPC call now flows through `getListsDrizzle()` in pops-api**, which opens / reuses a connection to `lists.db` on a shared volume. The lists-api container being stopped does NOT close the volume mount or the SQLite file, so `lists.list.*` and `lists.items.*` reads/writes continue to land on `lists.db` directly via pops-api's handle. The stop drill is therefore a soft test of compose ordering, not a real outage of the data layer. **To truly simulate an outage**, also unmount or move `lists.db` aside. Phase 5 (cross-pillar URI dispatch + true container isolation) will move the writers into lists-api so stopping its container fully simulates an outage.
-- `pops-shell` boot probe to `/pillars` still succeeds (because the proxy hits core-api, not lists-api). The lists entry stays in the registry; the `/pillars/health` aggregator (still on pops-api) flips lists's status from `'healthy'` to `'unavailable'` after the per-probe timeout fires. `PillarGuard` reads `'unavailable'` and shows the unavailable placeholder on lists routes; other routes (core, finance, inventory, media, food, cerebrum) keep working.
-- The soft fallback is intentional — losing the lists pillar should NOT take down the whole shell. The shell shows degraded UI on lists routes and full UI everywhere else.
+- The registry's heartbeat for `lists` lapses; on the next health sweep the
+  registry marks the `lists` entry unavailable. Because lists owns its own DB
+  and is the sole writer, stopping the container is a **real** data-layer
+  outage, not a soft one — there is no fall-through path that keeps writing
+  `lists.db` behind the stopped container.
+- `pops-shell`'s `PillarGuard` reads the `unavailable` status and shows the
+  unavailable placeholder on `/lists` routes. Every other pillar's routes
+  (finance, inventory, media, food, cerebrum, …) keep working — losing one
+  pillar must never take down the shell.
+- Sibling pillars that call `pillar('lists')` (food's "send to list" action is
+  the first consumer) get a connection failure and degrade per their own
+  fallback — food surfaces a "Lists not available" path rather than crashing,
+  and never persists list IDs on its own rows, so no cleanup is needed.
 
 ### Step 3 — restart lists-api and confirm recovery
 
@@ -65,26 +85,31 @@ Expected behaviour:
 docker compose -f infra/docker-compose.yml start lists-api
 ```
 
-Within ~30s the healthcheck reports healthy. Re-running the probes in Step 1 returns the same shapes. `PillarGuard` re-promotes lists from `'unavailable'` back to `'healthy'` on the next status-context refresh; the lists UI hydrates without a hard navigation.
+Within ~30s the healthcheck reports healthy and the boot handshake
+re-registers lists with the registry. Re-running the Step 1 probes returns the
+same shapes. `PillarGuard` re-promotes lists to healthy on the next
+status-context refresh; the lists UI hydrates without a hard navigation. No
+state recovery is needed — `lists.db` is on the shared volume and was never
+closed uncleanly (`SIGTERM` drains via `shutdown()` in `server.ts`).
 
 ### Step 4 — write up surprises
 
-Record any unexpected behaviour in the **Lessons captured** section of `.claude/pillar-migration-roadmap.md` before flipping Track K to ✅ Done. That file is gitignored — it only exists in local clones / sibling workspaces, so it isn't linkable from GitHub. Examples worth flagging:
+Record any unexpected behaviour worth flagging:
 
-- pops-api hard-crashes when lists-api is down (it shouldn't — should degrade per-route).
-- The shell's "lists unavailable" placeholder paints over working non-lists routes (PillarGuard scoping is too broad).
-- `lists.db` writes succeed against a stopped lists-api container (proves the shared-volume caveat noted in Step 2 — Phase 5 follow-up: convert lists-api to the sole writer once tRPC routers move into it).
+- `pops-shell` hard-crashes when lists-api is down (it shouldn't — should
+  degrade per-route via `PillarGuard`).
+- The "lists unavailable" placeholder paints over working non-lists routes
+  (`PillarGuard` scoping is too broad).
+- A sibling pillar crashes instead of degrading when `pillar('lists')` calls
+  fail.
 
 ## Reference
 
-- ADR-026: per-domain pillar architecture
-- `apps/pops-lists-api/src/server.ts` — boot sequence
-- `apps/pops-api/src/db/lists-handle.ts` — lazy open + env-aware handle
-- `apps/pops-shell/src/app/pillars/pillar-registry-client.ts` — soft-fallback behaviour (shared with core)
-- [`../../../core/docs/runbooks/core-api-pillar-verification.md`](../../../core/docs/runbooks/core-api-pillar-verification.md) — sibling runbook for the core pillar
-- [`../../../inventory/docs/runbooks/inventory-api-pillar-verification.md`](../../../inventory/docs/runbooks/inventory-api-pillar-verification.md) — sibling runbook for the inventory pillar
-- [`../../../media/docs/runbooks/media-api-pillar-verification.md`](../../../media/docs/runbooks/media-api-pillar-verification.md) — sibling runbook for the media pillar
-- [`../../../finance/docs/runbooks/finance-api-pillar-verification.md`](../../../finance/docs/runbooks/finance-api-pillar-verification.md) — sibling runbook for the finance pillar
-- [`../../../food/docs/runbooks/food-api-pillar-verification.md`](../../../food/docs/runbooks/food-api-pillar-verification.md) — sibling runbook for the food pillar
-- [`../../../cerebrum/docs/runbooks/cerebrum-api-pillar-verification.md`](../../../cerebrum/docs/runbooks/cerebrum-api-pillar-verification.md) — sibling runbook for the cerebrum pillar
-- `.claude/pillar-migration-roadmap.md` — Track K status + lessons captured (gitignored, local-only)
+- `pillars/lists/src/api/server.ts` — boot sequence, registry handshake,
+  SIGTERM drain.
+- `pillars/lists/src/api/pillars/registry.ts` — the `/pillars` view.
+- `pillars/lists/openapi/lists.openapi.json` — the wire contract consumers read.
+- `pillars/registry/docs/runbooks/core-api-pillar-verification.md` — sibling
+  runbook for the registry pillar.
+  </content>
+  </invoke>
