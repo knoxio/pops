@@ -13,6 +13,7 @@
     "lint:boundaries:baseline": "depcruise --config .dependency-cruiser.cjs --output-type baseline --output-to .dependency-cruiser-known-violations.json pillars libs scripts",
     "format": "oxfmt --write .",
     "format:check": "oxfmt --check .",
+    "exports:check": "node scripts/check-exports.mjs",
     "ci:fix": "pnpm lint:fix && pnpm format && pnpm typecheck",
     "registry:build": "pnpm --filter @pops/module-registry registry:build",
     "prepare": "husky"
