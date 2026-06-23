@@ -69,6 +69,7 @@ services:
       # transport (POPS_REGISTRY_ENABLED), so the snapshot is built from live
       # registrations, not a static list. POPS_PILLARS stays an operator
       # escape hatch for air-gapped/seed boots (the env.ts parser is retained).
+      POPS_REGISTRY_ENABLED: 'true'
       POPS_PILLARS: ${POPS_PILLARS:-}
     expose:
       - '3001'
@@ -110,6 +111,7 @@ services:
       PORT: '3002'
       INVENTORY_SQLITE_PATH: /data/sqlite/inventory.db
       INVENTORY_SELF_BASE_URL: http://inventory-api:3002
+      POPS_REGISTRY_ENABLED: 'true'
       POPS_PILLARS: ${POPS_PILLARS:-}
     expose:
       - '3002'
@@ -158,6 +160,7 @@ services:
       # it never collides with a self-pointing POPS_API_URL.
       AI_API_URL: http://ai-api:3008
       POPS_API_INTERNAL_TOKEN: ${POPS_API_INTERNAL_TOKEN:-}
+      POPS_REGISTRY_ENABLED: 'true'
       POPS_PILLARS: ${POPS_PILLARS:-}
     expose:
       - '3004'
@@ -201,6 +204,7 @@ services:
       PORT: '3003'
       MEDIA_SQLITE_PATH: /data/sqlite/media.db
       MEDIA_SELF_BASE_URL: http://media-api:3003
+      POPS_REGISTRY_ENABLED: 'true'
       POPS_PILLARS: ${POPS_PILLARS:-}
     expose:
       - '3003'
@@ -248,6 +252,7 @@ services:
       # self-pointing POPS_API_URL (see @pops/ai-telemetry report-sink).
       AI_API_URL: http://ai-api:3008
       POPS_API_INTERNAL_TOKEN: ${POPS_API_INTERNAL_TOKEN:-}
+      POPS_REGISTRY_ENABLED: 'true'
       POPS_PILLARS: ${POPS_PILLARS:-}
     expose:
       - '3005'
@@ -291,6 +296,7 @@ services:
       PORT: '3006'
       LISTS_SQLITE_PATH: /data/sqlite/lists.db
       LISTS_SELF_BASE_URL: http://lists-api:3006
+      POPS_REGISTRY_ENABLED: 'true'
       POPS_PILLARS: ${POPS_PILLARS:-}
     expose:
       - '3006'
@@ -339,6 +345,7 @@ services:
       # Validates `x-pops-internal-token` on `POST /ai-usage/record`. The
       # reporting pillars (finance/food/cerebrum) carry the same token.
       POPS_API_INTERNAL_TOKEN: ${POPS_API_INTERNAL_TOKEN:-}
+      POPS_REGISTRY_ENABLED: 'true'
       POPS_PILLARS: ${POPS_PILLARS:-}
     expose:
       - '3008'
@@ -455,6 +462,7 @@ services:
       CEREBRUM_SQLITE_PATH: /data/sqlite/cerebrum.db
       CEREBRUM_ENGRAMS_DIR: /data/cerebrum/engrams
       CEREBRUM_SELF_BASE_URL: http://cerebrum-api:3007
+      POPS_REGISTRY_ENABLED: 'true'
       # AI telemetry sink — read FIRST so it never collides with the
       # self-pointing POPS_API_URL cerebrum sets elsewhere.
       AI_API_URL: http://ai-api:3008
@@ -591,6 +599,7 @@ services:
       NODE_ENV: production
       PORT: '3009'
       ORCHESTRATOR_SELF_BASE_URL: http://pops-orchestrator:3009
+      POPS_REGISTRY_ENABLED: 'true'
       POPS_PILLARS: ${POPS_PILLARS:-}
     expose:
       - '3009'

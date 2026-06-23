@@ -1,17 +1,14 @@
 /**
- * Standalone opener for the core pillar's SQLite database.
+ * Standalone opener for the registry pillar's SQLite database.
  *
- * Phase 2 PR 1 of the core pillar migration scaffolds the per-pillar
- * connection so subsequent PRs can flip readers/writers over without
- * touching pops-api's existing singleton. The opener is intentionally
- * minimal — it does NOT load the sqlite-vec extension or the
- * vector-index helpers (those stay with pops-api's `getDrizzle()` for
- * now) and it relies on drizzle-orm's built-in `migrate` helper to apply
- * the in-package migrations journal at `pillars/core/migrations/meta/_journal.json`.
+ * The opener is intentionally minimal — it does NOT load the sqlite-vec
+ * extension or the vector-index helpers, and it relies on drizzle-orm's
+ * built-in `migrate` helper to apply the in-package migrations journal at
+ * `pillars/registry/migrations/meta/_journal.json`.
  *
- * No production consumer wires this up yet. Subsequent PRs add the
- * `CORE_SQLITE_PATH` env-var read, the boot-time call, and the data
- * backfill from the shared pops.db.
+ * The registry pillar's HTTP server (`src/api/server.ts`) wires this up
+ * at boot, calling `openCoreDb(resolveCoreSqlitePath())` before it starts
+ * the registry tickers and registration handshake.
  */
 import { mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -25,10 +22,10 @@ import type { CoreDb } from './services/internal.js';
 
 /**
  * Path to the migrations folder inside this package. Resolved relative
- * to this module's location (`src/open-core-db.ts` in dev,
- * `dist/open-core-db.js` after build) so it works both when consumed
+ * to this module's location (`src/db/open-core-db.ts` in dev,
+ * `dist/db/open-core-db.js` after build) so it works both when consumed
  * via the workspace symlink and when bundled into a Docker image's
- * `node_modules/@pops/core-db/`.
+ * `node_modules/@pops/registry/`.
  */
 function migrationsDir(): string {
   const here = dirname(fileURLToPath(import.meta.url));
@@ -46,15 +43,15 @@ export interface OpenedCoreDb {
 }
 
 /**
- * Open the core pillar's SQLite database at `path`, configure it, apply
- * the in-package migrations journal, and return both the drizzle wrapper
- * and the raw handle.
+ * Open the registry pillar's SQLite database at `path`, configure it,
+ * apply the in-package migrations journal, and return both the drizzle
+ * wrapper and the raw handle.
  *
  * Side effects:
  *   - The parent directory of `path` is created if missing (recursive).
  *   - `journal_mode=WAL`, `foreign_keys=ON`, and `busy_timeout=5000` are
- *     enabled to match the shared singleton in `apps/pops-api/src/db.ts`.
- *   - Every migration in `packages/core-db/migrations/meta/_journal.json`
+ *     enabled.
+ *   - Every migration in `pillars/registry/migrations/meta/_journal.json`
  *     is applied via drizzle's built-in migrator (idempotent — re-running
  *     against the same DB short-circuits on the `__drizzle_migrations`
  *     hash check).
