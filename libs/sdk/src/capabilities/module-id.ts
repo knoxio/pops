@@ -1,87 +1,39 @@
 /**
- * Module-id projections — superset of `KnownPillarId` that includes the one
- * remaining transitional sub-module id the shell still routes on (`ego`).
+ * Module-id projection.
  *
- * Per ADR-026 the platform is carved into pillars: `core`, `finance`, `media`,
- * `inventory`, `cerebrum`, `food`, `lists`, `contacts`, and `ai` (a first-class
- * pillar as of PRD-055). Ego is a sub-system of `cerebrum` — it is NOT a pillar.
- * `@pops/module-registry`'s build-time `KNOWN_MODULES` still emits it as a
- * routable id because the shell, the settings UI, and a handful of cross-pillar
- * URI consumers have not yet folded it into its parent pillar.
+ * Historically this file carried a closed `ALL_MODULE_IDS` tuple and the
+ * `ModuleId` union derived from it (pillars + the transitional `ego`
+ * sub-module). RD-9 (POPS federation) widened the type tier to `string` so
+ * the registry is the sole source of truth for which modules exist; the
+ * frozen tuple, its `isModuleId` guard, and the `MODULE_PARENT_PILLAR` table
+ * were retired in the same pass.
  *
- * The `ego` entry here is transitional. Once the FE migration tracked under
- * PRD-218 completes and every routable surface dispatches on the parent pillar,
- * it drops out of the SDK and `ModuleId` collapses back into `KnownPillarId`.
+ * Runtime "is this a module the build curates?" checks live in
+ * `@pops/module-registry` (`KNOWN_MODULES` / `isInstalledModule`), which is
+ * disk-discovered and per-deploy gated. Parent-pillar dispatch lives in the
+ * shell's `pillarIdForModule` (`pillars/shell/src/app/pillars.ts`). The only
+ * surviving member here is `isKnownPillarId`, the narrowing seam against the
+ * curated `PILLARS` value.
  */
 
-import { PILLARS, type KnownPillarId } from './known-pillar-id.js';
+import { PILLARS, type KnownPillarId, type PillarId } from './known-pillar-id.js';
 
 /**
- * Canonical superset of routable module ids: every `KnownPillarId` (the
- * `PILLARS` set, including `contacts` and `ai`) plus the one remaining
- * transitional sub-module id (`ego`). The test in `__tests__/modules.test.ts`
- * pins this to `PILLARS + {ego}`.
+ * Routable module id — an alias of the open {@link PillarId}.
  *
- * This is deliberately NOT in lock-step with `@pops/module-registry`'s
- * build-time `KNOWN_MODULES`. That registry is manifest-driven — it only
- * lists pillars that ship a JS/TS contract with a `./manifest` export.
- * `contacts` is a Rust pillar with no such manifest yet, so it is a routable
- * pillar id here but absent from `KNOWN_MODULES` until it gains a TS manifest
- * in N1+.
+ * Was a closed union over `pillars + {ego}`; now `string`, so a module id the
+ * build has never compiled against (a runtime/registry/LAN registration) is
+ * expressible without a type edit. Membership in the build's curated set is a
+ * runtime question answered by `@pops/module-registry`.
  */
-export const ALL_MODULE_IDS = [
-  'ai',
-  'cerebrum',
-  'contacts',
-  'ego',
-  'finance',
-  'food',
-  'inventory',
-  'lists',
-  'media',
-  'registry',
-] as const;
+export type ModuleId = PillarId;
 
 /**
- * Union of every routable module id. Superset of `KnownPillarId` that adds
- * the two transitional sub-module ids (`ai`, `ego`).
- */
-export type ModuleId = (typeof ALL_MODULE_IDS)[number];
-
-/**
- * Runtime type guard narrowing an arbitrary string to `KnownPillarId`.
- * Use at the boundary of untyped inputs (URL params, env vars, untyped
- * tRPC inputs) before routing on the value.
+ * Runtime type guard narrowing an arbitrary string to `KnownPillarId` by
+ * membership of the curated {@link PILLARS} value. Use at the boundary of
+ * untyped inputs (URL params, env vars, untyped REST inputs) when a build-time
+ * surface needs to know whether the id is one of the in-tree pillars.
  */
 export function isKnownPillarId(id: string): id is KnownPillarId {
   return (PILLARS as readonly string[]).includes(id);
 }
-
-/**
- * Runtime type guard narrowing an arbitrary string to the `ModuleId`
- * superset (pillars + `ai` + `ego`).
- */
-export function isModuleId(id: string): id is ModuleId {
-  return (ALL_MODULE_IDS as readonly string[]).includes(id);
-}
-
-/**
- * Maps every `ModuleId` to its owning pillar. Pillars map to themselves
- * (`ai → ai` now that AI Ops is a first-class pillar per PRD-055);
- * `ego → cerebrum` per ADR-026.
- *
- * Used by routers and the shell to dispatch a sub-module id onto the
- * pillar that physically owns its contract.
- */
-export const MODULE_PARENT_PILLAR: Record<ModuleId, KnownPillarId> = {
-  ai: 'ai',
-  cerebrum: 'cerebrum',
-  contacts: 'contacts',
-  ego: 'cerebrum',
-  finance: 'finance',
-  food: 'food',
-  inventory: 'inventory',
-  lists: 'lists',
-  media: 'media',
-  registry: 'registry',
-};

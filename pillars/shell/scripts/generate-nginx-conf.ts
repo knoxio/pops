@@ -45,7 +45,7 @@
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { PILLARS, isKnownPillarId, type KnownPillarId, type PillarId } from '@pops/pillar-sdk';
+import { PILLARS, type PillarId } from '@pops/pillar-sdk';
 import {
   HttpDiscoveryTransport,
   type DiscoveredPillar,
@@ -59,14 +59,24 @@ import { NGINX_CONF_HEAD, NGINX_CONF_REST_INTRO, NGINX_CONF_TAIL } from './nginx
 import { DEFAULT_REGISTRY_URL, resolveRegistryUrl } from './registry-url-env.ts';
 
 /**
+ * In-tree pillar id, keyed off the curated `PILLARS` value (NOT the SDK's
+ * `KnownPillarId` type, which RD-9 widened to `string`). This local literal
+ * union is what `PILLAR_UPSTREAMS` is keyed on, so the exhaustiveness guard —
+ * "every curated pillar ships a port" — survives the type-widening: a new
+ * entry in `PILLARS` without a matching `PILLAR_UPSTREAMS` port still fails
+ * typecheck here.
+ */
+type BuildPillarId = (typeof PILLARS)[number];
+
+/**
  * Internal port assignment for each pillar's API container. Matches every
  * `proxy_pass` in the pre-generator hand-written `nginx.conf`.
  *
- * `Record<KnownPillarId, …>` forces every new pillar added to `PILLARS`
- * (in `@pops/pillar-sdk`) to ship a port here; missing entries fail
+ * `Record<BuildPillarId, …>` forces every pillar in the curated `PILLARS`
+ * value (in `@pops/pillar-sdk`) to ship a port here; missing entries fail
  * typecheck.
  */
-export const PILLAR_UPSTREAMS: Record<KnownPillarId, { host: string; port: number }> = {
+export const PILLAR_UPSTREAMS: Record<BuildPillarId, { host: string; port: number }> = {
   registry: { host: 'registry-api', port: 3001 },
   inventory: { host: 'inventory-api', port: 3002 },
   media: { host: 'media-api', port: 3003 },
@@ -78,12 +88,25 @@ export const PILLAR_UPSTREAMS: Record<KnownPillarId, { host: string; port: numbe
   contacts: { host: 'contacts-api', port: 3010 },
 };
 
+const PILLAR_UPSTREAMS_BY_ID: ReadonlyMap<string, { host: string; port: number }> = new Map(
+  Object.entries(PILLAR_UPSTREAMS)
+);
+
+/**
+ * Look up a curated pillar's canonical in-cluster upstream by raw id.
+ * Returns `undefined` for any id outside the curated `PILLARS` set — the
+ * dynamic path uses that to fall through to parsing the registry `baseUrl`.
+ */
+function knownUpstream(pillarId: string): { host: string; port: number } | undefined {
+  return PILLAR_UPSTREAMS_BY_ID.get(pillarId);
+}
+
 /**
  * Stable ordering for the rendered `/<id>-api/` blocks. Matches the
  * order PRD-190 shipped in the hand-written conf so the generator's
  * first run produces a byte-identical (modulo header comment) file.
  */
-export const PILLAR_RENDER_ORDER: readonly KnownPillarId[] = [
+export const PILLAR_RENDER_ORDER: readonly BuildPillarId[] = [
   'registry',
   'inventory',
   'media',
@@ -104,7 +127,7 @@ export interface PillarUpstream {
 }
 
 export function assertRenderOrderCoversAllPillars(): void {
-  const ordered = new Set<KnownPillarId>(PILLAR_RENDER_ORDER);
+  const ordered = new Set<string>(PILLAR_RENDER_ORDER);
   const missing = PILLARS.filter((id) => !ordered.has(id));
   if (missing.length > 0) {
     throw new Error(
@@ -112,9 +135,8 @@ export function assertRenderOrderCoversAllPillars(): void {
         `Add them to PILLAR_RENDER_ORDER (and PILLAR_UPSTREAMS) and re-run.`
     );
   }
-  const extra = PILLAR_RENDER_ORDER.filter(
-    (id) => !(PILLARS as readonly KnownPillarId[]).includes(id)
-  );
+  const curated = new Set<string>(PILLARS);
+  const extra = PILLAR_RENDER_ORDER.filter((id) => !curated.has(id));
   if (extra.length > 0) {
     throw new Error(
       `generate-nginx-conf: PILLAR_RENDER_ORDER contains unknown pillar(s): ${extra.join(', ')}.`
@@ -126,7 +148,7 @@ function nginxVarName(pillarId: PillarId): string {
   return pillarId.replace(/-/g, '_');
 }
 
-function upstreamForId(id: KnownPillarId): PillarUpstream {
+function upstreamForId(id: BuildPillarId): PillarUpstream {
   const upstream = PILLAR_UPSTREAMS[id];
   return { pillarId: id, host: upstream.host, port: upstream.port };
 }
@@ -149,7 +171,7 @@ function renderPillarRestBlockFromUpstream(upstream: PillarUpstream): string {
   ].join('\n');
 }
 
-function renderPillarRestBlock(id: KnownPillarId): string {
+function renderPillarRestBlock(id: BuildPillarId): string {
   return renderPillarRestBlockFromUpstream(upstreamForId(id));
 }
 
@@ -158,7 +180,7 @@ function renderPillarRestBlock(id: KnownPillarId): string {
  * the full `nginx.conf` body. Exported so the drift-detection test can
  * call it without touching the filesystem.
  */
-export function renderNginxConf(order: readonly KnownPillarId[] = PILLAR_RENDER_ORDER): string {
+export function renderNginxConf(order: readonly BuildPillarId[] = PILLAR_RENDER_ORDER): string {
   const restBlocks = order.map(renderPillarRestBlock).join('\n\n');
   return `${NGINX_CONF_HEAD}\n${NGINX_CONF_REST_INTRO}\n${restBlocks}\n\n${NGINX_CONF_ORCHESTRATOR}\n${NGINX_CONF_TAIL}`;
 }
@@ -188,8 +210,8 @@ export function renderNginxConfFromUpstreams(upstreams: readonly PillarUpstream[
 export function resolveUpstreamForEntry(
   entry: Pick<DiscoveredPillar, 'pillarId' | 'baseUrl'>
 ): PillarUpstream {
-  if (isKnownPillarId(entry.pillarId)) {
-    const known = PILLAR_UPSTREAMS[entry.pillarId];
+  const known = knownUpstream(entry.pillarId);
+  if (known !== undefined) {
     return { pillarId: entry.pillarId, host: known.host, port: known.port };
   }
   let parsed: URL;

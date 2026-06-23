@@ -1,11 +1,15 @@
 /**
- * Canonical list of pillar ids known to the SDK.
+ * Curated runtime list of the pillar ids that ship in this tree.
  *
- * The long-term home for this list is PRD-156's import discipline rule —
- * once that lands the constant will be re-sourced from there and this file
- * becomes a re-export. Keeping the list local in the interim lets PRD-160
- * ship its `KnownPillarId` projection without taking a build-time dependency
- * on a not-yet-shipped sibling PRD.
+ * This is a *value*, not the source of a closed type. It is the canonical
+ * "pillars baked into this build" list that runtime code legitimately needs:
+ * the nginx generator's coverage assert (`assertRenderOrderCoversAllPillars`)
+ * and the `isKnownPillarId` narrowing guard both check membership against it.
+ * Adding a pillar to the tree means adding a string here so those runtime
+ * surfaces stay in sync — but it is no longer a *type* edit (see
+ * `KnownPillarId` below): a pillar the build has never heard of is a valid
+ * `KnownPillarId` at compile time, and `isKnownPillarId` is the runtime seam
+ * that tells the curated set apart from an arbitrary registry id.
  *
  * The set started from the seven pillars ADR-026 carves the platform into;
  * `contacts` (the first Rust pillar) extends it as the canonical entities
@@ -14,8 +18,6 @@
  * budgets, alerts, the cross-pillar telemetry ingest) out of it.
  * The `registry` pillar (formerly `core`) is the platform registry /
  * discovery / settings host.
- * Adding a new pillar = add a string here → every consumer that types a
- * pillar id against `KnownPillarId` updates at compile time.
  */
 export const PILLARS = [
   'registry',
@@ -30,37 +32,33 @@ export const PILLARS = [
 ] as const;
 
 /**
- * Closed union over the in-tree pillars (build-time tier).
- *
- * Use `KnownPillarId` where a missing entry *should* fail the build: the
- * nginx upstream map (`Record<KnownPillarId, …>`), `MODULE_PARENT_PILLAR`,
- * and the typed `pillar<P extends KnownPillarId>()` projection (PRD-160).
- * Adding a `pillars/<x>/` without wiring it here becomes a compile error —
- * that guard rail is deliberate and stays.
- */
-export type KnownPillarId = (typeof PILLARS)[number];
-
-/**
- * Open pillar id (runtime tier) — a plain `string` alias, intentionally
- * *not* a brand, because registry/runtime ids are genuinely open and a
- * brand would force a cast at every registry boundary.
+ * Open pillar id — a plain `string` alias, intentionally *not* a brand,
+ * because registry/runtime ids are genuinely open and a brand would force a
+ * cast at every registry boundary.
  *
  * Use `PillarId` on every surface fed by the runtime registry: registry
  * snapshot entries, the nginx render's pillar set, routing/dispatch, and
  * the shell's nav/app-context. A pillar the build has never heard of
  * (a runtime/registry/LAN registration per PRD-228/PRD-242) is expressible
  * here without a compile error.
- *
- * The seam between the two tiers is the existing
- * `isKnownPillarId(id): id is KnownPillarId` guard — a real narrowing, not
- * an `as`-widening. Narrow a `PillarId` to `KnownPillarId` through that
- * guard wherever a closed-set operation (docker upstream lookup,
- * parent-pillar table) is required; the open path otherwise routes via the
- * registry `baseUrl`.
- *
- * Two-tier rule (PRD-256):
- * - **closed** `KnownPillarId` on `PILLAR_UPSTREAMS`, `MODULE_PARENT_PILLAR`,
- *   and the typed `pillar()` projection (PRD-160, unchanged);
- * - **open** `PillarId` on registry / routing / nav.
  */
 export type PillarId = string;
+
+/**
+ * Pillar id known to the SDK — now an alias of the open {@link PillarId}.
+ *
+ * RD-9 (POPS federation) collapsed the formerly-closed compile-time tier:
+ * `KnownPillarId` no longer derives from the {@link PILLARS} tuple, so adding
+ * a pillar to the tree (or registering one at runtime over the LAN) needs no
+ * type edit — the registry is the sole source of truth for which pillars
+ * exist. The two-tier *runtime* seam is unchanged: `isKnownPillarId(id)`
+ * narrows an arbitrary string by checking membership of the curated
+ * {@link PILLARS} value, which is still the right gate for build-time
+ * surfaces (the nginx upstream map, the render-order coverage assert) that
+ * must enumerate the in-tree pillars.
+ *
+ * Kept as a distinct name (rather than replacing every use with `PillarId`)
+ * so call sites that document "this should be a pillar the build curates"
+ * stay self-describing; both resolve to `string`.
+ */
+export type KnownPillarId = PillarId;

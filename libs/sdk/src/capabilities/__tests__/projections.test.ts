@@ -183,10 +183,14 @@ describe('CallResult discriminant', () => {
 });
 
 describe('KnownPillarId', () => {
-  it('covers every entry in PILLARS', () => {
-    expectTypeOf<KnownPillarId>().toEqualTypeOf<
-      'registry' | 'finance' | 'media' | 'inventory' | 'cerebrum' | 'food' | 'lists' | 'contacts'
-    >();
+  it('is the open string tier after RD-9 (no closed literal union)', () => {
+    // RD-9 widened the formerly-closed compile-time tier to `string`, so any
+    // arbitrary id — including one the build has never compiled against — is a
+    // valid `KnownPillarId`. The runtime curated set lives in the `PILLARS`
+    // value, gated by `isKnownPillarId`, not in this type.
+    expectTypeOf<KnownPillarId>().toEqualTypeOf<string>();
+    const arbitrary: KnownPillarId = 'a-pillar-the-build-has-never-heard-of';
+    expectTypeOf(arbitrary).toEqualTypeOf<string>();
   });
 
   it('PILLARS is a readonly tuple at the value level', () => {
@@ -200,6 +204,7 @@ describe('KnownPillarId', () => {
         'food',
         'lists',
         'contacts',
+        'ai',
       ]
     >();
   });

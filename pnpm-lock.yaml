@@ -100,6 +100,9 @@ importers:
 
   libs/navigation:
     dependencies:
+      '@pops/module-registry':
+        specifier: workspace:*
+        version: link:../module-registry
       '@pops/pillar-sdk':
         specifier: workspace:*
         version: link:../sdk
