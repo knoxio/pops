@@ -14,9 +14,11 @@
  *     `@pops/food-contracts` plural variant, or contracts for surfaces not
  *     yet promoted to pillar) are skipped with a build-log info line.
  *
- * No file in `@pops/module-registry` names a pillar id. Adding a new in-repo
- * pillar = adding a contract package with a `./manifest` export and pinning
- * it in `module-registry/package.json` devDependencies. See PRD-241 README.
+ * No file in `@pops/module-registry` names a pillar id, and no workspace
+ * dependency edge points at a pillar: discovery walks `pillars/*` on disk and
+ * `import()`s each pillar's published `./manifest` artifact by file URL. Adding
+ * a new in-repo pillar = adding a contract package with a `./manifest` export;
+ * nothing in `module-registry` needs to reference it. See PRD-241 README.
  */
 import { readdir, readFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
