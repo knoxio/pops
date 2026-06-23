@@ -1,6 +1,6 @@
 # PRD-008: API Server
 
-> Epic: [03 — API Server](../../epics/03-api-server.md)
+> Epic: [API Server](../../../foundation/epics/api-server.md)
 > Status: Done
 
 ## Overview

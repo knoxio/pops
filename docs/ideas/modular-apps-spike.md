@@ -2,7 +2,7 @@
 
 Investigation only — recommendations, no code changes. Sibling spikes: [deployment-split](./deployment-split-spike.md), [feature-toggles](./feature-toggles-spike.md).
 
-Outcome: superseded by **Epic 10 — Modular Module Runtime** ([docs/themes/01-foundation/epics/10-modular-module-runtime.md](../themes/01-foundation/epics/10-modular-module-runtime.md)). The spike below describes the goal-state architecture; PRDs 097–100 carry the implementation.
+Outcome: superseded by **Epic: Modular Module Runtime** ([docs/themes/foundation/epics/modular-module-runtime.md](../themes/foundation/epics/modular-module-runtime.md)). The spike below describes the goal-state architecture; PRDs 097–100 carry the implementation.
 
 ## Question
 

@@ -1,80 +1,69 @@
 # @pops/food
 
-The **food** pillar — third pilot of the collapsed-pillar shape, the first
-with a worker. Self-contained workspace member that owns its HTTP API, queue
-contract, persistence, recipe DSL, inbox quality scoring, seed data, and the
-ingestion daemon behind a strict `exports` map.
+The **food** pillar — recipes, ingredients, the cook/plan/shopping domain, the
+inbox quality scorer, the recipe DSL, and the ingestion worker. A standalone
+REST service that owns its own SQLite DB, serves a [ts-rest](https://ts-rest.com)
+contract built from zod, runs a BullMQ ingest worker, exports a `./manifest`,
+and self-registers with the `registry` pillar on boot. Port **3005**.
 
-## The rules — refinements from the lists + inventory pilots
+## Public surface
 
-```
+Food has the widest public surface of the pillars because it runs more than one
+transport. **One public subpath per transport / wire concern:**
+
+```jsonc
 package.json
   "exports": {
-    ".":          → src/contract/index.ts        HTTP wire schemas + types
-    "./manifest": → src/contract/manifest.ts     Pillar manifest
-    "./queue":    → src/contract/queue/index.ts  BullMQ queue payload schemas
-    "./openapi":  → openapi/food.openapi.json    OpenAPI 3 (HTTP only)
+    ".":          → src/contract/index.ts        // HTTP wire schemas + types
+    "./manifest": → src/contract/manifest.ts     // pillar manifest
+    "./api-types":→ src/contract/api-types.generated.ts
+    "./queue":    → src/contract/queue/index.ts  // BullMQ queue payload schemas
+    "./dsl":      → src/dsl/public.ts            // recipe DSL public API
+    "./openapi":  → openapi/food.openapi.json    // OpenAPI 3 (HTTP only)
   }
 ```
 
-Three public surfaces. New since lists: **`./queue`** — the BullMQ queue
-contract is a wire surface like OpenAPI, just over Redis instead of HTTP.
-**One public subpath per transport** is the lesson food adds to the
-template — a pillar exposing only HTTP gets `.` + `./manifest`; a pillar
-that also runs a queue adds `./queue`; future websocket pillars would
-add `./ws`. Subpaths name the transport, not the domain.
-
-`src/api/`, `src/db/`, `src/worker/`, `src/dsl/`, `src/inbox/`, `src/seed/`,
-and `src/domain/` are all private — `ERR_PACKAGE_PATH_NOT_EXPORTED` at the
-Node resolver.
+A queue payload is a wire contract — same role as OpenAPI, just over Redis
+instead of HTTP — so it gets its own `./queue` subpath rather than being
+conflated with the synchronous request/response surface. Everything else
+(`src/api/`, `src/db/`, `src/worker/`, `src/inbox/`, `src/seed/`, `src/domain/`)
+is private — `ERR_PACKAGE_PATH_NOT_EXPORTED` at the Node resolver.
 
 ## Layout
 
 ```
 pillars/food/
-├── package.json           @pops/food (single workspace member)
+├── package.json            @pops/food
 ├── tsconfig.json
 ├── vitest.config.ts
-├── Dockerfile             one image, two CMDs (api + worker)
-├── README.md
+├── Dockerfile              one image, two CMDs (api + worker)
+├── mise.toml               per-pillar tasks
+├── app/                    @pops/app-food — FE feature module
 ├── openapi/
-│   └── food.openapi.json  canonical HTTP wire contract (committed)
-├── migrations/            drizzle journal
-├── scripts/               codegen — manifest + openapi
+│   └── food.openapi.json   canonical HTTP wire contract (committed)
+├── migrations/             drizzle journal
+├── scripts/                codegen — manifest + openapi + api-types
 └── src/
-    ├── contract/   PUBLIC: HTTP schemas + types + manifest + queue/ subpath
-    │   ├── index.ts
-    │   ├── types/
-    │   ├── schemas/
-    │   ├── queue/         ← BullMQ payload schemas (the `./queue` export)
-    │   ├── errors.ts
-    │   ├── manifest.ts
-    │   └── router.ts      (FoodRouter type-stub; do not export)
-    ├── api/        PRIVATE: HTTP server, handlers, registry wiring
-    ├── db/         PRIVATE: drizzle schema, migrations, services, opener
-    ├── dsl/        PRIVATE: recipe DSL parser/resolver/compiler (pure logic)
+    ├── contract/   PUBLIC: ts-rest contract (rest.ts), HTTP schemas/types, manifest, queue/ subpath
+    ├── api/        PRIVATE: Express server, ts-rest handlers, registry wiring
+    ├── db/         PRIVATE: drizzle schema, migrations, services, the SQLite opener
+    ├── dsl/        PRIVATE logic + `public.ts` (the `./dsl` export): recipe DSL parser/resolver/compiler
     ├── inbox/      PRIVATE: quality scoring helpers (pure)
     ├── seed/       PRIVATE: initial seed data
     ├── domain/     PRIVATE: shared types + utilities (slug, recipe-renderer)
     └── worker/     PRIVATE: BullMQ ingestion daemon
 ```
 
-Boundaries inside the pillar:
-
-- **`db/`** is literally drizzle + services + schema.
-- **`dsl/`** is pure logic — no drizzle, no DB.
-- **`inbox/`** is pure scoring — operates on already-loaded data.
-- **`seed/`** is fixture data.
-- **`domain/`** holds anything shared between subdirs (slug grammar, plan
-  types, recipe-renderer types).
-- **`worker/`** runs the BullMQ daemon. Imports queue schemas relatively
-  from `../contract/queue/`. Calls back to pops-api via raw HTTP fetch
-  (no `@pops/api` typed-client coupling — the typed-tRPC pattern would
-  tie the worker to a lake-broken monolith).
+Boundaries inside the pillar: `db/` is literally drizzle + services + schema;
+`dsl/` and `inbox/` are pure logic (no DB); `seed/` is fixture data; `domain/`
+holds anything shared between subdirs; `worker/` runs the BullMQ daemon and
+imports queue schemas relatively from `../contract/queue/`. The worker calls
+back to the pillar over plain HTTP fetch — no typed-client coupling to any
+server internals.
 
 ## Dockerfile — two CMDs, one image
 
-Single multi-stage Dockerfile produces a single image. `docker-compose`
+A single multi-stage Dockerfile produces a single image; `docker compose`
 selects the role per container:
 
 ```yaml
@@ -86,84 +75,29 @@ food-worker:
   command: ['node', 'dist/worker/worker.js']
 ```
 
-Both processes share the same compiled artefact, the same dependencies,
-and the same migrations folder. Building once and `command:`-overriding
-in compose keeps the registry lean and the build pipeline simple.
+Both processes share the same compiled artefact, dependencies, and migrations.
+Building once and overriding `command:` in compose keeps the registry lean and
+the layer cache warm across both roles.
 
-## Quality gates
+## Registration
 
-`.github/workflows/food-quality.yml` — comprehensive single workflow.
-Replaces three fragmented workflows (`food-api-quality.yml`,
-`food-db-quality.yml`, `worker-food-image.yml`) the legacy split had.
+On boot, when `POPS_REGISTRY_ENABLED=true`, the API server registers via
+`bootstrapPillar` from `@pops/pillar-sdk` (`/registry/register` on the
+`registry` pillar) and deregisters on `SIGTERM`. There is no per-request auth:
+the pillar trusts the docker network and the gateway in front authenticates.
 
-Locally:
+## Commands
 
-```
-pnpm install --frozen-lockfile --filter "@pops/food..."
+```bash
 pnpm --filter @pops/food typecheck
-pnpm --filter @pops/food test
-pnpm --filter @pops/food build
-pnpm exec oxfmt --check pillars/food/
-pnpm exec oxlint pillars/food/src
+pnpm --filter @pops/food test          # vitest against a real temp SQLite DB
+pnpm --filter @pops/food build         # verify-manifest → tsc → openapi → api-types
+pnpm --filter @pops/food dev
+pnpm --filter @pops/food generate:openapi
+pnpm --filter @pops/food generate:api-types
 docker build -f pillars/food/Dockerfile .
 ```
 
-## Consumer migration (the deliberate part of the lake)
-
-The food collapse migrates **only one consumer**: the 9 `apps/pops-api`
-ingest files that share the BullMQ queue contract with the worker. They
-rewrite `from '@pops/food-contracts'` → `from '@pops/food/queue'`.
-Everything else stays broken until the pops-api retirement work or
-explicit consumer migrations land.
-
-What's still broken (lake of sludge):
-
-- `apps/pops-api/src/modules/food/*` (everything except the 9 ingest
-  files) — still imports `@pops/food-db`, `@pops/food-contract`,
-  `@pops/app-food-db`. Unresolved by design; will resolve when each
-  handler migrates to `@pops/food` or moves into `pillars/food/src/api/`.
-- `packages/app-food` (FE) — imports `@pops/app-food-db`. Stays broken
-  until the FE pillar collapse.
-- `apps/pops-api` legacy worker callback (`food.ingest.workerComplete`)
-  receives `IngestJobResult` shapes that now come from `@pops/food/queue`.
-  The 9-file mechanical rewrite resolves this side specifically.
-
-## Decision log
-
-- **Why one image with two CMDs (not two images).** The API and the
-  worker share 100% of the compiled artefact, all dependencies, and the
-  migrations folder. Building one image keeps the registry simple and
-  the docker layer cache warm across both roles.
-- **Why drop `@pops/api` from the worker.** Typed tRPC clients coupled
-  the worker's compilation to the monolith's `AppRouter` type. With
-  pops-api in a lake-broken state, that coupling would red the food
-  CI on every collapse. Raw fetch against the known `food.ingest.workerComplete`
-  endpoint achieves the same effect without the compile-time leash.
-- **Why queue contract is public (`./queue`).** A queue payload is a wire
-  contract — same role as OpenAPI for HTTP. Different transport, same
-  consumer-facing concern. Single `./` subpath would conflate two
-  unrelated lifecycle models (synchronous request/response vs
-  fire-and-forget enqueue).
-- **Why no `step-lists.ts` in seed/.** Food previously wrote directly
-  into the lists pillar's SQLite via shared workspace packages. With
-  lists collapsed and its DB private, that import path is unreachable —
-  correctly. Food list-item fixtures are deferred to a follow-up that
-  goes through lists' public HTTP API.
-- **Why `dsl/`, `inbox/`, `seed/`, `domain/` are separate from `db/`.**
-  Honest categorisation: `db/` literally means drizzle calls. Pure
-  logic (DSL compiler, inbox scoring), pure data (seed), and shared
-  types (domain) all have homes outside `db/`. Reorganising later, if
-  needed, is a contained internal refactor — the public surface stays
-  identical.
-
-## What this PR exposes about the rest of the codebase
-
-Beyond the 9 sanctioned consumer-migration sites:
-
-- **`apps/pops-api/src/modules/food/`** still hosts most of food's business
-  logic. Moving it into `pillars/food/src/api/` is the pops-api retirement
-  work, deferred to a later phase.
-- **`packages/app-food`** depends on `@pops/app-food-db`. After this
-  collapse, that's unresolved. The FE module either collapses into
-  `pillars/food/src/fe/` or stays separate; that's a design call deferred
-  to the FE pillar phase.
+The contract (zod) is the single source of truth; OpenAPI and api-types are
+generated projections, drift-checked in CI. Redis is required to run the worker
+(set `REDIS_URL`); the API degrades gracefully without it.

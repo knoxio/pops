@@ -6,19 +6,19 @@ Accepted — 2026-06-14
 
 ## Context
 
-Three regexes in the manifest schema (`packages/pillar-sdk/src/manifest-schema/schema.ts`) jointly determine how identifiers flow across the federation:
+Three regexes in the manifest schema (`libs/sdk/src/manifest-schema/schema.ts`) jointly determine how identifiers flow across the federation:
 
 - `PILLAR_ID` — `^[a-z][a-z0-9-]*$` (lowercase kebab-case)
 - `CAMEL_IDENTIFIER` — `^[a-z][a-zA-Z0-9]*$` (camelCase; no dots, no hyphens). Used for `ai.tools[].name` and `search.adapters[].name`.
 - `SINK_EVENT_TYPE` — `^[a-z][a-z0-9]*\.[a-z][a-z0-9]*\.[a-z][a-z0-9]*$` (lowercase dotted, exactly 3 segments)
 
-The constraints are enforced — the manifest validator (PRD-157) rejects non-conforming manifests at registration time — but the _convention_ that ties them together is not documented anywhere. Three Theme 13 PRs hit it in quick succession and each had to rediscover the rule:
+The constraints are enforced — the manifest validator ([manifest-schema-validator](../themes/federation/prds/manifest-schema-validator/README.md)) rejects non-conforming manifests at registration time — but the _convention_ that ties them together is not documented anywhere. Three federation PRs hit it in quick succession and each had to rediscover the rule:
 
 - **PR #3179** — drafted as `ha.entity.list`. Manifest publishes `entityList`. The tool-router composes `<pillarId>.<toolName>` at call time, so the LLM sees `ha-bridge.entityList`.
 - **PR #3184** — same shape for `ha.entity.getState` → `entityGetState`. Identical workaround.
 - **PR #3189** — drafted as `ha.notify` (2 segments). `SINK_EVENT_TYPE` requires 3 segments, so shipped as `ha.notify.send` and `ha.event.fire`. Behaviour matches PRD intent; the names were widened to satisfy the regex.
 
-The constraints exist for real reasons. LLM tool-name discoverability is the camelCase driver — provider tool schemas (OpenAI, Anthropic) treat the name as a single identifier and behave poorly with dots or hyphens, and the orchestrator's `parseToolName` (`packages/pillar-sdk/src/ai-tools/tool-router.ts`) splits on the _first_ dot to recover `<pillarId>.<toolName>`, which only works if the tool half contains no further dots. Sink event types are routed by the orchestrator's publish/subscribe dispatcher, which keys on the full string; the 3-segment shape (`<source>.<entity>.<action>`) keeps the namespace flat and parseable without enforcing a per-pillar prefix.
+The constraints exist for real reasons. LLM tool-name discoverability is the camelCase driver — provider tool schemas (OpenAI, Anthropic) treat the name as a single identifier and behave poorly with dots or hyphens, and the orchestrator's `parseToolName` (`libs/sdk/src/ai-tools/tool-router.ts`) splits on the _first_ dot to recover `<pillarId>.<toolName>`, which only works if the tool half contains no further dots. Sink event types are routed by the orchestrator's publish/subscribe dispatcher, which keys on the full string; the 3-segment shape (`<source>.<entity>.<action>`) keeps the namespace flat and parseable without enforcing a per-pillar prefix.
 
 New pillar authors keep stepping on the same trap because the _constraint_ lives in the regex and the _rationale_ lives in PR review comments.
 
@@ -34,9 +34,9 @@ New pillar authors keep stepping on the same trap because the _constraint_ lives
 
 Codify (not change) the three identifier conventions and cross-reference this ADR from the manifest-schema source.
 
-**Pillar IDs are kebab-case.** `ha-bridge`, `pops-shell`, `cerebrum`, `finance`. Enforced by `PILLAR_ID`. They appear in URLs, package names (`@pops/<pillar>-contract`), contract tags (`contract-<pillar>@v<semver>`), and as the prefix the tool-router composes onto every tool name.
+**Pillar IDs are kebab-case.** `ha-bridge`, `pops-shell`, `cerebrum`, `finance`. Enforced by `PILLAR_ID`. They appear in URLs, the published package name (`@pops/<pillar>`), and as the prefix the tool-router composes onto every tool name.
 
-**Tool and search-adapter names are camelCase.** `entityList`, `entityGetState`. Enforced by `CAMEL_IDENTIFIER`. No dots, no hyphens. The tool-router (`packages/pillar-sdk/src/ai-tools/tool-router.ts`) composes the qualified name `<pillarId>.<toolName>` at call time — e.g. `ha-bridge.entityList` — and `parseToolName` splits on the _first_ dot to recover the two halves. The pillar id may therefore contain hyphens, but the tool name cannot, because `parseToolName` rejects any qualified name with a second dot. The LLM never sees a tool name with internal dots or hyphens.
+**Tool and search-adapter names are camelCase.** `entityList`, `entityGetState`. Enforced by `CAMEL_IDENTIFIER`. No dots, no hyphens. The tool-router (`libs/sdk/src/ai-tools/tool-router.ts`) composes the qualified name `<pillarId>.<toolName>` at call time — e.g. `ha-bridge.entityList` — and `parseToolName` splits on the _first_ dot to recover the two halves. The pillar id may therefore contain hyphens, but the tool name cannot, because `parseToolName` rejects any qualified name with a second dot. The LLM never sees a tool name with internal dots or hyphens.
 
 **Sink event types are lowercase dotted, exactly 3 segments: `<source>.<entity>.<action>`.** `media.watch.completed`, `finance.balance.low`, `ha.notify.send`, `ha.event.fire`. Enforced by `SINK_EVENT_TYPE`. The leading segment is the source — usually the pillar id, but kebab-case pillar ids collapse to a single token (`ha-bridge` publishes under `ha.*`). The orchestrator routes on the full string; the segmentation is for naming hygiene, not parsing.
 
@@ -67,10 +67,10 @@ Concretely, draft and ship like this:
 
 - [ADR-026](adr-026-pillar-architecture.md) — pillar architecture; pillar id concept
 - [ADR-034](adr-034-sinks-manifest-dimension.md) — sinks dimension; original home of the `SINK_EVENT_TYPE` rule
-- PRD-157 — manifest schema (regexes live here, unchanged)
-- PRD-200 — AI tool descriptors in the manifest (camelCase tool name)
-- PRD-202 — tool-router dispatch (`<pillarId>.<toolName>` composition)
-- PRD-236 — sinks manifest validation
+- [manifest-schema-validator](../themes/federation/prds/manifest-schema-validator/README.md) — manifest schema (regexes live here, unchanged)
+- [ai-tool-manifest](../themes/federation/prds/ai-tool-manifest/README.md) — AI tool descriptors in the manifest (camelCase tool name)
+- [tool-call-routing](../themes/federation/prds/tool-call-routing/README.md) — tool-router dispatch (`<pillarId>.<toolName>` composition)
+- [manifest-schema-validator](../themes/federation/prds/manifest-schema-validator/README.md) — sinks manifest validation
 - PR #3179 — `ha.entity.list` → `entityList`
 - PR #3184 — `ha.entity.getState` → `entityGetState`
 - PR #3189 — `ha.notify` → `ha.notify.send` + `ha.event.fire`

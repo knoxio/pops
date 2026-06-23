@@ -2,7 +2,7 @@
 
 > Audience: anyone with `write` access to `knoxio/pops`.
 > Frequency: when the compose contract changes (network names, secret names, env var renames, image names) or when a stable point is worth marking.
-> Related: [PRD-096 — Application Packaging & GHCR Contract](../themes/00-platform/prds/096-application-packaging/README.md).
+> Related: [Application Packaging & GHCR Contract](../themes/00-platform/prds/application-packaging/README.md).
 
 ## TL;DR
 

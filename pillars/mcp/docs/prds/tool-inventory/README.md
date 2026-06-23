@@ -1,12 +1,12 @@
 # MCP Tool Inventory
 
-> Domain: [MCP Gateway](../../README.md) · Gateway plumbing: [PRD-102](../../../../../docs/themes/00-platform/prds/102-mcp-server/README.md)
+> Domain: [MCP Gateway](../../README.md) · Gateway plumbing: [MCP Server PRD](../../../../../docs/themes/00-platform/prds/mcp-server/README.md)
 
 Status: Done — 30 tools wired into `allTools`, every family vitest-covered.
 
 ## Purpose
 
-Catalogue the tools the MCP gateway advertises and the pillar each one drives. This PRD is the per-tool surface; the transport, request lifecycle, container packaging, and CI publish are owned by PRD-102 and are not repeated here.
+Catalogue the tools the MCP gateway advertises and the pillar each one drives. This PRD is the per-tool surface; the transport, request lifecycle, container packaging, and CI publish are owned by the central [MCP Server PRD](../../../../../docs/themes/00-platform/prds/mcp-server/README.md) and are not repeated here.
 
 Each tool is an adapter in `pillars/mcp/src/tools/*`. A handler reads MCP args, calls the owning pillar through `getPillar<TRouter>(id).<domain>.<op>(...)`, and returns `mapCallResult(...)`: SDK `kind: 'ok'` → the value as pretty JSON text; every failure shape → `{ isError: true }` with a human-readable reason the model can act on. Tools register flat into `allTools` (`tools/index.ts`); the server lists them via `ListTools` and routes a `CallTool` by name.
 

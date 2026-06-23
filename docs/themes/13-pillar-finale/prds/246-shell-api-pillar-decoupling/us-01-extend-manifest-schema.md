@@ -27,5 +27,5 @@ As a pillar author, I want to declare my pillar's capture overlay inside my mani
 
 - `CaptureOverlayDescriptor` is intentionally a _descriptor_, not the runtime React component value — same pattern as `PageDescriptor` ([PRD-243](../243-registry-driven-shell-ui/README.md) US-01), `SinkDescriptor` ([PRD-236](../236-sinks-manifest-dimension/README.md) US-01), and `SettingsManifestDescriptor` ([PRD-240](../240-settings-as-manifest-dimension/README.md) US-01). The descriptor carries everything wire-shaped; the React component reference comes from the workspace bundle map at the shell side.
 - The `bundleSlot` field follows the same convention as `PageDescriptor.bundleSlot` (PRD-243 US-01). The resolution mechanism is identical; no new shell-side seam.
-- The cross-language wire-format spec ([PRD-231](../231-cross-language-wire-format-spec/README.md)) already covers JSON-Schema-shaped payloads. `CaptureOverlayDescriptor` contains only primitives + optional strings; it is trivially representable from a Rust / Go pillar.
+- The cross-language wire-format spec ([PRD-231](../cross-language-wire-format-spec/README.md)) already covers JSON-Schema-shaped payloads. `CaptureOverlayDescriptor` contains only primitives + optional strings; it is trivially representable from a Rust / Go pillar.
 - This US is foundational for US-02, US-03, US-05.

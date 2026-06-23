@@ -169,7 +169,7 @@ Tracked per-US — summary here for orientation:
 - **Frontend `AppRouter` regeneration.** The shell continues to consume the static `AppRouter` type for in-repo pillars. External pillars are not in `AppRouter`; the shell uses `pillar(id).callDynamic` for them. A future PRD may surface external pillars in the shell's typed catalogue via a separate codegen step.
 - **Multi-instance external pillars.** Inherits PRD-228's one-row-per-pillar-id stance.
 - **Runtime router invalidation on `health-changed → unavailable`.** The orchestrator recomposes on register / deregister; health-driven invalidation is PRD-216's `PillarGuard` rewrite territory.
-- **Cross-language wire-format details.** Covered by [PRD-231](../231-cross-language-wire-format-spec/README.md); PRD-242 assumes the wire format works.
+- **Cross-language wire-format details.** Covered by [PRD-231](../cross-language-wire-format-spec/README.md); PRD-242 assumes the wire format works.
 
 ## References
 

@@ -1,6 +1,6 @@
 # PRD-011: Drizzle ORM
 
-> Epic: [06 — Drizzle ORM](../../epics/06-drizzle-orm.md)
+> Epic: [Drizzle ORM](../../../foundation/epics/drizzle-orm.md)
 > Status: Done
 
 ## Overview

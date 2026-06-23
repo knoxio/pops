@@ -34,25 +34,25 @@ For TS-to-TS consumption, the existing `@pops/<pillar>-contract` package with tR
 For cross-language pillar authoring (a Rust pillar that exposes its own router):
 
 1. The Rust pillar authors a contract repo (`pops-finance-contract-rs` for example) that publishes the same `openapi.json` + a tRPC-compatible JSON-over-HTTP server impl.
-2. The OpenAPI must conform to the same shape PRD-195 emits (envelope: `{result: {data}}` or `{error: {code, message, data}}`; batched endpoint format documented in PRD-231 wire-format spec).
-3. The pillar registers with `POST /core.registry.register` (PRD-228) advertising its baseUrl + manifest.
+2. The OpenAPI must conform to the same REST shape PRD-195 emits: value-direct success bodies and a `{ message, code? }` error body on real HTTP status codes, with each operation's `operationId = "<domain>.<proc>"`. The full wire conventions are documented in the [cross-language wire-format spec](../themes/13-pillar-finale/prds/cross-language-wire-format-spec/README.md).
+3. The pillar registers with `POST /registry/register` (legacy alias `/core.registry.register`) advertising its baseUrl + manifest.
 4. TS consumers see no difference — they call `pillar('rust-thing').something.list(...)` through the SDK proxy; the proxy treats the response identically.
 
-No per-language SDK is maintained by the POPS project. The wire-format spec (PRD-231, planned for Wave 6) is the contract the language ecosystem implements against using whatever OpenAPI tooling already exists in that language.
+No per-language SDK is maintained by the POPS project. The [cross-language wire-format spec](../themes/13-pillar-finale/prds/cross-language-wire-format-spec/README.md) is the contract the language ecosystem implements against using whatever OpenAPI tooling already exists in that language. The Rust `contacts` pillar is the live proof it is implementable.
 
 ## Consequences
 
-- **Enables:** language-agnostic pillar authoring as soon as PRD-231 (wire-format spec) lands. A demonstration Rust pillar becomes a concrete Wave 6 deliverable.
+- **Enables:** language-agnostic pillar authoring — shipped. The [wire-format spec](../themes/13-pillar-finale/prds/cross-language-wire-format-spec/README.md) documents the contract and the Rust `contacts` pillar federates live against it.
 - **Enables:** the OpenAPI snapshot becomes the public contract surface even for TS consumers in external repos that don't want to npm-install the contract package.
 - **Prevents:** language-specific SDK ports owned by POPS. Anyone wanting an idiomatic Rust SDK builds it themselves on top of the OpenAPI spec.
-- **Constrains:** the wire format must remain stable. Breaking changes to envelope shape, error structure, or batched-request format become breaking for every cross-language consumer simultaneously. Versioning becomes a hard contract semver (per ADR-030).
-- **Trade-off accepted:** non-TS consumers get a weaker typing experience (OpenAPI-generated types are coarser than tRPC's procedure-level inference). They get language idiomaticity in exchange. This is the right trade for the audience.
-- **Trade-off accepted:** the wire-format spec (PRD-231) becomes a load-bearing artifact. It is the source of truth for cross-language interop, more so than any single TS implementation. It must be authored carefully and reviewed by anyone proposing a non-TS implementation.
+- **Constrains:** the wire format must remain stable. Breaking changes to the success/error envelope, status-code mapping, or registry handshake become breaking for every cross-language consumer simultaneously. Versioning becomes a hard contract semver (per ADR-030).
+- **Trade-off accepted:** non-TS consumers get a weaker typing experience (OpenAPI-generated types are coarser than the in-tree TS contract's inference). They get language idiomaticity in exchange. This is the right trade for the audience.
+- **Trade-off accepted:** the wire-format spec is a load-bearing artifact. It is the source of truth for cross-language interop, more so than any single TS implementation.
 
 ## Related
 
 - [ADR-030](adr-030-contract-packages-semver.md) — contract package semver discipline becomes load-bearing here
 - [ADR-032](adr-032-positioning-vs-self-hosted-os-family.md) — establishes the external-pillar vision this ADR enables
-- PRD-195 — codegen pipeline emits the OpenAPI snapshot this ADR depends on (already shipped on all 7 pillars)
-- PRD-231 — cross-language SDK wire-format spec (Wave 6, planned)
-- PRD-233 — external pillar example repo (Wave 6, planned, ships Rust reference impl)
+- PRD-195 — codegen pipeline emits the OpenAPI snapshot this ADR depends on (shipped fleet-wide)
+- [Cross-language wire-format spec](../themes/13-pillar-finale/prds/cross-language-wire-format-spec/README.md) — the REST wire contract a non-TS pillar implements
+- PRD-233 — external Rust pillar example (in progress); the in-tree `contacts` pillar already proves cross-language federation
