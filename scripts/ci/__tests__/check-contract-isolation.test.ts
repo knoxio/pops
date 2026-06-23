@@ -39,7 +39,7 @@ describe('findReachBehindInSource', () => {
     const src = ['const ok = 1;', '', "import { x } from '@pops/ai/src/y.js';"].join('\n');
     const v = findReachBehindInSource(src, 'f.ts');
     expect(v).toHaveLength(1);
-    expect(v[0].line).toBe(3);
+    expect(v[0]?.line).toBe(3);
   });
 
   it('catches multiple reach-behinds across lines', () => {
