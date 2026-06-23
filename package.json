@@ -22,6 +22,8 @@
     "exports:check": "node scripts/check-exports.mjs",
     "check:bundle-map": "node scripts/check-bundle-map-coverage.mjs",
     "check:bundle-map:self-test": "node scripts/check-bundle-map-coverage.mjs --self-test",
+    "check:vendored-contracts": "node scripts/ci/check-vendored-contracts.mjs",
+    "check:vendored-contracts:self-test": "node scripts/ci/check-vendored-contracts.mjs --self-test",
     "ci:fix": "pnpm lint:fix && pnpm format && pnpm typecheck",
     "registry:build": "pnpm --filter @pops/module-registry registry:build",
     "prepare": "husky"

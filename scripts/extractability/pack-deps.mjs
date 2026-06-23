@@ -33,20 +33,42 @@ function main(argv) {
   const unit = resolveUnit(unitArg, cwd);
   const byName = new Map(discoverUnits(undefined, cwd).map((u) => [u.name, u]));
 
-  const popsDeps = workspacePopsDeps(unit.pkg);
+  // Pack the TRANSITIVE @pops/* closure, not just the unit's direct edges. A
+  // packed dep's tarball declares its own @pops/* deps as concrete versions
+  // (pnpm pack rewrites `workspace:*` -> the version), which the isolated
+  // install would otherwise try to fetch from the public registry and 404 on
+  // (they are private workspace packages). Packing the whole closure and
+  // pointing every @pops/* edge at its tarball (via pnpm.overrides, see
+  // rewrite-deps.mjs) is what lets a unit with @pops/* runtime deps — e.g. a
+  // pillar app importing its own pillar contract — install in isolation.
   /** @type {Record<string, string>} */
   const manifest = {};
-  for (const depName of popsDeps) {
+  // Seed the closure with the unit's OWN edges INCLUDING devDependencies: the
+  // proof we run is build (or typecheck+test for shell-bundled app units), and
+  // those legitimately import workspace devDeps — e.g. `@pops/locales` provides
+  // the JSON resources a finance/app test-setup imports. A consumer's devDeps
+  // are not transitively installed, so the BFS expansion below stays
+  // runtime-only (devDeps are pulled for the root unit alone).
+  /** @type {string[]} */
+  const queue = workspacePopsDeps(unit.pkg, true);
+  const seen = new Set(queue);
+  while (queue.length > 0) {
+    const depName = /** @type {string} */ (queue.shift());
     const dep = byName.get(depName);
     if (!dep) {
       process.stderr.write(
-        `pack-deps: ${depName} not found in workspace (declared by ${unit.name})\n`
+        `pack-deps: ${depName} not found in workspace (declared in the closure of ${unit.name})\n`
       );
       return 1;
     }
     buildUnit(dep.dir);
-    const tgz = packUnit(dep.dir, outDir);
-    manifest[depName] = tgz;
+    manifest[depName] = packUnit(dep.dir, outDir);
+    for (const next of workspacePopsDeps(dep.pkg, false)) {
+      if (!seen.has(next)) {
+        seen.add(next);
+        queue.push(next);
+      }
+    }
   }
   process.stdout.write(`${JSON.stringify(manifest, null, 2)}\n`);
   return 0;
@@ -54,15 +76,23 @@ function main(argv) {
 
 /**
  * Returns the @pops/* deps declared with a workspace protocol (the edges that
- * must be rewritten for isolation). Spans dependencies + peerDependencies +
- * optionalDependencies (runtime surfaces); devDeps are not needed to build a
- * consumer of the packed unit.
+ * must be rewritten for isolation). Always spans dependencies +
+ * peerDependencies + optionalDependencies (runtime surfaces); when
+ * `includeDev` is set it also spans devDependencies — used only for the root
+ * unit, whose own build/typecheck/test legitimately needs its workspace
+ * devDeps. A consumer never installs a packed dep's devDeps, so the transitive
+ * walk passes `includeDev=false`.
+ *
  * @param {Record<string, unknown>} pkg
+ * @param {boolean} includeDev
  */
-function workspacePopsDeps(pkg) {
+function workspacePopsDeps(pkg, includeDev) {
   /** @type {string[]} */
   const out = [];
-  for (const field of ['dependencies', 'peerDependencies', 'optionalDependencies']) {
+  const fields = includeDev
+    ? ['dependencies', 'peerDependencies', 'optionalDependencies', 'devDependencies']
+    : ['dependencies', 'peerDependencies', 'optionalDependencies'];
+  for (const field of fields) {
     const block = pkg[field];
     if (block && typeof block === 'object') {
       for (const [name, spec] of Object.entries(block)) {
@@ -79,8 +109,30 @@ function workspacePopsDeps(pkg) {
   return out;
 }
 
-/** @param {string} dir */
+/**
+ * Builds a packed dep so its `dist/` exists before `pnpm pack`. Source-only
+ * `@pops/*` libs (e.g. `@pops/navigation`, `@pops/ui`, `@pops/locales`) ship
+ * their `src/` directly — `main`/`exports` point at `./src/index.ts`, there is
+ * no compile step and so no `build` script. Packing those as-is is correct (the
+ * tarball carries the source the consumer resolves), so skip the build step for
+ * them rather than erroring on a missing script — otherwise the sandbox could
+ * never run on any unit that depends on a source-only lib (every pillar app
+ * depends on `@pops/navigation`/`@pops/ui`).
+ *
+ * @param {string} dir
+ */
 function buildUnit(dir) {
+  const scripts = resolveUnit(dir).pkg.scripts;
+  const hasBuild =
+    scripts &&
+    typeof scripts === 'object' &&
+    typeof (/** @type {Record<string, unknown>} */ (scripts).build) === 'string';
+  if (!hasBuild) {
+    process.stderr.write(
+      `pack-deps: ${packageNameAt(dir)} has no build script (source-only lib) — packing src/ as-is.\n`
+    );
+    return;
+  }
   // stdout is reserved for the manifest JSON; build chatter must go to stderr
   // so the caller can capture stdout cleanly.
   execFileSync('pnpm', ['--filter', packageNameAt(dir), 'run', 'build'], {

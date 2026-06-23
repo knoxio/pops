@@ -1,0 +1,780 @@
+{
+  "components": {
+    "schemas": {
+      "CreateEntityBody": {
+        "description": "Body accepted by `POST /entities`. `type` defaults to `company`; the array\nfields default to empty.",
+        "properties": {
+          "abn": {
+            "nullable": true,
+            "type": "string"
+          },
+          "aliases": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "defaultTags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "defaultTransactionType": {
+            "nullable": true,
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "notes": {
+            "nullable": true,
+            "type": "string"
+          },
+          "type": {
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "type": "object"
+      },
+      "Entity": {
+        "description": "The wire shape served by every entities route — the `toEntity` projection.\n`notionId`, `ownerUri`, and `ownerUriStaleAt` are deliberately NOT exposed\n(internal/integration columns), matching core's `EntitySchema`.",
+        "properties": {
+          "abn": {
+            "nullable": true,
+            "type": "string"
+          },
+          "aliases": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "defaultTags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "defaultTransactionType": {
+            "nullable": true,
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "lastEditedTime": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "notes": {
+            "nullable": true,
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "type",
+          "aliases",
+          "defaultTags",
+          "lastEditedTime"
+        ],
+        "type": "object"
+      },
+      "EntityListResponse": {
+        "description": "`GET /entities` response body.",
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/Entity"
+            },
+            "type": "array"
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/PaginationMeta"
+          }
+        },
+        "required": [
+          "data",
+          "pagination"
+        ],
+        "type": "object"
+      },
+      "EntityLookup": {
+        "description": "Wire shape of one bulk-lookup entry.",
+        "properties": {
+          "aliases": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "aliases"
+        ],
+        "type": "object"
+      },
+      "EntityMutation": {
+        "description": "Create/update response body — the entity plus a human-readable message.",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/Entity"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "data",
+          "message"
+        ],
+        "type": "object"
+      },
+      "EntityResponse": {
+        "description": "`GET /entities/:id` response body.",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/Entity"
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "type": "object"
+      },
+      "ErrorBody": {
+        "description": "Error envelope returned by every fallible route. `code` carries the\noriginating error class name (e.g. `NotFoundError`) so clients can branch\nwithout parsing `message`.",
+        "properties": {
+          "code": {
+            "nullable": true,
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "type": "object"
+      },
+      "HealthResponse": {
+        "description": "`GET /health` response body. Field-for-field identical to the TS pillar\nhealth envelope: `ok`, `status`, `pillar`, `version`, `ts` (an RFC 3339 /\nISO 8601 UTC timestamp, matching the TS `new Date().toISOString()`). The\nregistry health probe parses this shape across every pillar.",
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          },
+          "pillar": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "ts": {
+            "type": "string"
+          },
+          "version": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "ok",
+          "status",
+          "pillar",
+          "version",
+          "ts"
+        ],
+        "type": "object"
+      },
+      "LookupBody": {
+        "description": "`POST /entities/lookup` body — reserved for a future field selector; an\nempty body fetches the default match columns.",
+        "properties": {
+          "fields": {
+            "items": {
+              "type": "string"
+            },
+            "nullable": true,
+            "type": "array"
+          }
+        },
+        "type": "object"
+      },
+      "LookupResponse": {
+        "description": "`POST /entities/lookup` response — the whole contact set's match columns in\none round-trip, plus the fetch instant for the caller's in-run cache.",
+        "properties": {
+          "entities": {
+            "items": {
+              "$ref": "#/components/schemas/EntityLookup"
+            },
+            "type": "array"
+          },
+          "fetchedAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "entities",
+          "fetchedAt"
+        ],
+        "type": "object"
+      },
+      "MatchType": {
+        "enum": [
+          "exact",
+          "prefix",
+          "contains"
+        ],
+        "type": "string"
+      },
+      "MessageResponse": {
+        "description": "Bare `{ message }` body returned by delete.",
+        "properties": {
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "type": "object"
+      },
+      "PaginationMeta": {
+        "description": "Pagination envelope returned by every list endpoint. Mirrors core's\n`PaginationMetaSchema`.",
+        "properties": {
+          "hasMore": {
+            "type": "boolean"
+          },
+          "limit": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "offset": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "total": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "total",
+          "limit",
+          "offset",
+          "hasMore"
+        ],
+        "type": "object"
+      },
+      "SearchHit": {
+        "description": "One ranked search hit. `uri` is the canonical `pops:contacts/contact/<id>`.",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/SearchHitData"
+          },
+          "matchField": {
+            "type": "string"
+          },
+          "matchType": {
+            "$ref": "#/components/schemas/MatchType"
+          },
+          "score": {
+            "format": "double",
+            "type": "number"
+          },
+          "uri": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "uri",
+          "score",
+          "matchField",
+          "matchType",
+          "data"
+        ],
+        "type": "object"
+      },
+      "SearchHitData": {
+        "properties": {
+          "aliases": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "name": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "type",
+          "aliases"
+        ],
+        "type": "object"
+      },
+      "SearchQuery": {
+        "properties": {
+          "text": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "type": "object"
+      },
+      "SearchRequest": {
+        "description": "`POST /search` request body. `query.text` is the term; `context` is\naccepted and ignored (parity with the orchestrator's wire shape).",
+        "properties": {
+          "context": {},
+          "query": {
+            "$ref": "#/components/schemas/SearchQuery"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "type": "object"
+      },
+      "SearchResponse": {
+        "description": "`POST /search` response body.",
+        "properties": {
+          "hits": {
+            "items": {
+              "$ref": "#/components/schemas/SearchHit"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "hits"
+        ],
+        "type": "object"
+      },
+      "UpdateEntityBody": {
+        "description": "Body accepted by `PATCH /entities/:id`. Every field is optional; a present\nfield (even `null` for the nullable columns) is applied, an absent field is\nleft untouched. The nullable columns use `Option<Option<T>>` to tell\n\"absent\" (outer `None` — leave the column alone) apart from \"set to null\"\n(`Some(None)` — clear the column). serde collapses a JSON `null` into the\nouter `None` by default, so those fields deserialize through\n[`double_option`], which preserves the present-but-null case.",
+        "properties": {
+          "abn": {
+            "nullable": true,
+            "type": "string"
+          },
+          "aliases": {
+            "items": {
+              "type": "string"
+            },
+            "nullable": true,
+            "type": "array"
+          },
+          "defaultTags": {
+            "items": {
+              "type": "string"
+            },
+            "nullable": true,
+            "type": "array"
+          },
+          "defaultTransactionType": {
+            "nullable": true,
+            "type": "string"
+          },
+          "name": {
+            "nullable": true,
+            "type": "string"
+          },
+          "notes": {
+            "nullable": true,
+            "type": "string"
+          },
+          "type": {
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "description": "Contacts pillar — authoritative entities store (first Rust pillar).",
+    "license": {
+      "identifier": "UNLICENSED",
+      "name": "UNLICENSED"
+    },
+    "title": "POPS Contacts",
+    "version": "0.1.0"
+  },
+  "openapi": "3.0.3",
+  "paths": {
+    "/": {
+      "get": {
+        "operationId": "root.get",
+        "responses": {
+          "200": {
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Pillar identity banner"
+          }
+        },
+        "summary": "Stub root. A human-friendly landing string so `GET /` is not a 404 while\nthe real surface is still under construction.",
+        "tags": [
+          "crate::health"
+        ]
+      }
+    },
+    "/entities": {
+      "get": {
+        "operationId": "entities.list",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "search",
+            "required": false,
+            "schema": {
+              "nullable": true,
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "type",
+            "required": false,
+            "schema": {
+              "nullable": true,
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "format": "int64",
+              "nullable": true,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "format": "int64",
+              "nullable": true,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EntityListResponse"
+                }
+              }
+            },
+            "description": "Paginated entity list"
+          }
+        },
+        "tags": [
+          "crate::entities::routes"
+        ]
+      },
+      "post": {
+        "operationId": "entities.create",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateEntityBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EntityMutation"
+                }
+              }
+            },
+            "description": "Created entity"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Invalid body"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Duplicate name"
+          }
+        },
+        "tags": [
+          "crate::entities::routes"
+        ]
+      }
+    },
+    "/entities/lookup": {
+      "post": {
+        "operationId": "entities.lookup",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LookupBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LookupResponse"
+                }
+              }
+            },
+            "description": "Bulk match columns"
+          }
+        },
+        "tags": [
+          "crate::entities::routes"
+        ]
+      }
+    },
+    "/entities/{id}": {
+      "delete": {
+        "operationId": "entities.delete",
+        "parameters": [
+          {
+            "description": "Entity id",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageResponse"
+                }
+              }
+            },
+            "description": "Deleted"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "No such entity"
+          }
+        },
+        "tags": [
+          "crate::entities::routes"
+        ]
+      },
+      "get": {
+        "operationId": "entities.get",
+        "parameters": [
+          {
+            "description": "Entity id",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EntityResponse"
+                }
+              }
+            },
+            "description": "The entity"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "No such entity"
+          }
+        },
+        "tags": [
+          "crate::entities::routes"
+        ]
+      },
+      "patch": {
+        "operationId": "entities.update",
+        "parameters": [
+          {
+            "description": "Entity id",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateEntityBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EntityMutation"
+                }
+              }
+            },
+            "description": "Updated entity"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "No such entity"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Duplicate name"
+          }
+        },
+        "tags": [
+          "crate::entities::routes"
+        ]
+      }
+    },
+    "/health": {
+      "get": {
+        "operationId": "health.get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            },
+            "description": "Pillar is live"
+          }
+        },
+        "summary": "Liveness probe.",
+        "tags": [
+          "crate::health"
+        ]
+      }
+    },
+    "/search": {
+      "post": {
+        "operationId": "search.search",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SearchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchResponse"
+                }
+              }
+            },
+            "description": "Ranked contact hits"
+          }
+        },
+        "tags": [
+          "crate::search::routes"
+        ]
+      }
+    }
+  }
+}

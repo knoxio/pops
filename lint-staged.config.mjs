@@ -18,7 +18,15 @@ export default {
   },
 
   '*.{json,md,css}': (filenames) => {
-    const formattable = filenames.filter((f) => !/\/openapi\/[^/]+\.openapi\.json$/.test(f));
+    // Never reformat an OpenAPI snapshot: a pillar's canonical
+    // `**/openapi/<name>.openapi.json` is emitted by codegen, and a vendored
+    // copy under `**/app/contracts/<name>.openapi.json` must stay byte-identical
+    // to it (the check-vendored-contracts drift gate enforces equality).
+    // Formatting either would create silent drift at commit time.
+    const isOpenApiSnapshot = (/** @type {string} */ f) =>
+      /\/openapi\/[^/]+\.openapi\.json$/.test(f) ||
+      /\/app\/contracts\/[^/]+\.openapi\.json$/.test(f);
+    const formattable = filenames.filter((f) => !isOpenApiSnapshot(f));
     if (formattable.length === 0) return [];
     const formatFiles = formattable.map(esc).join(' ');
     return [`oxfmt --write ${formatFiles}`];

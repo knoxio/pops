@@ -35,6 +35,7 @@
     "pnpm-lock.yaml",
     "package-lock.json",
     "pillars/contacts/openapi/*.openapi.json",
+    "pillars/*/app/contracts/*.openapi.json",
     "**/__tests__/fixtures/*.json",
     "libs/*/tests/fixtures/*.json",
     "*.csv",
