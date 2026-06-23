@@ -69,6 +69,19 @@ jobs:
         uses: jdx/mise-action@v2
 
       - if: ${{ matrix.unit.lang == 'ts' }}
+        name: Expose bundled node-gyp on PATH
+        # mise-installed node bundles node-gyp under npm but does not put it on
+        # PATH, so native-module installs (better-sqlite3 in most pillars +
+        # libs/settings) fail with `node-gyp: not found` during their pnpm
+        # lifecycle build. setup-node would provide it; mise does not. Add npm's
+        # node-gyp-bin dir to PATH for subsequent steps.
+        run: |
+          set -euo pipefail
+          gyp_bin="$(dirname "$(mise which node)")/../lib/node_modules/npm/bin/node-gyp-bin"
+          [ -x "$gyp_bin/node-gyp" ] || { echo "::error::bundled node-gyp not found at $gyp_bin"; exit 1; }
+          echo "$gyp_bin" >> "$GITHUB_PATH"
+
+      - if: ${{ matrix.unit.lang == 'ts' }}
         name: Assert --filter matches exactly one package
         # pnpm --filter exits 0 on zero matches (a warning, not an error), so
         # a dir-name != pkg-name skew would silently run nothing. Fail loud.
@@ -97,13 +110,24 @@ jobs:
           fi
 
       - if: ${{ matrix.unit.lang == 'ts' }}
+        name: Build dependency closure
+        # Build the unit's compiled-lib deps so their dist/.d.ts exists before
+        # typecheck/test resolve them. `^...` selects strictly the dependencies
+        # (never the unit), and pnpm no-ops deps that lack a `build` script, so
+        # this is safe for source libs (ui/navigation/overlay-ego) whose deps
+        # (e.g. @pops/pillar-sdk, @pops/types) DO compile. Mirrors
+        # pillar-quality's `pnpm --filter "<pkg>^..." build` step.
+        run: pnpm --filter "${{ matrix.unit.pkg }}^..." build
+
+      - if: ${{ matrix.unit.lang == 'ts' }}
         name: Build (own mise build task only)
         # mise merges configs UP the tree: `mise run -C <dir> build` for a unit
         # whose own mise.toml lacks `build` (source libs ui/navigation/
         # overlay-ego/locales) would resolve the ROOT build task (`tsc -b`
-        # tsconfig.build.json — the whole graph). Run build ONLY when the unit
-        # OWNS the task (Source == its own mise.toml). Mirrors the root
-        # run-all Source guard. typecheck/test still run for source libs.
+        # tsconfig.build.json — the whole graph). Run the unit's OWN build ONLY
+        # when Source == its own mise.toml. Mirrors the root run-all Source
+        # guard. Source libs skip this (deps already built above); their
+        # typecheck/lint/test still run.
         run: |
           set -euo pipefail
           src=$(mise tasks info build -C "${{ matrix.unit.dir }}" 2>/dev/null | sed -n 's/^Source: //p')
