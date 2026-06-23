@@ -142,3 +142,26 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm extractability:baseline
+
+  bundle-map-coverage:
+    name: Bundle-map coverage (RD-10)
+    # NON-required gate (P7-T08 / RD-10): asserts every in-repo
+    # `pillars/*/app` package is referenced by the shell's static
+    # `bundle-map.tsx`, so adding a pillar app and forgetting its entry fails
+    # loudly here instead of silently shipping no UI. ADR-002 keeps the bundle
+    # map static (one optimized SPA importing the published `@pops/app-*`
+    # contract); this guard keeps it complete. Intentionally NOT in the
+    # required-checks ruleset while the federation phase lands. The guard reads
+    # the source tree directly and pulls in no third-party deps, so it skips
+    # `pnpm install`. See docs/plans/repo-federation/06-registry-decoupling.md
+    # RD-10.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+      - name: Gate self-test (proves the guard catches a missing pillar app)
+        run: node scripts/check-bundle-map-coverage.mjs --self-test
+      - name: Every pillar app is referenced by the shell bundle map
+        run: node scripts/check-bundle-map-coverage.mjs
