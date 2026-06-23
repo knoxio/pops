@@ -64,22 +64,15 @@ export default defineConfig({
       host: 'localhost',
     },
     proxy: {
-      // The core pillar now serves a REST contract; app-ai's generated Hey
-      // API client targets the shell's `/core-api` path (see
-      // `@pops/app-ai` core-api-runtime-config). Mirrors `/media-api`.
-      '/core-api': {
-        target: 'http://localhost:3001',
-        changeOrigin: true,
-        rewrite: (urlPath: string) => urlPath.replace(/^\/core-api/, ''),
-      },
-      // Boot install-set resolver (P7-T03 / RD-3): the shell fetches the full
-      // registry snapshot from `GET /registry-api/registry/pillars` before
-      // first render. The canonical nginx route is `/registry-api/...`; in
-      // dev it shares the registry pillar's upstream with `/core-api` (the
-      // pillar formerly named `core`, port 3001). Strip the prefix so the
-      // registry router sees its natural `/registry/pillars`. Without this
+      // The registry pillar (formerly named `core`, port 3001) serves a REST
+      // contract. The shell's generated registry Hey API client and the boot
+      // install-set resolver both target the shell's `/registry-api` path (see
+      // `src/registry-api-runtime-config.ts`); the boot fetch hits
+      // `GET /registry-api/registry/pillars` before first render. Strip the
+      // prefix so the registry router sees its natural paths. Without this
       // proxy the dev boot fetch 404s and the shell silently falls through to
       // the static floor — masking the registry-driven branch in dev.
+      // Mirrors `/media-api`.
       '/registry-api': {
         target: 'http://localhost:3001',
         changeOrigin: true,
@@ -127,7 +120,8 @@ export default defineConfig({
       },
       // SSE streaming endpoints (ego chat + cerebrum query) live on the
       // cerebrum pillar. These MUST precede the bare `/api` rule below,
-      // which otherwise sends every `/api/*` request to core-api (3000).
+      // which otherwise sends every `/api/*` request to the legacy
+      // monolith upstream (3000).
       '/api/ego': {
         target: 'http://localhost:3007',
         changeOrigin: true,
@@ -146,7 +140,7 @@ export default defineConfig({
       },
       '/pillars': {
         // ADR-026 P3: shell-side pillar boot calls GET /pillars and
-        // GET /pillars/health on core-api.
+        // GET /pillars/health on the legacy monolith upstream.
         target: 'http://localhost:3000',
         changeOrigin: true,
       },

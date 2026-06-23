@@ -65,7 +65,7 @@ describe('fetchSettingsSnapshot', () => {
   it('fetches the full registry snapshot route', async () => {
     const fetchStub = vi.fn<typeof fetch>(async () => snapshotResponse([]));
     await fetchSettingsSnapshot({ fetch: fetchStub });
-    expect(fetchStub.mock.calls[0]?.[0]).toBe('/core-api/registry/pillars');
+    expect(fetchStub.mock.calls[0]?.[0]).toBe('/registry-api/registry/pillars');
   });
 
   it('normalises entries into PillarSnapshot shape with capabilities', async () => {

@@ -7,8 +7,7 @@
  * it wins. `CORE_REGISTRY_URL` is kept as a deprecated legacy fallback for
  * the existing watcher test harness and any compose file that still sets the
  * older name; remove it once nothing references it. The default host below
- * is `registry-api` (the pillar formerly named `core`); the renamed container
- * also answers to the legacy `core-api` alias during the rename window.
+ * is `registry-api` (the pillar formerly named `core`).
  */
 export const DEFAULT_REGISTRY_URL = 'http://registry-api:3001';
 

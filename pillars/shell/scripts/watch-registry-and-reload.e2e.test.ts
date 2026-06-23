@@ -12,7 +12,7 @@
  *     `nginx_generator_last_error_at` health surface flips to degraded.
  *   - On the next successful cycle, the error clears.
  *
- * Mirrors the in-process e2e in `apps/pops-core-api` US-05 — same shape,
+ * Mirrors the in-process e2e in `pillars/registry` US-05 — same shape,
  * but exercised THROUGH the watcher rather than against the registry's
  * mutation handlers directly.
  */

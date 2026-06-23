@@ -3,7 +3,7 @@
  * (settings-federation S3). The load-bearing assertion is WHERE each pillar's
  * read/write routes: to `/<ownerPillar>-api/settings` when the pillar
  * advertises the live `settings` capability, else fall back to
- * `/core-api/settings`.
+ * `/registry-api/settings`.
  */
 import { describe, expect, it, vi } from 'vitest';
 
@@ -17,12 +17,12 @@ function okJson(body: unknown): Response {
 }
 
 describe('settingsBaseFor', () => {
-  it('keeps the registry pillar on the historic /core-api prefix', () => {
-    expect(settingsBaseFor('registry')).toBe('/core-api');
+  it('routes the registry pillar to the /registry-api prefix', () => {
+    expect(settingsBaseFor('registry')).toBe('/registry-api');
   });
 
-  it('keeps the legacy core id on the historic /core-api prefix', () => {
-    expect(settingsBaseFor('core')).toBe('/core-api');
+  it('routes the legacy core id to the /registry-api prefix', () => {
+    expect(settingsBaseFor('core')).toBe('/registry-api');
   });
 
   it('routes every other pillar to its /<id>-api prefix', () => {
@@ -47,7 +47,7 @@ describe('settingsClientFor — capability-gated routing', () => {
     ]);
   });
 
-  it('falls back to /core-api/settings when the pillar has NOT advertised the capability', async () => {
+  it('falls back to /registry-api/settings when the pillar has NOT advertised the capability', async () => {
     const fetchStub = vi.fn<typeof fetch>(async () => okJson({ settings: {} }));
     const client = settingsClientFor('finance', false, fetchStub);
 
@@ -55,15 +55,15 @@ describe('settingsClientFor — capability-gated routing', () => {
     await client.setMany([{ key: 'finance.aiCategorizer.model', value: 'x' }]);
 
     expect(fetchStub.mock.calls.map((c) => c[0])).toEqual([
-      '/core-api/settings/get-many',
-      '/core-api/settings/set-many',
+      '/registry-api/settings/get-many',
+      '/registry-api/settings/set-many',
     ]);
   });
 
-  it('routes core to /core-api regardless of the capability flag', async () => {
+  it('routes core to /registry-api regardless of the capability flag', async () => {
     const fetchStub = vi.fn<typeof fetch>(async () => okJson({ settings: {} }));
     await settingsClientFor('core', true, fetchStub).getMany(['theme']);
-    expect(fetchStub.mock.calls[0]?.[0]).toBe('/core-api/settings/get-many');
+    expect(fetchStub.mock.calls[0]?.[0]).toBe('/registry-api/settings/get-many');
   });
 
   it('sends a JSON body with the requested keys/entries', async () => {

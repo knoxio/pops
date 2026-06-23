@@ -1,5 +1,5 @@
-import { shellManifest } from '@/core-api';
-import { unwrap } from '@/core-api-helpers';
+import { shellManifest } from '@/registry-api';
+import { unwrap } from '@/registry-api-helpers';
 import { useQuery } from '@tanstack/react-query';
 import { Navigate } from 'react-router';
 

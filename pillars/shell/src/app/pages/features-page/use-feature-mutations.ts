@@ -2,8 +2,8 @@ import {
   featuresClearUserPreference,
   featuresSetEnabled,
   featuresSetUserPreference,
-} from '@/core-api';
-import { unwrap } from '@/core-api-helpers';
+} from '@/registry-api';
+import { unwrap } from '@/registry-api-helpers';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import type { FeatureStatus } from '@pops/types';

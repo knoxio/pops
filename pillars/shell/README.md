@@ -8,7 +8,7 @@ ADR-035 carves pillars into three variants — `data`, `UI`, and `bridge`.
 The shell is the first **UI pillar**: it owns no data, exposes no
 procedures, and ships an empty manifest (no `routes.queries`, no
 `search.adapters`, no `ai.tools`, no `uri.types`, no `settings.keys`,
-no `sinks`). It still announces itself to `pops-core-api`'s pillar
+no `sinks`). It still announces itself to `pops-registry`'s pillar
 registry so the federation has a single, dynamic list of every running
 surface — UI included.
 
@@ -45,7 +45,7 @@ POST /core.registry.register
 ### Invoking the CLI
 
 ```bash
-POPS_REGISTRY_URL=http://core-api:3001 \
+POPS_REGISTRY_URL=http://registry-api:3001 \
 SHELL_BASE_URL=https://pops.local \
 POPS_INTERNAL_API_KEY=… \
   tsx apps/pops-shell/scripts/register-with-registry.ts
@@ -106,7 +106,7 @@ cycle.
 
 | Var                          | Default                      | Purpose                                                                                                |
 | ---------------------------- | ---------------------------- | ------------------------------------------------------------------------------------------------------ |
-| `CORE_REGISTRY_URL`          | `http://core-api:3001`       | Core-api base URL; SSE consumed from `<url>/registry/subscribe`.                                       |
+| `CORE_REGISTRY_URL`          | `http://registry-api:3001`   | Registry pillar base URL; SSE consumed from `<url>/registry/subscribe`.                                |
 | `POPS_NGINX_OUTPUT`          | `apps/pops-shell/nginx.conf` | Where the regenerated conf is written.                                                                 |
 | `POPS_NGINX_RELOAD_CMD`      | `nginx -s reload`            | Shell command run after each successful validate.                                                      |
 | `POPS_NGINX_CONFIG_TEST_CMD` | `nginx -t -c <output>`       | Pre-reload validation. Empty string disables the gate (e.g. when nginx runs in a different container). |

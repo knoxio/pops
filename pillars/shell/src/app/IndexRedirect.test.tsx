@@ -1,4 +1,4 @@
-import { CoreApiError } from '@/core-api-helpers';
+import { RegistryApiError } from '@/registry-api-helpers';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router';
@@ -8,7 +8,7 @@ const mocks = vi.hoisted(() => ({
   manifest: vi.fn(),
 }));
 
-vi.mock('@/core-api', () => ({
+vi.mock('@/registry-api', () => ({
   shellManifest: (...args: unknown[]) => mocks.manifest(...args),
 }));
 
@@ -107,8 +107,8 @@ describe('IndexRedirect', () => {
     expect(screen.getByTestId('landed')).toHaveTextContent('/finance');
   });
 
-  it('falls back to /finance when the core pillar is unavailable', async () => {
-    mocks.manifest.mockRejectedValue(new CoreApiError('down', 503));
+  it('falls back to /finance when the registry pillar is unavailable', async () => {
+    mocks.manifest.mockRejectedValue(new RegistryApiError('down', 503));
     renderAt();
     await waitFor(() => expect(mocks.manifest).toHaveBeenCalled());
     expect(screen.getByTestId('landed')).toHaveTextContent('/finance');

@@ -8,8 +8,8 @@
  * the pillar's container is restarting or its health check is failing.
  *
  * The retry button calls `refresh()` on the boot context, which re-runs
- * `GET /pillars/health` against core-api. No global page reload — the
- * shell and the working pillars stay mounted.
+ * `GET /pillars/health` against the registry pillar. No global page reload —
+ * the shell and the working pillars stay mounted.
  */
 import { CloudOff } from 'lucide-react';
 import { useTranslation } from 'react-i18next';

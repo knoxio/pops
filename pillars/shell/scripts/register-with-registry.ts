@@ -1,6 +1,6 @@
 #!/usr/bin/env tsx
 /**
- * Ops CLI: register the running shell with `pops-core-api`'s pillar
+ * Ops CLI: register the running shell with `pops-registry`'s pillar
  * registry (Theme 13 PRD-228 US-01 + ADR-035).
  *
  * The shell's production image is `nginx:alpine` — there is no Node
@@ -9,7 +9,7 @@
  * `mise run shell:register`) with the same secrets every other pillar
  * uses:
  *
- *     POPS_REGISTRY_URL     http://core-api:3001
+ *     POPS_REGISTRY_URL     http://registry-api:3001
  *     SHELL_BASE_URL        https://pops.local
  *     POPS_INTERNAL_API_KEY <shared docker-network key>
  *

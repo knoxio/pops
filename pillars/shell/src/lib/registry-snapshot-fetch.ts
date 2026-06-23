@@ -15,8 +15,7 @@
  * Both share this single fetch + parse so the shell has exactly one registry
  * client. The minimal `GET /pillars` boot projection only carries
  * `{ id, baseUrl }` and cannot drive either consumer; this reads the full
- * snapshot. The URL prefers the canonical `/registry-api/...` nginx route
- * (the legacy `/core-api/...` alias proxies to the same upstream).
+ * snapshot via the canonical `/registry-api/...` nginx route.
  *
  * Failures are soft: a fetch error, timeout, non-OK status, wrong shape, or
  * empty list yields `[]`, so each consumer degrades to its own fallback

@@ -120,9 +120,7 @@ export const NGINX_CONF_TAIL = `    # Relocated raw routes (02): Up Bank webhook
     # \`pops-registry\` would otherwise fail to boot pops-shell entirely
     # (\`host not found in upstream "registry-api"\`); with the variable form
     # the SPA stays up and \`/pillars\` returns 502 until the upstream is
-    # in place — the correct failure mode. The renamed container also carries
-    # a \`core-api\` network alias during the rename window, so a stale name
-    # still resolves.
+    # in place — the correct failure mode.
     location ~ ^/pillars/?$ {
         set $pillars_upstream http://registry-api:3001;
         proxy_pass $pillars_upstream;
@@ -176,20 +174,6 @@ export const NGINX_CONF_TAIL = `    # Relocated raw routes (02): Up Bank webhook
         proxy_connect_timeout 5s;
         proxy_read_timeout 10s;
         proxy_send_timeout 10s;
-    }
-
-    # TRANSITIONAL (core→registry rename window): the registry pillar's REST
-    # surface is now served under \`/registry-api/\` (generated above). An old
-    # shell bundle baked before the rename still posts to \`/core-api/\`, so
-    # this alias block proxies the legacy prefix to the same registry-api
-    # upstream. Strips \`/core-api\` exactly like the generated \`/registry-api/\`
-    # block strips its own prefix. Removed once every shell bundle posts to
-    # \`/registry-api/\`.
-    location /core-api/ {
-        set $core_api_upstream http://registry-api:3001;
-        rewrite ^/core-api/(.*)$ /$1 break;
-        proxy_pass $core_api_upstream;
-        include /etc/nginx/snippets/_pillar-proxy.conf;
     }
 
     # API docs browser — Theme 13 PRD-219.

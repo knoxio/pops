@@ -20,7 +20,7 @@ describe('consumeSse', () => {
   it('parses named events with single-line data payloads', async () => {
     const frames: SseFrame[] = [];
     await consumeSse({
-      url: 'http://core-api/registry/subscribe',
+      url: 'http://registry-api/registry/subscribe',
       onFrame: (f) => frames.push(f),
       fetchImpl: async () =>
         makeStreamingResponse([
@@ -39,7 +39,7 @@ describe('consumeSse', () => {
   it('joins multi-line data fields with a newline', async () => {
     const frames: SseFrame[] = [];
     await consumeSse({
-      url: 'http://core-api/registry/subscribe',
+      url: 'http://registry-api/registry/subscribe',
       onFrame: (f) => frames.push(f),
       fetchImpl: async () =>
         makeStreamingResponse(['event: pillar.snapshot\ndata: line1\ndata: line2\n\n']),
@@ -50,7 +50,7 @@ describe('consumeSse', () => {
   it('reassembles frames split across chunk boundaries', async () => {
     const frames: SseFrame[] = [];
     await consumeSse({
-      url: 'http://core-api/registry/subscribe',
+      url: 'http://registry-api/registry/subscribe',
       onFrame: (f) => frames.push(f),
       fetchImpl: async () =>
         makeStreamingResponse([
@@ -67,7 +67,7 @@ describe('consumeSse', () => {
   it('ignores comment lines and empty fields', async () => {
     const frames: SseFrame[] = [];
     await consumeSse({
-      url: 'http://core-api/registry/subscribe',
+      url: 'http://registry-api/registry/subscribe',
       onFrame: (f) => frames.push(f),
       fetchImpl: async () =>
         makeStreamingResponse([': keep-alive\n\nevent: pillar.registered\ndata: ok\n\n']),
@@ -78,7 +78,7 @@ describe('consumeSse', () => {
   it('throws when the upstream returns non-2xx', async () => {
     await expect(
       consumeSse({
-        url: 'http://core-api/registry/subscribe',
+        url: 'http://registry-api/registry/subscribe',
         onFrame: () => undefined,
         fetchImpl: async () =>
           new Response('nope', { status: 503, statusText: 'Service Unavailable' }),

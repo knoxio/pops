@@ -16,7 +16,7 @@ type OptionsLoaders = Record<string, () => Promise<{ value: string; label: strin
  * federated `/settings` surface (settings-federation S3), capability-gated:
  * when the pillar advertises the live `settings` capability the transport
  * targets `/<ownerPillar>-api/settings`, otherwise it falls back to
- * `/core-api/settings` (where the value still lives during the rollout).
+ * `/registry-api/settings` (where the value still lives during the rollout).
  *
  * Both `get-many` / `set-many` round-trip the `{ settings: Record<key,value> }`
  * shape `useSettingsValues` and `useAutoSave` expect. The setter invalidates

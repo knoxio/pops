@@ -1,5 +1,5 @@
-import { featuresGetManifests, featuresList } from '@/core-api';
-import { unwrap } from '@/core-api-helpers';
+import { featuresGetManifests, featuresList } from '@/registry-api';
+import { unwrap } from '@/registry-api-helpers';
 import { useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
 
