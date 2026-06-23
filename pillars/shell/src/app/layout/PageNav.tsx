@@ -1,6 +1,6 @@
+import { useRegisteredApps } from '@/app/BootRegistryProvider';
 import { iconMap } from '@/app/nav/icon-map';
 import { findActiveApp, findActiveItem } from '@/app/nav/path-utils';
-import { registeredApps } from '@/app/nav/registry';
 /**
  * Page navigation panel
  *
@@ -17,6 +17,7 @@ export function PageNav() {
   const { t } = useTranslation('navigation');
   const { t: tShell } = useTranslation('shell');
   const location = useLocation();
+  const registeredApps = useRegisteredApps();
   const activeApp = findActiveApp(location.pathname, registeredApps);
 
   if (!activeApp) return null;

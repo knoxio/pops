@@ -1,14 +1,21 @@
 /**
- * Shell-side aggregator that joins the build-time `MODULES` install set
- * (`@pops/module-registry`) with the workspace bundle map
- * (`./bundle-map.ts`) — the single place the shell still enumerates
- * in-repo pillar ids per PRD-243 US-03.
+ * Shell-side aggregator that resolves the shell's install set against the
+ * workspace bundle map (`./bundle-map.tsx`) — the single place the shell
+ * enumerates in-repo pillar ids per PRD-243 US-03.
  *
  * Prior to PRD-243 this file hand-imported each pillar's frontend
- * manifest by name and reduced the registry intersection through the
- * `KNOWN_FRONTEND_MANIFESTS` literal. The registry walk replaces both:
- * every installed pillar id resolves through `lookupBundleEntry()`,
- * which fronts the workspace bundle map.
+ * manifest by name. The registry walk replaces that: every installed
+ * pillar id resolves through the workspace bundle map.
+ *
+ * Install-set source (P7-T03 / RD-3): the live registry snapshot is now
+ * the source of truth for which pillars mount, not the build-time
+ * `MODULES` / `INSTALLED_MODULES` constants. The async boot path
+ * (`main.tsx` → `boot-snapshot.ts`) fetches the snapshot and walks
+ * {@link bootEntries}; if the registry is unreachable the shell falls
+ * back to {@link staticFloorEntries} (the in-repo bundle-map pillars) so
+ * it never bricks. `installedFrontendManifests()` is that static floor —
+ * the synchronous in-repo set the boot path degrades to, and the source
+ * the capture-overlay / manifest-validation tests read.
  *
  * External pillars (PRD-228) that the registry advertises via
  * `assetsBaseUrl` are absent from the workspace bundle map by design
@@ -21,7 +28,7 @@
  * See `docs/themes/13-pillar-finale/prds/243-registry-driven-shell-ui/us-03-shell-registry-walk.md`
  * and `us-05-external-pillar-ui-loading.md`.
  */
-import { INSTALLED_MODULES, MODULES } from '@pops/module-registry';
+import { isInstalledModule } from '@pops/module-registry';
 
 import { WORKSPACE_BUNDLE_MAP, type BundleEntry } from './bundle-map';
 import {
@@ -32,7 +39,7 @@ import {
 
 import type { RouteObject } from 'react-router';
 
-import type { NavConfigDescriptor, PageDescriptor } from '@pops/pillar-sdk';
+import type { NavConfigDescriptor, PageDescriptor, PillarSnapshot } from '@pops/pillar-sdk';
 import type { ModuleManifest } from '@pops/types';
 
 /**
@@ -86,9 +93,9 @@ export class ExternalUiLoadError extends Error {
  * `nav` / `pages` descriptors the runtime loader (US-05) consumes.
  *
  * In-repo pillars carry only `pillarId`: their UI surface comes from the
- * static bundle map, never the wire. Backed by `MODULES` +
- * `INSTALLED_MODULES` today; PRD-228 wires the runtime registry behind
- * the same shape so external pillars flow through the same walk.
+ * static bundle map, never the wire. Sourced from the live registry
+ * snapshot via {@link bootEntries} (P7-T03), or from the in-repo bundle
+ * map via {@link staticFloorEntries} when the registry is unreachable.
  */
 export interface RegistryEntry {
   readonly pillarId: string;
@@ -98,15 +105,49 @@ export interface RegistryEntry {
 }
 
 /**
- * Build the default registry-entry list from the build-time `MODULES`
- * snapshot intersected with the runtime `INSTALLED_MODULES` shim. The
- * synchronous walk source the shell uses at boot.
+ * The static install-set floor: the in-repo pillars the shell renders when
+ * the live registry is unreachable (the never-brick fallback, P7-T03), and
+ * the synchronous source `installedFrontendManifests()` walks.
+ *
+ * The floor is the workspace bundle map narrowed by the runtime install
+ * shim `isInstalledModule` (the `@pops/module-registry` projection of the
+ * build-time `POPS_APPS` contract). The LIVE install set comes from the
+ * registry snapshot (`bootEntries`) and is the source of truth; this floor
+ * only governs the offline path. Honouring the install shim here keeps that
+ * path identical to the pre-P7-T03 behaviour — so an operator's `POPS_APPS`
+ * selection still narrows the shell when the registry is down (and the
+ * finance-only install-set e2e stays meaningful) — without the shell
+ * consulting the build-time `MODULES` superset for the live install set. In-
+ * repo pillars carry only `pillarId`; their UI surface comes from the static
+ * bundle map.
  */
-function defaultRegistryEntries(): readonly RegistryEntry[] {
+export function staticFloorEntries(): readonly RegistryEntry[] {
+  return Object.keys(WORKSPACE_BUNDLE_MAP)
+    .filter((pillarId) => isInstalledModule(pillarId))
+    .map((pillarId) => ({ pillarId }));
+}
+
+/**
+ * Map a live registry snapshot onto the registry-entry list the walk
+ * consumes (P7-T03 / RD-3). Only `registered` pillars contribute. For
+ * each, the wire `manifest` carries the external-UI surface
+ * (`assetsBaseUrl` / `nav` / `pages`); in-repo pillars omit `assetsBaseUrl`
+ * and resolve through the static bundle map instead. The snapshot is the
+ * sole truth for which pillars mount — backend-only pillars (no bundle-map
+ * entry, no `assetsBaseUrl`) are dropped by the walk's existing decision
+ * tree.
+ */
+export function bootEntries(snapshot: readonly PillarSnapshot[]): readonly RegistryEntry[] {
   const out: RegistryEntry[] = [];
-  for (const module of MODULES) {
-    if (!INSTALLED_MODULES.includes(module.id)) continue;
-    out.push({ pillarId: module.id });
+  for (const s of snapshot) {
+    if (!s.registered) continue;
+    const { assetsBaseUrl, nav, pages } = s.manifest;
+    out.push({
+      pillarId: s.pillarId,
+      ...(assetsBaseUrl !== undefined ? { assetsBaseUrl } : {}),
+      ...(nav !== undefined ? { nav } : {}),
+      ...(pages !== undefined ? { pages } : {}),
+    });
   }
   return out;
 }
@@ -194,45 +235,53 @@ export function walkRegistry(
 
 /**
  * Test-only override. When set, `installedFrontendManifests()` returns
- * this list verbatim instead of computing from the registry walk.
+ * this list verbatim instead of walking the static floor.
  * Reset between tests via `__resetInstalledFrontendManifestsOverride()`.
  *
- * The override exists because `MODULES` / `INSTALLED_MODULES` are
- * computed at build / module-load time — there is no public API for
- * tests to inject synthetic module manifests into either. PRD-243 US-04
- * is the integration test that exercises the live walk against a
- * synthetic registry without using this hook.
+ * The override exists so tests can inject synthetic module manifests
+ * without standing up the workspace bundle map.
  */
 let testOverride: readonly FrontendManifest[] | null = null;
 
 /**
- * Frontend manifests considered "installed" for this build. Walks the
- * registry: every id in the `MODULES` superset that survives the runtime
- * install set (`INSTALLED_MODULES`, per PRD-218 US-01) is resolved
- * against the workspace bundle map.
+ * The static install-set floor as frontend manifests: every in-repo
+ * pillar in the workspace bundle map, walked through {@link walkRegistry}.
  *
- * Skip path: a registered id with no entry in the workspace bundle map
- * AND no `assetsBaseUrl` to defer to logs a warning and is omitted —
- * external pillars (US-05 deferred) fall here today.
+ * This is the synchronous in-repo set the live install-set (P7-T03)
+ * degrades to when the registry is unreachable, and the source the
+ * capture-overlay walk and manifest-validation tests read. The live,
+ * snapshot-driven install set is built by the async boot path
+ * (`boot-snapshot.ts`), not here.
  */
 export function installedFrontendManifests(): readonly FrontendManifest[] {
   if (testOverride !== null) return testOverride;
-  return walkRegistry(defaultRegistryEntries(), WORKSPACE_BUNDLE_MAP);
+  return walkRegistry(staticFloorEntries(), WORKSPACE_BUNDLE_MAP);
 }
 
 /**
- * Subset of `installedFrontendManifests()` that surfaces a page-routed app
- * (i.e. declares `surfaces.includes('app')` and `frontend.routes`). Overlay
- * mounting is US-07; this getter returns only the modules the router
- * mounts under a top-level path.
+ * Filter a manifest list to the page-routed apps the router mounts under a
+ * top-level path (declares `surfaces.includes('app')` and `frontend.routes`).
+ * Pure over an arbitrary manifest list so the boot path can apply it to the
+ * snapshot-resolved set, not just the static floor.
+ */
+export function filterAppManifests(
+  manifests: readonly FrontendManifest[]
+): readonly (FrontendManifest & { frontend: { routes: RouteObject[] } })[] {
+  return manifests.filter(
+    (m): m is FrontendManifest & { frontend: { routes: RouteObject[] } } =>
+      m.surfaces.includes('app') && hasRoutes(m)
+  );
+}
+
+/**
+ * Subset of `installedFrontendManifests()` (the static floor) that surfaces a
+ * page-routed app. Retained for the synchronous in-repo consumers; the live
+ * router builds from the boot-resolved set via {@link filterAppManifests}.
  */
 export function installedAppManifests(): readonly (FrontendManifest & {
   frontend: { routes: RouteObject[] };
 })[] {
-  return installedFrontendManifests().filter(
-    (m): m is FrontendManifest & { frontend: { routes: RouteObject[] } } =>
-      m.surfaces.includes('app') && hasRoutes(m)
-  );
+  return filterAppManifests(installedFrontendManifests());
 }
 
 /**

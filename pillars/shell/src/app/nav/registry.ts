@@ -58,10 +58,16 @@ export function buildRegisteredAppsFromBundleMap(
 }
 
 /**
- * All registered app nav configs. Sorted by `navOrder` ascending with a
- * stable lexicographic tiebreak on `id`. Today's display order
- * (`finance, media, inventory, food, lists, cerebrum, ai`) is preserved
- * by the reconciled sparse scheme in `bundle-map.ts`.
+ * The static app-rail floor: every in-repo pillar in the workspace bundle
+ * map, sorted by `navOrder` ascending with a stable lexicographic tiebreak
+ * on `id`. The display order (`finance, media, inventory, food, lists,
+ * cerebrum, ai`) follows the reconciled sparse scheme in `bundle-map.tsx`.
+ *
+ * P7-T03 / RD-3: the LIVE app rail no longer reads this constant — it reads
+ * the boot-resolved install set from `BootRegistryProvider`
+ * (`useRegisteredApps()`), which is the registry snapshot (or this floor
+ * when the registry is unreachable). This export remains as the floor the
+ * boot path falls back to and the order parity gate pins.
  */
 export const registeredApps: AppNavConfig[] =
   buildRegisteredAppsFromBundleMap(WORKSPACE_BUNDLE_MAP);

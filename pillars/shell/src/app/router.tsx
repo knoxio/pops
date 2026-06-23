@@ -1,11 +1,16 @@
 /**
- * Shell route table — composed from the build-time module registry
- * (`@pops/module-registry` → `installedAppManifests()`).
+ * Shell route table — composed from the boot-resolved install set
+ * (`boot-snapshot.ts` → resolved `FrontendManifest[]`).
  *
- * PRD-101 US-03 removes the per-module hand-coded `<Route>` list from this
- * file: route entries derive from the install set, the runtime
- * `RequireModule` guard is gone, and direct navigation to an absent
- * module's URL renders `NotInstalledPage` via the catch-all.
+ * PRD-101 US-03 removed the per-module hand-coded `<Route>` list: route
+ * entries derive from the install set, the runtime `RequireModule` guard is
+ * gone, and direct navigation to an absent module's URL renders
+ * `NotInstalledPage` via the catch-all.
+ *
+ * P7-T03 / RD-3 moved the install-set source from the build-time `MODULES`
+ * constant to the live registry snapshot, resolved before first render. The
+ * router is therefore built by {@link buildRouter} (called from `App.tsx`
+ * with the boot-resolved manifests) rather than a module-eval constant.
  */
 import { Suspense } from 'react';
 import { createBrowserRouter, Link, Navigate, Outlet, useLocation } from 'react-router';
@@ -13,7 +18,7 @@ import { createBrowserRouter, Link, Navigate, Outlet, useLocation } from 'react-
 import { ALL_MODULE_IDS } from '@pops/pillar-sdk';
 
 import { IndexRedirect } from './IndexRedirect';
-import { installedAppManifests } from './installed-modules';
+import { filterAppManifests, type FrontendManifest } from './installed-modules';
 import { RootLayout } from './layout/RootLayout';
 import { FeaturesPage } from './pages/features-page/FeaturesPage';
 import { NotFoundPage } from './pages/NotFoundPage';
@@ -73,8 +78,8 @@ function withSuspense(routes: readonly RouteObject[]): RouteObject[] {
  * mature pillars migrate, their module's mapping flips and routes start
  * observing the pillar's reported health.
  */
-function appRouteEntries(): RouteObject[] {
-  return installedAppManifests().map((manifest) => {
+function appRouteEntries(manifests: readonly FrontendManifest[]): RouteObject[] {
+  return filterAppManifests(manifests).map((manifest) => {
     const pillarId = pillarIdForModule(manifest.id);
     return {
       path: manifest.id,
@@ -101,30 +106,40 @@ const ErrorElement = (
   </div>
 );
 
-export const router = createBrowserRouter([
-  {
-    path: '/',
-    element: <RootLayout />,
-    errorElement: ErrorElement,
-    children: [
-      { index: true, element: <IndexRedirect /> },
-      ...appRouteEntries(),
-      // Legacy /cerebrum/admin/* redirects — keep bookmarks pointing into
-      // the old in-cerebrum admin surface working after the AI app moved
-      // back to its own top-level /ai/* nav (#2618). Reverses the redirects
-      // added in #2333.
-      { path: 'cerebrum/admin', element: <Navigate to="/ai" replace /> },
-      { path: 'cerebrum/admin/prompts', element: <Navigate to="/finance/prompts" replace /> },
-      { path: 'cerebrum/admin/rules', element: <Navigate to="/finance/rules" replace /> },
-      { path: 'cerebrum/admin/cache', element: <Navigate to="/ai/cache" replace /> },
-      { path: 'settings', element: <SettingsPage /> },
-      { path: 'features', element: <FeaturesPage /> },
-      // Catch-all: if the first path segment names a routable module id
-      // (`ALL_MODULE_IDS`) the operator excluded via `POPS_APPS`, render
-      // NotInstalledPage. Genuinely unknown paths render NotFoundPage.
-      // Both decisions happen inside `UnmatchedRoute` so the route table
-      // stays free of inline module-id literals.
-      { path: '*', element: <UnmatchedRoute /> },
-    ],
-  },
-]);
+/**
+ * Build the shell's browser router from the boot-resolved install set. Called
+ * once from `App.tsx` after the boot snapshot resolves (P7-T03): the app
+ * routes derive from `manifests`, the rest of the table (index redirect,
+ * legacy redirects, settings/features, catch-all) is fixed.
+ */
+export function buildRouter(
+  manifests: readonly FrontendManifest[]
+): ReturnType<typeof createBrowserRouter> {
+  return createBrowserRouter([
+    {
+      path: '/',
+      element: <RootLayout />,
+      errorElement: ErrorElement,
+      children: [
+        { index: true, element: <IndexRedirect /> },
+        ...appRouteEntries(manifests),
+        // Legacy /cerebrum/admin/* redirects — keep bookmarks pointing into
+        // the old in-cerebrum admin surface working after the AI app moved
+        // back to its own top-level /ai/* nav (#2618). Reverses the redirects
+        // added in #2333.
+        { path: 'cerebrum/admin', element: <Navigate to="/ai" replace /> },
+        { path: 'cerebrum/admin/prompts', element: <Navigate to="/finance/prompts" replace /> },
+        { path: 'cerebrum/admin/rules', element: <Navigate to="/finance/rules" replace /> },
+        { path: 'cerebrum/admin/cache', element: <Navigate to="/ai/cache" replace /> },
+        { path: 'settings', element: <SettingsPage /> },
+        { path: 'features', element: <FeaturesPage /> },
+        // Catch-all: if the first path segment names a routable module id
+        // (`ALL_MODULE_IDS`) the operator excluded via `POPS_APPS`, render
+        // NotInstalledPage. Genuinely unknown paths render NotFoundPage.
+        // Both decisions happen inside `UnmatchedRoute` so the route table
+        // stays free of inline module-id literals.
+        { path: '*', element: <UnmatchedRoute /> },
+      ],
+    },
+  ]);
+}

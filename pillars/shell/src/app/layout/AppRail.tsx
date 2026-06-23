@@ -1,4 +1,4 @@
-import { registeredApps } from '@/app/nav/registry';
+import { useRegisteredApps } from '@/app/BootRegistryProvider';
 import { useUIStore } from '@/store/uiStore';
 import { useLocation } from 'react-router';
 
@@ -21,6 +21,7 @@ interface AppRailProps {
 }
 
 export function AppRail({ className }: AppRailProps) {
+  const registeredApps = useRegisteredApps();
   const location = useLocation();
   const railOpen = useUIStore((state) => state.railOpen);
   const toggleRail = useUIStore((state) => state.toggleRail);

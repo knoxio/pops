@@ -15,7 +15,10 @@ export function matchesAtBoundary(pathname: string, prefix: string): boolean {
 }
 
 /** Find the active app by matching the current pathname against registered base paths. */
-export function findActiveApp(pathname: string, apps: AppNavConfig[]): AppNavConfig | undefined {
+export function findActiveApp(
+  pathname: string,
+  apps: readonly AppNavConfig[]
+): AppNavConfig | undefined {
   return apps.find((app) => matchesAtBoundary(pathname, app.basePath));
 }
 

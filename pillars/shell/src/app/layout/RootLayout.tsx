@@ -1,5 +1,5 @@
+import { useRegisteredApps } from '@/app/BootRegistryProvider';
 import { findActiveApp } from '@/app/nav/path-utils';
-import { registeredApps } from '@/app/nav/registry';
 import { installedOverlays } from '@/app/overlays/registry';
 import { useUIStore } from '@/store/uiStore';
 import { Outlet, useLocation } from 'react-router';
@@ -35,6 +35,7 @@ export function RootLayout() {
   const pageNavOpen = useUIStore((state) => state.pageNavOpen);
   const setPageNavOpen = useUIStore((state) => state.setPageNavOpen);
   const location = useLocation();
+  const registeredApps = useRegisteredApps();
   const activeApp = findActiveApp(location.pathname, registeredApps);
   const appColorClass = activeApp?.color ? `app-${activeApp.color}` : undefined;
 
