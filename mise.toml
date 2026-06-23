@@ -154,6 +154,14 @@ description = "Run pops-shell tests"
 dir = "pillars/shell"
 run = "mise run test"
 
+[tasks."test:scripts"]
+description = "Run the root-owned scripts/ test suite (gates CI checks under scripts/)"
+# `scripts/` is root-owned tooling (CI guards, extractability checks) that is
+# never extracted into a unit, so it has no per-unit mise.toml and is invisible
+# to the `run-all` fan-out. The root `vitest.config.ts` includes only
+# `scripts/**/*.test.ts`; this task is the entry point CI runs.
+run = "vitest run scripts/"
+
 # ============================================================================
 # Database Management
 # ============================================================================

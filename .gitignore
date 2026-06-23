@@ -8,6 +8,8 @@ dist/
 dist-scripts/
 # tsc -b project-reference incremental build state
 *.tsbuildinfo
+# Local turbo cache (never committed; turbo is not the orchestrator — mise is)
+.turbo/
 
 # Rust build output (repo-root cargo workspace; members under pillars/ + libs/).
 # Cargo.lock IS committed for the workspace (reproducible bin builds).
