@@ -1,0 +1,11 @@
+[tasks.typecheck]
+run = "tsc --noEmit"
+
+[tasks.test]
+run = "vitest run && node scripts/check-storybook-coverage.mjs"
+
+[tasks.lint]
+run = "oxlint src && oxfmt --check ."
+
+[tasks.storybook]
+run = "storybook dev -p 6006"

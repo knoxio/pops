@@ -1,0 +1,20 @@
+[tasks.build]
+description = "verify manifest → tsc -b → openapi snapshot → typed client"
+run = [
+  "tsx scripts/verify-manifest.ts",
+  "tsc -b tsconfig.build.json",
+  "tsx scripts/generate-openapi.ts",
+  "tsx scripts/generate-api-types.ts",
+]
+sources = ["src/**/*.ts", "scripts/**/*.ts", "tsconfig.build.json"]
+outputs = ["dist/**", "openapi/*.json", "src/**/api-types.generated.ts"]
+
+[tasks.typecheck]
+run = ["tsc --noEmit", "tsc --noEmit -p scripts/tsconfig.json"]
+
+[tasks.test]
+depends = ["build"]
+run = "vitest run"
+
+[tasks.lint]
+run = "oxlint src && oxfmt --check ."

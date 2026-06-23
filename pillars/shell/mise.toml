@@ -1,0 +1,18 @@
+[tasks.build]
+run = ["tsc", "vite build"]
+outputs = ["dist/**"]
+
+[tasks.dev]
+run = "vite"
+
+[tasks.typecheck]
+run = "tsc --noEmit"
+
+[tasks.test]
+run = "vitest run"
+
+[tasks."test:e2e"]
+run = "playwright test"
+
+[tasks.lint]
+run = "oxlint src && oxfmt --check ."
