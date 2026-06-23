@@ -5,10 +5,10 @@
  * The shell renders one settings section per federated pillar and routes each
  * section's read/write to the OWNING pillar's `/<id>-api/settings/*` surface —
  * EXCEPT when the pillar has not yet advertised the live `settings` capability,
- * in which case the transport falls back to `/core-api/settings`. The fallback
- * still works because the federation backfill COPIED (not moved) each pillar's
- * keys into core, so core holds the values until the rollout completes (the
- * compat-shim removal is the later S5 node).
+ * in which case the transport falls back to `/registry-api/settings`. The
+ * fallback still works because the federation backfill COPIED (not moved) each
+ * pillar's keys into the registry pillar, so it holds the values until the
+ * rollout completes (the compat-shim removal is the later S5 node).
  *
  * This is a HAND-WRITTEN raw-`fetch` client, NOT a generated hey-api client,
  * precisely so it can be keyed dynamically by `ownerPillar` at runtime. It
@@ -40,19 +40,19 @@ export interface SettingsClient {
   reset(keys?: readonly string[]): Promise<SettingsResetResponse>;
 }
 
-const CORE_BASE = '/core-api';
+const REGISTRY_BASE = '/registry-api';
 
 /**
  * The API base path for a pillar's settings surface. The platform `registry`
- * pillar (formerly `core`) keeps its historic `/core-api` prefix during the
- * core→registry rename window — the shell's generated client and the
- * transitional `/core-api/` nginx block both still serve it; every other
- * pillar is reached at `/<id>-api` through the registry-driven nginx front
- * door (and the dev Vite proxy). The legacy `core` id is still mapped for any
- * un-rebuilt caller that has not yet observed the renamed snapshot.
+ * pillar (formerly `core`) is reached at `/registry-api`; every other pillar is
+ * reached at `/<id>-api` through the registry-driven nginx front door (and the
+ * dev Vite proxy). The legacy `core` id is still mapped to the registry base
+ * for any un-rebuilt caller that has not yet observed the renamed snapshot.
  */
 export function settingsBaseFor(ownerPillar: string): string {
-  return ownerPillar === 'registry' || ownerPillar === 'core' ? CORE_BASE : `/${ownerPillar}-api`;
+  return ownerPillar === 'registry' || ownerPillar === 'core'
+    ? REGISTRY_BASE
+    : `/${ownerPillar}-api`;
 }
 
 class SettingsClientError extends Error {
@@ -106,7 +106,7 @@ async function postJson(url: string, body: unknown, fetchImpl: typeof fetch): Pr
  * Build a settings transport keyed by `ownerPillar`. `hasFederatedSettings` is
  * the live `capabilities.settings` flag from the registry snapshot: when ON the
  * transport targets `/<ownerPillar>-api/settings`; when OFF/absent it falls
- * back to `/core-api/settings` so an un-upgraded pillar's writes still land
+ * back to `/registry-api/settings` so an un-upgraded pillar's writes still land
  * where the old shell put them.
  */
 export function settingsClientFor(

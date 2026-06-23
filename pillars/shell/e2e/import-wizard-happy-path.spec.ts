@@ -20,9 +20,9 @@
  *   here is the UI flow, not the backend plumbing. All endpoints are stubbed
  *   via `page.route()` — no DB writes.
  *
- * The wizard reads its data via the generated finance/core Hey API clients
+ * The wizard reads its data via the generated finance/contacts Hey API clients
  * (`@pops/app-finance`), which target the shell's `/finance-api` and
- * `/core-api` proxy paths (the prefix is stripped before forwarding). Each
+ * `/contacts-api` proxy paths (the prefix is stripped before forwarding). Each
  * route returns the plain REST body the Hey client unwraps — NOT a tRPC
  * `{ result: { data } }` envelope.
  *
@@ -30,7 +30,7 @@
  *   POST /finance-api/imports/process              → { sessionId }
  *   GET  /finance-api/imports/progress             → { status:'completed', result:{matched:[…2…]} }
  *   POST /finance-api/imports/commit               → { data:{ transactionsImported:2 … }, message }
- *   GET  /core-api/entities                        → { data:[], pagination }
+ *   GET  /contacts-api/entities                    → { data:[], pagination }
  *   GET  /finance-api/transactions/available-tags  → { tags:[] }
  *
  * Crash detection is wired via beforeEach/afterEach so the test also
@@ -134,7 +134,7 @@ async function setupMocks(page: Page): Promise<void> {
     fulfillJson(route, progressBody(processedOutput))
   );
   await page.route('**/finance-api/imports/commit', (route) => fulfillJson(route, commitBody));
-  await page.route('**/core-api/entities?**', (route) => fulfillJson(route, emptyEntitiesBody));
+  await page.route('**/contacts-api/entities?**', (route) => fulfillJson(route, emptyEntitiesBody));
   await page.route('**/finance-api/transactions/available-tags', (route) =>
     fulfillJson(route, { tags: [] })
   );
@@ -247,7 +247,7 @@ test.describe('Finance — import wizard happy path (mocked)', () => {
 // REST flow exercised (all under /finance-api unless noted):
 //   POST /imports/process                 → { sessionId }
 //   GET  /imports/progress                → { status:'completed', result:{ uncertain:[1] } }
-//   GET  /core-api/entities               → the candidate entity
+//   GET  /contacts-api/entities           → the candidate entity
 //   POST /corrections/analyze             → { data:{ pattern, matchType, confidence } }
 //   POST /corrections/propose-changeset   → { changeSet:{ ops:[add] }, preview, rationale, targetRules }
 //   POST /corrections/preview-changeset   → { diffs, summary }  (initial + after type change)
@@ -378,7 +378,7 @@ test.describe('Correction Proposal Dialog (mocked)', () => {
     await page.route('**/finance-api/imports/reevaluate-pending', (route) =>
       fulfillJson(route, reevaluateBody)
     );
-    await page.route('**/core-api/entities?**', (route) =>
+    await page.route('**/contacts-api/entities?**', (route) =>
       fulfillJson(route, candidateEntitiesBody)
     );
     await page.route('**/finance-api/corrections/analyze', (route) =>

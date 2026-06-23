@@ -1,4 +1,4 @@
-import { CoreApiError } from '@/core-api-helpers';
+import { RegistryApiError } from '@/registry-api-helpers';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
@@ -9,7 +9,7 @@ const mocks = vi.hoisted(() => ({
   list: vi.fn(),
 }));
 
-vi.mock('@/core-api', () => ({
+vi.mock('@/registry-api', () => ({
   featuresGetManifests: (...args: unknown[]) => mocks.getManifests(...args),
   featuresList: (...args: unknown[]) => mocks.list(...args),
 }));
@@ -75,9 +75,9 @@ describe('FeaturesPage', () => {
     expect(screen.getByTestId('feature-plex.refresh')).toBeInTheDocument();
   });
 
-  it('renders the empty state (not the skeleton) when the core pillar is unavailable', async () => {
-    mocks.getManifests.mockRejectedValue(new CoreApiError('down', 503));
-    mocks.list.mockRejectedValue(new CoreApiError('down', 503));
+  it('renders the empty state (not the skeleton) when the registry pillar is unavailable', async () => {
+    mocks.getManifests.mockRejectedValue(new RegistryApiError('down', 503));
+    mocks.list.mockRejectedValue(new RegistryApiError('down', 503));
     renderPage();
     await waitFor(() => expect(screen.getByText('No features registered.')).toBeInTheDocument());
   });

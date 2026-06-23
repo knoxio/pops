@@ -1,5 +1,5 @@
 /**
- * Shell self-registration with `pops-core-api`'s pillar registry
+ * Shell self-registration with `pops-registry`'s pillar registry
  * (Theme 13 PRD-228 US-01 + ADR-035 UI-pillar variant).
  *
  * The shell is the first **UI pillar** to register itself: a pillar that

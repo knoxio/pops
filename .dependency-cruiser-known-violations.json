@@ -1590,8 +1590,8 @@
   },
   {
     "type": "cycle",
-    "from": "pillars/shell/src/core-api-runtime-config.ts",
-    "to": "pillars/shell/src/core-api/client.gen.ts",
+    "from": "pillars/shell/src/registry-api-runtime-config.ts",
+    "to": "pillars/shell/src/registry-api/client.gen.ts",
     "unresolvedTo": "./core-api/client.gen.js",
     "dependencyTypes": ["local", "type-only", "import"],
     "rule": {
@@ -1600,19 +1600,19 @@
     },
     "cycle": [
       {
-        "name": "pillars/shell/src/core-api/client.gen.ts",
+        "name": "pillars/shell/src/registry-api/client.gen.ts",
         "dependencyTypes": ["local", "type-only", "import"]
       },
       {
-        "name": "pillars/shell/src/core-api-runtime-config.ts",
+        "name": "pillars/shell/src/registry-api-runtime-config.ts",
         "dependencyTypes": ["local", "import"]
       }
     ]
   },
   {
     "type": "cycle",
-    "from": "pillars/shell/src/core-api/client/types.gen.ts",
-    "to": "pillars/shell/src/core-api/client/utils.gen.ts",
+    "from": "pillars/shell/src/registry-api/client/types.gen.ts",
+    "to": "pillars/shell/src/registry-api/client/utils.gen.ts",
     "unresolvedTo": "./utils.gen",
     "dependencyTypes": ["local", "type-only", "import"],
     "rule": {
@@ -1621,11 +1621,11 @@
     },
     "cycle": [
       {
-        "name": "pillars/shell/src/core-api/client/utils.gen.ts",
+        "name": "pillars/shell/src/registry-api/client/utils.gen.ts",
         "dependencyTypes": ["local", "type-only", "import"]
       },
       {
-        "name": "pillars/shell/src/core-api/client/types.gen.ts",
+        "name": "pillars/shell/src/registry-api/client/types.gen.ts",
         "dependencyTypes": ["local", "type-only", "import"]
       }
     ]

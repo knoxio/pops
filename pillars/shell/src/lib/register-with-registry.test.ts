@@ -10,7 +10,7 @@ import {
 } from './register-with-registry';
 
 const VALID_ENV: RegisterShellEnv = {
-  registryBaseUrl: 'http://core-api:3001',
+  registryBaseUrl: 'http://registry-api:3001',
   shellBaseUrl: 'https://pops.local',
   internalApiKey: 'shared-internal-key',
 };
@@ -72,7 +72,7 @@ describe('registerShellWithRegistry — happy path', () => {
     const call = fetchStub.mock.calls[0] ?? [];
     const url = call[0] as string | URL;
     const init = call[1] as RequestInit | undefined;
-    expect(url).toBe('http://core-api:3001/core.registry.register');
+    expect(url).toBe('http://registry-api:3001/core.registry.register');
     expect(init?.method).toBe('POST');
     expect(init?.headers).toMatchObject({ 'content-type': 'application/json' });
 
@@ -99,12 +99,12 @@ describe('registerShellWithRegistry — happy path', () => {
         new Response(JSON.stringify({ ok: true, pillarId: SHELL_PILLAR_ID }), { status: 200 })
       );
     await registerShellWithRegistry({
-      env: { ...VALID_ENV, registryBaseUrl: 'http://core-api:3001/' },
+      env: { ...VALID_ENV, registryBaseUrl: 'http://registry-api:3001/' },
       fetch: fetchStub,
       logger: silentLogger(),
     });
     const firstCall = fetchStub.mock.calls[0] ?? [];
-    expect(firstCall[0]).toBe('http://core-api:3001/core.registry.register');
+    expect(firstCall[0]).toBe('http://registry-api:3001/core.registry.register');
   });
 });
 

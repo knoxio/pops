@@ -1,4 +1,4 @@
-import { CoreApiError } from '@/core-api-helpers';
+import { RegistryApiError } from '@/registry-api-helpers';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { createElement, type ReactNode } from 'react';
@@ -12,7 +12,7 @@ const mocks = vi.hoisted(() => ({
   clearUserPreference: vi.fn(),
 }));
 
-vi.mock('@/core-api', () => ({
+vi.mock('@/registry-api', () => ({
   featuresSetEnabled: (...args: unknown[]) => mocks.setEnabled(...args),
   featuresSetUserPreference: (...args: unknown[]) => mocks.setUserPreference(...args),
   featuresClearUserPreference: (...args: unknown[]) => mocks.clearUserPreference(...args),
@@ -99,7 +99,7 @@ describe('useFeatureMutations', () => {
   });
 
   it('surfaces the setEnabled error message', async () => {
-    mocks.setEnabled.mockRejectedValue(new CoreApiError('system denied', 400));
+    mocks.setEnabled.mockRejectedValue(new RegistryApiError('system denied', 400));
     const { result } = renderHook(() => useFeatureMutations(systemFeature()), {
       wrapper: wrapper(),
     });
@@ -109,7 +109,7 @@ describe('useFeatureMutations', () => {
   });
 
   it('falls back to the setUserPreference error when setEnabled has none', async () => {
-    mocks.setUserPreference.mockRejectedValue(new CoreApiError('user denied', 400));
+    mocks.setUserPreference.mockRejectedValue(new RegistryApiError('user denied', 400));
     const { result } = renderHook(() => useFeatureMutations(userFeature()), { wrapper: wrapper() });
     act(() => result.current.toggle(true));
 

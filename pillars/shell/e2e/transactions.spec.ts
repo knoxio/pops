@@ -88,9 +88,9 @@ const TRANSACTIONS: MockTransaction[] = [
 // ---------------------------------------------------------------------------
 // REST mock helpers
 //
-// The page reads its data via the generated finance/core Hey API clients
+// The page reads its data via the generated finance/contacts Hey API clients
 // (`@pops/app-finance`), which target the shell's `/finance-api` and
-// `/core-api` proxy paths (the prefix is stripped before forwarding). Each
+// `/contacts-api` proxy paths (the prefix is stripped before forwarding). Each
 // route returns the plain REST body the Hey client unwraps — NOT a tRPC
 // `{ result: { data } }` envelope, and there is no httpBatchLink batching.
 //
@@ -98,7 +98,7 @@ const TRANSACTIONS: MockTransaction[] = [
 //   GET   /finance-api/transactions/available-tags → { tags }
 //   GET   /finance-api/transactions/suggest-tags   → { tags }
 //   PATCH /finance-api/transactions/:id            → { data, message }
-//   GET   /core-api/entities                       → { data, pagination }
+//   GET   /contacts-api/entities                   → { data, pagination }
 // ---------------------------------------------------------------------------
 
 const mockListResponse = {
@@ -162,7 +162,7 @@ const setupMockAPIs = async (page: Page) => {
     });
   });
 
-  await page.route('**/core-api/entities?**', async (route) => {
+  await page.route('**/contacts-api/entities?**', async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',

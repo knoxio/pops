@@ -18,10 +18,10 @@
  *   mutate shared state used by other tests (and the dev environment), so we
  *   mock the three finance-api cache REST routes the page calls.
  *
- *   The page reads its data via the generated finance Hey API client
- *   (`@pops/app-ai` finance-api, baseUrl `/finance-api`):
+ *   The page reads its data via the generated finance + ai Hey API clients
+ *   (`@pops/app-ai` finance-api baseUrl `/finance-api`, ai-api baseUrl `/ai-api`):
  *     - GET  /finance-api/ai-usage/cache        → { totalEntries, diskSizeBytes }
- *     - GET  /core-api/ai-usage/stats        → usage roll-up
+ *     - GET  /ai-api/ai-usage/stats          → usage roll-up
  *     - POST /finance-api/ai-usage/cache/prune  → { removed }   (Clear Stale)
  *
  *   The mock drives a deterministic before/after comparison: the cache GET is
@@ -82,11 +82,11 @@ type CacheState = {
 };
 
 /**
- * Install REST mocks for the finance-api cache routes the page calls. The
- * generated finance Hey API client (`@pops/app-ai`) targets baseUrl `/finance-api`,
- * which the shell proxy strips before forwarding to the finance pillar:
+ * Install REST mocks for the cache routes the page calls. The generated finance
+ * + ai Hey API clients (`@pops/app-ai`) target baseUrl `/finance-api` and
+ * `/ai-api`, which the shell proxy strips before forwarding to each pillar:
  *   GET  /finance-api/ai-usage/cache        — cache stats (entry count + disk size)
- *   GET  /core-api/ai-usage/stats        — usage roll-up (feeds the Hit Rate card)
+ *   GET  /ai-api/ai-usage/stats          — usage roll-up (feeds the Hit Rate card)
  *   POST /finance-api/ai-usage/cache/prune  — clear stale entries (Clear Stale button)
  *
  * The cache GET is driven by a mutable `state.entries` so the value drops from
@@ -105,7 +105,7 @@ async function installCacheMocks(page: Page): Promise<{ getClearCalls: () => num
     });
   });
 
-  await page.route('**/core-api/ai-usage/stats', async (route) => {
+  await page.route('**/ai-api/ai-usage/stats', async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',

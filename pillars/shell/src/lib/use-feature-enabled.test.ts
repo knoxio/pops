@@ -1,4 +1,4 @@
-import { CoreApiError } from '@/core-api-helpers';
+import { RegistryApiError } from '@/registry-api-helpers';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
 import { createElement, type ReactNode } from 'react';
@@ -8,7 +8,7 @@ const mocks = vi.hoisted(() => ({
   isEnabled: vi.fn(),
 }));
 
-vi.mock('@/core-api', () => ({
+vi.mock('@/registry-api', () => ({
   featuresIsEnabled: (...args: unknown[]) => mocks.isEnabled(...args),
 }));
 
@@ -57,7 +57,7 @@ describe('useFeatureEnabled', () => {
   });
 
   it('falls back when the feature key is unknown (404)', async () => {
-    mocks.isEnabled.mockRejectedValue(new CoreApiError('not found', 404));
+    mocks.isEnabled.mockRejectedValue(new RegistryApiError('not found', 404));
     const { result } = renderHook(() => useFeatureEnabled('ghost', false), { wrapper: wrapper() });
     await waitFor(() => expect(mocks.isEnabled).toHaveBeenCalled());
     expect(result.current).toBe(false);

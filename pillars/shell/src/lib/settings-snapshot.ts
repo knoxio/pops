@@ -9,20 +9,19 @@
  * AND its live `capabilities`) and normalises it into the `PillarSnapshot[]`
  * shape `discoverSettings` consumes.
  *
- * Parsing/normalisation is shared with the boot install-set resolver via
- * `./registry-snapshot-fetch` so the shell has exactly one registry client.
- * This helper keeps the legacy `/core-api/registry/pillars` URL (an nginx
- * alias proxying to the same registry-api upstream as the canonical
- * `/registry-api/...` route) for wire-compat with deployed Settings bundles.
+ * Parsing/normalisation AND the snapshot URL are shared with the boot
+ * install-set resolver via `./registry-snapshot-fetch` so the shell has exactly
+ * one registry client hitting the canonical `/registry-api/registry/pillars`
+ * route.
  *
  * Failures are soft: a fetch error, wrong shape, or empty list yields `[]`, so
  * the page falls back to its empty state rather than throwing.
  */
-import { parseSnapshotBody } from './registry-snapshot-fetch';
+import { parseSnapshotBody, REGISTRY_SNAPSHOT_URL } from './registry-snapshot-fetch';
 
 import type { PillarSnapshot } from '@pops/pillar-sdk';
 
-const SNAPSHOT_URL = '/core-api/registry/pillars';
+const SNAPSHOT_URL = REGISTRY_SNAPSHOT_URL;
 const DEFAULT_TIMEOUT_MS = 3000;
 
 export interface SettingsSnapshotOptions {

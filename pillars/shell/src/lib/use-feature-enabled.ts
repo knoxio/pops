@@ -1,5 +1,5 @@
-import { featuresIsEnabled } from '@/core-api';
-import { unwrap } from '@/core-api-helpers';
+import { featuresIsEnabled } from '@/registry-api';
+import { unwrap } from '@/registry-api-helpers';
 import { useQuery } from '@tanstack/react-query';
 
 /**

@@ -178,11 +178,11 @@ describe('generate-nginx-conf', () => {
       expect(rendered).toContain('set $registry_api_upstream http://registry-api:3001;');
     });
 
-    it('keeps a transitional /core-api alias proxying to the registry pillar', () => {
-      // An old shell bundle still posts to `/core-api/` during the
-      // core→registry rename window; the alias must resolve to registry-api.
-      expect(rendered).toContain('location /core-api/ {');
-      expect(rendered).toContain('set $core_api_upstream http://registry-api:3001;');
+    it('no longer emits the transitional /core-api alias (core→registry rename complete)', () => {
+      // The shell's registry client now posts to `/registry-api/`; the legacy
+      // `/core-api/` alias block is fully removed.
+      expect(rendered).not.toContain('location /core-api/ {');
+      expect(rendered).not.toContain('core-api');
     });
 
     it('emits `set $<pillar>_api_upstream` BEFORE `rewrite ... break` in every pillar block', () => {
@@ -412,9 +412,6 @@ describe('generate-nginx-conf', () => {
     it('emits zero pillar REST blocks for an empty registry but keeps the orchestrator block', () => {
       const rendered = renderNginxConfFromUpstreams([]);
       // The per-pillar `/<id>-api/` blocks are absent for an empty registry.
-      // `/core-api/` is NOT a per-pillar block — it is the static transitional
-      // alias in the TAIL (proxying to registry-api during the rename window),
-      // so it is excluded from this assertion.
       expect(rendered).not.toMatch(
         /location \/(?:registry|inventory|media|finance|food|lists|cerebrum|contacts)-api\/ \{/
       );
@@ -439,12 +436,12 @@ describe('generate-nginx-conf', () => {
           baseUrl: `http://${PILLAR_UPSTREAMS[id].host}:${PILLAR_UPSTREAMS[id].port}`,
         }))
       );
-      const rendered = await renderNginxConfDynamic('http://core-api:3001', transport);
+      const rendered = await renderNginxConfDynamic('http://registry-api:3001', transport);
       expect(rendered).toBe(renderNginxConf());
     });
 
     it('emits zero pillar blocks for an empty registry (snapshot)', async () => {
-      const rendered = await renderNginxConfDynamic('http://core-api:3001', makeTransport([]));
+      const rendered = await renderNginxConfDynamic('http://registry-api:3001', makeTransport([]));
       for (const id of PILLARS) {
         expect(rendered).not.toContain(`location /${id}-api/ {`);
       }
@@ -456,7 +453,7 @@ describe('generate-nginx-conf', () => {
       const transport = makeTransport([
         { pillarId: 'plugin-fitness', baseUrl: 'http://fitness-api:4242' },
       ]);
-      const rendered = await renderNginxConfDynamic('http://core-api:3001', transport);
+      const rendered = await renderNginxConfDynamic('http://registry-api:3001', transport);
       expect(rendered).toContain('location /plugin-fitness-api/ {');
       expect(rendered).toContain('set $plugin_fitness_api_upstream http://fitness-api:4242;');
       expect(rendered).not.toContain('location /finance-api/ {');
@@ -468,7 +465,7 @@ describe('generate-nginx-conf', () => {
         { pillarId: 'plugin-fitness', baseUrl: 'http://fitness-api:4242' },
         { pillarId: 'finance', baseUrl: 'http://localhost:9999' },
       ]);
-      const rendered = await renderNginxConfDynamic('http://core-api:3001', transport);
+      const rendered = await renderNginxConfDynamic('http://registry-api:3001', transport);
       const financeIdx = rendered.indexOf('location /finance-api/ {');
       const fitnessIdx = rendered.indexOf('location /plugin-fitness-api/ {');
       expect(financeIdx).toBeGreaterThan(-1);
@@ -483,8 +480,8 @@ describe('generate-nginx-conf', () => {
         { pillarId: 'finance', baseUrl: 'http://finance-api:3004' },
         { pillarId: 'plugin-z', baseUrl: 'http://z:1' },
       ];
-      const a = await renderNginxConfDynamic('http://core-api:3001', makeTransport(pillars));
-      const b = await renderNginxConfDynamic('http://core-api:3001', makeTransport(pillars));
+      const a = await renderNginxConfDynamic('http://registry-api:3001', makeTransport(pillars));
+      const b = await renderNginxConfDynamic('http://registry-api:3001', makeTransport(pillars));
       expect(a).toBe(b);
     });
   });

@@ -20,7 +20,7 @@
     "gen:nginx:watch": "tsx scripts/watch-registry-and-reload-cli.ts",
     "gen:nginx:bundle": "tsx scripts/bundle-nginx-tools.ts",
     "registry:register": "tsx scripts/register-with-registry.ts",
-    "generate:core-client": "openapi-ts && oxfmt --write src/core-api"
+    "generate:registry-client": "openapi-ts && oxfmt --write src/registry-api"
   },
   "dependencies": {
     "@hey-api/client-fetch": "^0.13.1",
