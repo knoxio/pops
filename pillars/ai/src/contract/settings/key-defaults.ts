@@ -2,8 +2,8 @@
  * The ai pillar's settings key authority for the shared `@pops/pillar-settings`
  * surface.
  *
- * Unlike core (which pins `keys` to the full central `SETTINGS_KEY_VALUES` for
- * S1 wire-compat), the ai pillar owns exactly the `ai.*` keys its own
+ * The central key enum has been retired — each pillar owns exactly the keys
+ * its own manifest declares. The ai pillar owns exactly the `ai.*` keys its
  * `aiConfigManifest` declares. `deriveKeySet([aiConfigManifest])` is the source
  * of the declared-key set, the reset defaults, and the read-side sensitive set —
  * all three flow from the same manifest so they can never drift.

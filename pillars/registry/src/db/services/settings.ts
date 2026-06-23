@@ -104,7 +104,7 @@ export function setSetting(db: CoreDb, input: SetSettingInput): SettingRow {
 /**
  * Untyped upsert into the settings table — used by callers that own
  * their own key namespace (e.g. the feature-toggle framework, which
- * manages keys via the features registry rather than `SETTINGS_KEYS`).
+ * manages keys via the features registry rather than the typed key set).
  * Prefer {@link setSetting} when the key is part of the typed key set.
  */
 export function setRawSetting(db: CoreDb, key: string, value: string): SettingRow {
