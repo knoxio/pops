@@ -56,12 +56,9 @@ services:
     environment:
       NODE_ENV: production
       PORT: '3001'
-      # The on-disk SQLite filename stays `core.db` through the rename window:
-      # the deployer (homelab-infra) renames the live file to `registry.db`
-      # out of band and flips this path in the same change. Flipping it here
-      # before the file exists would boot the registry empty (mass
-      # deregistration), so it is intentionally left as `core.db` until then.
-      CORE_SQLITE_PATH: /data/sqlite/core.db
+      # S5 rename complete: the registry's SQLite is registry.db (live file
+      # renamed out of band on capivara). This dev reference matches.
+      REGISTRY_SQLITE_PATH: /data/sqlite/registry.db
       REGISTRY_SELF_BASE_URL: http://registry-api:3001
       # Cross-pillar registry — registry-api hosts the authoritative
       # `/pillars` snapshot that the shell's nginx proxy fans out to. The
