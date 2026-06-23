@@ -1,7 +1,7 @@
 /**
  * Discovery-algorithm regression tests (PRD-241 US-02).
  *
- * `discoverManifestSources` is the input to `pnpm registry:build`. These tests
+ * `discoverManifestSources` is the input to `mise run registry`. These tests
  * pin the *algorithm* in isolation, driven entirely off injected fixtures
  * (`packagesRoot` + `importManifest`) so the unit never depends on any pillar's
  * built `dist/` artifact existing. The end-to-end "every real in-repo pillar is

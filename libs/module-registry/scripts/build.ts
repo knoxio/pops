@@ -1,6 +1,7 @@
 #!/usr/bin/env tsx
 /**
- * Build the committed module registry (`packages/module-registry/src/generated.ts`).
+ * Build the committed build-time validation manifest
+ * (`libs/module-registry/src/generated.ts`).
  *
  * Pipeline:
  *
@@ -16,8 +17,8 @@
  *      `as const`-narrowed `MODULES` array (and the exact module-id union
  *      via `(typeof MODULES)[number]['id']`).
  *
- * The output is committed; CI runs `pnpm registry:build` and fails if
- * `git diff --exit-code packages/module-registry/src/generated.ts` is
+ * The output is committed; CI runs `mise run registry` and fails if
+ * `git diff --exit-code libs/module-registry/src/generated.ts` is
  * non-zero (drizzle-style guard).
  *
  * See `docs/themes/01-foundation/prds/101-plugin-contract/us-02-build-time-registry.md`.
@@ -38,7 +39,7 @@ const REPO_ROOT = join(PACKAGE_ROOT, '..', '..');
 /**
  * Run `oxfmt --write` over the generated file as the final step so the
  * committed output is always in the project's canonical format. Without
- * this the CI guard would chase its own tail: `pnpm registry:build`
+ * this the CI guard would chase its own tail: `mise run registry`
  * produces a "raw" file, `pnpm format:check` reformats it, and the diff
  * against the committed copy never settles.
  */
