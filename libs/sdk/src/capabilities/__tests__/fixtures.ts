@@ -95,10 +95,10 @@ export const procedureConforms: AssertProcedureConforms = true;
 export type EmptyContract = {
   readonly pillar: 'registry';
   readonly version: '0.0.0';
-  readonly types: Record<string, never>;
-  readonly schemas: Record<string, never>;
-  readonly router: Record<string, never>;
-  readonly errors: Record<string, never>;
+  readonly types: Record<never, never>;
+  readonly schemas: Record<never, never>;
+  readonly router: Record<never, never>;
+  readonly errors: Record<never, never>;
   readonly search: { readonly adapters: readonly [] };
   readonly ai: { readonly tools: readonly [] };
   readonly uri: { readonly types: readonly [] };
