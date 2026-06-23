@@ -1,0 +1,5 @@
+# CI toolchain override (activated by `MISE_ENV=ci`).
+# Local `mise.toml` pins node 24 (HARD CONSTRAINT); CI pins node 22.
+# jdx/mise-action@v2 is the sole Node manager — no setup-node anywhere.
+[tools]
+node = "22"

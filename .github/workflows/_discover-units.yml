@@ -1,0 +1,90 @@
+name: Discover Units
+
+# Reusable disk-discovery of every buildable unit under `pillars/` + `libs/`
+# (maxdepth 1). A unit is any such dir carrying a recognised manifest:
+#   - `package.json`                     -> lang=ts,   pkg = package.json#name
+#   - `Cargo.toml` with a `[package]`    -> lang=rust, pkg = crate [package].name
+# Manifest-less dirs (moltbot, workspace stubs, stale build-only dirs) are
+# skipped. `kind` = pillar|lib by root. `name` is the dir basename and is a
+# display/path key ONLY — never a `pnpm --filter` / `cargo -p` selector
+# (libs/sdk publishes @pops/pillar-sdk; the dir-name != pkg-name skew is
+# LOCKED — selecting on the basename silently matches zero packages).
+#
+# Outputs:
+#   units   — every discovered unit (full list)
+#   changed — units touched by this PR's diff, OR all units when a shared
+#             root (lockfile / base tsconfig / formatter / mise root / Cargo
+#             root) changed. Drives the unit-quality matrix.
+
+on:
+  workflow_call:
+    outputs:
+      units:
+        value: ${{ jobs.list.outputs.units }}
+      changed:
+        value: ${{ jobs.list.outputs.changed }}
+
+jobs:
+  list:
+    name: Discover units from disk
+    runs-on: ubuntu-latest
+    outputs:
+      units: ${{ steps.scan.outputs.units }}
+      changed: ${{ steps.scan.outputs.changed }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0 # need merge-base for changed-detection
+
+      - id: scan
+        name: Scan pillars/ + libs/ and compute changed set
+        run: |
+          set -euo pipefail
+
+          # $1 = Cargo.toml path; read [package] name, blank if none.
+          crate_name() {
+            awk '/^\[package\]/{p=1;next} /^\[/{p=0} p&&/^name[[:space:]]*=/{gsub(/.*=[[:space:]]*"|"[[:space:]]*$/,"");print;exit}' "$1"
+          }
+
+          # $1 = root (pillars|libs); emit one JSON object per discovered unit.
+          emit() {
+            root="$1"
+            [ -d "$root" ] || return 0
+            find "$root" -mindepth 1 -maxdepth 1 -type d | sort | while read -r d; do
+              kind=$([ "$root" = pillars ] && echo pillar || echo lib)
+              if   [ -f "$d/package.json" ]; then
+                lang=ts; pkg=$(jq -r '.name' "$d/package.json")
+              elif [ -f "$d/Cargo.toml" ] && grep -q '^\[package\]' "$d/Cargo.toml"; then
+                lang=rust; pkg=$(crate_name "$d/Cargo.toml")
+              else
+                continue # manifest-less dir (moltbot, workspace stubs) — skip
+              fi
+              [ -n "$pkg" ] && [ "$pkg" != null ] || { echo "::error::no pkg name for $d" >&2; exit 1; }
+              jq -n --arg n "$(basename "$d")" --arg pkg "$pkg" --arg dir "$d" \
+                    --arg k "$kind" --arg l "$lang" \
+                    '{name:$n,pkg:$pkg,dir:$dir,kind:$k,lang:$l}'
+            done
+          }
+
+          units=$( { emit pillars; emit libs; } | jq -s -c '.')
+          echo "units=$units" >> "$GITHUB_OUTPUT"
+          echo "Discovered units:"
+          echo "$units" | jq .
+
+          base=$(git merge-base "origin/${{ github.base_ref || 'main' }}" HEAD || echo HEAD~1)
+          diff=$(git diff --name-only "$base" HEAD)
+          echo "Changed files vs $base:"
+          echo "$diff"
+
+          # A shared-root touch invalidates everything (lockfile / base
+          # tsconfig / formatter / linter / mise root / cargo root) -> build ALL.
+          if echo "$diff" | grep -qE '^(pnpm-lock\.yaml|pnpm-workspace\.yaml|tsconfig\.base\.json|tsconfig\.build\.json|\.oxfmtrc\.json|\.oxlintrc\.json|mise\.toml|mise\.ci\.toml|Cargo\.toml|Cargo\.lock)$'; then
+            echo "Shared root changed — building ALL units."
+            echo "changed=$units" >> "$GITHUB_OUTPUT"
+          else
+            changed=$(DIFF="$diff" jq -c -n --argjson units "$units" \
+              '$units | [.[] | select(.dir as $d | ($ENV.DIFF | test("(^|\\n)"+$d+"/")))]')
+            echo "Changed units:"
+            echo "$changed" | jq .
+            echo "changed=$changed" >> "$GITHUB_OUTPUT"
+          fi

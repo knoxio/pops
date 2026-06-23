@@ -1,0 +1,52 @@
+name: Registry Generated Quality
+
+# Preserves the module-registry `generated.ts` drift gate after
+# `module-registry-quality.yml` is folded into `unit-quality.yml`. unit-quality
+# typechecks/tests/lints/builds the module-registry lib, but does NOT regenerate
+# its static manifest and diff it — that drift gate lives here.
+#
+# `mise run registry` == `tsx libs/module-registry/scripts/build.ts`. The
+# contract deps' dist/ manifests must exist first (registry:build imports
+# them), so `mise run build` (tsc -b tsconfig.build.json) runs ahead of it.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "libs/module-registry/**"
+      - "libs/types/**"
+      - ".github/workflows/registry-generated-quality.yml"
+  pull_request:
+    paths:
+      - "libs/module-registry/**"
+      - "libs/types/**"
+      - ".github/workflows/registry-generated-quality.yml"
+
+concurrency:
+  group: registry-generated-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  MISE_ENV: ci
+
+jobs:
+  registry-up-to-date:
+    name: Registry generated.ts up to date
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: jdx/mise-action@v2
+      - name: Install
+        run: pnpm install --frozen-lockfile
+      - name: Regenerate registry (build contract deps first)
+        run: |
+          mise run build
+          mise run registry
+      - name: Verify generated.ts is up to date
+        run: |
+          if ! git diff --exit-code -- libs/module-registry/src/generated.ts; then
+            echo ""
+            echo "::error::libs/module-registry/src/generated.ts is out of date."
+            echo "Run 'mise run registry' locally and commit the result."
+            exit 1
+          fi

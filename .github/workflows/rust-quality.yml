@@ -3,10 +3,10 @@ name: Rust Quality
 # Self-contained Rust CI lane for the repo-root cargo workspace and the Rust
 # pillars it builds (currently `pillars/contacts`, the first Rust pillar).
 #
-# ADDITIVE by design: it is path-filtered to the Rust tree and is NOT part of
-# the TS `pillar-quality` / `_pkg-check` matrices. Rust pillars carry no
-# `package.json`, so the pnpm pillar discovery never sees them — this
-# workflow is their only gate. Adding a Rust crate to the workspace
+# ADDITIVE by design: it is path-filtered to the Rust tree and runs the whole
+# cargo workspace (no matrix). The per-crate changed-only Rust legs live in
+# `unit-quality.yml`. Rust pillars carry no `package.json`, so the pnpm pillar
+# discovery never sees them. Adding a Rust crate to the workspace
 # `Cargo.toml` (e.g. `pops-ai`, `pops-settings`) is covered here with no
 # workflow edit because every step operates on the whole workspace.
 #
