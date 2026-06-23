@@ -1,9 +1,10 @@
 /**
  * GENERATED FILE — do not edit by hand.
  *
- * Built from `packages/module-registry/scripts/known-modules.ts` by
- * `pnpm registry:build`. CI verifies this file is up to date; commit
- * regenerated output alongside any change to the source manifest list.
+ * Build-time validation manifest. Built from
+ * `libs/module-registry/scripts/known-modules.ts` by `mise run registry`.
+ * CI verifies this file is up to date as a drift guard; commit regenerated
+ * output alongside any change to the source manifest list.
  *
  * See `docs/themes/01-foundation/prds/101-plugin-contract/us-02-build-time-registry.md`.
  */

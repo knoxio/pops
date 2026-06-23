@@ -1,16 +1,22 @@
 /**
- * @pops/module-registry — build-time module registry (PRD-101 US-02) with
+ * @pops/module-registry — build-time manifest validator (PRD-101 US-02) with
  * a runtime install-set shim layered on top (PRD-218 US-01).
  *
+ * This lib is not the live registry — that is the DB in `pillars/registry`,
+ * surfaced over the SDK transport. Its job is to validate cross-pillar
+ * manifest invariants at build time and emit `generated.ts` as a committed
+ * CI drift guard (see `scripts/build.ts` + `scripts/lib.ts:validateManifests`).
+ *
  * `MODULES` / `KNOWN_MODULES` come from `generated.ts` and reflect the set
- * of modules selected at registry build time (see `scripts/build.ts`).
+ * of in-repo pillar manifests validated at build time.
  *
  * `INSTALLED_MODULES` / `isInstalledModule` re-evaluate `POPS_APPS` /
  * `POPS_OVERLAYS` at module-load time so consumers that need the live
  * install set (per-deploy gating) do not have to read `process.env`
- * themselves and risk semantic drift. The runtime shim is necessary
- * because a single registry build is reused across deploys that may scope
- * the install set differently via env.
+ * themselves and risk semantic drift. This static env-gated fallback is the
+ * shell's offline never-brick floor (`installed-modules.ts`) and overlay
+ * gating (`overlays/registry.ts`); it is retained deliberately and is not
+ * superseded by the runtime registry snapshot.
  *
  * The `MODULES` constant is `as const` so consumers narrow on the exact
  * installed module-id union via `(typeof MODULES)[number]['id']`.
