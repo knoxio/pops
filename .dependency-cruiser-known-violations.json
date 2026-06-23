@@ -1,1 +1,1710 @@
-[]
+[
+  {
+    "type": "cycle",
+    "from": "libs/module-registry/scripts/lib.ts",
+    "to": "libs/module-registry/scripts/render.ts",
+    "unresolvedTo": "./render.js",
+    "dependencyTypes": ["local", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular"
+    },
+    "cycle": [
+      {
+        "name": "libs/module-registry/scripts/render.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "libs/module-registry/scripts/lib.ts",
+        "dependencyTypes": ["local", "type-only", "import"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "libs/navigation/src/search-results/SectionView.tsx",
+    "to": "libs/navigation/src/SearchResultsPanel.tsx",
+    "unresolvedTo": "../SearchResultsPanel",
+    "dependencyTypes": ["local", "type-only", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular"
+    },
+    "cycle": [
+      {
+        "name": "libs/navigation/src/SearchResultsPanel.tsx",
+        "dependencyTypes": ["local", "type-only", "import"]
+      },
+      {
+        "name": "libs/navigation/src/search-results/SectionView.tsx",
+        "dependencyTypes": ["local", "import"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "libs/overlay-ego/src/ego-api-runtime-config.ts",
+    "to": "libs/overlay-ego/src/ego-api/client.gen.ts",
+    "unresolvedTo": "./ego-api/client.gen.js",
+    "dependencyTypes": ["local", "type-only", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular"
+    },
+    "cycle": [
+      {
+        "name": "libs/overlay-ego/src/ego-api/client.gen.ts",
+        "dependencyTypes": ["local", "type-only", "import"]
+      },
+      {
+        "name": "libs/overlay-ego/src/ego-api-runtime-config.ts",
+        "dependencyTypes": ["local", "import"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "libs/overlay-ego/src/ego-api/client/types.gen.ts",
+    "to": "libs/overlay-ego/src/ego-api/client/utils.gen.ts",
+    "unresolvedTo": "./utils.gen",
+    "dependencyTypes": ["local", "type-only", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular"
+    },
+    "cycle": [
+      {
+        "name": "libs/overlay-ego/src/ego-api/client/utils.gen.ts",
+        "dependencyTypes": ["local", "type-only", "import"]
+      },
+      {
+        "name": "libs/overlay-ego/src/ego-api/client/types.gen.ts",
+        "dependencyTypes": ["local", "type-only", "import"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "libs/types/src/manifest-assertions.ts",
+    "to": "libs/types/src/manifest-frontend-assertions.ts",
+    "unresolvedTo": "./manifest-frontend-assertions.js",
+    "dependencyTypes": ["local", "export"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular"
+    },
+    "cycle": [
+      {
+        "name": "libs/types/src/manifest-frontend-assertions.ts",
+        "dependencyTypes": ["local", "export"]
+      },
+      {
+        "name": "libs/types/src/module-manifest.ts",
+        "dependencyTypes": ["local", "type-only", "import"]
+      },
+      {
+        "name": "libs/types/src/manifest-assertions.ts",
+        "dependencyTypes": ["local", "import"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "libs/types/src/manifest-assertions.ts",
+    "to": "libs/types/src/module-manifest.ts",
+    "unresolvedTo": "./module-manifest.js",
+    "dependencyTypes": ["local", "type-only", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular"
+    },
+    "cycle": [
+      {
+        "name": "libs/types/src/module-manifest.ts",
+        "dependencyTypes": ["local", "type-only", "import"]
+      },
+      {
+        "name": "libs/types/src/manifest-assertions.ts",
+        "dependencyTypes": ["local", "import"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "libs/ui/src/components/ComboboxSelect.popover.tsx",
+    "to": "libs/ui/src/components/ComboboxSelect.tsx",
+    "unresolvedTo": "./ComboboxSelect",
+    "dependencyTypes": ["local", "type-only", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular"
+    },
+    "cycle": [
+      {
+        "name": "libs/ui/src/components/ComboboxSelect.tsx",
+        "dependencyTypes": ["local", "type-only", "import"]
+      },
+      {
+        "name": "libs/ui/src/components/ComboboxSelect.popover.tsx",
+        "dependencyTypes": ["local", "import"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "libs/ui/src/components/ForceGraph.hooks.ts",
+    "to": "libs/ui/src/components/ForceGraph.pointer.ts",
+    "unresolvedTo": "./ForceGraph.pointer",
+    "dependencyTypes": ["local", "export"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular"
+    },
+    "cycle": [
+      {
+        "name": "libs/ui/src/components/ForceGraph.pointer.ts",
+        "dependencyTypes": ["local", "export"]
+      },
+      {
+        "name": "libs/ui/src/components/ForceGraph.utils.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "libs/ui/src/components/ForceGraph.tsx",
+        "dependencyTypes": ["local", "type-only", "import"]
+      },
+      {
+        "name": "libs/ui/src/components/ForceGraph.hooks.ts",
+        "dependencyTypes": ["local", "import"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "libs/ui/src/components/ForceGraph.hooks.ts",
+    "to": "libs/ui/src/components/ForceGraph.tsx",
+    "unresolvedTo": "./ForceGraph",
+    "dependencyTypes": ["local", "type-only", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular"
+    },
+    "cycle": [
+      {
+        "name": "libs/ui/src/components/ForceGraph.tsx",
+        "dependencyTypes": ["local", "type-only", "import"]
+      },
+      {
+        "name": "libs/ui/src/components/ForceGraph.hooks.ts",
+        "dependencyTypes": ["local", "import"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "libs/ui/src/components/ForceGraph.hooks.ts",
+    "to": "libs/ui/src/components/ForceGraph.utils.ts",
+    "unresolvedTo": "./ForceGraph.utils",
+    "dependencyTypes": ["local", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular"
+    },
+    "cycle": [
+      {
+        "name": "libs/ui/src/components/ForceGraph.utils.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "libs/ui/src/components/ForceGraph.tsx",
+        "dependencyTypes": ["local", "type-only", "import"]
+      },
+      {
+        "name": "libs/ui/src/components/ForceGraph.hooks.ts",
+        "dependencyTypes": ["local", "import"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "libs/ui/src/components/ScrollShelf.lazy.tsx",
+    "to": "libs/ui/src/components/ScrollShelf.tsx",
+    "unresolvedTo": "./ScrollShelf",
+    "dependencyTypes": ["local", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular"
+    },
+    "cycle": [
+      {
+        "name": "libs/ui/src/components/ScrollShelf.tsx",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "libs/ui/src/components/ScrollShelf.lazy.tsx",
+        "dependencyTypes": ["local", "export"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "pillars/ai/app/src/ai-api-runtime-config.ts",
+    "to": "pillars/ai/app/src/ai-api/client.gen.ts",
+    "unresolvedTo": "./ai-api/client.gen.js",
+    "dependencyTypes": ["local", "type-only", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular"
+    },
+    "cycle": [
+      {
+        "name": "pillars/ai/app/src/ai-api/client.gen.ts",
+        "dependencyTypes": ["local", "type-only", "import"]
+      },
+      {
+        "name": "pillars/ai/app/src/ai-api-runtime-config.ts",
+        "dependencyTypes": ["local", "import"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "pillars/ai/app/src/ai-api/client/types.gen.ts",
+    "to": "pillars/ai/app/src/ai-api/client/utils.gen.ts",
+    "unresolvedTo": "./utils.gen",
+    "dependencyTypes": ["local", "type-only", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular"
+    },
+    "cycle": [
+      {
+        "name": "pillars/ai/app/src/ai-api/client/utils.gen.ts",
+        "dependencyTypes": ["local", "type-only", "import"]
+      },
+      {
+        "name": "pillars/ai/app/src/ai-api/client/types.gen.ts",
+        "dependencyTypes": ["local", "type-only", "import"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "pillars/ai/app/src/finance-api-runtime-config.ts",
+    "to": "pillars/ai/app/src/finance-api/client.gen.ts",
+    "unresolvedTo": "./finance-api/client.gen.js",
+    "dependencyTypes": ["local", "type-only", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular"
+    },
+    "cycle": [
+      {
+        "name": "pillars/ai/app/src/finance-api/client.gen.ts",
+        "dependencyTypes": ["local", "type-only", "import"]
+      },
+      {
+        "name": "pillars/ai/app/src/finance-api-runtime-config.ts",
+        "dependencyTypes": ["local", "import"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "pillars/ai/app/src/finance-api/client/types.gen.ts",
+    "to": "pillars/ai/app/src/finance-api/client/utils.gen.ts",
+    "unresolvedTo": "./utils.gen",
+    "dependencyTypes": ["local", "type-only", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular"
+    },
+    "cycle": [
+      {
+        "name": "pillars/ai/app/src/finance-api/client/utils.gen.ts",
+        "dependencyTypes": ["local", "type-only", "import"]
+      },
+      {
+        "name": "pillars/ai/app/src/finance-api/client/types.gen.ts",
+        "dependencyTypes": ["local", "type-only", "import"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "pillars/ai/src/api/modules/ai-budgets/enforcement.ts",
+    "to": "pillars/ai/src/api/modules/ai-budgets/service.ts",
+    "unresolvedTo": "./service.js",
+    "dependencyTypes": ["local", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular"
+    },
+    "cycle": [
+      {
+        "name": "pillars/ai/src/api/modules/ai-budgets/service.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "pillars/ai/src/api/modules/ai-budgets/enforcement.ts",
+        "dependencyTypes": ["local", "export"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "pillars/cerebrum/app/src/cerebrum-api-runtime-config.ts",
+    "to": "pillars/cerebrum/app/src/cerebrum-api/client.gen.ts",
+    "unresolvedTo": "./cerebrum-api/client.gen.js",
+    "dependencyTypes": ["local", "type-only", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular"
+    },
+    "cycle": [
+      {
+        "name": "pillars/cerebrum/app/src/cerebrum-api/client.gen.ts",
+        "dependencyTypes": ["local", "type-only", "import"]
+      },
+      {
+        "name": "pillars/cerebrum/app/src/cerebrum-api-runtime-config.ts",
+        "dependencyTypes": ["local", "import"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "pillars/cerebrum/app/src/cerebrum-api/client/types.gen.ts",
+    "to": "pillars/cerebrum/app/src/cerebrum-api/client/utils.gen.ts",
+    "unresolvedTo": "./utils.gen",
+    "dependencyTypes": ["local", "type-only", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular"
+    },
+    "cycle": [
+      {
+        "name": "pillars/cerebrum/app/src/cerebrum-api/client/utils.gen.ts",
+        "dependencyTypes": ["local", "type-only", "import"]
+      },
+      {
+        "name": "pillars/cerebrum/app/src/cerebrum-api/client/types.gen.ts",
+        "dependencyTypes": ["local", "type-only", "import"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "pillars/cerebrum/src/api/modules/ego/llm.ts",
+    "to": "pillars/cerebrum/src/api/modules/ego/stream-events.ts",
+    "unresolvedTo": "./stream-events.js",
+    "dependencyTypes": ["local", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular"
+    },
+    "cycle": [
+      {
+        "name": "pillars/cerebrum/src/api/modules/ego/stream-events.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "pillars/cerebrum/src/api/modules/ego/llm.ts",
+        "dependencyTypes": ["local", "type-only", "import"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "pillars/cerebrum/src/api/modules/reflex/reflex-parser.ts",
+    "to": "pillars/cerebrum/src/api/modules/reflex/reflex-validators.ts",
+    "unresolvedTo": "./reflex-validators.js",
+    "dependencyTypes": ["local", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular"
+    },
+    "cycle": [
+      {
+        "name": "pillars/cerebrum/src/api/modules/reflex/reflex-validators.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "pillars/cerebrum/src/api/modules/reflex/reflex-parser.ts",
+        "dependencyTypes": ["local", "type-only", "import"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "pillars/finance/app/src/components/imports/hooks/preview-effect-hooks.ts",
+    "to": "pillars/finance/app/src/components/imports/hooks/preview-effects-runner.ts",
+    "unresolvedTo": "./preview-effects-runner",
+    "dependencyTypes": ["local", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular"
+    },
+    "cycle": [
+      {
+        "name": "pillars/finance/app/src/components/imports/hooks/preview-effects-runner.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "pillars/finance/app/src/components/imports/hooks/preview-effect-hooks.ts",
+        "dependencyTypes": ["local", "type-only", "import"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "pillars/finance/app/src/contacts-api-runtime-config.ts",
+    "to": "pillars/finance/app/src/contacts-api/client.gen.ts",
+    "unresolvedTo": "./contacts-api/client.gen.js",
+    "dependencyTypes": ["local", "type-only", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular"
+    },
+    "cycle": [
+      {
+        "name": "pillars/finance/app/src/contacts-api/client.gen.ts",
+        "dependencyTypes": ["local", "type-only", "import"]
+      },
+      {
+        "name": "pillars/finance/app/src/contacts-api-runtime-config.ts",
+        "dependencyTypes": ["local", "import"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "pillars/finance/app/src/contacts-api/client/types.gen.ts",
+    "to": "pillars/finance/app/src/contacts-api/client/utils.gen.ts",
+    "unresolvedTo": "./utils.gen",
+    "dependencyTypes": ["local", "type-only", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular"
+    },
+    "cycle": [
+      {
+        "name": "pillars/finance/app/src/contacts-api/client/utils.gen.ts",
+        "dependencyTypes": ["local", "type-only", "import"]
+      },
+      {
+        "name": "pillars/finance/app/src/contacts-api/client/types.gen.ts",
+        "dependencyTypes": ["local", "type-only", "import"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "pillars/finance/app/src/finance-api-runtime-config.ts",
+    "to": "pillars/finance/app/src/finance-api/client.gen.ts",
+    "unresolvedTo": "./finance-api/client.gen.js",
+    "dependencyTypes": ["local", "type-only", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular"
+    },
+    "cycle": [
+      {
+        "name": "pillars/finance/app/src/finance-api/client.gen.ts",
+        "dependencyTypes": ["local", "type-only", "import"]
+      },
+      {
+        "name": "pillars/finance/app/src/finance-api-runtime-config.ts",
+        "dependencyTypes": ["local", "import"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "pillars/finance/app/src/finance-api/client/types.gen.ts",
+    "to": "pillars/finance/app/src/finance-api/client/utils.gen.ts",
+    "unresolvedTo": "./utils.gen",
+    "dependencyTypes": ["local", "type-only", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular"
+    },
+    "cycle": [
+      {
+        "name": "pillars/finance/app/src/finance-api/client/utils.gen.ts",
+        "dependencyTypes": ["local", "type-only", "import"]
+      },
+      {
+        "name": "pillars/finance/app/src/finance-api/client/types.gen.ts",
+        "dependencyTypes": ["local", "type-only", "import"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "pillars/finance/src/api/modules/imports/ai-categorizer-api.ts",
+    "to": "pillars/finance/src/api/modules/imports/ai-categorizer.ts",
+    "unresolvedTo": "./ai-categorizer.js",
+    "dependencyTypes": ["local", "type-only", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular"
+    },
+    "cycle": [
+      {
+        "name": "pillars/finance/src/api/modules/imports/ai-categorizer.ts",
+        "dependencyTypes": ["local", "type-only", "import"]
+      },
+      {
+        "name": "pillars/finance/src/api/modules/imports/ai-categorizer-api.ts",
+        "dependencyTypes": ["local", "import"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "pillars/food/app/src/components/cook/CookModal.tsx",
+    "to": "pillars/food/app/src/components/cook/CookModalShell.tsx",
+    "unresolvedTo": "./CookModalShell.js",
+    "dependencyTypes": ["local", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular"
+    },
+    "cycle": [
+      {
+        "name": "pillars/food/app/src/components/cook/CookModalShell.tsx",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "pillars/food/app/src/components/cook/CookModal.tsx",
+        "dependencyTypes": ["local", "type-only", "import"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "pillars/food/app/src/components/cook/CookModal.tsx",
+    "to": "pillars/food/app/src/components/cook/useMarkCookedMutation.ts",
+    "unresolvedTo": "./useMarkCookedMutation.js",
+    "dependencyTypes": ["local", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular"
+    },
+    "cycle": [
+      {
+        "name": "pillars/food/app/src/components/cook/useMarkCookedMutation.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "pillars/food/app/src/components/cook/CookModal.tsx",
+        "dependencyTypes": ["local", "type-only", "import"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "pillars/food/app/src/food-api-runtime-config.ts",
+    "to": "pillars/food/app/src/food-api/client.gen.ts",
+    "unresolvedTo": "./food-api/client.gen.js",
+    "dependencyTypes": ["local", "type-only", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular"
+    },
+    "cycle": [
+      {
+        "name": "pillars/food/app/src/food-api/client.gen.ts",
+        "dependencyTypes": ["local", "type-only", "import"]
+      },
+      {
+        "name": "pillars/food/app/src/food-api-runtime-config.ts",
+        "dependencyTypes": ["local", "import"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "pillars/food/app/src/food-api/client/types.gen.ts",
+    "to": "pillars/food/app/src/food-api/client/utils.gen.ts",
+    "unresolvedTo": "./utils.gen",
+    "dependencyTypes": ["local", "type-only", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular"
+    },
+    "cycle": [
+      {
+        "name": "pillars/food/app/src/food-api/client/utils.gen.ts",
+        "dependencyTypes": ["local", "type-only", "import"]
+      },
+      {
+        "name": "pillars/food/app/src/food-api/client/types.gen.ts",
+        "dependencyTypes": ["local", "type-only", "import"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "pillars/food/app/src/lists-api-runtime-config.ts",
+    "to": "pillars/food/app/src/lists-api/client.gen.ts",
+    "unresolvedTo": "./lists-api/client.gen.js",
+    "dependencyTypes": ["local", "type-only", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular"
+    },
+    "cycle": [
+      {
+        "name": "pillars/food/app/src/lists-api/client.gen.ts",
+        "dependencyTypes": ["local", "type-only", "import"]
+      },
+      {
+        "name": "pillars/food/app/src/lists-api-runtime-config.ts",
+        "dependencyTypes": ["local", "import"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "pillars/food/app/src/lists-api/client/types.gen.ts",
+    "to": "pillars/food/app/src/lists-api/client/utils.gen.ts",
+    "unresolvedTo": "./utils.gen",
+    "dependencyTypes": ["local", "type-only", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular"
+    },
+    "cycle": [
+      {
+        "name": "pillars/food/app/src/lists-api/client/utils.gen.ts",
+        "dependencyTypes": ["local", "type-only", "import"]
+      },
+      {
+        "name": "pillars/food/app/src/lists-api/client/types.gen.ts",
+        "dependencyTypes": ["local", "type-only", "import"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "pillars/food/src/api/modules/cook/mark-cooked-helpers.ts",
+    "to": "pillars/food/src/api/modules/cook/mark-cooked.ts",
+    "unresolvedTo": "./mark-cooked.js",
+    "dependencyTypes": ["local", "type-only", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular"
+    },
+    "cycle": [
+      {
+        "name": "pillars/food/src/api/modules/cook/mark-cooked.ts",
+        "dependencyTypes": ["local", "type-only", "import"]
+      },
+      {
+        "name": "pillars/food/src/api/modules/cook/mark-cooked-helpers.ts",
+        "dependencyTypes": ["local", "import"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "pillars/food/src/db/row-types.ts",
+    "to": "pillars/food/src/db/schema.ts",
+    "unresolvedTo": "./schema.js",
+    "dependencyTypes": ["local", "type-only", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular"
+    },
+    "cycle": [
+      {
+        "name": "pillars/food/src/db/schema.ts",
+        "dependencyTypes": ["local", "type-only", "import"]
+      },
+      {
+        "name": "pillars/food/src/db/row-types.ts",
+        "dependencyTypes": ["local", "type-only", "export"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "pillars/food/src/db/services/aliases-queries.ts",
+    "to": "pillars/food/src/db/services/aliases.ts",
+    "unresolvedTo": "./aliases.js",
+    "dependencyTypes": ["local", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular"
+    },
+    "cycle": [
+      {
+        "name": "pillars/food/src/db/services/aliases.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "pillars/food/src/db/services/aliases-queries.ts",
+        "dependencyTypes": ["local", "export"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "pillars/inventory/app/src/components/document-upload/PendingDocumentRow.tsx",
+    "to": "pillars/inventory/app/src/components/DocumentUpload.tsx",
+    "unresolvedTo": "../DocumentUpload",
+    "dependencyTypes": ["local", "type-only", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular"
+    },
+    "cycle": [
+      {
+        "name": "pillars/inventory/app/src/components/DocumentUpload.tsx",
+        "dependencyTypes": ["local", "type-only", "import"]
+      },
+      {
+        "name": "pillars/inventory/app/src/components/document-upload/PendingDocumentRow.tsx",
+        "dependencyTypes": ["local", "import"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "pillars/inventory/app/src/components/inventory-card/HorizontalCard.tsx",
+    "to": "pillars/inventory/app/src/components/InventoryCard.tsx",
+    "unresolvedTo": "../InventoryCard",
+    "dependencyTypes": ["local", "type-only", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular"
+    },
+    "cycle": [
+      {
+        "name": "pillars/inventory/app/src/components/InventoryCard.tsx",
+        "dependencyTypes": ["local", "type-only", "import"]
+      },
+      {
+        "name": "pillars/inventory/app/src/components/inventory-card/HorizontalCard.tsx",
+        "dependencyTypes": ["local", "import"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "pillars/inventory/app/src/components/inventory-card/VerticalCard.tsx",
+    "to": "pillars/inventory/app/src/components/InventoryCard.tsx",
+    "unresolvedTo": "../InventoryCard",
+    "dependencyTypes": ["local", "type-only", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular"
+    },
+    "cycle": [
+      {
+        "name": "pillars/inventory/app/src/components/InventoryCard.tsx",
+        "dependencyTypes": ["local", "type-only", "import"]
+      },
+      {
+        "name": "pillars/inventory/app/src/components/inventory-card/VerticalCard.tsx",
+        "dependencyTypes": ["local", "import"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "pillars/inventory/app/src/components/photo-gallery/Lightbox.tsx",
+    "to": "pillars/inventory/app/src/components/PhotoGallery.tsx",
+    "unresolvedTo": "../PhotoGallery",
+    "dependencyTypes": ["local", "type-only", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular"
+    },
+    "cycle": [
+      {
+        "name": "pillars/inventory/app/src/components/PhotoGallery.tsx",
+        "dependencyTypes": ["local", "type-only", "import"]
+      },
+      {
+        "name": "pillars/inventory/app/src/components/photo-gallery/Lightbox.tsx",
+        "dependencyTypes": ["local", "import"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "pillars/inventory/app/src/components/photo-gallery/ThumbnailStrip.tsx",
+    "to": "pillars/inventory/app/src/components/PhotoGallery.tsx",
+    "unresolvedTo": "../PhotoGallery",
+    "dependencyTypes": ["local", "type-only", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular"
+    },
+    "cycle": [
+      {
+        "name": "pillars/inventory/app/src/components/PhotoGallery.tsx",
+        "dependencyTypes": ["local", "type-only", "import"]
+      },
+      {
+        "name": "pillars/inventory/app/src/components/photo-gallery/ThumbnailStrip.tsx",
+        "dependencyTypes": ["local", "import"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "pillars/inventory/app/src/components/photo-upload/UploadedFileRow.tsx",
+    "to": "pillars/inventory/app/src/components/PhotoUpload.tsx",
+    "unresolvedTo": "../PhotoUpload",
+    "dependencyTypes": ["local", "type-only", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular"
+    },
+    "cycle": [
+      {
+        "name": "pillars/inventory/app/src/components/PhotoUpload.tsx",
+        "dependencyTypes": ["local", "type-only", "import"]
+      },
+      {
+        "name": "pillars/inventory/app/src/components/photo-upload/UploadedFileRow.tsx",
+        "dependencyTypes": ["local", "import"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "pillars/inventory/app/src/inventory-api-runtime-config.ts",
+    "to": "pillars/inventory/app/src/inventory-api/client.gen.ts",
+    "unresolvedTo": "./inventory-api/client.gen.js",
+    "dependencyTypes": ["local", "type-only", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular"
+    },
+    "cycle": [
+      {
+        "name": "pillars/inventory/app/src/inventory-api/client.gen.ts",
+        "dependencyTypes": ["local", "type-only", "import"]
+      },
+      {
+        "name": "pillars/inventory/app/src/inventory-api-runtime-config.ts",
+        "dependencyTypes": ["local", "import"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "pillars/inventory/app/src/inventory-api/client/types.gen.ts",
+    "to": "pillars/inventory/app/src/inventory-api/client/utils.gen.ts",
+    "unresolvedTo": "./utils.gen",
+    "dependencyTypes": ["local", "type-only", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular"
+    },
+    "cycle": [
+      {
+        "name": "pillars/inventory/app/src/inventory-api/client/utils.gen.ts",
+        "dependencyTypes": ["local", "type-only", "import"]
+      },
+      {
+        "name": "pillars/inventory/app/src/inventory-api/client/types.gen.ts",
+        "dependencyTypes": ["local", "type-only", "import"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "pillars/lists/app/src/lists-api-runtime-config.ts",
+    "to": "pillars/lists/app/src/lists-api/client.gen.ts",
+    "unresolvedTo": "./lists-api/client.gen.js",
+    "dependencyTypes": ["local", "type-only", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular"
+    },
+    "cycle": [
+      {
+        "name": "pillars/lists/app/src/lists-api/client.gen.ts",
+        "dependencyTypes": ["local", "type-only", "import"]
+      },
+      {
+        "name": "pillars/lists/app/src/lists-api-runtime-config.ts",
+        "dependencyTypes": ["local", "import"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "pillars/lists/app/src/lists-api/client/types.gen.ts",
+    "to": "pillars/lists/app/src/lists-api/client/utils.gen.ts",
+    "unresolvedTo": "./utils.gen",
+    "dependencyTypes": ["local", "type-only", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular"
+    },
+    "cycle": [
+      {
+        "name": "pillars/lists/app/src/lists-api/client/utils.gen.ts",
+        "dependencyTypes": ["local", "type-only", "import"]
+      },
+      {
+        "name": "pillars/lists/app/src/lists-api/client/types.gen.ts",
+        "dependencyTypes": ["local", "type-only", "import"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "pillars/lists/app/src/pages/components/shopping/ShoppingDetailContent.tsx",
+    "to": "pillars/lists/app/src/pages/components/shopping/useShoppingBulkMutations.ts",
+    "unresolvedTo": "./useShoppingBulkMutations.js",
+    "dependencyTypes": ["local", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular"
+    },
+    "cycle": [
+      {
+        "name": "pillars/lists/app/src/pages/components/shopping/useShoppingBulkMutations.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "pillars/lists/app/src/pages/ListDetailPage.tsx",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "pillars/lists/app/src/pages/components/shopping/ShoppingDetailContent.tsx",
+        "dependencyTypes": ["local", "import"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "pillars/mcp/src/tools/cerebrum.ts",
+    "to": "pillars/mcp/src/tools/index.ts",
+    "unresolvedTo": "./index.js",
+    "dependencyTypes": ["local", "type-only", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular"
+    },
+    "cycle": [
+      {
+        "name": "pillars/mcp/src/tools/index.ts",
+        "dependencyTypes": ["local", "type-only", "import"]
+      },
+      {
+        "name": "pillars/mcp/src/tools/cerebrum.ts",
+        "dependencyTypes": ["local", "import"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "pillars/mcp/src/tools/finance.ts",
+    "to": "pillars/mcp/src/tools/index.ts",
+    "unresolvedTo": "./index.js",
+    "dependencyTypes": ["local", "type-only", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular"
+    },
+    "cycle": [
+      {
+        "name": "pillars/mcp/src/tools/index.ts",
+        "dependencyTypes": ["local", "type-only", "import"]
+      },
+      {
+        "name": "pillars/mcp/src/tools/finance.ts",
+        "dependencyTypes": ["local", "import"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "pillars/mcp/src/tools/index.ts",
+    "to": "pillars/mcp/src/tools/inventory-fixtures.ts",
+    "unresolvedTo": "./inventory-fixtures.js",
+    "dependencyTypes": ["local", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular"
+    },
+    "cycle": [
+      {
+        "name": "pillars/mcp/src/tools/inventory-fixtures.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "pillars/mcp/src/tools/index.ts",
+        "dependencyTypes": ["local", "type-only", "import"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "pillars/mcp/src/tools/index.ts",
+    "to": "pillars/mcp/src/tools/inventory.ts",
+    "unresolvedTo": "./inventory.js",
+    "dependencyTypes": ["local", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular"
+    },
+    "cycle": [
+      {
+        "name": "pillars/mcp/src/tools/inventory.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "pillars/mcp/src/tools/index.ts",
+        "dependencyTypes": ["local", "type-only", "import"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "pillars/mcp/src/tools/index.ts",
+    "to": "pillars/mcp/src/tools/media.ts",
+    "unresolvedTo": "./media.js",
+    "dependencyTypes": ["local", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular"
+    },
+    "cycle": [
+      {
+        "name": "pillars/mcp/src/tools/media.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "pillars/mcp/src/tools/index.ts",
+        "dependencyTypes": ["local", "type-only", "import"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "pillars/mcp/src/tools/inventory-connections.ts",
+    "to": "pillars/mcp/src/tools/index.ts",
+    "unresolvedTo": "./index.js",
+    "dependencyTypes": ["local", "type-only", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular"
+    },
+    "cycle": [
+      {
+        "name": "pillars/mcp/src/tools/index.ts",
+        "dependencyTypes": ["local", "type-only", "import"]
+      },
+      {
+        "name": "pillars/mcp/src/tools/inventory.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "pillars/mcp/src/tools/inventory-connections.ts",
+        "dependencyTypes": ["local", "import"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "pillars/mcp/src/tools/inventory-fixtures-write.ts",
+    "to": "pillars/mcp/src/tools/index.ts",
+    "unresolvedTo": "./index.js",
+    "dependencyTypes": ["local", "type-only", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular"
+    },
+    "cycle": [
+      {
+        "name": "pillars/mcp/src/tools/index.ts",
+        "dependencyTypes": ["local", "type-only", "import"]
+      },
+      {
+        "name": "pillars/mcp/src/tools/inventory-fixtures.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "pillars/mcp/src/tools/inventory-fixtures-write.ts",
+        "dependencyTypes": ["local", "import"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "pillars/mcp/src/tools/inventory-items.ts",
+    "to": "pillars/mcp/src/tools/index.ts",
+    "unresolvedTo": "./index.js",
+    "dependencyTypes": ["local", "type-only", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular"
+    },
+    "cycle": [
+      {
+        "name": "pillars/mcp/src/tools/index.ts",
+        "dependencyTypes": ["local", "type-only", "import"]
+      },
+      {
+        "name": "pillars/mcp/src/tools/inventory.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "pillars/mcp/src/tools/inventory-items.ts",
+        "dependencyTypes": ["local", "import"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "pillars/mcp/src/tools/inventory-items.ts",
+    "to": "pillars/mcp/src/tools/inventory-items-write.ts",
+    "unresolvedTo": "./inventory-items-write.js",
+    "dependencyTypes": ["local", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular"
+    },
+    "cycle": [
+      {
+        "name": "pillars/mcp/src/tools/inventory-items-write.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "pillars/mcp/src/tools/index.ts",
+        "dependencyTypes": ["local", "type-only", "import"]
+      },
+      {
+        "name": "pillars/mcp/src/tools/inventory.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "pillars/mcp/src/tools/inventory-items.ts",
+        "dependencyTypes": ["local", "import"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "pillars/mcp/src/tools/inventory-locations.ts",
+    "to": "pillars/mcp/src/tools/index.ts",
+    "unresolvedTo": "./index.js",
+    "dependencyTypes": ["local", "type-only", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular"
+    },
+    "cycle": [
+      {
+        "name": "pillars/mcp/src/tools/index.ts",
+        "dependencyTypes": ["local", "type-only", "import"]
+      },
+      {
+        "name": "pillars/mcp/src/tools/inventory.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "pillars/mcp/src/tools/inventory-locations.ts",
+        "dependencyTypes": ["local", "import"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "pillars/media/app/src/components/ComparisonMovieCard.tsx",
+    "to": "pillars/media/app/src/components/ComparisonMovieCardActions.tsx",
+    "unresolvedTo": "./ComparisonMovieCardActions",
+    "dependencyTypes": ["local", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular"
+    },
+    "cycle": [
+      {
+        "name": "pillars/media/app/src/components/ComparisonMovieCardActions.tsx",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "pillars/media/app/src/components/ComparisonMovieCard.tsx",
+        "dependencyTypes": ["local", "type-only", "import"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "pillars/media/app/src/components/discover-card/DiscoverCardOverlay.tsx",
+    "to": "pillars/media/app/src/components/DiscoverCard.tsx",
+    "unresolvedTo": "../DiscoverCard",
+    "dependencyTypes": ["local", "type-only", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular"
+    },
+    "cycle": [
+      {
+        "name": "pillars/media/app/src/components/DiscoverCard.tsx",
+        "dependencyTypes": ["local", "type-only", "import"]
+      },
+      {
+        "name": "pillars/media/app/src/components/discover-card/DiscoverCardOverlay.tsx",
+        "dependencyTypes": ["local", "import"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "pillars/media/app/src/components/request-series/RequestSeriesForm.tsx",
+    "to": "pillars/media/app/src/components/request-series/SeasonMonitoringList.tsx",
+    "unresolvedTo": "./SeasonMonitoringList",
+    "dependencyTypes": ["local", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular"
+    },
+    "cycle": [
+      {
+        "name": "pillars/media/app/src/components/request-series/SeasonMonitoringList.tsx",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "pillars/media/app/src/components/RequestSeriesModal.tsx",
+        "dependencyTypes": ["local", "type-only", "import"]
+      },
+      {
+        "name": "pillars/media/app/src/components/request-series/RequestSeriesForm.tsx",
+        "dependencyTypes": ["local", "import"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "pillars/media/app/src/components/request-series/RequestSeriesForm.tsx",
+    "to": "pillars/media/app/src/components/RequestSeriesModal.tsx",
+    "unresolvedTo": "../RequestSeriesModal",
+    "dependencyTypes": ["local", "type-only", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular"
+    },
+    "cycle": [
+      {
+        "name": "pillars/media/app/src/components/RequestSeriesModal.tsx",
+        "dependencyTypes": ["local", "type-only", "import"]
+      },
+      {
+        "name": "pillars/media/app/src/components/request-series/RequestSeriesForm.tsx",
+        "dependencyTypes": ["local", "import"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "pillars/media/app/src/components/request-series/useRequestSeriesModel.ts",
+    "to": "pillars/media/app/src/components/request-series/useRequestSeriesQueries.ts",
+    "unresolvedTo": "./useRequestSeriesQueries",
+    "dependencyTypes": ["local", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular"
+    },
+    "cycle": [
+      {
+        "name": "pillars/media/app/src/components/request-series/useRequestSeriesQueries.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "pillars/media/app/src/components/RequestSeriesModal.tsx",
+        "dependencyTypes": ["local", "type-only", "import"]
+      },
+      {
+        "name": "pillars/media/app/src/components/request-series/useRequestSeriesModel.ts",
+        "dependencyTypes": ["local", "import"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "pillars/media/app/src/components/request-series/useRequestSeriesModel.ts",
+    "to": "pillars/media/app/src/components/RequestSeriesModal.tsx",
+    "unresolvedTo": "../RequestSeriesModal",
+    "dependencyTypes": ["local", "type-only", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular"
+    },
+    "cycle": [
+      {
+        "name": "pillars/media/app/src/components/RequestSeriesModal.tsx",
+        "dependencyTypes": ["local", "type-only", "import"]
+      },
+      {
+        "name": "pillars/media/app/src/components/request-series/useRequestSeriesModel.ts",
+        "dependencyTypes": ["local", "import"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "pillars/media/app/src/components/search-result-card/SearchResultActionButtons.tsx",
+    "to": "pillars/media/app/src/components/SearchResultCard.tsx",
+    "unresolvedTo": "../SearchResultCard",
+    "dependencyTypes": ["local", "type-only", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular"
+    },
+    "cycle": [
+      {
+        "name": "pillars/media/app/src/components/SearchResultCard.tsx",
+        "dependencyTypes": ["local", "type-only", "import"]
+      },
+      {
+        "name": "pillars/media/app/src/components/search-result-card/SearchResultActionButtons.tsx",
+        "dependencyTypes": ["local", "import"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "pillars/media/app/src/components/search-result-card/SearchResultMeta.tsx",
+    "to": "pillars/media/app/src/components/SearchResultCard.tsx",
+    "unresolvedTo": "../SearchResultCard",
+    "dependencyTypes": ["local", "type-only", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular"
+    },
+    "cycle": [
+      {
+        "name": "pillars/media/app/src/components/SearchResultCard.tsx",
+        "dependencyTypes": ["local", "type-only", "import"]
+      },
+      {
+        "name": "pillars/media/app/src/components/search-result-card/SearchResultMeta.tsx",
+        "dependencyTypes": ["local", "import"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "pillars/media/app/src/components/search-result-card/SearchResultPoster.tsx",
+    "to": "pillars/media/app/src/components/SearchResultCard.tsx",
+    "unresolvedTo": "../SearchResultCard",
+    "dependencyTypes": ["local", "type-only", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular"
+    },
+    "cycle": [
+      {
+        "name": "pillars/media/app/src/components/SearchResultCard.tsx",
+        "dependencyTypes": ["local", "type-only", "import"]
+      },
+      {
+        "name": "pillars/media/app/src/components/search-result-card/SearchResultPoster.tsx",
+        "dependencyTypes": ["local", "import"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "pillars/media/app/src/hooks/discover-actions/handlers.ts",
+    "to": "pillars/media/app/src/hooks/useDiscoverCardActions.ts",
+    "unresolvedTo": "../useDiscoverCardActions",
+    "dependencyTypes": ["local", "type-only", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular"
+    },
+    "cycle": [
+      {
+        "name": "pillars/media/app/src/hooks/useDiscoverCardActions.ts",
+        "dependencyTypes": ["local", "type-only", "import"]
+      },
+      {
+        "name": "pillars/media/app/src/hooks/discover-actions/handlers.ts",
+        "dependencyTypes": ["local", "import"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "pillars/media/app/src/media-api-runtime-config.ts",
+    "to": "pillars/media/app/src/media-api/client.gen.ts",
+    "unresolvedTo": "./media-api/client.gen.js",
+    "dependencyTypes": ["local", "type-only", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular"
+    },
+    "cycle": [
+      {
+        "name": "pillars/media/app/src/media-api/client.gen.ts",
+        "dependencyTypes": ["local", "type-only", "import"]
+      },
+      {
+        "name": "pillars/media/app/src/media-api-runtime-config.ts",
+        "dependencyTypes": ["local", "import"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "pillars/media/app/src/media-api/client/types.gen.ts",
+    "to": "pillars/media/app/src/media-api/client/utils.gen.ts",
+    "unresolvedTo": "./utils.gen",
+    "dependencyTypes": ["local", "type-only", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular"
+    },
+    "cycle": [
+      {
+        "name": "pillars/media/app/src/media-api/client/utils.gen.ts",
+        "dependencyTypes": ["local", "type-only", "import"]
+      },
+      {
+        "name": "pillars/media/app/src/media-api/client/types.gen.ts",
+        "dependencyTypes": ["local", "type-only", "import"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "pillars/media/app/src/pages/candidate-queue/CandidateActions.tsx",
+    "to": "pillars/media/app/src/pages/candidate-queue/CandidateCard.tsx",
+    "unresolvedTo": "./CandidateCard",
+    "dependencyTypes": ["local", "type-only", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular"
+    },
+    "cycle": [
+      {
+        "name": "pillars/media/app/src/pages/candidate-queue/CandidateCard.tsx",
+        "dependencyTypes": ["local", "type-only", "import"]
+      },
+      {
+        "name": "pillars/media/app/src/pages/candidate-queue/CandidateActions.tsx",
+        "dependencyTypes": ["local", "import"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "pillars/media/app/src/pages/candidate-queue/CandidateActions.tsx",
+    "to": "pillars/media/app/src/pages/candidate-queue/useCardMutations.ts",
+    "unresolvedTo": "./useCardMutations",
+    "dependencyTypes": ["local", "type-only", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular"
+    },
+    "cycle": [
+      {
+        "name": "pillars/media/app/src/pages/candidate-queue/useCardMutations.ts",
+        "dependencyTypes": ["local", "type-only", "import"]
+      },
+      {
+        "name": "pillars/media/app/src/pages/candidate-queue/CandidateCard.tsx",
+        "dependencyTypes": ["local", "type-only", "import"]
+      },
+      {
+        "name": "pillars/media/app/src/pages/candidate-queue/CandidateActions.tsx",
+        "dependencyTypes": ["local", "import"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "pillars/media/app/src/pages/candidate-queue/CandidateCard.tsx",
+    "to": "pillars/media/app/src/pages/candidate-queue/useCardMutations.ts",
+    "unresolvedTo": "./useCardMutations",
+    "dependencyTypes": ["local", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular"
+    },
+    "cycle": [
+      {
+        "name": "pillars/media/app/src/pages/candidate-queue/useCardMutations.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "pillars/media/app/src/pages/candidate-queue/CandidateCard.tsx",
+        "dependencyTypes": ["local", "type-only", "import"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "pillars/media/src/db/services/movies-rotation.ts",
+    "to": "pillars/media/src/db/services/movies.ts",
+    "unresolvedTo": "./movies.js",
+    "dependencyTypes": ["local", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular"
+    },
+    "cycle": [
+      {
+        "name": "pillars/media/src/db/services/movies.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "pillars/media/src/db/services/movies-rotation.ts",
+        "dependencyTypes": ["local", "export"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "pillars/registry/src/db/services/pillar-registry-status.ts",
+    "to": "pillars/registry/src/db/services/pillar-registry.ts",
+    "unresolvedTo": "./pillar-registry.js",
+    "dependencyTypes": ["local", "type-only", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular"
+    },
+    "cycle": [
+      {
+        "name": "pillars/registry/src/db/services/pillar-registry.ts",
+        "dependencyTypes": ["local", "type-only", "import"]
+      },
+      {
+        "name": "pillars/registry/src/db/services/pillar-registry-status.ts",
+        "dependencyTypes": ["local", "export"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "pillars/shell/src/core-api-runtime-config.ts",
+    "to": "pillars/shell/src/core-api/client.gen.ts",
+    "unresolvedTo": "./core-api/client.gen.js",
+    "dependencyTypes": ["local", "type-only", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular"
+    },
+    "cycle": [
+      {
+        "name": "pillars/shell/src/core-api/client.gen.ts",
+        "dependencyTypes": ["local", "type-only", "import"]
+      },
+      {
+        "name": "pillars/shell/src/core-api-runtime-config.ts",
+        "dependencyTypes": ["local", "import"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "pillars/shell/src/core-api/client/types.gen.ts",
+    "to": "pillars/shell/src/core-api/client/utils.gen.ts",
+    "unresolvedTo": "./utils.gen",
+    "dependencyTypes": ["local", "type-only", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular"
+    },
+    "cycle": [
+      {
+        "name": "pillars/shell/src/core-api/client/utils.gen.ts",
+        "dependencyTypes": ["local", "type-only", "import"]
+      },
+      {
+        "name": "pillars/shell/src/core-api/client/types.gen.ts",
+        "dependencyTypes": ["local", "type-only", "import"]
+      }
+    ]
+  },
+  {
+    "type": "dependency",
+    "from": "pillars/shell/src/app/bundle-map.tsx",
+    "to": "pillars/ai/app/src/index.ts",
+    "unresolvedTo": "@pops/app-ai",
+    "dependencyTypes": ["undetermined", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "pillar-no-cross-internal"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "pillars/shell/src/app/bundle-map.tsx",
+    "to": "pillars/cerebrum/app/src/index.ts",
+    "unresolvedTo": "@pops/app-cerebrum",
+    "dependencyTypes": ["undetermined", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "pillar-no-cross-internal"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "pillars/shell/src/app/bundle-map.tsx",
+    "to": "pillars/finance/app/src/index.ts",
+    "unresolvedTo": "@pops/app-finance",
+    "dependencyTypes": ["undetermined", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "pillar-no-cross-internal"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "pillars/shell/src/app/bundle-map.tsx",
+    "to": "pillars/food/app/src/index.ts",
+    "unresolvedTo": "@pops/app-food",
+    "dependencyTypes": ["undetermined", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "pillar-no-cross-internal"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "pillars/shell/src/app/bundle-map.tsx",
+    "to": "pillars/inventory/app/src/index.ts",
+    "unresolvedTo": "@pops/app-inventory",
+    "dependencyTypes": ["undetermined", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "pillar-no-cross-internal"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "pillars/shell/src/app/bundle-map.tsx",
+    "to": "pillars/lists/app/src/index.ts",
+    "unresolvedTo": "@pops/app-lists",
+    "dependencyTypes": ["undetermined", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "pillar-no-cross-internal"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "pillars/shell/src/app/bundle-map.tsx",
+    "to": "pillars/media/app/src/index.ts",
+    "unresolvedTo": "@pops/app-media",
+    "dependencyTypes": ["undetermined", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "pillar-no-cross-internal"
+    }
+  }
+]

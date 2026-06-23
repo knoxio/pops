@@ -18,14 +18,54 @@
 module.exports = {
   forbidden: [
     {
-      name: 'no-cross-app-import',
+      name: 'lib-no-pillar-import',
       severity: 'error',
       comment:
-        'pillars/<x>/app may not import from another pillars/<y>/app. Cross-pillar frontend communication goes through the pillar REST APIs or shared workspace packages (@pops/ui, @pops/navigation, @pops/types, @pops/db-types).',
-      from: { path: '^pillars/([^/]+)/app/src' },
+        'ISO-R1: a lib facilitates pillars; it must never depend on one. Importing a pillar (by path under pillars/, or by its @pops/<pillar> contract package) inverts the dependency and blocks extraction — the lib could not build in its own repo without dragging a pillar in. A lib takes a pillar capability via injection/discovery at runtime, never a compile-time import.',
+      from: { path: '^libs/' },
       to: {
-        path: '^pillars/([^/]+)/app/',
-        pathNot: '^pillars/$1/app/',
+        pathNot: '^libs/',
+        path: [
+          '^pillars/',
+          // KNOWN_PILLAR_IDS (disk-derived; `core` is now `registry` post-rename):
+          '^@pops/(ai|cerebrum|contacts|registry|docs|finance|food|inventory|lists|mcp|media|moltbot|orchestrator|shell)(/|$)',
+          '^@pops/app-',
+        ],
+      },
+    },
+    {
+      name: 'pillar-no-cross-internal',
+      severity: 'error',
+      comment:
+        'ISO-R2 (supersedes no-cross-app-import): a pillar may consume another pillar ONLY through its published contract package (@pops/<other>, resolved via that package exports map). Reaching into pillars/<other>/src|app|db|migrations by filesystem path is a behind-the-contract reach that breaks black-box isolation + extraction. Same-pillar imports are fine.',
+      from: { path: '^pillars/([^/]+)/' },
+      to: { path: '^pillars/[^/]+/', pathNot: '^pillars/$1/' },
+    },
+    {
+      name: 'no-deep-internal-import',
+      severity: 'error',
+      comment:
+        'ISO-R3: importing a subpath of a @pops/* package that its exports map does not declare is a behind-the-contract reach (e.g. @pops/finance/src/db, @pops/pillar-sdk/dist/internal). Consume only declared subpaths; add an exports entry if the surface is meant to be public.',
+      from: {},
+      to: { path: '^@pops/[^/]+/(src|dist|lib|internal)/' },
+    },
+    {
+      name: 'no-circular',
+      severity: 'error',
+      comment:
+        'ISO-R4: cyclic dependency between units — a cycle means neither can be extracted independently.',
+      from: {},
+      to: { circular: true },
+    },
+    {
+      name: 'lib-layering',
+      severity: 'error',
+      comment:
+        'ISO-R4: leaf libs (types, db-types, sdk, settings, ai-telemetry) must not import any other @pops/* lib — they are the extraction floor.',
+      from: { path: '^libs/(types|db-types|sdk|settings|ai-telemetry)/' },
+      to: {
+        path: '^@pops/',
+        pathNot: '^@pops/(types|db-types|pillar-sdk|pillar-settings|ai-telemetry)(/|$)',
       },
     },
     {
