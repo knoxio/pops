@@ -1,4 +1,4 @@
-import { registeredApps } from '@/app/nav/registry';
+import { useRegisteredApps } from '@/app/BootRegistryProvider';
 import { useUIStore } from '@/store/uiStore';
 import { X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -22,6 +22,7 @@ interface SidebarProps {
 export function Sidebar({ open }: SidebarProps) {
   const { t } = useTranslation('shell');
   const location = useLocation();
+  const registeredApps = useRegisteredApps();
   const setSidebarOpen = useUIStore((state) => state.setSidebarOpen);
   const close = () => setSidebarOpen(false);
 

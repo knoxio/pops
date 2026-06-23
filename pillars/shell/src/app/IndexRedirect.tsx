@@ -3,7 +3,7 @@ import { unwrap } from '@/core-api-helpers';
 import { useQuery } from '@tanstack/react-query';
 import { Navigate } from 'react-router';
 
-import { registeredApps } from './nav/registry';
+import { useRegisteredApps } from './BootRegistryProvider';
 
 /**
  * `/` redirect that respects the installed-modules manifest (PRD-100).
@@ -16,6 +16,7 @@ import { registeredApps } from './nav/registry';
  * bundle map.
  */
 export function IndexRedirect() {
+  const registeredApps = useRegisteredApps();
   const { data } = useQuery({
     queryKey: ['core', 'shell', 'manifest'],
     queryFn: async () => unwrap(await shellManifest()),

@@ -12,7 +12,13 @@ vi.mock('@/core-api', () => ({
   shellManifest: (...args: unknown[]) => mocks.manifest(...args),
 }));
 
+import { resolveBootRegistry } from './boot-snapshot';
+import { BootRegistryProvider } from './BootRegistryProvider';
 import { IndexRedirect } from './IndexRedirect';
+
+// Empty snapshot → the static bundle-map floor, so `registeredApps` carries
+// the in-repo pillars in nav.order — the ordering the redirect tests assert.
+const STATIC_FLOOR = resolveBootRegistry([]);
 
 function LocationProbe() {
   const { pathname } = useLocation();
@@ -34,12 +40,14 @@ function renderAt(primed?: { apps: string[] }): void {
   }
   render(
     <QueryClientProvider client={client}>
-      <MemoryRouter initialEntries={['/']}>
-        <Routes>
-          <Route path="/" element={<IndexRedirect />} />
-          <Route path="*" element={<LocationProbe />} />
-        </Routes>
-      </MemoryRouter>
+      <BootRegistryProvider value={STATIC_FLOOR}>
+        <MemoryRouter initialEntries={['/']}>
+          <Routes>
+            <Route path="/" element={<IndexRedirect />} />
+            <Route path="*" element={<LocationProbe />} />
+          </Routes>
+        </MemoryRouter>
+      </BootRegistryProvider>
     </QueryClientProvider>
   );
 }
