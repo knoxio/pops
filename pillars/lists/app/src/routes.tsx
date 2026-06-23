@@ -15,7 +15,7 @@ const ListDetailPage = lazy(() =>
  *
  * `IconName` here is the narrow set of icons app-lists actually references,
  * NOT the `@pops/navigation` union: a static dep on `@pops/navigation` would
- * close a turbo build cycle (`app-food-db` → `app-lists` → `navigation` →
+ * close a `tsc -b` project-reference cycle (`app-food-db` → `app-lists` → `navigation` →
  * `api-client` → `api` → `app-food-db`). Each literal here must also exist
  * in the navigation `IconName` union and the shell `iconMap` — assignability
  * (literal → wider union) catches drift at the shell's `AppNavConfig[]`

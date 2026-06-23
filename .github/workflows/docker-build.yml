@@ -8,7 +8,6 @@ on:
       - "**/Dockerfile"
       - "pnpm-lock.yaml"
       - "pnpm-workspace.yaml"
-      - "turbo.json"
       - "tsconfig.base.json"
       - ".github/workflows/docker-build.yml"
   push:
@@ -19,7 +18,6 @@ on:
       - "**/Dockerfile"
       - "pnpm-lock.yaml"
       - "pnpm-workspace.yaml"
-      - "turbo.json"
       - "tsconfig.base.json"
       - ".github/workflows/docker-build.yml"
 
@@ -47,7 +45,6 @@ jobs:
               - 'infra/docker*/**'
               - 'pnpm-lock.yaml'
               - 'pnpm-workspace.yaml'
-              - 'turbo.json'
               - 'tsconfig.base.json'
               - '.github/workflows/docker-build.yml'
             compose:
