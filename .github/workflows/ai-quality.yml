@@ -1,5 +1,10 @@
 name: AI Quality
 
+# Gates the `pillars/ai/app` frontend (npm name @pops/app-ai), an app-* unit
+# that lives at maxdepth 2 and name-collides on basename `app`, so it is OUT
+# of `unit-quality.yml`'s disk-discovery scope. Self-contained (formerly used
+# `_pkg-check.yml`, deleted in P5-T04).
+
 on:
   push:
     branches: [main]
@@ -9,7 +14,6 @@ on:
       - "libs/types/**"
       - "libs/ui/**"
       - ".github/workflows/ai-quality.yml"
-      - ".github/workflows/_pkg-check.yml"
   pull_request:
     paths:
       - "pillars/ai/app/**"
@@ -17,34 +21,39 @@ on:
       - "libs/types/**"
       - "libs/ui/**"
       - ".github/workflows/ai-quality.yml"
-      - ".github/workflows/_pkg-check.yml"
+
+concurrency:
+  group: ai-quality-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  MISE_ENV: ci
 
 jobs:
-  changes:
-    name: Detect changes
+  typecheck:
+    name: Typecheck
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
-    outputs:
-      relevant: ${{ steps.filter.outputs.relevant }}
     steps:
       - uses: actions/checkout@v6
-      - uses: dorny/paths-filter@v4
-        id: filter
-        with:
-          filters: |
-            relevant:
-              - 'pillars/ai/app/**'
-              - 'libs/db-types/**'
-              - 'libs/types/**'
-              - 'libs/ui/**'
-              - '.github/workflows/ai-quality.yml'
-              - '.github/workflows/_pkg-check.yml'
+      - uses: jdx/mise-action@v2
+      - run: pnpm install --frozen-lockfile
+      - name: Build shared packages
+        run: pnpm --filter "@pops/app-ai^..." build
+      - run: pnpm --filter @pops/app-ai typecheck
 
-  quality:
-    needs: [changes]
-    if: always()
-    uses: ./.github/workflows/_pkg-check.yml
-    with:
-      package-path: pillars/ai/app
-      needs-db-build: true
-      skip: ${{ github.event_name == 'pull_request' && needs.changes.outputs.relevant != 'true' }}
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: jdx/mise-action@v2
+      - run: pnpm install --frozen-lockfile
+      - name: Build shared packages
+        run: pnpm --filter "@pops/app-ai^..." build
+      - name: Run tests (with coverage if configured)
+        run: |
+          if node -e 'process.exit(require("./pillars/ai/app/package.json").scripts["test:coverage"] ? 0 : 1)' 2>/dev/null; then
+            pnpm --filter @pops/app-ai test:coverage
+          else
+            pnpm --filter @pops/app-ai test
+          fi

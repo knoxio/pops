@@ -1,0 +1,191 @@
+name: Unit Quality
+
+# Single disk-discovered matrix gating every buildable unit under
+# `pillars/` + `libs/` (maxdepth 1), TS and Rust. Replaces the per-lib
+# `*-quality.yml` files + `_pkg-check.yml`. Does NOT cover:
+#   - app frontends (`pillars/*/app`, maxdepth 2 + name-collide) — fe-quality.yml
+#   - moltbot (manifest-less) — its own config gate
+#   - the module-registry generated.ts drift gate — registry-generated-quality.yml
+#
+# The unit list + changed-set come from `_discover-units.yml`. Each lane is
+# selected by `matrix.unit.lang`; the per-unit `mise.toml` pins the toolchain
+# so the steps are uniform regardless of unit. jdx/mise-action@v2 is the sole
+# Node manager (no setup-node); `MISE_ENV=ci` pins node 22 via `mise.ci.toml`.
+#
+# Selectors use `matrix.unit.pkg` (the manifest name) EXCLUSIVELY — never
+# `@pops/${name}`: libs/sdk publishes `@pops/pillar-sdk`, and
+# `pnpm --filter @pops/sdk` matches zero packages and exits 0, silently
+# running nothing. The "exactly one package" guard makes that loud.
+
+on:
+  pull_request:
+    paths:
+      - "pillars/**"
+      - "libs/**"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "tsconfig.base.json"
+      - "tsconfig.build.json"
+      - ".oxfmtrc.json"
+      - ".oxlintrc.json"
+      - "mise.toml"
+      - "mise.ci.toml"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - ".github/workflows/unit-quality.yml"
+      - ".github/workflows/_discover-units.yml"
+  push:
+    branches: [main]
+    paths: ["**"] # main rebuilds via the changed-set
+
+concurrency:
+  group: unit-quality-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  MISE_ENV: ci
+
+jobs:
+  discover:
+    uses: ./.github/workflows/_discover-units.yml
+
+  ts:
+    name: ${{ matrix.unit.name }} (${{ matrix.unit.kind }}) — ts
+    needs: discover
+    if: ${{ needs.discover.outputs.changed != '[]' }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        unit: ${{ fromJson(needs.discover.outputs.changed) }}
+    steps:
+      - if: ${{ matrix.unit.lang != 'ts' }}
+        run: echo "skip non-ts unit ${{ matrix.unit.name }} (${{ matrix.unit.lang }})"
+
+      - if: ${{ matrix.unit.lang == 'ts' }}
+        uses: actions/checkout@v6
+
+      - if: ${{ matrix.unit.lang == 'ts' }}
+        uses: jdx/mise-action@v2
+
+      - if: ${{ matrix.unit.lang == 'ts' }}
+        name: Assert --filter matches exactly one package
+        # pnpm --filter exits 0 on zero matches (a warning, not an error), so
+        # a dir-name != pkg-name skew would silently run nothing. Fail loud.
+        run: |
+          set -euo pipefail
+          n=$(pnpm ls -r --depth -1 --filter "${{ matrix.unit.pkg }}" --json | jq 'length')
+          [ "$n" = 1 ] || { echo "::error::--filter ${{ matrix.unit.pkg }} matched $n packages (expected 1)"; exit 1; }
+
+      - if: ${{ matrix.unit.lang == 'ts' }}
+        name: Install (subgraph only)
+        run: pnpm install --frozen-lockfile --filter "${{ matrix.unit.pkg }}..."
+
+      - if: ${{ matrix.unit.lang == 'ts' }}
+        name: Format check
+        run: pnpm exec oxfmt --check ${{ matrix.unit.dir }}/
+
+      - if: ${{ matrix.unit.lang == 'ts' }}
+        name: Lint
+        # Data-only units (e.g. libs/locales) have no src/ — nothing to lint.
+        run: |
+          set -euo pipefail
+          if [ -d "${{ matrix.unit.dir }}/src" ]; then
+            pnpm exec oxlint ${{ matrix.unit.dir }}/src
+          else
+            echo "no src/ in ${{ matrix.unit.dir }} — skip lint"
+          fi
+
+      - if: ${{ matrix.unit.lang == 'ts' }}
+        name: Build (own mise build task only)
+        # mise merges configs UP the tree: `mise run -C <dir> build` for a unit
+        # whose own mise.toml lacks `build` (source libs ui/navigation/
+        # overlay-ego/locales) would resolve the ROOT build task (`tsc -b`
+        # tsconfig.build.json — the whole graph). Run build ONLY when the unit
+        # OWNS the task (Source == its own mise.toml). Mirrors the root
+        # run-all Source guard. typecheck/test still run for source libs.
+        run: |
+          set -euo pipefail
+          src=$(mise tasks info build -C "${{ matrix.unit.dir }}" 2>/dev/null | sed -n 's/^Source: //p')
+          case "$src" in
+            */"${{ matrix.unit.dir }}"/mise.toml)
+              echo "own build task — building ${{ matrix.unit.dir }}"
+              mise run -C "${{ matrix.unit.dir }}" build
+              ;;
+            *)
+              echo "no own build task for ${{ matrix.unit.dir }} (source lib) — skip build"
+              ;;
+          esac
+
+      - if: ${{ matrix.unit.lang == 'ts' }}
+        name: Typecheck
+        run: |
+          set -euo pipefail
+          if node -e "process.exit((require('./${{ matrix.unit.dir }}/package.json').scripts||{}).typecheck?0:1)"; then
+            pnpm --filter "${{ matrix.unit.pkg }}" typecheck
+          else
+            echo "no typecheck script for ${{ matrix.unit.pkg }} — skip"
+          fi
+
+      - if: ${{ matrix.unit.lang == 'ts' }}
+        name: Codegen drift
+        # Run every `generate:*` script the unit defines, then fail on any diff.
+        run: |
+          set -euo pipefail
+          scripts=$(node -e "const s=require('./${{ matrix.unit.dir }}/package.json').scripts||{};process.stdout.write(Object.keys(s).filter(k=>k.startsWith('generate:')).join('\n'))")
+          if [ -z "$scripts" ]; then
+            echo "no generate:* scripts for ${{ matrix.unit.pkg }} — skip codegen drift"
+          else
+            while IFS= read -r s; do
+              [ -z "$s" ] && continue
+              echo "::group::pnpm --filter ${{ matrix.unit.pkg }} $s"
+              pnpm --filter "${{ matrix.unit.pkg }}" "$s"
+              echo "::endgroup::"
+            done <<< "$scripts"
+            git diff --exit-code ${{ matrix.unit.dir }}/
+          fi
+
+      - if: ${{ matrix.unit.lang == 'ts' }}
+        name: Test
+        run: |
+          set -euo pipefail
+          if node -e "process.exit((require('./${{ matrix.unit.dir }}/package.json').scripts||{}).test?0:1)"; then
+            pnpm --filter "${{ matrix.unit.pkg }}" test
+          else
+            echo "no test script for ${{ matrix.unit.pkg }} — skip"
+          fi
+
+  rust:
+    name: ${{ matrix.unit.name }} (${{ matrix.unit.kind }}) — rust
+    needs: discover
+    if: ${{ needs.discover.outputs.changed != '[]' }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        unit: ${{ fromJson(needs.discover.outputs.changed) }}
+    steps:
+      - if: ${{ matrix.unit.lang != 'rust' }}
+        run: echo "skip non-rust unit ${{ matrix.unit.name }} (${{ matrix.unit.lang }})"
+
+      - if: ${{ matrix.unit.lang == 'rust' }}
+        uses: actions/checkout@v6
+
+      - if: ${{ matrix.unit.lang == 'rust' }}
+        uses: jdx/mise-action@v2
+
+      - if: ${{ matrix.unit.lang == 'rust' }}
+        name: Format check
+        run: cargo fmt -p ${{ matrix.unit.pkg }} --check
+
+      - if: ${{ matrix.unit.lang == 'rust' }}
+        name: Clippy
+        run: cargo clippy -p ${{ matrix.unit.pkg }} --all-targets --all-features -- -D warnings
+
+      - if: ${{ matrix.unit.lang == 'rust' }}
+        name: Build
+        run: cargo build -p ${{ matrix.unit.pkg }} --all-targets
+
+      - if: ${{ matrix.unit.lang == 'rust' }}
+        name: Test
+        run: cargo test -p ${{ matrix.unit.pkg }}
