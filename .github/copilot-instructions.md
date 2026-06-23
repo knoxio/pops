@@ -54,7 +54,7 @@ Do not soften or hedge. Do not say "you might want to consider" or "this is just
 - `docs/roadmap.md` must reflect the current state of any phase or PRD that changed.
 - API changes must update or maintain the OpenAPI spec. Run `pnpm openapi:validate`.
 - Schema changes must have a Drizzle migration generated via `mise drizzle:generate`.
-- Any behavior documented in `AGENTS.md`, `CONVENTIONS.md`, or `docs/CLAUDE.md` that changes must be updated in those files too.
+- Any behavior documented in `AGENTS.md` or `docs/CLAUDE.md` that changes must be updated in those files too.
 - Design system changes must be reflected in `.impeccable.md` if applicable.
 
 **2. Implementation gaps — no partial work**
@@ -77,9 +77,8 @@ Do not soften or hedge. Do not say "you might want to consider" or "this is just
 - Every ts-rest route input must have a Zod schema. Every response must be typed.
 - No implicit `any` from missing type annotations on function parameters.
 
-**5. Conventions (from `CONVENTIONS.md`)**
+**5. Conventions (from `AGENTS.md` → "Coding Conventions")**
 
-- API modules: `router.ts` + `service.ts` + `types.ts` + `index.ts`. Business logic lives in `service.ts` only.
 - Frontend: one route = one page. Page components use shell + sections + hooks pattern for complex UIs.
 - Styling: Tailwind only. No arbitrary values without a design token reason. Use `app-accent` for domain color. No `style={{}}` except for dynamic runtime values (e.g., progress bar widths computed at runtime); `w-[var(--radix-*)]` bindings are also permitted.
 - Components: all new UI components must have a Storybook story.
@@ -118,7 +117,7 @@ Do not batch small issues into a single comment. File a separate review comment 
 | Purpose | Path |
 |---|---|
 | Agent guidance (primary) | `AGENTS.md` |
-| Coding conventions | `CONVENTIONS.md` |
+| Coding conventions | `AGENTS.md` → "Coding Conventions" |
 | Design system | `.impeccable.md` |
 | Documentation standards | `docs/CLAUDE.md` |
 | Roadmap & phase tracker | `docs/roadmap.md` |

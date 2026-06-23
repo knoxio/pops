@@ -440,11 +440,67 @@ The chain: **gap discovered → issue filed → issue linked in PR description �
 
 ## Rules and Standards
 
-See `CONVENTIONS.md` for coding conventions (styling, API patterns, component rules, data patterns, testing).
-
 - Keep files small, modular and reusable.
 - Aim for small, well named and well structured code.
 - REuse reuse reuse. DRY principles!
+
+### Coding Conventions
+
+Every PR follows these. If a convention is wrong, change this section first — don't silently deviate.
+
+#### Styling
+
+- **Tailwind only** — no CSS modules, no styled-components, no inline `style={{}}` except dynamic runtime values (progress bar widths).
+- **Design tokens** — all colours reference CSS variables via Tailwind (`bg-background`, `text-foreground`, `bg-primary`). No hardcoded hex/rgb/oklch in components.
+- **Semantic status colours** — `text-destructive` not `text-red-500`, `text-success` not `text-green-600`. Status tokens: `destructive`, `success`, `warning`, `info`.
+- **App accent** — components use `bg-app-accent` / `text-app-accent`, never `bg-indigo-600` or `bg-emerald-500`. The shell sets `--app-accent` per active app.
+- **No arbitrary values** — no `w-[180px]` or `text-[10px]`. Use Tailwind scale values. If no match exists, add a token to `@theme` in `globals.css`.
+- **Exception** — `w-[var(--radix-*)]` bindings are permitted (runtime-computed).
+- **JS colour constants** — canvas/chart code imports from `@pops/ui/theme` token objects, not hardcoded hex strings.
+
+#### Frontend feature apps
+
+Each domain feature app registers with the shell via `navConfig` and is organised pages-first:
+
+- **Pages** are route-level components. One page = one route. Pages compose components.
+- **Components** are reusable within the app. Cross-app components go in `@pops/ui`.
+- **Page headers** — drill-down pages use the shared `PageHeader` pattern (back button + breadcrumbs). No inline `h1` styling.
+- **View toggles** — table/grid toggles use `ViewToggleGroup` from `@pops/ui`. Preference persisted in `localStorage`.
+
+For anything non-trivial (multiple queries/mutations, complex UI state, many subsections), use the **page shell + sections + hooks** pattern:
+
+```
+pages/
+  SomePage.tsx                # route params + layout + wiring only
+  some-page/
+    useSomePageModel.ts       # derived state + query/mutation wiring
+    sections/
+      SummarySection.tsx      # presentational section(s) + local UI state
+      DetailsSection.tsx
+```
+
+- **`Page.tsx` (the shell)**: read route params, own top-level layout, call `usePageModel()`, pass stable props down. Avoid building large derived objects inline.
+- **`usePageModel()`**: owns data fetching, mutation calls, derived state, and "domain view model" mapping (formatting, grouping, sorting).
+- **`sections/` components**: mostly presentational; allow local UI state (tabs, expanded rows, dialogs) but avoid firing network calls directly unless intentionally isolated.
+- **Avoid prop drilling**: if a section needs many props, move mapping into `usePageModel()` or split the section further.
+
+#### Component library (`@pops/ui`)
+
+- Primitives wrap Shadcn/Radix. Composites combine primitives.
+- All components consume design tokens — no hardcoded colours or spacing.
+- Every exported component needs a Storybook story.
+- Icons are Lucide only. Icon-only buttons must have `aria-label`.
+
+(See also the "UI Component Rule: Search Before You Build" section above — reuse before you build.)
+
+#### Data patterns
+
+- **No raw SQL in new code** — all access through Drizzle ORM. Parameterized queries only.
+- **Integer PKs** for domain tables. **TEXT UUIDs** for cross-domain FKs (finance transactions, entities).
+- **Timestamps** — `createdAt`/`updatedAt` as ISO 8601 TEXT columns.
+- **JSON columns** — stored as TEXT, parsed on read (e.g. tags, genres).
+- **Env vars** — read via `getEnv()`, which reads the Docker secret first and falls back to `process.env`.
+- Schema changes go through Drizzle per pillar — see "Production → Schema changes go through Drizzle" above for the generate/review/migrate flow.
 
 ### Agent automation (overrides default ask-before-commit behavior)
 
