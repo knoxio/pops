@@ -10,6 +10,25 @@ name: Discover Units
 # (libs/sdk publishes @pops/pillar-sdk; the dir-name != pkg-name skew is
 # LOCKED — selecting on the basename silently matches zero packages).
 #
+# SCOPE — `maxdepth 1` is deliberate, NOT an oversight. The nested
+# `pillars/*/app` frontend members (real pnpm workspace members per
+# `pnpm-workspace.yaml` `pillars/*/*`, npm name `@pops/app-<id>`) live at
+# maxdepth 2 and collide on basename `app`, so they are intentionally OUT of
+# this discovery and OUT of `unit-quality.yml`'s matrix. They are routed to
+# the FE workflows instead, with NO double-coverage:
+#   - ALL `@pops/app-*` are static deps of `@pops/shell` (see its
+#     package.json + `pillars/shell/src/app/bundle-map.tsx`), so
+#     `fe-quality.yml`'s shell typecheck + build compile every app's source
+#     transitively. `bundle-map-coverage` (RD-10) asserts every app appears in
+#     that map, which is what makes "the shell build reaches every app"
+#     provable rather than assumed.
+#   - `@pops/app-ai` additionally runs its own `typecheck` + `test` in
+#     `ai-quality.yml` (the only app with a dedicated unit job today).
+# The `assert-app-coverage` job below turns this from a comment into a gate:
+# it enumerates the `pillars/*/app` members on disk and FAILS if any one is
+# not routed to a covering FE workflow — so a newly added pillar app whose
+# coverage was forgotten breaks discovery loudly instead of shipping untested.
+#
 # Outputs:
 #   units   — every discovered unit (full list)
 #   changed — units touched by this PR's diff, OR all units when a shared
@@ -88,3 +107,48 @@ jobs:
             echo "$changed" | jq .
             echo "changed=$changed" >> "$GITHUB_OUTPUT"
           fi
+
+  assert-app-coverage:
+    # Proves the maxdepth-1 scope above leaves NO `pillars/*/app` member
+    # uncovered. Each such member (npm name `@pops/app-<id>`) is excluded from
+    # the unit matrix by design; this job fails loud if any one is not routed
+    # to a covering FE workflow, so "every unit is covered" is a gate, not a
+    # hope. Pure disk + workflow-file reads — no install.
+    name: Assert pillars/*/app are routed to FE workflows
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Every pillars/*/app is named @pops/app-* and covered by fe-quality
+        run: |
+          set -euo pipefail
+
+          fe=.github/workflows/fe-quality.yml
+          [ -f "$fe" ] || { echo "::error::$fe missing — pillars/*/app lose their build coverage"; exit 1; }
+
+          # fe-quality's shell typecheck + build compile every @pops/app-* via
+          # the shell's static deps; this glob is what fires that build on any
+          # app change. If it is ever dropped, app changes ship untested.
+          grep -qE '^\s*-\s*["'\'']?pillars/\*/app/\*\*' "$fe" \
+            || { echo "::error::$fe no longer triggers on 'pillars/*/app/**' — app build coverage lost"; exit 1; }
+
+          missing=0
+          while IFS= read -r appdir; do
+            [ -f "$appdir/package.json" ] || continue
+            pkg=$(jq -r '.name' "$appdir/package.json")
+            case "$pkg" in
+              @pops/app-*) : ;;
+              *) echo "::error::$appdir is a nested workspace member named '$pkg' (expected @pops/app-*); unit-discovery does not see maxdepth-2 members — give it explicit coverage or fix the name"; missing=1; continue ;;
+            esac
+            id=${pkg#@pops/app-}
+            # app-ai also gets a dedicated unit job (typecheck+test). The rest
+            # rely on fe-quality's shell build (asserted above) + RD-10
+            # bundle-map coverage. Either path is acceptable coverage.
+            if [ -f ".github/workflows/${id}-quality.yml" ]; then
+              echo "$pkg -> ${id}-quality.yml (dedicated) + fe-quality (shell build)"
+            else
+              echo "$pkg -> fe-quality (shell build)"
+            fi
+          done < <(find pillars -mindepth 2 -maxdepth 2 -type d -name app | sort)
+
+          [ "$missing" = 0 ] || { echo "::error::one or more pillars/*/app members are uncovered"; exit 1; }
+          echo "All pillars/*/app members are routed to a covering FE workflow."

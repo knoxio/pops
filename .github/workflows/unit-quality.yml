@@ -7,6 +7,11 @@ name: Unit Quality
 #   - moltbot (manifest-less) — its own config gate
 #   - the module-registry generated.ts drift gate — registry-generated-quality.yml
 #
+# The `pillars/*/app` exclusion is not just assumed — `_discover-units.yml`'s
+# `assert-app-coverage` job enumerates those members and FAILS if any one is
+# not routed to a covering FE workflow, so "discovery covers every unit" is a
+# gate, not a hope.
+#
 # The unit list + changed-set come from `_discover-units.yml`. Each lane is
 # selected by `matrix.unit.lang`; the per-unit `mise.toml` pins the toolchain
 # so the steps are uniform regardless of unit. jdx/mise-action@v2 is the sole

@@ -103,7 +103,12 @@ jobs:
       # boilerplate is identical across every consumer by construction —
       # counting it as duplication penalises codegen, not authored code,
       # the same reason `**/generated.ts` is already ignored.
-      - run: npx jscpd@^4 --threshold 5 --min-lines 8 --min-tokens 70 --ignore "**/*.test.{ts,tsx},**/*.spec.{ts,tsx},**/dist/**,**/node_modules/**,**/*.snap,**/*.d.ts,**/generated.ts,**/src/*-api/**,**/db/schema.ts,**/db/seeder.ts" --reporters "console" --exitCode 0 .
+      # Fails when TOTAL duplication exceeds `--threshold` (jscpd v4 gates on
+      # the aggregate, not per-format). Current tree sits at 2.33% total
+      # (measured 2026-06-23 with these exact flags), so threshold 5 is a real
+      # gate that is green now with headroom. NO `--exitCode 0` override — that
+      # would pin the exit to 0 and make this required check unable to fail.
+      - run: npx jscpd@^4 --threshold 5 --min-lines 8 --min-tokens 70 --ignore "**/*.test.{ts,tsx},**/*.spec.{ts,tsx},**/dist/**,**/node_modules/**,**/*.snap,**/*.d.ts,**/generated.ts,**/src/*-api/**,**/db/schema.ts,**/db/seeder.ts" --reporters "console" .
 
   # --- Extractability fast gates (EX-1 / EX-3) -------------------------------
   # NON-REQUIRED by design: these jobs are deliberately kept out of the branch
