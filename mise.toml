@@ -74,8 +74,13 @@ description = "Run every unit's coverage suite (fan-out)"
 run = "mise run run-all test:coverage"
 
 [tasks.typecheck]
-description = "Typecheck the compiled graph (tsc -b --noEmit) then fan out to source units"
-run = "tsc -b tsconfig.build.json --noEmit && mise run run-all typecheck"
+description = "Build-check the compiled graph (tsc -b) then fan out to source units"
+# `tsc -b` (not `--noEmit`): on a composite project graph, `tsc -b --noEmit`
+# errors TS6310 ("referenced project may not disable emit") on a COLD graph
+# (no .tsbuildinfo) — it only passed when the graph was already built. `tsc -b`
+# type-checks during the (incremental) build and is cold-safe; emitted dist is
+# gitignored. This is what makes the pre-push hook pass on fresh clones/worktrees.
+run = "tsc -b tsconfig.build.json && mise run run-all typecheck"
 
 [tasks.dev]
 description = "Build compiled-lib deps once, then start every unit's watcher in parallel"
