@@ -84,12 +84,14 @@ jobs:
       #     (config: deny.toml at repo root).
       #   - check-cargo-deps.mjs: a lib crate must not depend on a pillar crate,
       #     and no pillar may depend on another pillar (RUST-2a/2b).
-      # `--locked` keeps the cargo-deny install reproducible; the binary is
-      # cached in ~/.cargo/bin across runs, so the `cargo install` is a no-op
-      # after first build. NON-required — additive gate, the ruleset is untouched.
+      # `--locked` keeps the cargo-deny install reproducible. The binary is
+      # cached in ~/.cargo/bin across runs, so guard the install with `command
+      # -v`: a bare `cargo install` over an already-present binary ERRORS
+      # ("already exists in destination") rather than no-op'ing, so a cache-warm
+      # run would fail this step. NON-required — additive gate, ruleset untouched.
       - name: Boundaries + supply chain
         run: |
-          cargo install cargo-deny --locked
+          command -v cargo-deny >/dev/null 2>&1 || cargo install cargo-deny --locked
           cargo deny check
           node scripts/extractability/check-cargo-deps.mjs --self-test
           node scripts/extractability/check-cargo-deps.mjs
