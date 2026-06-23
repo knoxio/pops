@@ -13,6 +13,7 @@
     "lint:boundaries:baseline": "depcruise --config .dependency-cruiser.cjs --output-type baseline --output-to .dependency-cruiser-known-violations.json pillars/ai/app/src pillars/cerebrum/app/src pillars/finance/app/src pillars/food/app/src pillars/inventory/app/src pillars/lists/app/src pillars/media/app/src",
     "format": "oxfmt --write .",
     "format:check": "oxfmt --check .",
+    "exports:check": "node scripts/check-exports.mjs",
     "ci:fix": "pnpm lint:fix && pnpm format && pnpm typecheck",
     "registry:build": "pnpm --filter @pops/module-registry registry:build",
     "prepare": "husky"
