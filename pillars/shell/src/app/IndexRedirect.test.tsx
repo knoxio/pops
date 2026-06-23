@@ -16,9 +16,39 @@ import { resolveBootRegistry } from './boot-snapshot';
 import { BootRegistryProvider } from './BootRegistryProvider';
 import { IndexRedirect } from './IndexRedirect';
 
+import type { PillarSnapshot } from '@pops/pillar-sdk';
+
 // Empty snapshot → the static bundle-map floor, so `registeredApps` carries
 // the in-repo pillars in nav.order — the ordering the redirect tests assert.
 const STATIC_FLOOR = resolveBootRegistry([]);
+
+function snapshotEntry(pillarId: string): PillarSnapshot {
+  return {
+    pillarId,
+    baseUrl: `http://${pillarId}-api:3001`,
+    manifest: {
+      pillar: pillarId,
+      version: '1.0.0',
+      contract: {
+        package: `@pops/${pillarId}`,
+        version: '1.0.0',
+        tag: `contract-${pillarId}@v1.0.0`,
+      },
+      routes: { queries: [], mutations: [], subscriptions: [] },
+      search: { adapters: [] },
+      ai: { tools: [] },
+      uri: { types: [] },
+      consumedSettings: { keys: [] },
+      healthcheck: { path: '/health' },
+    },
+    registered: true,
+    lastSeenAt: new Date(0),
+  };
+}
+
+// A live registry where finance is NOT registered: the rail's first live app
+// is `media`. The redirect must land there, NOT on a `/finance` literal.
+const FINANCE_LESS = resolveBootRegistry([snapshotEntry('media'), snapshotEntry('inventory')]);
 
 function LocationProbe() {
   const { pathname } = useLocation();
@@ -33,14 +63,17 @@ function LocationProbe() {
  * Without priming, the optimistic `/finance` fallback wins, which is the real
  * cold-start behaviour.
  */
-function renderAt(primed?: { apps: string[] }): void {
+function renderAt(
+  primed?: { apps: string[] },
+  bootRegistry: typeof STATIC_FLOOR = STATIC_FLOOR
+): void {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   if (primed) {
     client.setQueryData(['core', 'shell', 'manifest'], { apps: primed.apps, overlays: [] });
   }
   render(
     <QueryClientProvider client={client}>
-      <BootRegistryProvider value={STATIC_FLOOR}>
+      <BootRegistryProvider value={bootRegistry}>
         <MemoryRouter initialEntries={['/']}>
           <Routes>
             <Route path="/" element={<IndexRedirect />} />
@@ -89,5 +122,19 @@ describe('IndexRedirect', () => {
   it('redirects to /settings when no registered app is installed', () => {
     renderAt({ apps: ['unknown'] });
     expect(screen.getByTestId('landed')).toHaveTextContent('/settings');
+  });
+
+  it('falls back to the first LIVE app (not a /finance literal) when finance is unregistered', () => {
+    // Cold start (manifest unloaded) against a finance-less registry: the
+    // optimistic target must be the first live rail app (media), not /finance —
+    // navigating to an unmounted /finance would flash NotInstalledPage.
+    mocks.manifest.mockReturnValue(new Promise(() => undefined));
+    renderAt(undefined, FINANCE_LESS);
+    expect(screen.getByTestId('landed')).toHaveTextContent('/media');
+  });
+
+  it('picks the first live app present in the manifest on a finance-less registry', () => {
+    renderAt({ apps: ['inventory', 'media'] }, FINANCE_LESS);
+    expect(screen.getByTestId('landed')).toHaveTextContent('/media');
   });
 });

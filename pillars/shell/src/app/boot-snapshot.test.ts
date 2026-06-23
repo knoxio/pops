@@ -115,6 +115,98 @@ describe('resolveBootRegistry — registry-driven (snapshot non-empty)', () => {
     expect(Array.isArray(weather?.frontend?.routes)).toBe(true);
     expect(result.registeredApps.map((a) => a.id)).toContain('weather');
   });
+
+  // M2(a): the registry-driven branch is THIS PR's whole purpose, yet no
+  // rendered/e2e test exercises it (every e2e silently falls through to the
+  // floor — see the PR body). This focused unit pins the live-mount path
+  // non-blank: a non-empty snapshot with 1 in-repo pillar (bundle-map hit) and
+  // 1 external pillar (assetsBaseUrl) must yield source='registry' with BOTH a
+  // non-empty router manifest set (including the synthesized external route)
+  // and a non-empty app rail. A regression that breaks only the live mount —
+  // invisible to the floor-only e2e — fails here.
+  it('drives the live registry branch to a non-blank surface (in-repo + external)', () => {
+    const result = resolveBootRegistry(
+      [snapshotEntry('finance'), externalSnapshotEntry()],
+      inertImporter
+    );
+
+    expect(result.source).toBe('registry');
+
+    // Router-facing set: non-empty, both pillars present, external route synthesized.
+    expect(result.manifests.length).toBeGreaterThan(0);
+    expect(result.manifests.map((m) => m.id).toSorted()).toEqual(['finance', 'weather']);
+    const external = result.manifests.find((m) => m.id === 'weather');
+    expect(external?.surfaces).toContain('app');
+    const externalRoutes = external?.frontend?.routes;
+    expect(Array.isArray(externalRoutes)).toBe(true);
+    if (Array.isArray(externalRoutes)) {
+      expect(externalRoutes.length).toBeGreaterThan(0);
+    }
+
+    // App rail: non-empty, both pillars present.
+    expect(result.registeredApps.length).toBeGreaterThan(0);
+    expect(result.registeredApps.map((a) => a.id)).toEqual(
+      expect.arrayContaining(['finance', 'weather'])
+    );
+  });
+});
+
+describe('resolveBootRegistry — never-brick on a zero-UI live snapshot', () => {
+  // M1 (never-brick hole): a NON-EMPTY snapshot whose pillars are all
+  // backend-only — no bundle-map hit, no assetsBaseUrl — is the live state
+  // mid-deploy on a host restart, before the app pillars have re-registered
+  // (only `registry` / `orchestrator` are up). `snapshot.length > 0` is true,
+  // but the snapshot resolves to zero mountable UI. Treating that as
+  // "registry is the source of truth" would mount an app-less shell (manifests
+  // = [], registeredApps = []) — exactly the brick the resilience contract
+  // forbids, reachable on a real capivara restart. The resolver must fall back
+  // to the static floor instead.
+  const BACKEND_ONLY_SNAPSHOT = [snapshotEntry('registry'), snapshotEntry('orchestrator')];
+
+  it('falls back to the static floor (source) when a live snapshot resolves to zero mountable UI', () => {
+    const result = resolveBootRegistry(BACKEND_ONLY_SNAPSHOT);
+    expect(result.source).toBe('static-floor');
+  });
+
+  it('mounts the FULL in-repo rail (not an app-less shell) on the zero-UI fallback', () => {
+    const result = resolveBootRegistry(BACKEND_ONLY_SNAPSHOT);
+
+    // The router-facing app set must equal the floor's app-routed pillars
+    // exactly — a blank shell would surface as []. This is the literal
+    // never-brick guarantee under the precise hole M1 closes.
+    const floorAppIds = IN_REPO_IDS.filter((id) => {
+      const m = WORKSPACE_BUNDLE_MAP[id]?.manifest;
+      return m?.surfaces.includes('app') === true && Array.isArray(m.frontend?.routes);
+    }).toSorted();
+    const mountedAppIds = filterAppManifests(result.manifests)
+      .map((m) => m.id)
+      .toSorted();
+    expect(mountedAppIds).toEqual(floorAppIds);
+    expect(mountedAppIds.length).toBeGreaterThan(0);
+
+    // And the app rail is the full in-repo floor, in nav.order — never blank.
+    expect(result.registeredApps.map((a) => a.id)).toEqual([
+      'finance',
+      'media',
+      'inventory',
+      'food',
+      'lists',
+      'cerebrum',
+      'ai',
+    ]);
+
+    // The result must be byte-identical to the empty-snapshot floor: the
+    // zero-UI live snapshot degrades EXACTLY as if the registry were down.
+    const emptyFloor = resolveBootRegistry([]);
+    expect(mountedAppIds).toEqual(
+      filterAppManifests(emptyFloor.manifests)
+        .map((m) => m.id)
+        .toSorted()
+    );
+    expect(result.registeredApps.map((a) => a.id)).toEqual(
+      emptyFloor.registeredApps.map((a) => a.id)
+    );
+  });
 });
 
 describe('resolveBootRegistry — never-brick fallback (snapshot empty)', () => {

@@ -12,13 +12,18 @@
  *
  * Resilience contract (never brick the shell):
  *
- *   - snapshot non-empty → the registry's `registered` entries ARE the install
- *     set. In-repo pillars resolve via the static bundle map; external pillars
- *     (advertising `assetsBaseUrl`) via the runtime loader; backend-only
- *     pillars are dropped — exactly `walkRegistry`'s existing decision tree.
- *   - snapshot empty / fetch failed / timed out → fall back to the static
- *     bundle-map floor (the in-repo pillars, i.e. the pre-P7-T03 behaviour).
- *     The shell MUST render its in-repo app set even with the registry down.
+ *   - snapshot non-empty AND it resolves to ≥1 mountable UI surface → the
+ *     registry's `registered` entries ARE the install set. In-repo pillars
+ *     resolve via the static bundle map; external pillars (advertising
+ *     `assetsBaseUrl`) via the runtime loader; backend-only pillars are
+ *     dropped — exactly `walkRegistry`'s existing decision tree.
+ *   - snapshot empty / fetch failed / timed out / resolves to ZERO mountable
+ *     UI → fall back to the static bundle-map floor (the in-repo pillars, i.e.
+ *     the pre-P7-T03 behaviour). The zero-UI case covers a live snapshot whose
+ *     pillars are all backend-only (e.g. only `registry`/`orchestrator`
+ *     registered mid-bring-up) — that must NOT mount an app-less shell. The
+ *     shell MUST render its in-repo app set even with the registry down or
+ *     mid-restart.
  *
  * The snapshot fetch itself soft-fails to `[]` (see `registry-snapshot-fetch`),
  * so an unreachable registry surfaces here as the empty-snapshot branch.
@@ -32,6 +37,7 @@ import { WORKSPACE_BUNDLE_MAP, type BundleEntry } from './bundle-map';
 import { synthesizeExternalBundleEntry, type RemoteModuleImporter } from './external-ui';
 import {
   bootEntries,
+  ExternalUiLoadError,
   staticFloorEntries,
   walkRegistry,
   type FrontendManifest,
@@ -67,6 +73,12 @@ export interface BootRegistry {
  * so the rail orders both kinds through the single
  * `buildRegisteredAppsFromBundleMap` projection. Entries with no resolvable
  * UI surface contribute no rail entry.
+ *
+ * Synthesis is wrapped in the same `try/catch` the router-side
+ * `resolveExternalManifest` uses (`installed-modules.ts`): a structurally
+ * broken external descriptor logs once and is skipped on the rail path too,
+ * so the two walks stay symmetric and a bad descriptor can never throw out of
+ * boot resolution via the rail.
  */
 function railBundleMap(
   entries: readonly RegistryEntry[],
@@ -80,24 +92,62 @@ function railBundleMap(
       continue;
     }
     if (entry.assetsBaseUrl === undefined) continue;
-    const synthesized = synthesizeExternalBundleEntry(
-      {
-        pillarId: entry.pillarId,
-        assetsBaseUrl: entry.assetsBaseUrl,
-        nav: entry.nav,
-        pages: entry.pages,
-      },
-      importer
-    );
-    if (synthesized !== null) out[entry.pillarId] = synthesized;
+    try {
+      const synthesized = synthesizeExternalBundleEntry(
+        {
+          pillarId: entry.pillarId,
+          assetsBaseUrl: entry.assetsBaseUrl,
+          nav: entry.nav,
+          pages: entry.pages,
+        },
+        importer
+      );
+      if (synthesized !== null) out[entry.pillarId] = synthesized;
+    } catch (cause) {
+      const err = new ExternalUiLoadError(entry.pillarId, entry.assetsBaseUrl, cause);
+      console.warn(`[boot-snapshot] ${err.message}`, cause);
+    }
   }
   return out;
 }
 
 /**
- * Resolve a registry snapshot into the boot install set. A non-empty snapshot
- * is the source of truth; an empty one falls back to the static bundle-map
- * floor (the never-brick guarantee).
+ * The router manifests + app-rail nav an entry list resolves to. The two
+ * always travel together (the router and the rail must agree on the mounted
+ * set), so the resolver computes them in one pass and the never-brick check
+ * inspects both before deciding whether a snapshot yielded any UI.
+ */
+interface ResolvedSurface {
+  readonly manifests: readonly FrontendManifest[];
+  readonly registeredApps: readonly AppNavConfig[];
+}
+
+function resolveSurface(
+  entries: readonly RegistryEntry[],
+  importer?: RemoteModuleImporter
+): ResolvedSurface {
+  return {
+    manifests: walkRegistry(entries, WORKSPACE_BUNDLE_MAP, importer),
+    registeredApps: buildRegisteredAppsFromBundleMap(railBundleMap(entries, importer)),
+  };
+}
+
+/**
+ * Resolve a registry snapshot into the boot install set.
+ *
+ * A non-empty snapshot is normally the source of truth: its `registered`
+ * pillars ARE the install set (in-repo via the bundle map, external via the
+ * runtime loader). An empty snapshot — or one that resolves to zero mountable
+ * UI — falls back to the static bundle-map floor (the never-brick guarantee).
+ *
+ * The zero-UI fallback closes a real hole: a non-empty snapshot whose pillars
+ * are all backend-only (no bundle-map hit, no `assetsBaseUrl`) — e.g. only
+ * `registry` / `orchestrator` registered mid-bring-up, before the app pillars
+ * have re-registered after a host restart — resolves to no manifests and no
+ * rail entries. Treating that as "the registry is the source of truth" would
+ * mount an app-less shell, which the resilience contract forbids. So when a
+ * live snapshot resolves to an empty surface we degrade to the floor exactly
+ * as if the registry were unreachable.
  *
  * `importer` is injectable so tests exercise the external-pillar path without
  * a network round-trip; production omits it and the runtime loader uses the
@@ -107,15 +157,17 @@ export function resolveBootRegistry(
   snapshot: readonly PillarSnapshot[],
   importer?: RemoteModuleImporter
 ): BootRegistry {
-  const useRegistry = snapshot.length > 0;
-  const entries = useRegistry ? bootEntries(snapshot) : staticFloorEntries();
-  const manifests = walkRegistry(entries, WORKSPACE_BUNDLE_MAP, importer);
-  const registeredApps = buildRegisteredAppsFromBundleMap(railBundleMap(entries, importer));
-  return {
-    manifests,
-    registeredApps,
-    source: useRegistry ? 'registry' : 'static-floor',
-  };
+  const registryEntries = snapshot.length > 0 ? bootEntries(snapshot) : null;
+
+  if (registryEntries !== null) {
+    const surface = resolveSurface(registryEntries, importer);
+    if (surface.manifests.length > 0 || surface.registeredApps.length > 0) {
+      return { ...surface, source: 'registry' };
+    }
+  }
+
+  const floor = resolveSurface(staticFloorEntries(), importer);
+  return { ...floor, source: 'static-floor' };
 }
 
 /**

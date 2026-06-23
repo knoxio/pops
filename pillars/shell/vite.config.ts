@@ -72,6 +72,19 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (urlPath: string) => urlPath.replace(/^\/core-api/, ''),
       },
+      // Boot install-set resolver (P7-T03 / RD-3): the shell fetches the full
+      // registry snapshot from `GET /registry-api/registry/pillars` before
+      // first render. The canonical nginx route is `/registry-api/...`; in
+      // dev it shares the registry pillar's upstream with `/core-api` (the
+      // pillar formerly named `core`, port 3001). Strip the prefix so the
+      // registry router sees its natural `/registry/pillars`. Without this
+      // proxy the dev boot fetch 404s and the shell silently falls through to
+      // the static floor — masking the registry-driven branch in dev.
+      '/registry-api': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+        rewrite: (urlPath: string) => urlPath.replace(/^\/registry-api/, ''),
+      },
       '/lists-api': {
         target: 'http://localhost:3006',
         changeOrigin: true,
