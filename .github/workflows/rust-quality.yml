@@ -19,17 +19,21 @@ on:
     paths:
       - "Cargo.toml"
       - "Cargo.lock"
+      - "deny.toml"
       - "libs/pops-ai/**"
       - "libs/pops-settings/**"
       - "pillars/contacts/**"
+      - "scripts/extractability/**"
       - ".github/workflows/rust-quality.yml"
   pull_request:
     paths:
       - "Cargo.toml"
       - "Cargo.lock"
+      - "deny.toml"
       - "libs/pops-ai/**"
       - "libs/pops-settings/**"
       - "pillars/contacts/**"
+      - "scripts/extractability/**"
       - ".github/workflows/rust-quality.yml"
 
 concurrency:
@@ -50,13 +54,20 @@ jobs:
           rustc --version
           cargo --version
 
-      - name: Cache cargo registry + workspace target
+      # Node powers the crate-boundary guard (scripts/extractability/
+      # check-cargo-deps.mjs). Pinned to 22 to match the TS lanes.
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+
+      - name: Cache cargo registry + workspace target + installed tools
         uses: actions/cache@v5
         with:
           path: |
             ~/.cargo/registry/index
             ~/.cargo/registry/cache
             ~/.cargo/git/db
+            ~/.cargo/bin
             target
           key: cargo-${{ runner.os }}-${{ hashFiles('Cargo.toml', 'Cargo.lock', 'pillars/contacts/Cargo.toml') }}
           restore-keys: |
@@ -67,6 +78,21 @@ jobs:
 
       - name: Clippy (deny warnings)
         run: cargo clippy --all-targets --all-features -- -D warnings
+
+      # Crate-boundary + supply-chain gate (federation isolation, P6-T04):
+      #   - cargo deny: licence / advisory / source policy over the whole graph
+      #     (config: deny.toml at repo root).
+      #   - check-cargo-deps.mjs: a lib crate must not depend on a pillar crate,
+      #     and no pillar may depend on another pillar (RUST-2a/2b).
+      # `--locked` keeps the cargo-deny install reproducible; the binary is
+      # cached in ~/.cargo/bin across runs, so the `cargo install` is a no-op
+      # after first build. NON-required — additive gate, the ruleset is untouched.
+      - name: Boundaries + supply chain
+        run: |
+          cargo install cargo-deny --locked
+          cargo deny check
+          node scripts/extractability/check-cargo-deps.mjs --self-test
+          node scripts/extractability/check-cargo-deps.mjs
 
       - name: Build
         run: cargo build --all-targets
