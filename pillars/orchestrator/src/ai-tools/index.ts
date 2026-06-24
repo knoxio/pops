@@ -1,14 +1,14 @@
 /**
- * Orchestrator AI-tool registry handler (precursor C2 / epic 07).
+ * Orchestrator AI-tool registry handler. See
+ * `pillars/orchestrator/docs/prds/ai-tool-registry`.
  *
- * Epic 07's deliverable: the orchestrator HOSTS the aggregated AI-tool
- * registry. The aggregation itself already lives in the SDK —
- * `@pops/pillar-sdk`'s `buildToolList()` (PRD-201) pulls the current
- * registry snapshot from the shared discovery cache (PRD-159), projects
- * each registered pillar's `manifest.ai.tools` slot (PRD-200) into a flat
- * list, and drops pillars that aren't healthy. This module wires that
- * aggregation onto an HTTP surface and nothing more — it deliberately does
- * not reimplement the projection.
+ * The orchestrator hosts the aggregated AI-tool registry; the aggregation
+ * itself lives in the SDK. `@pops/pillar-sdk`'s `buildToolList()` pulls the
+ * current registry snapshot from the shared discovery cache, projects each
+ * registered pillar's `manifest.ai.tools` slot into a flat list, and drops
+ * pillars that aren't healthy. This module wires that aggregation onto an
+ * HTTP surface and nothing more — it deliberately does not reimplement the
+ * projection.
  *
  * Registry source: `buildToolList` reads the in-process discovery cache
  * (the same central registry the orchestrator registers itself with via
@@ -20,10 +20,8 @@
  *
  * Best-effort: a registry read failure (e.g. `RegistryUnreachableError`
  * on a cold, empty cache) degrades to `{ tools: [] }` rather than a 500.
- * An empty list is also the correct STEADY-STATE result today: no pillar
- * ships PRD-200 `ai.tools` descriptors yet, so the projection is empty
- * until they adopt them. The value delivered now is that the registry is
- * hosted and ready — tools appear as pillars declare them.
+ * An empty list is also a valid steady state: a pillar that ships no
+ * `ai.tools` descriptors contributes nothing to the projection.
  */
 import { buildToolList as sdkBuildToolList, type Tool } from '@pops/pillar-sdk';
 

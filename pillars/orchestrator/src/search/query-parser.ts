@@ -1,11 +1,6 @@
 /**
  * Structured query parser — extracts typed filter tokens from search input.
  *
- * Relocated verbatim from the monolith engine
- * (`apps/pops-api/src/modules/core/search/query-parser.ts`) so the
- * orchestrator parses the user's raw input the same way the in-process engine
- * did before federation.
- *
  * Supported filters:
  *   type:<value>     — entity/content type
  *   domain:<value>   — search domain
