@@ -7,15 +7,11 @@
  * JSON-encoded `string[]` — there is no SQL foreign key from `tags` to
  * `tag_vocabulary.tag` (the only schema-level FK is `entity_id` →
  * `entities.id`). The logical relationship to the vocabulary is enforced
- * at the application layer (see `preview.ts` in the in-tree consumer).
+ * at the application layer.
  *
- * The in-tree service at `apps/pops-api/src/modules/core/tag-rules/service.ts`
- * still uses `getDrizzle()`; this package version takes a `FinanceDb` handle
- * as its first argument so callers control the connection (and can pass a
- * transaction). PR 3 of phase 1 flips the router to call into here.
- *
- * Mirrors the wish-list and tag-vocabulary patterns: db-arg services, plain
- * functions, typed domain errors, no HTTP or tRPC concerns.
+ * Standard service pattern: db-arg services (callers control the connection
+ * and can pass a transaction), plain functions, typed domain errors, no HTTP
+ * concerns.
  */
 import { desc, eq } from 'drizzle-orm';
 
@@ -42,11 +38,9 @@ export interface CreateTransactionTagRuleInput {
 }
 
 /**
- * PATCH-style update. Mirrors the legacy in-tree `TagRuleUpdateSchema`
- * (`apps/pops-api/src/modules/core/tag-rules/types.ts`) which deliberately
- * omits `descriptionPattern` and `matchType` — those fields define the
- * rule's identity and are immutable post-create. To replace a pattern the
- * caller deletes the old rule and creates a new one.
+ * PATCH-style update. Deliberately omits `descriptionPattern` and `matchType` —
+ * those fields define the rule's identity and are immutable post-create. To
+ * replace a pattern the caller deletes the old rule and creates a new one.
  */
 export interface UpdateTransactionTagRuleInput {
   entityId?: string | null;
@@ -56,12 +50,7 @@ export interface UpdateTransactionTagRuleInput {
   priority?: number;
 }
 
-/**
- * List every rule, ordered by `(confidence DESC, times_applied DESC)`.
- *
- * Matches the legacy in-tree ordering so the cutover (PR 3) does not
- * change observed router behaviour.
- */
+/** List every rule, ordered by `(confidence DESC, times_applied DESC)`. */
 export function listTransactionTagRules(db: FinanceDb): TransactionTagRuleRow[] {
   return db
     .select()
@@ -80,9 +69,8 @@ export function getTransactionTagRule(db: FinanceDb, id: string): TransactionTag
 /**
  * Create a new tag rule. `tags` is JSON-encoded before insert.
  *
- * Defaults mirror the legacy in-tree `addTagRule` path: `confidence=0.95`,
- * `isActive=true`, `priority=0`, `timesApplied=0`. The generated `id` is a
- * UUID from drizzle's `$defaultFn`.
+ * Defaults: `confidence=0.95`, `isActive=true`, `priority=0`,
+ * `timesApplied=0`. The generated `id` is a UUID from drizzle's `$defaultFn`.
  */
 export function createTransactionTagRule(
   db: FinanceDb,
@@ -138,11 +126,7 @@ export function updateTransactionTagRule(
   return getTransactionTagRule(db, id);
 }
 
-/**
- * Soft-delete: flip `is_active` to `false`. Throws if the id is unknown.
- *
- * The legacy in-tree path uses this for the changeSet `disable` op.
- */
+/** Soft-delete: flip `is_active` to `false`. Throws if the id is unknown. */
 export function disableTransactionTagRule(db: FinanceDb, id: string): void {
   const result = db
     .update(transactionTagRules)

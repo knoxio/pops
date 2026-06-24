@@ -1,7 +1,5 @@
 /**
  * usePreviewEffects — manages combined and selected-op preview state.
- *
- * Extracted from CorrectionProposalDialog (tb-364).
  */
 import { useMutation } from '@tanstack/react-query';
 import { useCallback, useMemo, useState } from 'react';
@@ -36,7 +34,7 @@ export interface UsePreviewEffectsOptions {
   selectedOp: LocalOp | null;
   minConfidence: number;
   previewTransactions: Array<{ checksum?: string; description: string }>;
-  /** Optional: existing DB transactions to include in browse-mode preview (PRD-032 US-06). */
+  /** Optional: existing DB transactions to include in browse-mode preview. */
   dbTransactions?: Array<{ checksum?: string | null; description: string }>;
   pendingChangeSets: Array<{ changeSet: ServerChangeSet }>;
 }

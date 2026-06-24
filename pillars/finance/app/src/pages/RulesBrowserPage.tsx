@@ -6,8 +6,8 @@ import { Button, PageHeader } from '@pops/ui';
 import { RuleFormDialog } from './rules-browser/rule-form/RuleFormDialog';
 import { useRulePreview } from './rules-browser/rule-form/useRulePreview';
 /**
- * RulesBrowserPage — browse, filter, adjust, and delete AI categorisation rules.
- * PRD-053/US-02 (tb-542). #2187 adds manual create/edit + preview.
+ * Browse, filter, adjust, and delete AI categorisation rules, with manual
+ * create/edit and live preview.
  */
 import { DeleteRuleDialog } from './rules-browser/sections/DeleteRuleDialog';
 import { RulesErrorState } from './rules-browser/sections/RulesErrorState';

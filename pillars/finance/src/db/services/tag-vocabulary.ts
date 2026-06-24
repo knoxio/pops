@@ -6,13 +6,9 @@
  * returns the active tags; `upsertVocabularyTag` inserts a tag or reactivates
  * one that had been soft-deleted.
  *
- * The in-tree service at `apps/pops-api/src/modules/core/tag-rules/vocabulary.ts`
- * still uses `getDrizzle()`; this package version takes a `FinanceDb` handle as
- * its first argument. PR 3 of phase 1 flips the router to call into here.
- *
- * Mirrors the wish-list pattern: db-arg services, plain functions, no HTTP or
- * tRPC concerns. No typed errors are exported because neither function has a
- * not-found path — an empty vocabulary returns `[]` and upsert is idempotent.
+ * Standard service pattern: db-arg services, plain functions, no HTTP concerns.
+ * No typed errors are exported because neither function has a not-found path —
+ * an empty vocabulary returns `[]` and upsert is idempotent.
  */
 import { eq } from 'drizzle-orm';
 
@@ -29,10 +25,8 @@ export type TagVocabularySource = 'seed' | 'user';
 /**
  * Return the active vocabulary tags.
  *
- * No explicit ORDER BY — SQLite makes no ordering guarantee in that case,
- * which matches the legacy in-tree implementation. The router treats the
- * result as a set so order is not observable to clients, and preserving
- * the unordered shape keeps the cutover (PR 3) a pure routing flip.
+ * No explicit ORDER BY — SQLite makes no ordering guarantee in that case. The
+ * router treats the result as a set, so order is not observable to clients.
  */
 export function listVocabularyTags(db: FinanceDb): string[] {
   return db

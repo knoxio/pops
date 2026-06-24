@@ -1,14 +1,14 @@
 /**
  * REST contract for the finance pillar — ts-rest single source of truth.
  *
- * Composes the migrated domain sub-routers (wishlist, budgets,
- * transactions, tagRules, corrections, imports) into the public wire surface.
+ * Composes the domain sub-routers (wishlist, budgets, transactions, tagRules,
+ * corrections, imports) into the public wire surface.
  * `generateOpenApi(financeContract, …)` projects this to
  * `openapi/finance.openapi.json`; `openapi-typescript` then projects the
  * JSON to `src/contract/api-types.generated.ts`.
  *
- * Lego principle: this is the ONLY description of the finance wire format.
- * Don't hand-author OpenAPI or hand-author paths anywhere else.
+ * This is the ONLY description of the finance wire format. Don't hand-author
+ * OpenAPI or hand-author paths anywhere else.
  */
 import { initContract } from '@ts-rest/core';
 

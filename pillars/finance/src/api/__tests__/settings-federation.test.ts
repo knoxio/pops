@@ -1,6 +1,5 @@
 /**
- * Integration tests for finance's federated `/settings/*` surface
- * (settings-federation S2).
+ * Integration tests for finance's federated `/settings/*` surface.
  *
  * Boots the production `createFinanceApiApp` factory against a per-test temp
  * `finance.db` and drives the RU+reset surface over real HTTP via supertest:

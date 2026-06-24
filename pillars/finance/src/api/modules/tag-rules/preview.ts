@@ -1,11 +1,9 @@
 /**
  * Deterministic suggestion-impact preview for a tag-rule ChangeSet.
  *
- * Ported from `apps/pops-api/src/modules/core/tag-rules/preview.ts`, the
- * only change being the `FinanceDb` handle is passed in rather than reached
- * through `getFinanceDrizzle()`. Suggestion-only: rules never override
- * user-entered tags, and the computation reads nothing but the supplied
- * transactions plus the user vocabulary.
+ * Suggestion-only: rules never override user-entered tags, and the
+ * computation reads nothing but the supplied transactions plus the user
+ * vocabulary.
  */
 import { type FinanceDb, tagVocabularyService } from '../../../db/index.js';
 

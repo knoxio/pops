@@ -96,20 +96,19 @@ function buildSubmit(
 }
 
 /**
- * Hook owning the manual rule create/edit dialog form state (#2187).
+ * Hook owning the manual rule create/edit dialog form state.
  *
  * Mirrors `useEntitiesPage`:
- *   - `useForm` + `zodResolver` + `DEFAULT_RULE_FORM_VALUES`
+ *   - `useForm` + standard-schema resolver + `DEFAULT_RULE_FORM_VALUES`
  *   - `form.reset(...)` on edit so prefilled values land in `register`d
- *     inputs (the #2155 TextInput safety pattern relies on uncontrolled
- *     inputs whose value is rewritten via the ref).
- *   - boolean `isActive` is managed via Controller in the dialog (#2175).
+ *     inputs (the TextInput safety pattern relies on uncontrolled inputs
+ *     whose value is rewritten via the ref).
+ *   - boolean `isActive` is managed via Controller in the dialog.
  *
  * The dialog supports both create and edit, backed by the finance REST
  * `corrections.createOrUpdate` / `corrections.update` operations; the entity
  * picker reads the contacts `entities.list` over the generated contacts REST
- * client. Per PRD-244 Option A, `isSubmitting` aggregates the two mutation
- * `isPending` flags by hand.
+ * client. `isSubmitting` aggregates the two mutation `isPending` flags by hand.
  */
 export function useRuleFormState({ onClose }: UseRuleFormStateOptions) {
   const [editingRule, setEditingRule] = useState<Correction | null>(null);

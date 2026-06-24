@@ -1,8 +1,6 @@
 /**
- * PromptViewerPage — read-only display of AI prompt templates.
- *
- * Shows the current prompt templates used for transaction categorisation
- * and rule generation, with model attribution. PRD-053/US-04.
+ * Read-only view of the AI prompt templates used for transaction
+ * categorisation and rule generation, with model attribution.
  */
 import { PageHeader } from '@pops/ui';
 

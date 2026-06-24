@@ -1,16 +1,16 @@
 /**
- * One-shot deploy step: migrate core's `entities` into the contacts pillar
- * (PRD-163 N4). Reads the full core entity set over the pillar SDK and creates
+ * One-shot deploy step: migrate the registry pillar's `entities` into the
+ * contacts pillar. Reads the full entity set over the pillar SDK and creates
  * each contact create-or-fetch-by-name (idempotent — safe to re-run). Does NOT
  * run automatically; invoke explicitly:
  *
- *   POPS_REGISTRY_URL=http://core-api:3001 \
+ *   POPS_REGISTRY_URL=http://registry-api:3001 \
  *   POPS_INTERNAL_API_KEY=... \
  *   pnpm --filter @pops/finance exec tsx scripts/migrate-core-entities.ts
  *
- * Core keeps serving `/entities` during the transition, so the source stays
- * readable while contacts becomes authoritative. Exits non-zero on any hard
- * failure so a deploy pipeline can halt.
+ * The registry keeps serving `/entities` during the transition, so the source
+ * stays readable while contacts becomes authoritative. Exits non-zero on any
+ * hard failure so a deploy pipeline can halt.
  */
 import { isOk, pillar, type CallResult } from '@pops/pillar-sdk/server';
 

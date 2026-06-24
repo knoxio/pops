@@ -1,10 +1,9 @@
 /**
  * Import processing core — dedup + entity matching (pure read flow, no writes).
  *
- * Ported from the monolith `process-service.ts`, db-injected. Dedup routes
- * through the pillar's `importsService`; the entity-match maps are built from
- * the contact set fetched live from the contacts pillar per run (no mirror,
- * PRD-163 US-03); per-row classification through `process-transaction.ts`.
+ * Dedup routes through the pillar's `importsService`; the entity-match maps are
+ * built from the contact set fetched live from the contacts pillar per run (no
+ * mirror); per-row classification through `process-transaction.ts`.
  */
 import { type FinanceDb, importsService } from '../../../db/index.js';
 import { type ContactsClient } from '../../contacts/client.js';

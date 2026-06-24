@@ -1,11 +1,6 @@
 /**
  * Wish list CRUD against finance's SQLite via drizzle.
  *
- * The in-tree service in `apps/pops-api/src/modules/finance/wishlist/`
- * still uses `getDrizzle()`; this package version takes a `FinanceDb`
- * handle as its first argument. The cutover (PR 3 of phase 1) flips
- * pops-api to call into here.
- *
  * Follows the standard service pattern: db-arg services, typed domain
  * errors, no HTTP concerns.
  */
@@ -20,7 +15,7 @@ import type { FinanceDb } from './internal.js';
  * Wish list priority levels. Defined locally so the finance pillar package
  * does not need a workspace dependency on `@pops/db-types`, which would
  * create a literal cycle once db-types adds `@pops/finance-db` to its
- * re-export shim (PRD-245 US-03). The canonical contract-level constant
+ * re-export shim. The canonical contract-level constant
  * lives in `@pops/finance-contract`; `@pops/db-types/constants` re-exports
  * the same tuple for legacy callers.
  */

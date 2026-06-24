@@ -10,10 +10,6 @@ import type {
   PendingTagRuleChangeSet,
 } from '../store/importStore';
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
 function makePendingEntity(overrides: Partial<PendingEntity> = {}): PendingEntity {
   return {
     tempId: `temp:entity:${crypto.randomUUID()}`,
@@ -87,10 +83,6 @@ const sampleTagRuleChangeSet: TagRuleChangeSet = {
     },
   ],
 };
-
-// ---------------------------------------------------------------------------
-// Tests — PRD-030 US-09
-// ---------------------------------------------------------------------------
 
 describe('buildCommitPayload', () => {
   it('returns empty payload when no pending data', () => {

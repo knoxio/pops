@@ -19,7 +19,6 @@ export const transactionCorrections = sqliteTable(
       enum: ['purchase', 'transfer', 'income'],
     }),
     isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
-    // CHECK: confidence >= 0.0 AND confidence <= 1.0
     confidence: real('confidence').notNull().default(0.5),
     priority: integer('priority').notNull().default(0),
     timesApplied: integer('times_applied').notNull().default(0),
@@ -30,21 +29,8 @@ export const transactionCorrections = sqliteTable(
   },
   (table) => [
     index('idx_corrections_pattern').on(table.descriptionPattern),
-    // Note: SQL schema uses DESC sort order on these indexes;
-    // Drizzle's index().on() does not support sort direction
     index('idx_corrections_priority').on(table.priority),
     index('idx_corrections_confidence').on(table.confidence),
     index('idx_corrections_times_applied').on(table.timesApplied),
   ]
 );
-
-// Note: The SQL schema also defines a view:
-//   CREATE VIEW v_active_corrections AS
-//   SELECT * FROM transaction_corrections
-//   WHERE confidence >= 0.7
-//   ORDER BY confidence DESC, times_applied DESC;
-// Drizzle views require separate handling — not represented here.
-//
-// IMPORTANT (PRD-024): Runtime matching no longer uses this view's ordering.
-// Priority-aware matching (PRD-032) orders by priority ASC, id ASC.
-// The view is legacy — kept for ad-hoc queries but not used in application code.

@@ -3,19 +3,11 @@
  *
  * The `transaction_corrections` table stores learned patterns derived from
  * user-supplied corrections of imported transactions. Matching is a
- * priority-ordered scan over active rules — see PRD-024 and PRD-032 for
- * the runtime semantics this layer preserves.
+ * priority-ordered scan over active rules.
  *
- * The in-tree service at
- * `apps/pops-api/src/modules/core/corrections/handlers/query-helpers.ts`
- * (and its sibling `pattern-match.ts`) still uses `getDrizzle()`; this
- * package version takes a `FinanceDb` handle as its first argument. PR 3 of
- * phase 1 flips the in-tree call sites to call into here.
- *
- * Mirrors the wish-list pattern: db-arg services, plain functions, typed
- * domain errors, no HTTP or tRPC concerns. Higher-level orchestrations
- * (changesets, AI rewrites, preview helpers) stay in-tree — they layer on
- * top of these primitives and migrate later in the slice cutover.
+ * Standard service pattern: db-arg services, plain functions, typed domain
+ * errors, no HTTP concerns. Higher-level orchestrations (changesets, AI
+ * rewrites, preview helpers) layer on top of these primitives.
  *
  * The file is intentionally split into three siblings to stay under the
  * 200-line cap: types + normalisation in `transaction-corrections-types.ts`,
@@ -151,10 +143,9 @@ function insertNewCorrection(
  * to true, the `entityId` / `entityName` / `location` / `transactionType` /
  * `priority` fields are overlaid with the input only when the input value is
  * non-null (a `null` keeps the existing value), and `tags` is always
- * overwritten by `input.tags ?? []`. The last item is intentional and
- * matches the in-tree behaviour the cutover (PR 3) preserves — omitting
- * `tags` from a reinforcement clears them. Pass the existing tags through
- * explicitly if you want to keep them.
+ * overwritten by `input.tags ?? []`. The last item is intentional —
+ * omitting `tags` from a reinforcement clears them. Pass the existing tags
+ * through explicitly if you want to keep them.
  *
  * On miss, a new row is inserted with confidence + timesApplied left at the
  * schema defaults (0.5 and 0 respectively).
@@ -201,8 +192,7 @@ function buildCorrectionUpdates(
 
 /**
  * PATCH a correction. Throws `TransactionCorrectionNotFoundError` if missing.
- * Empty input still re-reads the row but skips the UPDATE — mirrors the
- * in-tree behaviour the routers already depend on.
+ * Empty input still re-reads the row but skips the UPDATE.
  */
 export function updateTransactionCorrection(
   db: FinanceDb,
@@ -228,9 +218,9 @@ export function deleteTransactionCorrection(db: FinanceDb, id: string): void {
 /**
  * Bump `timesApplied` and stamp `lastUsedAt` without otherwise touching the row.
  *
- * Silently no-ops if `id` does not exist — the in-tree caller treats this as
- * a best-effort telemetry update inside the import pipeline and doesn't want
- * the surrounding transaction to fail on a stale id.
+ * Silently no-ops if `id` does not exist — this is a best-effort telemetry
+ * update inside the import pipeline and must not fail the surrounding
+ * transaction on a stale id.
  */
 export function incrementTransactionCorrectionUsage(db: FinanceDb, id: string): void {
   db.update(transactionCorrections)

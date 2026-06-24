@@ -2,13 +2,6 @@
  * `transactions.*` sub-router — transaction CRUD plus the delete/restore
  * (Undo) handshake.
  *
- * Response/body schemas mirror the legacy `finance.transactions.*` tRPC
- * wire shapes (`toTransaction` + the create/update/snapshot zod inputs).
- * Only the 6-procedure CRUD slice is migrated — `suggestTags`,
- * `listDescriptionsForPreview`, and `availableTags` stay in the monolith
- * until their cross-pillar surfaces (tag-suggester / core-corrections)
- * move into the pillar.
- *
  * `restore` is `POST /transactions/restore` (a literal segment) so it does
  * not collide with the `:id` param routes.
  */
@@ -19,7 +12,7 @@ import { ERR_RESPONSES, LimitQuery, OffsetQuery } from './rest-schemas.js';
 
 const c = initContract();
 
-/** Wire shape served by the transaction handlers (`toTransaction`). */
+/** Wire shape served by the transaction handlers. */
 export const TransactionSchema = z.object({
   id: z.string(),
   description: z.string(),

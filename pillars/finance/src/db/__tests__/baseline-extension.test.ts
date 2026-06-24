@@ -1,19 +1,11 @@
 /**
  * Coverage for `0054_finance_pillar_baseline_extension.sql` — the
- * follow-up migration that creates the three finance tables absent from
- * the 0053 baseline (`transactions`, `transaction_tag_rules`,
- * `tag_vocabulary`).
- *
- * Track N4 (#2908) flipped `transaction_tag_rules` consumers to
- * `getFinanceDrizzle()` but the table was only created by the legacy
- * shared `0000_naive_chameleon.sql` / `0026_little_frank_castle.sql`
- * statements — on a fresh per-pillar `finance.db` populated solely by
- * 0053 the table did not exist.
+ * migration that creates `transactions`, `transaction_tag_rules`, and
+ * `tag_vocabulary` on top of the 0053 baseline.
  *
  * The migration uses CREATE TABLE / CREATE INDEX IF NOT EXISTS so
- * replaying it against a production `finance.db` populated by the
- * legacy boot path (where `transaction_tag_rules` already exists from
- * the shared journal) is a no-op rather than an error.
+ * replaying it against a `finance.db` where those tables already exist
+ * is a no-op rather than an error.
  */
 import { existsSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -83,7 +75,7 @@ describe('0054_finance_pillar_baseline_extension', () => {
     const { raw } = openFinanceDb(path);
     try {
       // 0057 rebuilt the table without the FK: entity_id now holds a contacts
-      // entity id with no local referent (PRD-163 US-03).
+      // entity id with no local referent.
       const fks = raw
         .prepare('PRAGMA foreign_key_list(transaction_tag_rules)')
         .all() as ForeignKeyRow[];

@@ -176,8 +176,8 @@ function EmptyState() {
 }
 
 /**
- * Step 7: Import summary (PRD-031 US-06).
- * Guards against direct navigation without a commit.
+ * Final import-flow step: the commit summary. Renders the empty state when
+ * reached by direct navigation without a prior commit.
  */
 export function SummaryStep() {
   const commitResult = useImportStore((s) => s.commitResult);

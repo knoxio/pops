@@ -1,7 +1,7 @@
 /**
  * Guards the path-classification logic of the one-shot ai_usage migration.
  *
- * The dangerous case (gap #3489): an operator sets `CORE_SQLITE_PATH` but
+ * The dangerous case: an operator sets `CORE_SQLITE_PATH` but
  * fat-fingers it. If the script silently treats that as "no source", the
  * migration is skipped, then core's staged `DROP TABLE` rolls out and the
  * history is gone. These tests pin the contract: explicit + missing must

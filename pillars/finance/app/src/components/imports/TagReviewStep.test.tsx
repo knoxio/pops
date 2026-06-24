@@ -3,10 +3,6 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { type ReactElement } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-// ---------------------------------------------------------------------------
-// Mock imports store
-// ---------------------------------------------------------------------------
-
 const mockAddPendingTagRuleChangeSet = vi.fn();
 const mockUpdateTransactionTags = vi.fn();
 const mockNextStep = vi.fn();
@@ -31,19 +27,11 @@ vi.mock('../../store/importStore', () => ({
   },
 }));
 
-// ---------------------------------------------------------------------------
-// Mock finance SDK
-// ---------------------------------------------------------------------------
-
 const { mockAvailableTags } = vi.hoisted(() => ({ mockAvailableTags: vi.fn() }));
 
 vi.mock('../../finance-api/index.js', () => ({
   transactionsAvailableTags: (...args: unknown[]) => mockAvailableTags(...args),
 }));
-
-// ---------------------------------------------------------------------------
-// Mock sonner toast
-// ---------------------------------------------------------------------------
 
 const mockToastInfo = vi.fn();
 const mockToastSuccess = vi.fn();
@@ -56,10 +44,6 @@ vi.mock('sonner', () => ({
     message: vi.fn(),
   },
 }));
-
-// ---------------------------------------------------------------------------
-// Mock @pops/ui — minimal stubs
-// ---------------------------------------------------------------------------
 
 vi.mock('@pops/ui', async () => {
   const React = await import('react');
@@ -118,10 +102,6 @@ vi.mock('@pops/ui', async () => {
   };
 });
 
-// ---------------------------------------------------------------------------
-// Mock TagRuleProposalDialog — captures onApplied for handleTagRuleApplied tests
-// ---------------------------------------------------------------------------
-
 // eslint-disable-next-line prefer-const
 let mockOnAppliedFn: ((...args: unknown[]) => void) | null = null;
 
@@ -157,10 +137,6 @@ vi.mock('./TagRuleProposalDialog', async () => {
   };
 });
 
-// ---------------------------------------------------------------------------
-// Mock TagEditor — stub that exposes a trigger to simulate user edits
-// ---------------------------------------------------------------------------
-
 vi.mock('../TagEditor', async () => {
   const React = await import('react');
   return {
@@ -182,25 +158,14 @@ vi.mock('../TagEditor', async () => {
   };
 });
 
-// ---------------------------------------------------------------------------
-// Mock lib/utils — cn is used by GroupTagBar
-// ---------------------------------------------------------------------------
-
 vi.mock('../../lib/utils', () => ({
   cn: (...args: unknown[]) => args.filter(Boolean).join(' '),
 }));
 
-// ---------------------------------------------------------------------------
-// Import the component under test (MUST come after mocks)
-// ---------------------------------------------------------------------------
-
+// Import must follow the vi.mock calls above so the mocks are registered first.
 import { TagReviewStep } from './TagReviewStep';
 
 import type { ConfirmedTransaction, TagRuleChangeSet, TagRuleImpactItem } from '@pops/finance';
-
-// ---------------------------------------------------------------------------
-// Fixtures
-// ---------------------------------------------------------------------------
 
 function makeTransaction(
   overrides: Partial<ConfirmedTransaction> & { description: string; amount: number }
@@ -251,10 +216,6 @@ const noTagTx = makeTransaction({
   suggestedTags: [],
 });
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
 function seedTransactions(txns: ConfirmedTransaction[]) {
   mockConfirmedTransactions.length = 0;
   mockConfirmedTransactions.push(...txns);
@@ -271,10 +232,6 @@ function renderTagReviewStep() {
   );
   return render(tree);
 }
-
-// ---------------------------------------------------------------------------
-// Tests
-// ---------------------------------------------------------------------------
 
 beforeEach(() => {
   mockConfirmedTransactions.length = 0;
@@ -294,7 +251,7 @@ beforeEach(() => {
   mockToastSuccess.mockReset();
 });
 
-describe('TagReviewStep — Save tag rule wiring (PRD-029 US-02 / US-03)', () => {
+describe('TagReviewStep — Save tag rule wiring (US-02 / US-03)', () => {
   it('renders a "Save tag rule…" button for each entity group', () => {
     seedTransactions([woolworthsTx1, netflixTx]);
     renderTagReviewStep();
@@ -332,7 +289,6 @@ describe('TagReviewStep — Save tag rule wiring (PRD-029 US-02 / US-03)', () =>
     seedTransactions([woolworthsTx1, netflixTx, noTagTx]);
     renderTagReviewStep();
 
-    // 3 group-level buttons + 3 transaction-level buttons = 6 total
     const saveButtons = screen.getAllByRole('button', { name: /Save tag rule/i });
     expect(saveButtons).toHaveLength(6);
     // Group-level buttons use the entity name
@@ -504,7 +460,7 @@ describe('TagReviewStep — Accept All Suggestions', () => {
   });
 });
 
-describe('TagReviewStep — handleTagRuleApplied live re-suggestion (PRD-029 US-03)', () => {
+describe('TagReviewStep — handleTagRuleApplied live re-suggestion (US-03)', () => {
   const CHECKSUM_A = 'test-checksum-aaa';
   const CHECKSUM_B = 'test-checksum-bbb';
 

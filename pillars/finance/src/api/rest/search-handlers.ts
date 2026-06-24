@@ -1,22 +1,15 @@
 /**
  * Handler for the `search.*` sub-router — finance's slice of unified search.
  *
- * Aggregates the THREE finance adapters the monolith bound in
- * `apps/pops-api/src/modules/search-adapters.ts`:
- *   - transactions (`finance/transactions/search-adapter.ts`)
- *   - budgets       (`finance/budgets/search-adapter.ts`)
- *   - wishlist      (`finance/wishlist/search-adapter.ts`)
+ * Aggregates three finance adapters, each a `LIKE` candidate scan ranked by
+ * exact/prefix/contains scoring against the finance pillar's `FinanceDb`:
+ *   - transactions
+ *   - budgets (capped at BUDGETS_DEFAULT_LIMIT)
+ *   - wishlist
+ * Hits from all three are concatenated into one response.
  *
- * Each adapter's ranking is preserved verbatim — same `LIKE` candidate scans,
- * same exact/prefix/contains scoring, same per-adapter sort and (where the
- * monolith applied one) the same default cap. The only rewire is the db
- * handle: the monolith adapters read the shared `getFinanceDrizzle()` handle;
- * here they run against the finance pillar's OWN `FinanceDb`, where these
- * tables now live. Hits from all three adapters are concatenated into one
- * response, matching how the engine merged them in-process.
- *
- * `uri` shapes are kept identical to the monolith so the orchestrator's URI
- * dispatch and cached client links stay stable.
+ * `uri` shapes are a cross-pillar contract: the search orchestrator dispatches
+ * on them and caches client links keyed by them, so they must stay stable.
  */
 import { and, like, sql } from 'drizzle-orm';
 
@@ -57,7 +50,7 @@ function classify(
 /**
  * Normalize raw DB type strings to the canonical lowercase union.
  *  - Capitalised variants ('Expense', 'Income', 'Transfer') come from the import pipeline.
- *  - 'purchase' is a legacy value used before 'expense' was standardised (migrations 007/010).
+ *  - 'purchase' is a legacy synonym for 'expense' still present in stored rows.
  *  - Anything else (including null/undefined coerced to '') falls back to 'expense'.
  */
 export function normalizeTransactionType(raw: string): 'income' | 'expense' | 'transfer' {
@@ -146,7 +139,7 @@ function searchWishlist(db: FinanceDb, text: string): SearchHit[] {
   // Exclude already-purchased items (saved >= target_amount). Items with no
   // target_amount stay searchable since there is no completion threshold to
   // compare against. NULL `saved` is treated as 0 via COALESCE so a row with
-  // a target but no recorded savings still counts as not-yet-purchased (#2391).
+  // a target but no recorded savings still counts as not-yet-purchased.
   const rows = db
     .select()
     .from(wishList)

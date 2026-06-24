@@ -1,8 +1,8 @@
 /**
- * Integration tests for the transactions read-helpers migrated alongside
- * the CRUD slice: `suggestTags` (rule-based, via the ported tag-suggester),
- * `descriptionsForPreview` (paged descriptions + truncation flag), and
- * `availableTags` (distinct sorted tag values).
+ * Integration tests for the transactions read-helpers: `suggestTags`
+ * (rule-based, via the tag-suggester), `descriptionsForPreview` (paged
+ * descriptions + truncation flag), and `availableTags` (distinct sorted tag
+ * values).
  */
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';

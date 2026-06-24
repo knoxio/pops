@@ -1,25 +1,20 @@
 /**
  * Persistence helpers for the finance imports slice.
  *
- * The in-tree pipeline in `apps/pops-api/src/modules/finance/imports/` is
- * a large orchestration surface — CSV/PDF transformers, AI categorisation,
- * progress streaming, transfer classification, retroactive reclassification.
- * Most of that is coordination logic, not data layer.
- *
- * This module scaffolds only the pure-persistence primitives the pipeline
+ * This module holds only the pure-persistence primitives the import pipeline
  * uses against `transactions`:
  *
  *   - `findExistingChecksums` — checksum dedup probe (read-only)
  *   - `buildEntityMaps`       — name + alias lookup builder over a fetched set
  *   - `insertImportTransaction` — low-level transactions insert (write)
  *
- * Crucially, the imports slice owns NO tables of its own. Entities are no
- * longer mirrored in finance: the matcher fetches the contact set from the
- * contacts pillar per import run and `buildEntityMaps` turns that fetched set
- * into the lookup/alias maps in memory (PRD-163 US-03, contacts plan N3/OD-3).
+ * The imports slice owns NO tables of its own. Entities are not mirrored in
+ * finance: the matcher fetches the contact set from the contacts pillar per
+ * import run and `buildEntityMaps` turns that fetched set into the
+ * lookup/alias maps in memory.
  *
- * Mirrors the wish-list / budgets / tag-vocabulary pattern: db-arg
- * services, plain functions, typed domain errors, no HTTP concerns.
+ * Follows the standard service pattern: db-arg services, plain functions,
+ * typed domain errors, no HTTP concerns.
  */
 import { eq, inArray } from 'drizzle-orm';
 
@@ -120,9 +115,8 @@ export function buildEntityMaps(contacts: ContactEntity[]): EntityMaps {
 
 /**
  * Build the `entityId → defaultTags` map the tag-suggester's entity-default
- * stage consumes, from the same fetched contact set. Pure — replaces the
- * former per-transaction `entities.default_tags` read against the local mirror
- * with one in-memory map per import run.
+ * stage consumes, from the same fetched contact set. Pure — one in-memory map
+ * per import run, no per-transaction DB read.
  */
 export function buildDefaultTagsByEntity(contacts: ContactEntity[]): Map<string, string[]> {
   const map = new Map<string, string[]>();
@@ -135,17 +129,12 @@ export function buildDefaultTagsByEntity(contacts: ContactEntity[]): Map<string,
 /**
  * Insert a single transaction during the commit phase of an import.
  *
- * Mirrors the in-tree `insertTransaction` shape verbatim so the cutover
- * (PR 3) is a pure routing flip. The full atomic commit pipeline
- * (`commitImport`) remains in-tree for now because it depends on
- * `applyChangeSet` (core/corrections), `applyTagRuleChangeSet`
- * (core/tag-rules), and `reclassifyExistingTransactions` (transactions
- * slice) — cross-slice orchestration the persistence layer should not
- * own.
+ * The full atomic commit pipeline (changeset application, tag-rule changesets,
+ * reclassification of existing transactions) is cross-slice orchestration that
+ * lives above the persistence layer; this primitive only writes the row.
  *
- * Throws `ImportTransactionPersistError` if the row is not readable
- * after the insert — a defensive check against silent SQLite write
- * failures that the in-tree implementation surfaces as a bare `Error`.
+ * Throws `ImportTransactionPersistError` if the row is not readable after the
+ * insert — a defensive check against silent SQLite write failures.
  */
 export function insertImportTransaction(
   db: FinanceDb,

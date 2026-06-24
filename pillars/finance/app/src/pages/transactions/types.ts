@@ -5,7 +5,7 @@ import { z } from 'zod';
  *
  * The shape is form-friendly: amount and entityId are strings (text inputs +
  * EntitySelect store strings). The `useTransactionsPage` hook coerces these
- * to the tRPC contract (`amount: number`, `entityId: string | null`) on submit.
+ * to the contract shape (`amount: number`, `entityId: string | null`) on submit.
  */
 
 /** Transaction record from the API list query (camelCase). */

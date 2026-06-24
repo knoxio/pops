@@ -5,12 +5,9 @@
  * the resulting schema, and confirms the helper is idempotent when
  * re-run against the same DB.
  *
- * Finance's package journal is now self-bootstrapping —
- * `0053_finance_pillar_baseline` creates the four tables the existing
- * 0025/0026/0027/0052 entries ALTER or recreate, mirroring inventory's
- * `0006_inventory_pillar_baseline` mechanism. Against a fresh per-pillar
- * file the baseline runs first; against the legacy shared pops.db the
- * runner backfills the no-op via `isAlreadyAppliedError`.
+ * The journal is self-bootstrapping: `0053_finance_pillar_baseline`
+ * creates the tables the 0025/0026/0027/0052 entries ALTER or recreate,
+ * mirroring inventory's `0006_inventory_pillar_baseline` mechanism.
  */
 import { existsSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -56,7 +53,7 @@ describe('openFinanceDb', () => {
         )
         .all() as { name: string }[];
       // `entities` is intentionally absent — the mirror was dropped in 0057 once
-      // entities moved to the contacts pillar (PRD-163 US-03).
+      // entities moved to the contacts pillar.
       expect(tables.map((t) => t.name)).toEqual([
         'budgets',
         'tag_vocabulary',

@@ -1,11 +1,6 @@
 /**
  * Budget CRUD + spend aggregation against finance's SQLite via drizzle.
  *
- * The in-tree service in `apps/pops-api/src/modules/finance/budgets/`
- * still uses `getDrizzle()`; this package version takes a `FinanceDb`
- * handle as its first argument. The cutover (PR 3 of phase 1) flips
- * pops-api to call into here.
- *
  * Follows the standard service pattern: db-arg services, typed domain
  * errors, no HTTP concerns.
  */

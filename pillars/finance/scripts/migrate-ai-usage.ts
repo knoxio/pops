@@ -1,8 +1,7 @@
 /**
- * One-shot deploy step: migrate core's `ai_usage` rows into the finance pillar
- * (gap #3489). The finance-categorizer `ai_usage` table re-homed from core to
- * finance; this copies the historical rows across so usage history survives the
- * cutover. Idempotent — safe to re-run: rows already present in finance (matched
+ * One-shot deploy step: copy core's `ai_usage` rows into the finance pillar so
+ * usage history survives the categorizer's `ai_usage` table moving from core to
+ * finance. Idempotent — safe to re-run: rows already present in finance (matched
  * on their natural content key) are skipped, so a partial run resumes cleanly.
  *
  * Does NOT run automatically; invoke explicitly BEFORE the core image that drops

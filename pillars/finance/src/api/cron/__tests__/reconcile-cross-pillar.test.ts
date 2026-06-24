@@ -1,10 +1,7 @@
 /**
- * Unit tests for the finance cross-pillar reconciliation worker
- * (PRD-251 US-03). The four scenarios spelled out in the PRD's
- * acceptance criteria — happy-path, 404 marks staleAt, owning pillar
- * unavailable, bad URI — are each covered here against a real
- * in-memory finance.db so the SQL behaviour around `markStale` /
- * `clearStale` is exercised end-to-end.
+ * Cross-pillar reconciliation worker tests (budgets PRD: owner_uri /
+ * owner_uri_stale_at). Runs against a real on-disk finance.db so the
+ * `markStale` / `clearStale` SQL is exercised end-to-end rather than mocked.
  */
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -59,7 +56,7 @@ afterEach(() => {
   rmSync(tmpDir, { recursive: true, force: true });
 });
 
-describe('startReconcileCrossPillarWorker (PRD-251 US-03)', () => {
+describe('startReconcileCrossPillarWorker', () => {
   it('happy path: URI resolves, stale marker stays clear', async () => {
     const id = seedBudget('groceries', URI_ALICE);
 
@@ -113,7 +110,6 @@ describe('startReconcileCrossPillarWorker (PRD-251 US-03)', () => {
     expect(aliceRow2?.ownerUriStaleAt).toBe(fakeNow.toISOString());
     expect(bobRow?.ownerUriStaleAt).toBeNull();
 
-    // existence is best-effort — the row is not deleted
     expect(aliceRow).toBeDefined();
     expect(aliceRow2).toBeDefined();
   });
@@ -197,7 +193,6 @@ describe('startReconcileCrossPillarWorker (PRD-251 US-03)', () => {
       'finance reconcile lookup threw',
       expect.objectContaining({ uri: URI_ALICE, error: 'socket hang up' })
     );
-    // a thrown lookup must NOT mutate the row — row preserved with no stale marker
     expect(getBudget(id)?.ownerUriStaleAt).toBeNull();
   });
 

@@ -1,13 +1,9 @@
 /**
- * One-shot, IDEMPOTENT migrator: copy core's `entities` rows into the contacts
- * pillar (PRD-163 N4). Reads the full core entity set over the SDK and creates
+ * One-shot, IDEMPOTENT migrator: copy the legacy `entities` rows into the
+ * contacts pillar. Reads the full source entity set over the SDK and creates
  * each as a contact, create-or-fetch-by-name so a re-run is a no-op (a 409
  * dup-name is treated as "already migrated"). Does NOT auto-run — it is a
  * deploy step invoked by `scripts/migrate-core-entities.ts`.
- *
- * Core keeps serving `/entities` during the transition (its removal is deferred
- * to Stage 4a), so the source stays readable while contacts becomes the
- * authoritative store.
  */
 
 /** A core entity in its wire shape (core's `EntitySchema`). */

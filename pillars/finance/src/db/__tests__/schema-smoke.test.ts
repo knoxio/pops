@@ -1,6 +1,6 @@
 /**
- * Smoke test that the relocated finance schemas (PRD-245 US-03 / audit H6)
- * resolve from `@pops/finance-db` with the expected drizzle SQL `name`.
+ * Smoke test that the finance schemas resolve from the package barrel
+ * with the expected drizzle SQL `name`.
  *
  * Catches "table moved but the export forgot to flip" mistakes during
  * follow-up shuffles. The set MUST cover every table named in
@@ -21,7 +21,7 @@ import {
   wishList,
 } from '../schema.js';
 
-describe('PRD-245 US-03 finance schema relocation', () => {
+describe('us-03-relocate-finance-schemas', () => {
   it.each([
     [budgets, 'budgets'],
     [tagVocabulary, 'tag_vocabulary'],
@@ -30,7 +30,6 @@ describe('PRD-245 US-03 finance schema relocation', () => {
     [transactionTagRules, 'transaction_tag_rules'],
     [transactions, 'transactions'],
     [wishList, 'wish_list'],
-    // Finance-categorizer ai_usage table re-homed from core (gap #3489).
     [aiUsage, 'ai_usage'],
   ])('resolves %#: %s', (table, expectedName) => {
     expect(getTableName(table)).toBe(expectedName);

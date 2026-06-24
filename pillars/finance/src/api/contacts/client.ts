@@ -1,10 +1,10 @@
 /**
  * Live contacts-pillar client for the finance backend.
  *
- * Finance no longer keeps a local `entities` mirror. The import matcher and the
+ * Finance holds no local `entities` mirror. The import matcher and the
  * entity-usage rollup fetch the contact set from the contacts pillar over the
  * pillar SDK at request time and join/match it in memory for that run only —
- * no persistent copy (PRD-163 US-03/US-06, contacts plan OD-3/OD-4).
+ * no persistent copy.
  *
  * The whole set is fetched via a paginated `entities.list` sweep (the list cap
  * is per-page, so the client pages until exhausted). One bulk read serves all
@@ -14,14 +14,14 @@
  * All reads degrade gracefully: when contacts is unreachable the SDK returns a
  * `CallResult` whose `kind !== 'ok'` and the helpers substitute an EMPTY set
  * plus a logged warning rather than throwing — an import does a no-match run
- * and the usage list renders empty (OD-3 / S4). The pre-create path is
+ * and the usage list renders empty. The pre-create path is
  * create-or-fetch-by-name: it fetches by name FIRST (case-insensitively) and
  * only creates when absent, then tolerates a 409 dup-name from a concurrent
  * create — so a retry after a rolled-back finance transaction reuses the
- * contact (OD-8). The fetch-first step is load-bearing: contacts enforces name
- * uniqueness only case-SENSITIVELY (no UNIQUE constraint, `WHERE name = ?`), so
- * a 409 alone would let a case-variant (`ACME` vs `Acme`) slip through as a
- * duplicate that finance's case-insensitive matcher then collides on.
+ * contact. The fetch-first step gives a clean `created: false` reuse and a
+ * stable id without depending on a 409 round-trip; contacts itself enforces
+ * name uniqueness case-INSENSITIVELY (`WHERE name COLLATE NOCASE = ?`), so the
+ * 409 fallback is the backstop for a genuine concurrent insert.
  */
 import { isOk, pillar, type CallResult, type PillarHandle } from '@pops/pillar-sdk/client';
 
@@ -86,7 +86,7 @@ export interface CreateOrFetchResult {
 export interface ContactsClient {
   /**
    * The whole contact set (optionally filtered by `search`/`type`), paged out
-   * of the contacts list endpoint. Empty when contacts is down (OD-3).
+   * of the contacts list endpoint. Empty when contacts is down.
    */
   fetchAllEntities(query?: { search?: string; type?: string }): Promise<ContactEntity[]>;
   /**
@@ -213,9 +213,8 @@ export function createContactsClient(
 /**
  * Resolve a single contact by exact (case-insensitive) name. The list `search`
  * is a substring filter, so the exact match is re-checked client-side over the
- * matching page. Backs the fetch-first leg of create-or-fetch: contacts does
- * NOT enforce name uniqueness case-insensitively, so finance must dedupe here
- * to avoid creating a case-variant duplicate.
+ * matching page. Backs the fetch-first leg of create-or-fetch, returning the
+ * existing contact for reuse before any create is attempted.
  */
 async function fetchByExactName(
   handle: PillarHandle<ContactsRouter>,

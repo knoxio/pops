@@ -1,9 +1,7 @@
 /**
  * Tag-rule ChangeSet service — propose (deterministic) + apply.
  *
- * Ported from `apps/pops-api/src/modules/core/tag-rules/service.ts`, the
- * only change being the `FinanceDb` handle is threaded explicitly. The
- * `apply` path wraps the ops in a single db transaction so a partial
+ * The `apply` path wraps the ops in a single db transaction so a partial
  * ChangeSet never lands.
  */
 import {

@@ -4,10 +4,6 @@ import type { Correction, CorrectionRow, Entity } from '@pops/finance';
 
 import type { PendingChangeSet, PendingEntity } from '../store/importStore';
 
-// ---------------------------------------------------------------------------
-// computeMergedRules — PRD-030 US-03
-// ---------------------------------------------------------------------------
-
 let _cachedRulesInput: { dbRules: Correction[]; pending: PendingChangeSet[] } | null = null;
 let _cachedRulesOutput: Correction[] | null = null;
 
@@ -23,7 +19,6 @@ export function computeMergedRules(
   dbRules: Correction[],
   pendingChangeSets: PendingChangeSet[]
 ): Correction[] {
-  // Memoization: same input refs → same output ref
   if (
     _cachedRulesInput &&
     _cachedRulesInput.dbRules === dbRules &&
@@ -51,10 +46,6 @@ export function computeMergedRules(
   return result;
 }
 
-// ---------------------------------------------------------------------------
-// computeMergedEntities — PRD-030 US-04
-// ---------------------------------------------------------------------------
-
 let _cachedEntitiesInput: { dbEntities: Entity[]; pending: PendingEntity[] } | null = null;
 let _cachedEntitiesOutput: Entity[] | null = null;
 
@@ -71,7 +62,6 @@ export function computeMergedEntities(
   dbEntities: Entity[],
   pendingEntities: PendingEntity[]
 ): Entity[] {
-  // Memoization: same input refs → same output ref
   if (
     _cachedEntitiesInput &&
     _cachedEntitiesInput.dbEntities === dbEntities &&
@@ -91,12 +81,10 @@ export function computeMergedEntities(
   const byName = (a: Entity, b: Entity) =>
     a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
 
-  // Build a set of pending entity names (lowercased) for collision detection
   const pendingNameSet = new Set(pendingEntities.map((pe) => pe.name.toLowerCase()));
 
-  // Map pending entities to the consumable Entity shape (id + name + aliases +
-  // lastEditedTime). The merged list feeds the rule-form entity picker, which
-  // references entities by id/name only.
+  // The merged list feeds the rule-form entity picker, which references entities
+  // by id/name only, so aliases/lastEditedTime are placeholders.
   const adaptedPending: Entity[] = pendingEntities.map((pe) => ({
     id: pe.tempId,
     name: pe.name,
@@ -104,11 +92,8 @@ export function computeMergedEntities(
     lastEditedTime: new Date().toISOString(),
   }));
 
-  // Filter out DB entities that collide with pending entities
   const filteredDb = dbEntities.filter((e) => !pendingNameSet.has(e.name.toLowerCase()));
 
-  // Merge then sort alphabetically by name so pending entities slot in by name
-  // instead of being appended at the end.
   const result = [...filteredDb, ...adaptedPending].toSorted(byName);
 
   _cachedEntitiesInput = { dbEntities, pending: pendingEntities };

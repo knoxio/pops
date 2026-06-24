@@ -1,22 +1,11 @@
 /**
  * Invariant tests for the budgets service against an in-memory SQLite
- * seeded with the canonical `budgets` + `transactions` DDL. Pure DB +
- * service layer — no tRPC, no Express, no auth middleware.
+ * seeded with the canonical `budgets` + `transactions` DDL — DB + service
+ * layer only.
  *
- * Higher-level router coverage lives in pops-api's own integration suite
- * and exercises the same service via the pops-api wrapper (kept untouched
- * until phase 1 PR 3 cuts over).
- *
- * The DDL is inlined rather than read from the shared baseline migration
- * (`0000_naive_chameleon.sql`) because that migration creates the entire
- * pre-modular schema (hundreds of tables) and applying it for every test
- * here is wasted work. Phase 1 PR 2 will move the canonical statement
- * into the package's own migration journal — the byte-identical budgets
- * statement already exists at
- * `packages/finance-db/migrations/0053_finance_pillar_baseline.sql`, with
- * the `active` default flip applied via `0052_budgets_active_default_zero`
- * and the `(category, COALESCE(period, char(0)))` unique index added in
- * that same migration.
+ * The DDL is inlined rather than applied from the migration journal so
+ * each test runs against a lean two-table fixture instead of the full
+ * finance schema.
  */
 import Database from 'better-sqlite3';
 import { drizzle } from 'drizzle-orm/better-sqlite3';

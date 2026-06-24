@@ -1,17 +1,13 @@
 /**
  * Invariant tests for the tag-vocabulary service against an in-memory
- * SQLite seeded with the canonical `tag_vocabulary` DDL. Pure DB +
- * service layer — no tRPC, no Express, no auth middleware.
+ * SQLite seeded with the canonical `tag_vocabulary` DDL — DB + service
+ * layer only.
  *
- * The DDL is inlined rather than read from the package's own
+ * The DDL is inlined rather than applied from
  * `migrations/0026_little_frank_castle.sql` because that file mixes the
- * `tag_vocabulary` CREATE with the `transaction_tag_rules` CREATE +
- * seed inserts — the test owns its own fixtures so it can exercise the
- * service contract in isolation. `open-finance-db.test.ts` currently
- * only asserts that `tag_vocabulary` exists after migrations run, so it
- * does NOT catch DDL drift between this inlined schema and the shipped
- * migration. A schema-level assertion (column types, defaults) is left
- * as a follow-up.
+ * `tag_vocabulary` CREATE with the `transaction_tag_rules` CREATE + seed
+ * inserts; the test owns its own fixtures so it can exercise the service
+ * contract in isolation.
  */
 import Database from 'better-sqlite3';
 import { eq } from 'drizzle-orm';

@@ -1,15 +1,11 @@
 /**
- * Shared zod building blocks for the finance REST contract.
+ * Shared zod building blocks for the finance REST contract, used by the
+ * per-domain route files (`rest-wishlist.ts`, `rest-budgets.ts`, …).
+ * Everything here is zod-only — no imports from `src/api/` or `src/db/`, so
+ * the contract honours the package boundary (consumers see only `.`).
  *
- * Split from `rest.ts` so the per-domain route files (`rest-wishlist.ts`,
- * `rest-budgets.ts`, …) stay focused on their path maps. Everything here
- * is zod-only — no imports from `src/api/` or `src/db/`, so the contract
- * honours the package boundary (consumers see only `.`).
- *
- * These schemas describe the ACTUAL wire shapes the handlers serve (the
- * `to<Entity>` mappers in the legacy tRPC routers), not the idealised
- * `schemas/` entities from the pre-migration refactor. The OpenAPI
- * projection is therefore an honest description of what the server does.
+ * These schemas describe the actual wire shapes the handlers serve, so the
+ * OpenAPI projection is an honest description of what the server does.
  */
 import { z } from 'zod';
 
@@ -33,10 +29,7 @@ export const PaginationMetaSchema = z.object({
   hasMore: z.boolean(),
 });
 
-/**
- * Error envelope. `messageKey` carries the i18n key the FE resolves to a
- * localised string (preserved from the tRPC `data.messageKey` wire shape).
- */
+/** Error envelope. `messageKey` carries the i18n key the FE resolves to a localised string. */
 export const ErrorBodySchema = z.object({
   message: z.string(),
   code: z.string().optional(),

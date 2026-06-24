@@ -6,12 +6,6 @@ import type {
   PendingTagRuleChangeSet,
 } from '../store/importStore';
 
-// ---------------------------------------------------------------------------
-// CommitPayload — PRD-030 US-09
-// TODO: Move CommitPayload type to a shared package (e.g. @pops/types) before
-// PRD-031 commit endpoint work, since both frontend and backend need this shape.
-// ---------------------------------------------------------------------------
-
 export interface CommitPayload {
   entities: PendingEntity[];
   changeSets: ChangeSet[];

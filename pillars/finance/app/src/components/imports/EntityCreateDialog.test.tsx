@@ -1,10 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-// ---------------------------------------------------------------------------
-// Mock useImportStore — provide addPendingEntity via selector pattern
-// ---------------------------------------------------------------------------
-
 const mockAddPendingEntity = vi.fn();
 
 vi.mock('../../store/importStore', () => ({
@@ -13,10 +9,6 @@ vi.mock('../../store/importStore', () => ({
     return selector(state);
   },
 }));
-
-// ---------------------------------------------------------------------------
-// Mock @pops/ui — minimal Dialog + form element stubs
-// ---------------------------------------------------------------------------
 
 vi.mock('@pops/ui', async () => {
   const React = await import('react');
@@ -66,10 +58,6 @@ vi.mock('@pops/ui', async () => {
 
 import { EntityCreateDialog } from './EntityCreateDialog';
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
 const DEFAULT_PROPS = {
   open: true,
   onOpenChange: vi.fn(),
@@ -84,10 +72,6 @@ function renderDialog(overrides: Partial<typeof DEFAULT_PROPS> = {}) {
   return { ...utils, props };
 }
 
-// ---------------------------------------------------------------------------
-// Reset
-// ---------------------------------------------------------------------------
-
 beforeEach(() => {
   vi.clearAllMocks();
   mockAddPendingEntity.mockImplementation((input: { name: string; type: string }) => ({
@@ -96,10 +80,6 @@ beforeEach(() => {
     type: input.type,
   }));
 });
-
-// ---------------------------------------------------------------------------
-// Tests
-// ---------------------------------------------------------------------------
 
 describe('EntityCreateDialog', () => {
   it("calls addPendingEntity with trimmed name and type 'company' on submit", () => {
@@ -141,16 +121,12 @@ describe('EntityCreateDialog', () => {
     });
   });
 
-  it('does not call any tRPC mutation — only addPendingEntity is invoked', () => {
-    // The component intentionally has no tRPC dependency. We verify that
-    // addPendingEntity is called and nothing else unexpected happens.
+  it('routes submit through addPendingEntity as the sole write path', () => {
     renderDialog({ suggestedName: 'Spotify' });
 
     fireEvent.click(screen.getByRole('button', { name: /Create Entity/i }));
 
     expect(mockAddPendingEntity).toHaveBeenCalledTimes(1);
-    // No trpc module is imported by the component — this test simply confirms
-    // addPendingEntity is the sole write path exercised on submit.
   });
 
   it('shows an inline error message when addPendingEntity throws (e.g. duplicate name)', () => {
@@ -222,7 +198,6 @@ describe('EntityCreateDialog', () => {
   it('does not submit when name is empty or only whitespace', () => {
     renderDialog({ suggestedName: '' });
 
-    // Submit button is disabled when name is empty
     const submitBtn = screen.getByRole('button', { name: /Create Entity/i });
     expect(submitBtn).toBeDisabled();
 

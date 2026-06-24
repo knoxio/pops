@@ -1,9 +1,5 @@
 /**
  * `wishlist.*` sub-router — wish-list item CRUD.
- *
- * Response/body schemas mirror the legacy `finance.wishlist.*` tRPC wire
- * shapes (`toWishListItem` + the create/update zod inputs) so the REST
- * cutover is transparent to the FE.
  */
 import { initContract } from '@ts-rest/core';
 import { z } from 'zod';

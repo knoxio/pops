@@ -4,11 +4,9 @@
  * folds the {@link CallResult} discriminants down to the cron's smaller
  * vocabulary (`ok` / `not-found` / `bad-uri` / `unavailable`).
  *
- * Wire contract: PRD-251 §"Surface" specifies a URI-shaped cross-pillar
- * contract — input `{ uri }`, output `{ data: { uri } }`. Both the
- * inventory and finance crons go through the same `registry.users.get`
- * (the registry pillar, formerly `core`) and pass the URI through
- * end-to-end.
+ * The wire shape is URI-in / URI-out — input `{ uri }`, output
+ * `{ data: { uri } }`. Both the inventory and finance crons go through the
+ * same `registry.users.get` and pass the URI through end-to-end.
  *
  * Kept separate from the worker so unit tests can wire a stub directly
  * without exercising the HTTP transport.

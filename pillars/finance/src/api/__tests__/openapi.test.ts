@@ -4,7 +4,7 @@
  * The route serves the committed `openapi/finance.openapi.json` projection
  * verbatim so the pillar SDK can build its operationId route map against the
  * live pillar. This asserts the document is reachable, is OpenAPI 3.x, and
- * carries a known operationId (`budgets.list`) from the migrated surface.
+ * carries a known operationId (`budgets.list`).
  */
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';

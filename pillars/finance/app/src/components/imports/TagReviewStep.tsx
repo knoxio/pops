@@ -4,17 +4,13 @@ import { EntityGroup } from './tag-review/EntityGroup';
 import { useTagReviewState } from './tag-review/useTagReviewState';
 import { TagRuleProposalDialog } from './TagRuleProposalDialog';
 
-// ---------------------------------------------------------------------------
-// Main component
-// ---------------------------------------------------------------------------
-
 /**
- * Step 5: Tag Review — review and adjust tags before Final Review (PRD-030 / PRD-031).
+ * Tag Review step — review and adjust tags before Final Review.
  *
  * Confirmed transactions arrive with tags pre-populated from AI/rule/entity
  * suggestions. This step lets the user accept, modify, or clear tags. **No DB
- * writes** — Continue syncs tags into the store and advances to Step 6; the
- * single write path is `commitImport` on Final Review.
+ * writes** — Continue syncs tags into the store and advances to the next step;
+ * the single write path is `commitImport` on Final Review.
  *
  * Features:
  * - All groups expanded by default (including those with no suggestions)
@@ -22,7 +18,7 @@ import { TagRuleProposalDialog } from './TagRuleProposalDialog';
  * - Per-transaction tag editing via TagEditor
  * - Source badges on suggested tags: 🤖 AI, 📋 Rule, 🏪 Entity
  * - Rule pattern shown via tooltip on badge hover
- * - "Save tag rule…" button per group — opens TagRuleProposalDialog (PRD-029 US-02/US-03)
+ * - "Save tag rule…" button per group — opens TagRuleProposalDialog
  */
 export function TagReviewStep() {
   const state = useTagReviewState();
