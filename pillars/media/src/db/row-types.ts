@@ -1,9 +1,9 @@
 /**
  * Public `Row`/`Insert` aliases for the media-owned tables.
  *
- * Centralised here so consumers can `import type { MovieRow } from './index.js'`
- * without reaching into a service module. The underlying tables live in
- * `./schema/*.ts`.
+ * Centralised here and re-exported via `./index.js` so consumers import media
+ * row types from one place without reaching into a service or schema module.
+ * The underlying tables live in `./schema/*.ts`.
  *
  * Service-owned types (`MovieRow`, `TvShowRow`, `WatchHistoryRow`,
  * `MediaWatchlistRow`, `DismissedDiscoverRow`) are also exported by their

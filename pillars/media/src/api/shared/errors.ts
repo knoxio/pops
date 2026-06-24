@@ -3,7 +3,7 @@
  *
  * Each error carries an optional `messageKey` so the frontend can resolve a
  * translated string while the EN-AU fallback lives in `message`; the REST
- * error mapping plumbs it through the wire error shape as `data.messageKey`.
+ * error mapping plumbs it through the wire error body as a top-level `messageKey`.
  */
 export class HttpError extends Error {
   /** i18n key the frontend uses to resolve a localised message. */
