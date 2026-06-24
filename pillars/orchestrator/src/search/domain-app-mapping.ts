@@ -1,22 +1,19 @@
 /**
- * Domain-to-app mapping for search context section ordering.
- *
- * Relocated from the monolith engine
- * (`apps/pops-api/src/modules/core/search/domain-app-mapping.ts`). Maps each
- * search section domain to the app it belongs to so the federator can mark
- * "context sections" (belonging to the currently active app) and order them
- * first.
+ * Domain-to-app mapping for search context section ordering. Maps each search
+ * section domain to the app it belongs to so the federator can mark "context
+ * sections" (belonging to the currently active app) and order them first.
  *
  * Carries BOTH granularities:
- *   - the monolith's fine-grained adapter domains (`transactions`, `budgets`,
- *     …) so the mapping stays correct if a section is ever decorated at
- *     adapter granularity again, and
- *   - the pillar-level section domains the federation source emits today
+ *   - fine-grained adapter domains (`transactions`, `budgets`, …) so the
+ *     mapping stays correct if a section is ever decorated at adapter
+ *     granularity, and
+ *   - the pillar-level section domains the federation source emits
  *     (`finance`, `inventory`, `contacts`) — one section per pillar, because a
  *     pillar's `/search` returns a single flat hit list.
  *
- * The `entities` adapter domain now belongs to the contacts pillar (PRD-163);
- * a `contacts` pillar-level key is added alongside it.
+ * The `entities` adapter domain belongs to the contacts pillar (see
+ * pillars/contacts/docs/prds/entities); a `contacts` pillar-level key sits
+ * alongside it.
  */
 
 const DOMAIN_APP_MAP: Record<string, string> = {

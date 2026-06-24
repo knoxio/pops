@@ -1,21 +1,17 @@
 /**
- * Federated search engine — the monolith fan-out engine
- * (`apps/pops-api/src/modules/core/search/engine.ts`) with a PLUGGABLE hit
- * source.
+ * Federated search engine with a PLUGGABLE hit source.
  *
- * The monolith engine owned both the fan-out (calling each in-process
- * `adapter.search()`) AND the merge/rank/section-ordering. In the orchestrator
- * the fan-out moves over the network: each pillar's `/search` endpoint returns
- * an already-ranked flat hit list, and the federation source
- * (`federation.ts`) is responsible for issuing those HTTP calls and decorating
- * each pillar's hits with `domain`/`icon`/`color`/`isContextSection`.
+ * The fan-out runs over the network: each pillar's `/search` endpoint returns
+ * an already-ranked flat hit list, and the federation source (`federation.ts`)
+ * issues those HTTP calls and decorates each pillar's hits with
+ * `domain`/`icon`/`color`/`isContextSection`.
  *
  * This module keeps the PURE half: given the source's per-pillar result
  * groups, it sorts hits within each group, caps them per section, drops empty
  * groups, and orders context sections (current app) first then by top score.
- * The `source` option is the analogue of the monolith engine's `adapters?`
- * override seam — production callers pass {@link federationSource}; tests pass
- * a stub that returns fixed groups with no network.
+ * The `source` option is the injection seam — production callers pass the
+ * federation source; tests pass a stub that returns fixed groups with no
+ * network.
  */
 import { z } from 'zod';
 
@@ -41,8 +37,8 @@ export interface PillarSearchGroup {
 
 /**
  * Pluggable hit source. Resolves every search-capable pillar's group for the
- * query — best-effort: a down pillar is omitted, never throws. Production:
- * {@link import('./federation.js').federationSource}. Tests: a stub.
+ * query — best-effort: a down pillar is omitted, never throws. Production: the
+ * federation source from `./federation.js`. Tests: a stub.
  */
 export type SearchSource = (query: Query, context: SearchContext) => Promise<PillarSearchGroup[]>;
 
@@ -76,10 +72,9 @@ export const HITS_PER_SECTION = 5;
 
 export interface SearchAllOptions {
   /**
-   * Hit source override. Production callers pass the federation source; tests
-   * pass a stub. Required here (unlike the monolith's optional `adapters`)
-   * because the orchestrator has no in-process default adapter registry — the
-   * route handler injects {@link import('./federation.js').federationSource}.
+   * Hit source. Production callers pass the federation source; tests pass a
+   * stub. Required because there is no in-process default adapter registry —
+   * the route handler injects the federation source from `./federation.js`.
    */
   source: SearchSource;
 }

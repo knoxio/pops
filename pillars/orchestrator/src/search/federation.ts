@@ -1,14 +1,10 @@
 /**
  * Federation hit source — the production {@link SearchSource} for the engine.
  *
- * Replaces the monolith's in-process adapter registry: instead of calling each
- * `adapter.search(query, context)` in-process, it POSTs the same
- * `{ query, context }` envelope to every search-capable pillar's `/search`
- * endpoint over the pillar SDK (`pillar(id).search.search(...)`, REST
- * transport) and decorates each pillar's returned hits with the
- * `domain`/`icon`/`color` metadata the monolith's per-adapter descriptors
- * carried (`apps/pops-api/src/modules/search-adapters.ts` + each module's
- * `search-adapter.ts`).
+ * POSTs the `{ query, context }` envelope to every search-capable pillar's
+ * `/search` endpoint over the pillar SDK (`pillar(id).search.search(...)`, REST
+ * transport) and decorates each pillar's returned hits with `domain`/`icon`/
+ * `color` section metadata.
  *
  * One section per pillar: a pillar's `/search` returns a single flat ranked
  * hit list (finance concatenates its transactions/budgets/wishlist adapters
@@ -17,7 +13,7 @@
  *
  * Best-effort: a pillar that is `unavailable`, errors, or returns a non-ok
  * SDK result is LOGGED and SKIPPED — federation never fails the whole search
- * because one pillar is down (epic 06).
+ * because one pillar is down.
  *
  * Pillar discovery (registry-as-truth): the search-capable set is derived from
  * the LIVE registry snapshot — every registered, healthy pillar whose manifest
@@ -28,10 +24,10 @@
  *
  * Presentation metadata (the section `icon`/`color`/`domain`) is NOT carried by
  * the manifest's `search` slot — that slot describes adapter mechanics
- * (`name`/`entityType`/`queryShape`/`procedurePath`), not section chrome. The
- * monolith's per-section icon/color descriptors have no manifest equivalent, so
- * they stay in the small static {@link SEARCH_SECTION_META} table keyed by
- * pillar id. A search-capable pillar with no entry there is still federated,
+ * (`name`/`entityType`/`queryShape`/`procedurePath`), not section chrome. With
+ * no manifest equivalent, the per-section icon/color values stay in the small
+ * static {@link SEARCH_SECTION_META} table keyed by pillar id. A search-capable
+ * pillar with no entry there is still federated,
  * decorated with {@link DEFAULT_SECTION_META} — membership is registry-driven,
  * only the chrome falls back.
  */
@@ -46,7 +42,7 @@ import type { PillarSnapshot, PillarStatus } from '@pops/pillar-sdk/discovery';
 import type { PillarSearchGroup, SearchSource } from './engine.js';
 import type { Query, SearchContext, SearchHit } from './types.js';
 
-/** Per-pillar section decoration, ported from the monolith adapter descriptors. */
+/** Per-pillar section decoration. */
 export interface PillarSearchMeta {
   /** Section domain (drives context-section detection via domain-app-mapping). */
   readonly domain: string;
@@ -57,15 +53,13 @@ export interface PillarSearchMeta {
 }
 
 /**
- * Section presentation metadata, ported from the monolith adapter descriptors.
- * This table does NOT decide membership — that is the live registry's job (a
- * pillar whose manifest declares `search.adapters`). It only supplies the
- * section chrome (icon/color/domain) the manifest's `search` slot does not
- * express:
+ * Section presentation metadata. This table does NOT decide membership — that
+ * is the live registry's job (a pillar whose manifest declares
+ * `search.adapters`). It only supplies the section chrome (icon/color/domain)
+ * the manifest's `search` slot does not express:
  *   - contacts → `contact` adapter (`Users`, blue) — the authoritative entity
- *     store (PRD-163); the section a contact search hit lands in. Core's
- *     residual entities adapter was removed in Stage 4a (N5); contacts is now
- *     the sole entities-search source.
+ *     store (see pillars/contacts/docs/prds/entities) and the sole
+ *     entities-search source; the section a contact search hit lands in.
  *   - finance → transactions/budgets/wishlist adapters, aggregated under one
  *     `/search`; decorated with the transactions descriptor (`ArrowRightLeft`,
  *     green) as the pillar-representative section.
@@ -118,11 +112,10 @@ export type SearchInvoker = (
 ) => Promise<CallResult<PillarSearchResponse>>;
 
 /**
- * Minimal typed view of a search-capable pillar's contract router for the
- * SDK proxy. `search.search` returns the raw `{ hits }` response; the SDK's
- * `PillarHandle` proxy wraps it in `Promise<CallResult<…>>`. Modelled on the
- * `CerebrumEmbeddingsShape` pattern in the monolith embeddings client — an
- * object-literal type (not an interface) so it is assignable to the proxy's
+ * Minimal typed view of a search-capable pillar's `search.search` procedure for
+ * the SDK proxy. It returns the raw `{ hits }` response; the SDK's
+ * `PillarHandle` proxy wraps it in `Promise<CallResult<…>>`. An object-literal
+ * type (not an interface) so it is assignable to the proxy's
  * `Record<string, unknown>` constraint.
  */
 type PillarSearchRouter = {

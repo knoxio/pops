@@ -10,10 +10,10 @@ describe('getDomainApp', () => {
     expect(getDomainApp('contacts')).toBe('contacts');
   });
 
-  it('keeps the monolith fine-grained adapter domains mapped', () => {
+  it('keeps the fine-grained adapter domains mapped', () => {
     expect(getDomainApp('transactions')).toBe('finance');
     expect(getDomainApp('budgets')).toBe('finance');
-    // Entities are owned by the contacts pillar (PRD-163).
+    // Entities are owned by the contacts pillar (pillars/contacts/docs/prds/entities).
     expect(getDomainApp('entities')).toBe('contacts');
     expect(getDomainApp('inventory-items')).toBe('inventory');
   });

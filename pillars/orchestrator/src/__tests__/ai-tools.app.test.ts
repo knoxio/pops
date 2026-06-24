@@ -33,7 +33,8 @@ describe('GET /ai/tools', () => {
   });
 
   it('returns 200 with an empty list when no pillar declares ai.tools yet', async () => {
-    // No pillar ships PRD-200 ai.tools descriptors today, so the SDK
+    // No pillar ships ai.tools descriptors
+    // (docs/themes/federation/prds/ai-tool-manifest) today, so the SDK
     // projection is empty. The registry is hosted and ready; this asserts
     // the honest empty-but-200 contract, not a faked tool.
     const buildToolList: BuildToolList = vi.fn(async (): Promise<readonly Tool[]> => []);

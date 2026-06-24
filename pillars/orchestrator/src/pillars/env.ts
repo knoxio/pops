@@ -1,11 +1,8 @@
 /**
  * `POPS_PILLARS` environment-variable parser inside the orchestrator process.
  *
- * Functionally identical to the copies that live in each pillar's
- * `src/api/pillars/env.ts` (and `apps/pops-core-api/src/pillars/env.ts`) —
- * kept as a local copy so the orchestrator can boot without a runtime
- * dependency on any one pillar. The shape is the established federation
- * convention; promotion into a shared package is tracked separately.
+ * A local copy of the parser each pillar carries at `src/api/pillars/env.ts`,
+ * so the orchestrator can boot without a runtime dependency on any one pillar.
  *
  * Format: `id:baseUrl[,id:baseUrl,...]`
  *   - `id` lowercase kebab-case pillar slug (`food`, `finance`, …)
