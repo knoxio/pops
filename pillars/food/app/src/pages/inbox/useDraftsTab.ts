@@ -1,11 +1,7 @@
 /**
- * PRD-134 — React Query plumbing for the Drafts inbox tab.
- *
- * Splits the data hook out of `DraftsTab.tsx` so the page component stays
- * under the per-file line cap and the hook is testable on its own. Polling
- * runs every 60s so newly-completed ingests appear without a manual refresh
- * — React Query disables background polling automatically when the tab is
- * hidden.
+ * React Query plumbing for the Drafts inbox tab. Polls every 60s so
+ * newly-completed ingests appear without a manual refresh;
+ * `refetchIntervalInBackground: false` pauses polling when the tab is hidden.
  */
 import { useQuery } from '@tanstack/react-query';
 

@@ -1,9 +1,5 @@
 /**
- * Modal for creating or editing a variant. Shared form fields:
- *   - slug, name, default unit
- *   - package size (g, optional)
- *   - shelf-life fridge / freezer (days, optional, PRD-108)
- *   - notes (optional)
+ * Modal for creating or editing a variant.
  *
  * Form-state + value helpers live in `variant-form-helpers.ts`; the actual
  * input rows in `VariantFormFields.tsx`. Errors come pre-mapped from

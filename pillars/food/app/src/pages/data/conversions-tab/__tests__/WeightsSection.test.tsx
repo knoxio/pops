@@ -1,12 +1,9 @@
 /**
- * PRD-123 Phase D — WeightsSection smoke tests.
+ * Mocks the generated food SDK (src/food-api) so the section renders against
+ * controlled data without a live registry-mounted backend. Variant labels are
+ * resolved via a separate ingredientsGet lookup, mocked independently here.
  *
- * Mocks the generated food SDK so the section renders against controlled
- * data and asserts:
- *   - rows render with the resolved ingredient + variant labels
- *   - the seeded badge + disabled delete render for seeded rows
- *   - the create dialog submits valid input through the SDK
- *   - the ingredient filter feeds into the listWeights query
+ * See pillars/food/docs/prds/conversion-table.
  */
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, waitFor, within } from '@testing-library/react';
@@ -94,7 +91,7 @@ beforeEach(() => {
   conversionsDeleteWeightMock.mockResolvedValue({ data: { ok: true } });
 });
 
-describe('PRD-123 Phase D — WeightsSection', () => {
+describe('WeightsSection', () => {
   it('renders rows with the ingredient name and any-variant label', async () => {
     seedIngredients([{ id: 100, name: 'Onion', slug: 'onion' }]);
     seedWeights([row({ id: 1 })]);

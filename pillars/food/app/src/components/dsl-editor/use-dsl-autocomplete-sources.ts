@@ -1,6 +1,6 @@
 /**
  * `useDslAutocompleteSources` — production wiring for the autocomplete
- * extension (PRD-120 part B).
+ * extension.
  *
  * Builds three async lookups that the CodeMirror source calls per
  * keystroke:
@@ -12,8 +12,7 @@
  * Each lookup goes straight through the generated Hey API SDK and reads
  * `result.data`. React Query is intentionally not involved here — the
  * CodeMirror source owns its own per-keystroke calls and the SDK client
- * is cheap to invoke; the prior tRPC-utils read-through cache is dropped
- * with the pillar-call shim.
+ * is cheap to invoke.
  *
  * Tests do NOT import this hook — `DslEditor` accepts an
  * `autocompleteSources` prop and tests construct a synthetic object

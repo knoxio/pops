@@ -1,11 +1,12 @@
 /**
- * PRD-152 — `/food/shopping/from-plan`.
+ * `/food/shopping/from-plan`.
  *
  * Pre-fills the date range from `?start=YYYY-MM-DD&end=YYYY-MM-DD` query
- * parameters when present (linked from PRD-143's plan-header button),
- * otherwise defaults to today + 6 days. Drives a server-side preview and
- * gates a Generate mutation that writes a new shopping list + navigates
- * to `/lists/:id` on success.
+ * parameters when present (linked from the planning page's plan-header
+ * button — see pillars/food/docs/prds/planning-page), otherwise defaults
+ * to today + 6 days. Drives a server-side preview and gates a Generate
+ * mutation that writes a new shopping list + navigates to `/lists/:id` on
+ * success.
  */
 import { useCallback, useState, type ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';

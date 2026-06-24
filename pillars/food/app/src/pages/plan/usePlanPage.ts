@@ -1,9 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 /**
- * PRD-143 data hook for the planning page.
+ * Data hook for the planning page: polls the plan week view at
+ * `WEEK_POLL_INTERVAL_MS` and exposes mutation helpers that invalidate the
+ * week query on success.
  *
- * Wraps `plan.weekView` with 60s polling and exposes ergonomic mutation
- * helpers that invalidate the week query on success.
+ * Spec: pillars/food/docs/prds/planning-page
  */
 import { useCallback } from 'react';
 

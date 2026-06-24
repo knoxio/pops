@@ -1,5 +1,5 @@
 /**
- * PRD-119-E — mobile-viewport layout sanity check.
+ * Mobile-viewport layout sanity check.
  *
  * jsdom doesn't really lay out CSS, but we can assert the structural
  * primitives (action menus stay tappable; cards stack via the
@@ -7,6 +7,8 @@
  * survive a 375px viewport. The real responsive audit is delivered via
  * Storybook + manual review — these tests guard against regressions on
  * the contracts the page-level code depends on.
+ *
+ * Spec: pillars/food/docs/prds/recipe-crud-pages
  */
 import { render, screen } from '@testing-library/react';
 import { createInstance } from 'i18next';
@@ -68,7 +70,7 @@ afterEach(() => {
   Object.defineProperty(window, 'innerWidth', { writable: true, value: ORIGINAL_INNER_WIDTH });
 });
 
-describe('PRD-119-E — mobile viewport (375px) layout contracts', () => {
+describe('recipe-crud-pages — mobile viewport (375px) layout contracts', () => {
   it('RecipeListCard — caps visible tags at 4 + overflow indicator', () => {
     render(
       <Wrapper>

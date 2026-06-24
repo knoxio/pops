@@ -1,11 +1,8 @@
 /**
- * PRD-134 — filter chip group + sort dropdown for the Drafts tab.
- *
- * All chips are multi-select; the band group defaults to all-selected so the
- * triagers see the full queue out of the box. The sort dropdown is
- * single-select with four documented orders. Parent owns the filter object
- * and decides where the state is persisted (this PRD wires it to the URL
- * hash via `drafts-filters.ts`).
+ * Filter chip group + sort dropdown for the Drafts tab. All chips are
+ * multi-select; the band group defaults to all-selected so triagers see the
+ * full queue out of the box. Parent owns the filter object; persistence to
+ * the URL hash lives in `drafts-filters.ts`.
  */
 import { type ChangeEvent, type ReactElement } from 'react';
 

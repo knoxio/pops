@@ -1,5 +1,5 @@
 /**
- * Step-body scanner — unit suite (PRD-120 part B).
+ * Step-body scanner — unit suite.
  *
  * Covers `findStepBodyAtOffset` (membership test for the cursor) and
  * `collectStepIndexes` (the index → descriptor map that feeds step-ref
@@ -74,7 +74,6 @@ describe('findStepBodyAtOffset', () => {
     const cleaned = text.replace('|', '');
     const result = findStepBodyAtOffset(cleaned, cursor);
     expect(result).not.toBeNull();
-    // The outer body starts right after the first `"`.
     expect(result?.bodyStart).toBe(cleaned.indexOf('"') + 1);
   });
 });

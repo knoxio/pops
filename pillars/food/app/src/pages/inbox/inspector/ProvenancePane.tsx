@@ -1,15 +1,6 @@
 /**
- * PRD-135 — provenance pane.
- *
  * Dispatches to a per-kind body and renders the cost / extractor-version
- * footer. The bodies in v1 cover the always-on read surfaces — sandboxed
- * iframe for `url-web`, video + collapsible caption for `url-instagram`,
- * pre + copy for `text`, full-size `<img>` for `screenshot`. Image
- * zoom-on-click, the IG keyframe gallery, the STT transcript, and the
- * raw vision LLM output that the PRD calls out are deferred — they
- * depend on richer meta-JSON shapes than what handlers ship today.
- *
- * The pane is wrapped in an `ErrorBoundary` by the caller so a malformed
+ * footer. The caller wraps this pane in an `ErrorBoundary` so a malformed
  * `extracted_json` doesn't take down the editor or decision panes.
  */
 import { type ReactElement } from 'react';
@@ -87,11 +78,9 @@ function ProvenanceUrlInstagram({ source }: Props): ReactElement {
         </a>
       )}
       {/* eslint-disable-next-line jsx-a11y/media-has-caption --
-         IG reels we save have no native caption track and an empty <track>
-         element is worse than none (assistive tech may announce missing
-         captions exist). Real captions would come from PRD-130's STT
-         transcript — that pipeline is in flight; once stable we can wire
-         a generated VTT here and drop the suppression (Copilot R1). */}
+         IG reels we save have no native caption track, and an empty <track>
+         element is worse than none (assistive tech may announce that missing
+         captions exist). */}
       <video
         controls
         preload="metadata"

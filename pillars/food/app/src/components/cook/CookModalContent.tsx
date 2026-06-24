@@ -5,12 +5,10 @@ import { CookModalYieldFields } from './CookModalYieldFields.js';
 import { ShortfallList } from './ShortfallList.js';
 
 /**
- * Body of the cook modal — PRD-144.
- *
- * Hosts the scale + rating + notes fields, the yield-section fields
- * (when applicable), and the PRD-146 stub panels (`ConsumePreviewPanel`,
- * `ShortfallList`). Split out of `CookModal.tsx` to stay under the
- * per-file lint cap; the parent owns the dialog framing + state.
+ * Body of the cook modal: the scale + rating + notes fields, the
+ * yield-section fields (when applicable), and the consume-preview +
+ * shortfall panels (`ConsumePreviewPanel`, `ShortfallList`). The parent
+ * owns the dialog framing + state.
  */
 import type { Dispatch, ReactElement, SetStateAction } from 'react';
 
@@ -45,10 +43,9 @@ export function CookModalContent({
             setForm((prev) => ({
               ...prev,
               location: loc,
-              // Only freeze the expiry when the user has manually edited
-              // the expires field itself (Copilot R1). Earlier `dirty`-
-              // based gating would lock auto-expiry after the very first
-              // location toggle.
+              // Freeze the expiry only once the user has manually edited
+              // the expires field itself; until then it tracks the
+              // location change.
               expiresAt: prev.expiresAtDirty
                 ? prev.expiresAt
                 : deriveAutoExpires(prep.yieldDefault, loc),

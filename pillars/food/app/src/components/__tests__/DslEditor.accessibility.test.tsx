@@ -1,5 +1,5 @@
 /**
- * PRD-120 part F — axe-core accessibility sweep for the DSL editor.
+ * axe-core accessibility sweep for the DSL editor.
  *
  * The editor wraps an imperative CodeMirror EditorView, so a single
  * axe-core pass over the React-rendered container covers both the
@@ -64,7 +64,7 @@ async function assertNoViolations(container: HTMLElement): Promise<void> {
   expect(results.violations).toEqual([]);
 }
 
-describe('PRD-120 part F — DslEditor accessibility', () => {
+describe('DslEditor accessibility', () => {
   it('editable editor passes axe-core basic checks', async () => {
     const { container } = render(
       <Wrapper>

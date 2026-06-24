@@ -1,12 +1,6 @@
 /**
- * PRD-151 — TagsTab unit tests.
- *
- * Drives the read-only vocabulary view through synchronous tRPC stand-ins.
- * Asserts:
- *   - empty state when no tags
- *   - tags are grouped by namespace
- *   - `(no namespace)` bucket is rendered last
- *   - drill-down panel hits `findByTag` and lists the ingredients
+ * TagsTab unit tests: drives the read-only vocabulary view through mocked
+ * food-api REST clients (ingredientTagsDistinct / ingredientTagsByTag).
  */
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, waitFor } from '@testing-library/react';
@@ -98,7 +92,6 @@ describe('TagsTab', () => {
         <TagsTab />
       </Wrapper>
     );
-    // Each namespace produces a heading; the (no namespace) bucket renders last.
     await waitFor(() => {
       const headings = screen.getAllByRole('heading', { level: 3 }).map((h) => h.textContent);
       expect(headings).toEqual(['diet', 'store-section', '(no namespace)']);

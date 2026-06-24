@@ -1,5 +1,5 @@
 /**
- * Pure utilities for the PRD-148 substitution graph explorer.
+ * Pure utilities for the substitution graph explorer.
  *
  * Kept free of React + i18n so each can be unit-tested in isolation and
  * reused across `ForceGraphCanvas`, `RadialFocusView`, and the side
@@ -18,8 +18,7 @@ export function nodeLabel(node: SubGraphNode): string {
 
 /**
  * Render slug for a node. For variants we use the `parent:variant` form
- * that matches the URL `?node=<slug>` convention the PRD specifies for
- * radial focus.
+ * that matches the URL `?node=<slug>` convention used for radial focus.
  */
 export function nodeSlug(node: SubGraphNode): string {
   if (node.kind === 'variant' && node.variantSlug !== null) {
@@ -44,8 +43,8 @@ export function findNodeBySlug(nodes: readonly SubGraphNode[], slug: string): Su
 
 /**
  * Map a ratio to one of three discrete "thickness buckets" — cosmetic
- * only. PRD-148 calls for a thick line when the ratio is non-trivial
- * (outside the 0.5..2.0 band) so the user spots non-1:1 subs at a glance.
+ * only. A non-trivial ratio (outside the 0.5..2.0 band) draws a thick
+ * line so the user spots non-1:1 subs at a glance.
  */
 export type EdgeThickness = 'thin' | 'normal' | 'thick';
 

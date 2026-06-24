@@ -1,10 +1,8 @@
 /**
  * Create + edit dialogs for unit_conversions.
  *
- * The create dialog collects from / to / ratio / notes. The edit dialog
- * only mutates ratio + notes — `from_unit` and `to_unit` form the UNIQUE
- * key (PRD-123 Phase A) and changing them is "delete + re-create" by
- * intent; the PRD lists inline ratio + notes edit as the supported action.
+ * The edit dialog only mutates ratio + notes: `from_unit` and `to_unit`
+ * form the UNIQUE key, so changing them is delete + re-create, not an edit.
  */
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';

@@ -1,19 +1,10 @@
 /**
- * PRD-147 — `/food/fridge` page.
+ * The `/food/fridge` page.
  *
  * Sectioned list of every non-empty, non-deleted batch grouped by
  * location, then ingredient. Row-level Edit / Relocate / Adjust /
- * Cook / Delete actions delegate to PRD-145's `food.batches.*`
- * services. The filter / search / show-all controls feed
- * `food.fridge.view`.
- *
- * Deferred from v1:
- *   - URL-driven state (`?showAll=1`, `?add=1`, `?edit=<id>`, `?batch=<id>`
- *     scroll + highlight). Filter / modal state is local-only for now; a
- *     follow-up will sync to `useSearchParams` once the deep-link UX is
- *     designed (auto-expand showAll, auto-scroll target, pulse).
- *   - Sidebar badge for batches expiring within 3 days.
- *   - Mobile bottom-sheet modal variants.
+ * Cook / Delete actions delegate to the `batches*` REST endpoints. The
+ * filter / search / show-all controls feed `fridgeView`.
  */
 import { useEffect, useState, type ReactElement } from 'react';
 import { Link } from 'react-router';

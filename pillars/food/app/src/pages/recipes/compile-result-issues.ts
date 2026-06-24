@@ -20,9 +20,9 @@ interface PossiblyLocatedError {
 }
 
 /**
- * Convert PRD-116's `CompileResult` + PRD-119's `listProposedSlugs` into
- * the diagnostic shape PRD-120-C's `DslEditor` consumes via its `issues`
- * prop. Errors are `severity='error'`; proposed slugs are `severity='info'`.
+ * Convert a `CompileResult` + the proposed-slug rows into the diagnostic
+ * shape `DslEditor` consumes via its `issues` prop. Errors are
+ * `severity='error'`; proposed slugs are `severity='info'`.
  *
  * `MaterialiseError` has no `loc` (it fires deep in the DB write path);
  * pin it to file-origin so the gutter marker still appears.

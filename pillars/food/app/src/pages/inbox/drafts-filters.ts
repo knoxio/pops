@@ -1,10 +1,10 @@
 /**
- * PRD-134 — Drafts-tab filter types + URL-hash codec.
+ * Drafts-tab filter types + URL-hash codec.
  *
  * Filter state lives in the URL hash (`#filters=<base64url(json)>`) so
- * sharing / refresh preserves context. We base64url-encode rather than
- * stuff the JSON in raw so the hash stays free of `%`-escaped characters
- * and so it survives the React Router pass-through unchanged.
+ * sharing / refresh preserves context. The JSON is base64url-encoded rather
+ * than stored raw so the hash stays free of `%`-escaped characters and
+ * survives the React Router pass-through unchanged.
  */
 import type { PartialReason } from '@pops/food/queue';
 
@@ -53,9 +53,8 @@ export function toQueryInput(filters: DraftsFiltersState): {
   sort?: DraftSort;
 } {
   return {
-    // PRD-134: the "all selected" UI default collapses to undefined on the
-    // wire so the SQL skips the WHERE-IN clause. Same shape PRD-140-B used
-    // for kind filters — Copilot R1 lessons captured.
+    // The "all selected" UI default collapses to undefined on the wire so the
+    // query skips the WHERE-IN clause entirely.
     bands: filters.bands.length === ALL_BANDS.length ? undefined : [...filters.bands],
     kinds: filters.kinds.length === 0 ? undefined : [...filters.kinds],
     partialReasons: filters.partialReasons.length === 0 ? undefined : [...filters.partialReasons],

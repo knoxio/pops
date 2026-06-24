@@ -1,5 +1,5 @@
 /**
- * Sub-breakdown expander — PRD-150.
+ * Sub-breakdown expander.
  *
  * For recipes with one sub needed, the breakdown line is inlined into
  * the card so the user sees `soy sauce → tamari` without an extra

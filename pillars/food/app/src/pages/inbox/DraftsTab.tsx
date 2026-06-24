@@ -1,15 +1,6 @@
 /**
- * PRD-134 — Drafts tab body.
- *
- * Owns the filter object (defaulting to the URL-hash decoded state) and
- * surfaces:
- *   - the filter chip group + sort dropdown
- *   - the heuristic-sorted row list (one `DraftRow` per pending ingest)
- *   - empty states ("inbox is empty" vs "no rows match your filters")
- *   - loading / error pass-through
- *
- * The shell owns URL-hash sync via `InboxPage` so the URL stays a single
- * source of truth; this component just receives the initial state + an
+ * Drafts tab body. `InboxPage` owns URL-hash sync so the URL stays the single
+ * source of truth; this component receives the decoded filter state and an
  * `onFiltersChange` callback to push updates upward.
  */
 import { type ReactElement } from 'react';

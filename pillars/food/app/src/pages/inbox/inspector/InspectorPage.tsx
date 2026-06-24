@@ -1,16 +1,12 @@
 /**
- * PRD-135 — `/food/inbox/:sourceId` per-draft inspector.
+ * `/food/inbox/:sourceId` per-draft inspector: three-pane layout
+ * (provenance / editor / decision) for an ingest source and its draft.
+ * The provenance pane is wrapped in an error boundary so a malformed
+ * `extracted_json` doesn't tank the editor + decision panes.
  *
- * Three-pane layout (provenance / editor / decision) for an ingest source
- * + its draft. Replaces PRD-134's stub route. Provenance pane is wrapped
- * in an error boundary so a malformed `extracted_json` doesn't tank the
- * editor + decision panes.
- *
- * Layout: tailwind `lg:` breakpoint switches between a single stacked
- * column (decision first so Approve is above the fold on mobile) and the
- * three-pane horizontal grid (25/45/30). Resizable pane widths + the
- * `localStorage` persistence the PRD spec describes are deferred — the
- * Gaps section on the PR tracks that follow-up.
+ * The `lg:` breakpoint switches between a single stacked column (decision
+ * first so Approve is above the fold on mobile) and the three-pane
+ * horizontal grid.
  */
 import { Component, type ReactElement, type ReactNode, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -50,8 +46,8 @@ function InspectorBody({ sourceId, t }: BodyProps): ReactElement {
   >(undefined);
   // Monotonic counter — `Date.now()` can collide on back-to-back clicks
   // (especially in tests with fake timers); a ref-backed integer always
-  // changes identity so `usePendingCursor` re-runs (Copilot R1). Lives
-  // before the early-return guards to honour the rules of hooks.
+  // changes identity so `usePendingCursor` re-runs. Lives before the
+  // early-return guards to honour the rules of hooks.
   const nonceRef = useRef(0);
 
   if (inspector.isLoading) return <LoadingState t={t} />;
@@ -111,9 +107,6 @@ function InspectorLayout({
   editor: ReactNode;
   decision: ReactNode;
 }): ReactElement {
-  // PRD-135 §Layout — `lg:` brings the three-pane horizontal split (25/45/30).
-  // On narrow screens the decision pane comes first so Approve is above the
-  // fold (vertical stack `flex-col-reverse`-style via explicit ordering).
   return (
     <div className="flex flex-col gap-4 lg:grid lg:grid-cols-[1fr_1.8fr_1.2fr]">
       <div className="order-3 lg:order-1" data-testid="inspector-pane-provenance">

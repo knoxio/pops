@@ -1,5 +1,5 @@
 /**
- * Date-range picker header for the FromPlanPage — PRD-152.
+ * Date-range picker header for the FromPlanPage.
  *
  * Two date inputs + a "↺ This week" button that snaps to the current ISO
  * Mon–Sun. Live plan-entry count caption. Disabled feedback messaging when

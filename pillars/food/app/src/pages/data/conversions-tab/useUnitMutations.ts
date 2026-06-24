@@ -1,8 +1,7 @@
 /**
- * React Query mutations for unit_conversions (PRD-123 Phase D). Each
- * `submit*` returns the underlying mutation's promise so call sites can
- * chain `onSuccess` behaviour (close dialog, etc.) without racing the
- * synchronous-then-stale `errorMessage` state.
+ * React Query mutations for unit_conversions. Each `submit*` forwards an
+ * optional `onSuccess` so call sites can chain behaviour (close dialog,
+ * etc.) without racing the synchronous-then-stale `errorMessage` state.
  */
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useState } from 'react';

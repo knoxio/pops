@@ -1,11 +1,11 @@
 /**
- * Cook-now integration helpers for `RecipeDetailPage` — PRD-144.
+ * Cook-now integration helpers for `RecipeDetailPage`.
  *
- * Mirrors `use-send-flow.ts` from PRD-142: open/close state, a "can cook
- * this version" decider, and a builder that wires both into the action
- * menu's `extraItems` slot (between Drafts and Send-to-list).
+ * Mirrors `use-send-flow.ts`: open/close state, a "can cook this version"
+ * decider, and a builder that wires both into the action menu's
+ * `extraItems` slot (between Drafts and Send-to-list).
  *
- * Per the PRD-119 canonical menu order:
+ * Canonical menu order:
  *   Edit / Drafts / Cook now... / Send to shopping list... / Archive
  */
 import { useCallback, useState } from 'react';

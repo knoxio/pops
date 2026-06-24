@@ -1,5 +1,5 @@
 /**
- * Pure label + sort helpers for the Aliases tab (PRD-122-C).
+ * Pure label + sort helpers for the Aliases tab.
  *
  * Kept separate from the table component so the sort comparator can be
  * unit-tested without rendering React.

@@ -72,7 +72,7 @@ beforeEach(() => {
   resolvePage([]);
 });
 
-describe('PRD-119-A — RecipeListPage', () => {
+describe('recipe-crud-pages — RecipeListPage', () => {
   it('renders the empty state CTA when there are zero rows', async () => {
     resolvePage([]);
     render(

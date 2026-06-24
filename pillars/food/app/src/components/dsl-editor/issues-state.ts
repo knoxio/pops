@@ -1,9 +1,9 @@
 /**
- * Issues `StateField` + `StateEffect` for the DSL editor (PRD-120 part C).
+ * Issues `StateField` + `StateEffect` for the DSL editor.
  *
- * The parent (PRD-119, downstream) passes a fresh `CompileEditorIssue[]`
- * whenever the most-recent compile result changes. The `useDslEditorView`
- * hook dispatches `setIssuesEffect.of(issues)` and this field rebuilds the
+ * The parent passes a fresh `CompileEditorIssue[]` whenever the
+ * most-recent compile result changes. The `useDslEditorView` hook
+ * dispatches `setIssuesEffect.of(issues)` and this field rebuilds the
  * decoration set + a parallel ranged-marker set used by the gutter.
  *
  * Both sets are kept in a single `StateField` so a single dispatch

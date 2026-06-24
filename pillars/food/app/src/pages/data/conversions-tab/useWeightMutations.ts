@@ -1,9 +1,9 @@
 /**
- * React Query mutations for ingredient_weights (PRD-123 Phase D). Same
- * shape as `useUnitMutations`; separate hook so each section owns its own
- * error state. Each `submit*` accepts an optional `onSuccess` callback the
- * call site can use to close its dialog AFTER the server confirms (avoids
- * the synchronous-state race where the dialog would close on every submit
+ * React Query mutations for ingredient_weights. Same shape as
+ * `useUnitMutations`; separate hook so each section owns its own error
+ * state. Each `submit*` accepts an optional `onSuccess` the call site uses
+ * to close its dialog AFTER the server confirms (avoids the
+ * synchronous-state race where the dialog would close on every submit
  * regardless of outcome).
  */
 import { useMutation, useQueryClient } from '@tanstack/react-query';

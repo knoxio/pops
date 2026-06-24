@@ -1,11 +1,10 @@
 /**
- * `/food/data/prep-states` tab content (PRD-122-C / Tab 3).
+ * `/food/data/prep-states` tab content (pillars/food/docs/prds/data-page).
  *
  * Read-only list of all prep states (seeded + user-added) plus an Add
- * button. Per PRD-122 the delete affordance is deliberately omitted —
- * recipe_lines reference prep_states and cascade analysis is deferred
- * to a future PRD. The placeholder UI surfaces this via a disabled
- * delete button with a Tooltip explaining "not in v1".
+ * button. The delete affordance is deliberately omitted — recipe_lines
+ * reference prep_states and cascade analysis is deferred. The UI surfaces
+ * this via a disabled delete button with a Tooltip explaining "not in v1".
  */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';

@@ -5,7 +5,7 @@
  * Errors:
  *   - CONFLICT on create  → slug-taken localised message
  *   - CONFLICT on delete  → FK reference (batch / line / sub / alias)
- *   - BAD_REQUEST         → invalid slug shape (PRD-106)
+ *   - BAD_REQUEST         → invalid slug shape
  */
 import { useCallback, useState } from 'react';
 

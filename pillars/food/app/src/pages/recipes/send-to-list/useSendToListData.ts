@@ -1,13 +1,14 @@
 /**
- * Combined data hook for the send-to-list modal — PRD-142.
+ * Combined data hook for the send-to-list modal
+ * (pillars/food/docs/prds/send-to-list).
  *
- * Fetches the preview (`recipes.sendToList.prepare`) from the food SDK and
- * the available shopping lists (`GET /lists`) from the lists SDK in
- * parallel; the modal renders once both resolve. Both queries are scoped
- * to enabled=open so the modal pays nothing while closed.
+ * Fetches the preview (`sendToListPrepare`, food REST client) and the
+ * available shopping lists (`listListAggregate`, lists REST client) in
+ * parallel; the modal renders once both resolve. Both queries are scoped to
+ * `enabled=open` so the modal pays nothing while closed.
  *
  * The shopping-list read is a cross-pillar call to the lists pillar through
- * app-food's generated lists client (wire contract only — no monolith).
+ * food's generated lists client.
  */
 import { useQuery } from '@tanstack/react-query';
 

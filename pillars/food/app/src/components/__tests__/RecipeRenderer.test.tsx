@@ -15,7 +15,7 @@ import { ingredientBanana, makeLine, makeRecipeData, yieldIngredientPancake } fr
 
 import type { ResolvedStepBody } from '../recipe-render-types.js';
 
-describe('PRD-121 — RecipeRenderer helpers', () => {
+describe('RecipeRenderer helpers', () => {
   it('clampScaleFactor passes valid scales through', () => {
     expect(clampScaleFactor(undefined)).toBe(1);
     expect(clampScaleFactor(2)).toBe(2);
@@ -125,7 +125,7 @@ describe('PRD-121 — RecipeRenderer helpers', () => {
   });
 });
 
-describe('PRD-121 — RecipeRenderer detail layout', () => {
+describe('RecipeRenderer detail layout', () => {
   beforeEach(() => {
     vi.spyOn(console, 'warn').mockImplementation(() => undefined);
   });
@@ -214,7 +214,7 @@ describe('PRD-121 — RecipeRenderer detail layout', () => {
   });
 });
 
-describe('PRD-121 — Ingredient list scaling + formatting', () => {
+describe('Ingredient list scaling + formatting', () => {
   it('scales canonical quantities and leaves original text alone', () => {
     const data = makeRecipeData();
     render(<RecipeRenderer recipeVersion={data} scaleFactor={2} />);
@@ -310,7 +310,7 @@ describe('PRD-121 — Ingredient list scaling + formatting', () => {
   });
 });
 
-describe('PRD-121 — Step body two-pass substitution', () => {
+describe('Step body two-pass substitution', () => {
   beforeEach(() => {
     vi.spyOn(console, 'warn').mockImplementation(() => undefined);
   });
@@ -433,7 +433,7 @@ describe('PRD-121 — Step body two-pass substitution', () => {
     expect(onTimerStart).toHaveBeenNthCalledWith(2, 60, 3); // 1 h = 60 min
   });
 
-  it('renders step-level duration + temperature badges from PRD-116 hoist columns', () => {
+  it('renders step-level duration + temperature badges from hoist columns', () => {
     const bodyResolved: ResolvedStepBody = [{ kind: 'text', value: 'Bake until done.' }];
     const data = makeRecipeData({
       steps: [
@@ -498,7 +498,7 @@ describe('PRD-121 — Step body two-pass substitution', () => {
   });
 });
 
-describe('PRD-121 — Compile-status placeholder', () => {
+describe('Compile-status placeholder', () => {
   it('renders "not yet compiled" placeholder when compile_status != compiled', () => {
     const data = makeRecipeData({
       version: { ...makeRecipeData().version, compileStatus: 'failed' },
@@ -519,7 +519,7 @@ describe('PRD-121 — Compile-status placeholder', () => {
   });
 });
 
-describe('PRD-121 — Compact variant', () => {
+describe('Compact variant', () => {
   it('renders the compact card with title, time and yield', () => {
     const data = makeRecipeData();
     render(<RecipeRenderer recipeVersion={data} variant="compact" />);
@@ -548,7 +548,7 @@ describe('PRD-121 — Compact variant', () => {
   });
 });
 
-describe('PRD-121 — Accessibility surface', () => {
+describe('Accessibility surface', () => {
   beforeEach(() => {
     vi.spyOn(console, 'warn').mockImplementation(() => undefined);
   });

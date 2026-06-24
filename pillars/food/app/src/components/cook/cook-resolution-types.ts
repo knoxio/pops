@@ -1,12 +1,12 @@
 /**
- * Cook-flow view + resolution types (PRD-144 / PRD-146).
+ * Cook-flow view + resolution types.
  *
  * Wire-shaped values (`CookPreparation`, `CookYieldDefault`,
  * `LineConsumeNeed`, `BatchForConsumeRow`, `ConsumptionOverride`) are
  * projected from the generated food SDK so the modal stays in lockstep
  * with the `/cook/*` + `/batches/*` REST surface. `LineResolution` and
- * `LineShortfall` are FE-only modal state (PRD-146) — they never cross the
- * wire, so they live here.
+ * `LineShortfall` are FE-only modal state — they never cross the wire,
+ * so they live here.
  */
 import type {
   BatchesSearchForConsumeResponses,
@@ -25,11 +25,11 @@ export type ConsumptionOverride = NonNullable<
 >[number];
 
 /**
- * PRD-146 — per-line resolution state held by `useCookResolution`.
+ * Per-line resolution state held by `useCookResolution`.
  *
- * `fifo` = accept PRD-108's default; `batch-override` = user picked a
- * specific batch; `external` = user marks the line as consumed outside
- * the batch system; `partial` = some FIFO + some external.
+ * `fifo` = accept the default FIFO consumption; `batch-override` = user
+ * picked a specific batch; `external` = user marks the line as consumed
+ * outside the batch system; `partial` = some FIFO + some external.
  */
 export type LineResolution =
   | { kind: 'fifo' }
@@ -44,8 +44,8 @@ export type LineResolution =
     };
 
 /**
- * PRD-146 — per-line shortfall the cook modal surfaces when FIFO can't
- * fully cover a line. `lineIndex` matches `recipe_lines.position` (1-based).
+ * Per-line shortfall the cook modal surfaces when FIFO can't fully cover
+ * a line. `lineIndex` matches `recipe_lines.position` (1-based).
  */
 export interface LineShortfall {
   lineIndex: number;

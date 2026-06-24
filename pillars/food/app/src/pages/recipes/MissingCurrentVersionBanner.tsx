@@ -8,8 +8,8 @@ interface Props {
 }
 
 /**
- * Shown on the detail page when `recipes.current_version_id IS NULL`
- * (PRD-119 spec): links to the drafts page so the user can promote one.
+ * Shown on the detail page when `recipes.current_version_id IS NULL`:
+ * links to the drafts page so the user can promote one.
  */
 export function MissingCurrentVersionBanner({ slug }: Props): ReactElement {
   const { t } = useTranslation('food');

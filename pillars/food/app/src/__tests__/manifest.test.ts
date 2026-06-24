@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { manifest, navConfig, routes } from '../index.js';
 
-describe('PRD-118 — app-food module manifest', () => {
+describe('food app module manifest (pillars/food/docs/prds/app-shell)', () => {
   it('declares id="food"', () => {
     expect(manifest.id).toBe('food');
   });
@@ -26,7 +26,7 @@ describe('PRD-118 — app-food module manifest', () => {
     expect(routes[0]).toMatchObject({ index: true });
   });
 
-  it('does NOT yet declare a backend slot (Epic 00 implementation fills it)', () => {
+  it('declares no backend slot', () => {
     expect(manifest.backend).toBeUndefined();
   });
 });

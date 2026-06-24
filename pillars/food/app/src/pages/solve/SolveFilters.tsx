@@ -1,14 +1,14 @@
 /**
- * Header filter bar for `/food/solve` — PRD-150.
+ * Header filter bar for `/food/solve`.
  *
  * Four controls: a "No substitutions" toggle, multi-select recipe-type
  * chips, multi-select tag chips, and a max-time dropdown. Every filter
  * is optional; clearing them all is the equivalent of unfiltered.
  *
- * Tag suggestions come from `food.recipes.distinctTags` if/when that
- * surface lands — for v1 the input takes a comma-separated string the
- * user types directly. Keeps the page shippable without a dependency
- * on a tag taxonomy that doesn't exist yet.
+ * The tags control is a free-text comma-separated input: there is no
+ * tag-taxonomy read surface, so the user types tags directly. Replacing
+ * it with a discoverable chip group is tracked in
+ * pillars/food/docs/ideas/solver-tag-taxonomy-filter.md.
  */
 import { useTranslation } from 'react-i18next';
 

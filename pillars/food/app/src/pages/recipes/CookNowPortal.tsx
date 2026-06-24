@@ -1,8 +1,6 @@
 /**
- * Thin mount wrapper for PRD-144's `CookModal`.
- *
- * Mirrors `SendToListPortal` — owns the success-toast presentation so
- * `RecipeDetailPage` stays declarative.
+ * Thin mount wrapper for `CookModal`. Mirrors `SendToListPortal` — owns
+ * the success-toast presentation so `RecipeDetailPage` stays declarative.
  */
 import { type ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -32,8 +30,8 @@ export function CookNowPortal({ flow, versionId }: Props): ReactElement {
       onCookedSuccess={(result) => {
         if (result.yieldedBatchId !== null) {
           // Localise per chosen location instead of hardcoding "fridge"
-          // in the success copy (Copilot R1). i18n provides per-location
-          // strings; the `location` discriminator selects which one.
+          // in the success copy: i18n provides per-location strings; the
+          // `location` discriminator selects which one.
           const locKey = result.location ?? 'fridge';
           toast.success(t(`cook.modal.toast.success.${locKey}`), {
             action: {

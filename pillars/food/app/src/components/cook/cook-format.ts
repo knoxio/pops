@@ -1,5 +1,5 @@
 /**
- * PRD-146 — display formatters shared by the cook-modal panels.
+ * Display formatters shared by the cook-modal panels.
  *
  * `formatQty` mirrors `RecipeRenderer.helpers.formatQty` so quantity
  * formatting stays consistent across the food surfaces (integer →

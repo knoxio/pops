@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Input, Label, Textarea } from '@pops/ui';
 
 /**
- * Scale + rating + notes fields for `CookModal` — PRD-144.
+ * Scale + rating + notes fields for `CookModal`.
  */
 import type { ChangeEvent, Dispatch, ReactElement, SetStateAction } from 'react';
 

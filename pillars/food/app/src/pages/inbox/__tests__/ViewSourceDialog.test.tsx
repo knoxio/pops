@@ -1,12 +1,3 @@
-/**
- * PRD-138 — RTL coverage for the ViewSourceDialog.
- *
- *   - renders nothing when row is null
- *   - URL kinds render a clickable link + sandboxed iframe
- *   - screenshot kind renders an <img> pointing at the source endpoint
- *   - text kind renders the placeholder
- *   - Close button fires onClose
- */
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createInstance } from 'i18next';
@@ -59,7 +50,7 @@ function renderDialog(r: FailedRow | null, onClose = () => {}): void {
   render(<Wrapper />);
 }
 
-describe('ViewSourceDialog — PRD-138', () => {
+describe('ViewSourceDialog', () => {
   it('renders nothing when row is null', () => {
     renderDialog(null);
     expect(screen.queryByTestId('view-source-dialog')).toBeNull();

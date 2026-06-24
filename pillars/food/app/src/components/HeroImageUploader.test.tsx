@@ -1,5 +1,5 @@
 /**
- * PRD-124 — HeroImageUploader RTL suite.
+ * HeroImageUploader RTL suite.
  *
  * Mocks the generated food SDK so the upload + remove mutations can be
  * exercised in isolation. Toast errors are observed via `sonner.toast`

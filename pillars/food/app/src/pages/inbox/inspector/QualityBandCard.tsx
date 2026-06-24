@@ -1,9 +1,6 @@
 /**
- * PRD-135 — quality band card on the decision pane.
- *
- * Renders PRD-137's band pill (large), the integer score, and the full
- * signal list (NOT truncated to top-3 like the inbox row tooltip). Pure
- * presentation; no data fetching.
+ * Renders the band pill, the integer score, and the full signal list —
+ * NOT truncated to top-3 like the inbox row tooltip.
  */
 import { type ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';

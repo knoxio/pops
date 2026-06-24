@@ -1,5 +1,5 @@
 /**
- * A single location section (Pantry / Fridge / Freezer / Other) — PRD-147.
+ * A single location section (Pantry / Fridge / Freezer / Other).
  *
  * Collapsible header + per-ingredient sub-groups of batch rows.
  */

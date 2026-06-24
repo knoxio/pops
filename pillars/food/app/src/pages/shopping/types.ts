@@ -1,7 +1,6 @@
 /**
  * Wire types for the shopping FromPlanPage — derived from the generated
- * food SDK so they stay in lockstep with the `/shopping/*` REST surface
- * (PRD-152).
+ * food SDK so they stay in lockstep with the `/shopping/*` REST surface.
  */
 import type {
   ShoppingGenerateResponses,

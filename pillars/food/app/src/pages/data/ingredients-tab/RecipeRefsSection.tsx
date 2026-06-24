@@ -1,10 +1,9 @@
 /**
  * "Used by recipes" section of the ingredient detail panel.
  *
- * Queries `food.ingredients.recipeRefs` for the selected ingredient and
- * shows the count + a collapsible list of recipes. Recipe entries link to
- * `/food/recipes/<slug>` (the PRD-119 page; until that route exists the
- * link still renders but lands on a 404 placeholder).
+ * Queries the recipe-refs endpoint for the selected ingredient and shows the
+ * count + a collapsible list of recipes. Recipe entries link to the
+ * `/food/recipes/<slug>` detail page.
  */
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';

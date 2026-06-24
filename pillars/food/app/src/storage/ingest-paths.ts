@@ -10,7 +10,7 @@
  */
 import { isAbsolute, relative, resolve, sep } from 'node:path';
 
-/** Hard-coded default — kept in sync with `apps/pops-api/.env.example`. */
+/** Hard-coded default for `FOOD_INGEST_DIR`. */
 export const DEFAULT_FOOD_INGEST_DIR = './data/food/ingest';
 
 /**

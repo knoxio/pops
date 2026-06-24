@@ -1,10 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 /**
- * Relocate batch modal — PRD-147.
+ * Relocate batch modal.
  *
- * Single-field modal: pick a new location and call
- * `food.batches.relocate`. The service recomputes default expiry when
- * the user hasn't overridden it (PRD-145).
+ * Single-field modal: pick a new location and call `batchesRelocate`.
+ * The service recomputes default expiry when the user hasn't overridden
+ * it.
  */
 import { useEffect, useState, type ReactElement } from 'react';
 

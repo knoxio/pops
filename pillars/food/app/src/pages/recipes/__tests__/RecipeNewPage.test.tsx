@@ -69,7 +69,7 @@ beforeEach(() => {
   navigateMock.mockReset();
 });
 
-describe('PRD-119-C — RecipeNewPage', () => {
+describe('recipe-crud-pages — RecipeNewPage', () => {
   it('renders the editor + save CTA', () => {
     render(
       <Wrapper>

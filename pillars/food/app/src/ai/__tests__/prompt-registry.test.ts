@@ -1,5 +1,5 @@
 /**
- * PRD-133 — drift catcher for the prompt registry.
+ * Drift catcher for the prompt registry.
  *
  * Discovers every module under `pillars/food/app/src/prompts/` at
  * runtime via `import.meta.glob` so adding a new prompt file forces
@@ -25,7 +25,7 @@ function collectVersionExports(): string[] {
   return versions;
 }
 
-describe('PRD-133 — FOOD_PROMPTS registry', () => {
+describe('FOOD_PROMPTS registry', () => {
   it('discovers at least one prompt module under src/prompts/', () => {
     expect(Object.keys(promptModules).length).toBeGreaterThan(0);
   });

@@ -27,7 +27,7 @@ beforeEach(() => {
   navigateMock.mockReset();
 });
 
-describe('PRD-119-B — RecipeActionMenu', () => {
+describe('recipe-crud-pages — RecipeActionMenu', () => {
   it('opens the menu when the trigger is clicked', async () => {
     const user = userEvent.setup();
     wrap();
@@ -38,7 +38,7 @@ describe('PRD-119-B — RecipeActionMenu', () => {
     expect(trigger).toHaveAttribute('aria-expanded', 'true');
   });
 
-  it('renders the canonical 119-B order: Edit, Drafts, Archive (without Cook now/Send)', async () => {
+  it('renders the canonical order: Edit, Drafts, Archive (without Cook now/Send)', async () => {
     const user = userEvent.setup();
     wrap();
     await user.click(screen.getByRole('button', { name: /actions/i }));

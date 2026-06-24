@@ -1,10 +1,7 @@
 /**
- * PRD-135 — renderer tab body.
- *
- * Lazy-fetches PRD-121's `RecipeVersionWithCompiledData` via
- * `food.recipes.getForRendering` and mounts the read-only renderer. When
- * `compileStatus !== 'compiled'` we show a stub instead — the renderer is
- * only meaningful against materialised lines + steps.
+ * Lazy-fetches the joined render payload and mounts the read-only
+ * renderer. Uncompiled / failed versions show a stub instead — the
+ * renderer is only meaningful against materialised lines + steps.
  */
 import { useQuery } from '@tanstack/react-query';
 import { type ReactElement } from 'react';

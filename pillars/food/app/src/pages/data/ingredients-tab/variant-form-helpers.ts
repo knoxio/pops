@@ -63,9 +63,9 @@ function parsePositiveNumber(raw: string): number | null {
 function parseNonNegativeInt(raw: string): number | null {
   const n = parsePositiveNumber(raw);
   if (n === null) return null;
-  // Shelf-life columns are integers on the DB side (PRD-108) and the router
-  // validates with `z.number().int().nonnegative()` — coerce to int so decimal
-  // typos don't reach the backend as `BAD_REQUEST`.
+  // Shelf-life columns are integers on the DB side and the server validates
+  // with `z.number().int().nonnegative()` — coerce to int so decimal typos
+  // don't reach the backend as `BAD_REQUEST`.
   return Math.floor(n);
 }
 

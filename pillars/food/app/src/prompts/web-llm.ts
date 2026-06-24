@@ -1,14 +1,14 @@
 /**
- * Prompt template for PRD-128 (Web URL LLM fallback extraction).
+ * Web URL LLM fallback prompt (see pillars/food/docs/prds/web-llm-fallback).
  *
- * Used when JSON-LD recipe data is absent on a recipe page (PRD-127's
- * deterministic extractor failed). Sends readability-extracted page text
- * to Claude and asks for a structured DSL recipe.
+ * Used when JSON-LD recipe data is absent on a recipe page (the
+ * deterministic extractor in pillars/food/docs/prds/web-jsonld returns
+ * `JsonLdMissing`). Sends readability-extracted page text to Claude and
+ * asks for a structured DSL recipe.
  *
- * The handler implementation lands with PRD-128; this template is the
- * v1 starting point and is registered with the food prompt viewer
- * (PRD-133). Bump `PROMPT_VERSION_WEB_LLM` whenever the template
- * changes.
+ * Registered with the food prompt viewer
+ * (pillars/food/docs/prds/ai-usage-prompts). Bump `PROMPT_VERSION_WEB_LLM`
+ * whenever the template changes.
  */
 export const PROMPT_VERSION_WEB_LLM = 'web-llm-v0.1';
 

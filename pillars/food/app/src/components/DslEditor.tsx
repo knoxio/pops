@@ -41,14 +41,14 @@ export interface DslEditorProps {
   className?: string;
   /**
    * Autocomplete lookups. When omitted, the dropdown stays empty.
-   * Production wiring uses `useDslAutocompleteSources()` which wraps tRPC
-   * + React Query.
+   * Production wiring uses `useDslAutocompleteSources()`, which calls the
+   * generated REST SDK directly per keystroke.
    */
   autocompleteSources?: DslAutocompleteSources;
   /**
-   * PRD-135 — imperative cursor move target. The DecisionPane sets this
-   * when the user clicks a proposed-slug entry; the editor scrolls + sets
-   * the selection at `{ line, col }` and focuses. `nonce` lets callers
+   * Imperative cursor move target. The DecisionPane sets this when the
+   * user clicks a proposed-slug entry; the editor scrolls + sets the
+   * selection at `{ line, col }` and focuses. `nonce` lets callers
    * re-trigger the move with the same coordinates (e.g. clicking the same
    * entry twice). `line` + `col` are 1-indexed to match `SourceSpan`.
    */

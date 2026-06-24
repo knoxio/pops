@@ -1,17 +1,19 @@
 /**
- * Lezer-vs-parser parity test — PRD-120 part A acceptance criterion.
+ * Lezer-vs-parser parity test.
  *
- * The hand-rolled parser at `../parser.ts` is the canonical spec
- * (PRD-114 / ADR-023). The Lezer grammar at `../dsl.grammar` exists only
- * to drive CodeMirror highlighting. If they ever diverge, the editor will
- * colourise content that the runtime parser rejects (or vice versa) and
- * authors will see misleading visual cues.
+ * The hand-rolled parser exported as `@pops/food/dsl` (food pillar's
+ * `src/dsl`) is the canonical spec (grammar in ADR-023). The Lezer grammar
+ * at `../dsl.grammar` exists only to drive CodeMirror highlighting. If they
+ * ever diverge, the editor will colourise content that the runtime parser
+ * rejects (or vice versa) and authors will see misleading visual cues.
  *
- * This suite walks each PRD-114 sample recipe through BOTH parsers and
- * asserts the top-level function-call sequence matches by name and arity.
- * It deliberately does NOT compare full AST shapes — the Lezer grammar is
+ * This suite walks each sample recipe through BOTH parsers and asserts the
+ * top-level function-call sequence matches by name and arity. It
+ * deliberately does NOT compare full AST shapes — the Lezer grammar is
  * permissive and doesn't validate semantics; the parity contract is
  * "calls land in the same order with the same names".
+ *
+ * See pillars/food/docs/prds/dsl-editor and pillars/food/docs/prds/dsl-parser.
  */
 import { describe, expect, it } from 'vitest';
 
@@ -187,7 +189,7 @@ function countSourceArgs(input: string, span: CallSpan): number {
   return commas + 1;
 }
 
-describe('PRD-120 — Lezer ↔ parser parity', () => {
+describe('Lezer ↔ parser parity', () => {
   for (const [label, source] of ALL_SAMPLES) {
     it(`matches call signature on sample "${label}"`, () => {
       const result = parseRecipeDsl(source);

@@ -12,10 +12,9 @@ interface Props {
 }
 
 /**
- * Type-to-confirm archive dialog. v1 uses a hand-rolled overlay rather
- * than `@pops/ui`'s Radix `AlertDialog` to keep the focus-trap surface
- * deliberately minimal — PRD-119-E will swap to the shared primitive
- * when the dialog gets keyboard-shortcut + animation polish.
+ * Type-to-confirm archive dialog. Uses a hand-rolled overlay rather than
+ * `@pops/ui`'s Radix `AlertDialog` to keep the focus-trap surface
+ * deliberately minimal.
  */
 export function RecipeArchiveDialog({
   open,

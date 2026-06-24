@@ -1,9 +1,9 @@
 /**
- * Two-step picker for alias targets (PRD-122-C).
+ * Two-step picker for alias targets.
  *
- * Step 1 — type to search ingredients via `food.slugs.search`. Selecting
- * an ingredient hydrates the row via `food.ingredients.get` so the
- * embedded variants list is available without an extra round-trip.
+ * Step 1 — type to search ingredients via `slugsSearch`. Selecting an
+ * ingredient hydrates the row via `ingredientsGet` so the embedded
+ * variants list is available without an extra round-trip.
  *
  * Step 2 — optionally pick a variant (chip below the ingredient row).
  * When no variant is picked the target is the ingredient itself.

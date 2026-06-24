@@ -16,7 +16,7 @@ const SEARCH_DEBOUNCE_MS = 200;
 
 /**
  * `/food/recipes` — list page. Owns the local filter + cursor state;
- * the query hook handles tRPC + infinite-scroll mechanics.
+ * the query hook handles fetching + infinite-scroll mechanics.
  */
 export function RecipeListPage(): ReactElement {
   const { t } = useTranslation('food');

@@ -1,10 +1,8 @@
 /**
- * PRD-138 — data + retry mutation hook for the Failed-ingests tab.
- *
- * Wraps PRD-125's `ingest.retry` mutation. Optimistic update removes
- * the row from the cached page; on success the row is gone (the next
- * `listFailed` poll won't surface it because `error_code` is now NULL);
- * on failure the snapshot is restored.
+ * Data + retry mutation hook for the Failed-ingests tab. Wraps the
+ * `ingestRetry` endpoint. The optimistic update removes the row from the
+ * cached page; on success it stays gone (the next list poll won't surface it
+ * because `error_code` is now NULL); on failure the snapshot is restored.
  */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback } from 'react';

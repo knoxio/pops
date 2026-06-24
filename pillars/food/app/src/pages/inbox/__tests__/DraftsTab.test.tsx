@@ -1,17 +1,3 @@
-/**
- * PRD-134 — RTL coverage for the Drafts tab.
- *
- *   - renders rows from the mocked SDK query, including band pill, title,
- *     kind chip, age string, sub-line counts, partialReason banner
- *   - filter chip toggle updates the query input (band, kind, partialReason)
- *   - Fresh-only toggle updates the query input
- *   - sort dropdown change updates the query input
- *   - clicking the kind chip on a text/screenshot row opens the dialog
- *     without firing the row's navigation
- *   - clicking elsewhere on the row navigates to the inspector route
- *   - empty (filtered) state surfaces the Clear-filters link
- *   - empty (no filters) state surfaces the "Inbox is empty" copy
- */
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -104,7 +90,7 @@ beforeEach(() => {
   mockList([]);
 });
 
-describe('DraftsTab — PRD-134', () => {
+describe('DraftsTab', () => {
   it('renders one row per item including band pill, title, age, sub-line', async () => {
     mockList([makeRow(), makeRow({ versionId: 12, title: 'Lentil dahl', qualityBand: 'clean' })]);
     render(
@@ -159,7 +145,6 @@ describe('DraftsTab — PRD-134', () => {
       </Wrapper>
     );
     const user = userEvent.setup();
-    // Toggle a kind chip → filters now differ from default → filtered-empty.
     await user.click(screen.getByRole('button', { name: 'Web URL' }));
     expect(await screen.findByText(/No drafts match your filters/i)).toBeInTheDocument();
     expect(screen.getByTestId('drafts-clear-filters')).toBeInTheDocument();
@@ -173,8 +158,7 @@ describe('DraftsTab — PRD-134', () => {
       </Wrapper>
     );
     const user = userEvent.setup();
-    // Default: all 4 bands selected → wire is `undefined`. Toggling Clean off
-    // drops the chip to a 3-element list → wire ships an array.
+    // All bands selected collapses to `undefined` on the wire; dropping one ships the array.
     await user.click(screen.getByRole('button', { name: 'Clean' }));
     await vi.waitFor(() => {
       expect(Array.isArray(lastBody().bands)).toBe(true);

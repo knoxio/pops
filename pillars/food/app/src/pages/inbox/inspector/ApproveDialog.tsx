@@ -1,8 +1,3 @@
-/**
- * PRD-135 — approve confirmation dialog. Wraps PRD-136's
- * `food.inbox.approve` mutation. On success navigates to the promoted
- * recipe's detail page.
- */
 import { useMutation } from '@tanstack/react-query';
 import { type ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';

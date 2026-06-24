@@ -2,10 +2,6 @@
  * Node-only hero-image path helpers. Split from `./hero-paths.ts` because
  * the browser-bound `HeroImageUploader` imports constants from that file
  * and Vite cannot resolve `node:path` or read `process.env`.
- *
- * The same layout is mirrored at `apps/pops-api/src/modules/food/
- * hero-image/paths.ts` — pops-api doesn't depend on `@pops/app-food` at
- * runtime, so keep both sources in sync.
  */
 import { resolve, sep } from 'node:path';
 

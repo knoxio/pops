@@ -3,9 +3,8 @@
  *
  * Centre node is the focused entity; outgoing edges fan to the right,
  * incoming edges fan in from the left. Edges are sorted radially by how
- * close the ratio is to 1.0 (PRD-148 spec). Pure SVG layout — keeps the
- * focused view light + screenshot-friendly without spinning up the
- * force-directed canvas.
+ * close the ratio is to 1.0. Pure SVG layout keeps the focused view light
+ * and screenshot-friendly without spinning up the force-directed canvas.
  */
 import { useTranslation } from 'react-i18next';
 

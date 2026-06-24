@@ -1,17 +1,14 @@
 /**
- * Send-to-list modal — PRD-142.
+ * Send-to-list modal (pillars/food/docs/prds/send-to-list).
  *
- * Wraps `food.recipes.prepareSendToList` + `food.recipes.sendToList`. The
- * detail page mounts this under PRD-119's `RecipeScaleProvider` so the
- * scale factor flows in via `useRecipeScale()`.
- *
- * Per PRD §UI:
+ * The detail page mounts this under `RecipeScaleProvider` so the scale
+ * factor flows in via `useRecipeScale()`. Behaviour:
  *  - existing-list radio defaults selected when at least one shopping list
  *    exists; otherwise the modal auto-selects "create new"
  *  - the create-new name prefills `Shopping list — yyyy-MM-dd`
  *  - send button label dynamically shows the item count
- *  - closing mid-flight does NOT cancel the server work (PRD §Business
- *    Rules) — onOpenChange just hides the modal
+ *  - closing mid-flight does NOT cancel the server work — onOpenChange just
+ *    hides the modal
  */
 import { useEffect, useRef, useState, type FormEvent, type ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -57,10 +54,9 @@ export function SendToListModal({
   const { scaleFactor } = useRecipeScale();
   const data = useSendToListData({ versionId, scaleFactor, enabled: open });
   const [form, setForm] = useState<FormState>(initialForm);
-  // Track whether we've seeded the form for this open. We seed ONCE the
-  // first time the lists query resolves (or settles as empty) — re-seeding
-  // on every shoppingLists.length change would override a user who clicked
-  // "Create new" before a list-list refetch finished, per Copilot R1.
+  // Seed the form ONCE per open, the first time the lists query resolves (or
+  // settles as empty). Re-seeding on every shoppingLists.length change would
+  // override a user who clicked "Create new" before a refetch finished.
   const seededRef = useRef(false);
   useEffect(() => {
     if (!open) {
@@ -80,8 +76,8 @@ export function SendToListModal({
       onOpenChange(false);
     },
   });
-  // Clear stale server-error state when the modal closes so reopening
-  // doesn't surface yesterday's failure (Copilot R1).
+  // Clear stale server-error state on close so reopening doesn't surface a
+  // prior failure.
   useEffect(() => {
     if (!open) mutation.clearError();
   }, [open, mutation]);

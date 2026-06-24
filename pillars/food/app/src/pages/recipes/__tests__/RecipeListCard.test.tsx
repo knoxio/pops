@@ -34,7 +34,7 @@ function wrap(item: RecipeListItemView = baseItem) {
   );
 }
 
-describe('PRD-119-A — RecipeListCard', () => {
+describe('recipe-crud-pages — RecipeListCard', () => {
   it('renders the title and links to the detail route', () => {
     wrap();
     expect(screen.getByRole('link', { name: /banana pancakes/i })).toHaveAttribute(

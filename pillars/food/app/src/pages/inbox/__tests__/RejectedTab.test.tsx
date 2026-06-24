@@ -1,13 +1,3 @@
-/**
- * PRD-138 — RTL coverage for the Rejected tab.
- *
- *   - renders rows from the mocked SDK query
- *   - Undo invokes `inbox.unreject` with `{ versionId }` + surfaces
- *     a success toast on `{ ok: true }`
- *   - Undo failure rolls back the optimistic removal + surfaces an error toast
- *   - filter chip toggle updates the query input
- *   - empty state renders the recovery copy
- */
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -96,7 +86,7 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-describe('RejectedTab — PRD-138', () => {
+describe('RejectedTab', () => {
   it('renders rows from listRejected', async () => {
     mockList([makeRow(), makeRow({ versionId: 2, title: 'Lentil dahl' })]);
     render(

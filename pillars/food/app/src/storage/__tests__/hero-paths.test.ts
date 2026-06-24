@@ -1,6 +1,3 @@
-/**
- * PRD-124 — hero-paths unit tests.
- */
 import { resolve, sep } from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -127,11 +124,8 @@ describe('hero-paths', () => {
       expect(resolveServablePath(7, 'evil.gif')).toBeNull();
     });
     it('rejects traversal attempts via recipe id', () => {
-      // Numeric path traversal cannot escape because the guard rejects
-      // non-integers — assertValidRecipeId throws before any join happens.
-      // resolveServablePath wraps the throw and returns null for the
-      // filename case, but the recipeId guard raises. Both shape it as
-      // "no path returned".
+      // assertValidRecipeId rejects non-positive-integers before any path join,
+      // so an out-of-range id throws rather than escaping the root.
       expect(() => resolveServablePath(-1, 'hero.jpg')).toThrow();
     });
   });

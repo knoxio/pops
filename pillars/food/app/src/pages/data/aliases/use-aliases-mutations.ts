@@ -1,15 +1,14 @@
 /**
- * Mutations used by the Aliases tab (PRD-122-C).
+ * Mutations used by the Aliases tab.
  *
- * Each tRPC mutation lands its `onSuccess`/`onError` here so the consumer
- * can wire per-mutation reactions (close a dialog, clear selection)
- * without re-implementing toast + invalidation. The opts struct mirrors
- * the mutation surface; callers pass only the hooks they need.
+ * Each mutation lands its `onSuccess`/`onError` here so the consumer can
+ * wire per-mutation reactions (close a dialog, clear selection) without
+ * re-implementing toast + invalidation. The opts struct mirrors the
+ * mutation surface; callers pass only the hooks they need.
  *
- * Per Copilot review on PR #2724 — dialogs must close from the success
- * path of their mutation, not inline at submit time, otherwise a failed
- * server call would still close the dialog and the user would lose their
- * input.
+ * Dialogs must close from the success path of their mutation, not inline
+ * at submit time, otherwise a failed server call would still close the
+ * dialog and the user would lose their input.
  */
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCallback } from 'react';

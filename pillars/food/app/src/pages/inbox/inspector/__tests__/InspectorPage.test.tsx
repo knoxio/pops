@@ -1,17 +1,9 @@
 /**
- * PRD-135 — RTL coverage for the per-draft inspector page.
+ * RTL coverage for the per-draft inspector page.
+ * Spec: pillars/food/docs/prds/draft-inspector
  *
- * Mocks the generated food SDK so the page renders against a synthetic
- * `inbox.getForReview` payload and asserts:
- *   - 404 renders for `{ ok: false, reason: 'SourceNotFound' }`
- *   - pending source (draft = null) shows the no-draft body
- *   - clean compiled draft surfaces the band card + Approve enabled +
- *     Approve dialog opens + confirm fires the mutation
- *   - Approve is disabled when the band is blocked / compile failed
- *   - Reject flow: `other` reason requires a note before submit enables
- *   - Archived draft renders the rejection details + Undo button + read-only editor
- *   - Re-run pipeline button shows for partial sources and is disabled for auth-dead
- *   - Clicking a proposed-slug entry sets `pendingCursor` on the DslEditor
+ * Mocks the food API client so the page renders against a synthetic
+ * `inboxGetForReview` payload.
  */
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, waitFor } from '@testing-library/react';
@@ -148,7 +140,6 @@ function Wrapper(): ReactElement {
   );
 }
 
-/** Resolve `inbox.getForReview` with the given `InspectorResult` envelope. */
 function mockReview(result: InspectorResult): void {
   inboxGetForReviewMock.mockResolvedValue({ data: result });
 }
@@ -168,7 +159,7 @@ beforeEach(() => {
   ingestRetryMock.mockResolvedValue({ data: { jobId: 'j1', queuedAt: '2026-06-10T16:00:00Z' } });
 });
 
-describe('InspectorPage — PRD-135', () => {
+describe('InspectorPage', () => {
   it('renders the not-found view for SourceNotFound', async () => {
     mockReview({ ok: false, reason: 'SourceNotFound' });
     render(<Wrapper />);

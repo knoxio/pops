@@ -1,5 +1,5 @@
 /**
- * Fixtures shared across PRD-121 renderer tests.
+ * Fixtures shared across the renderer tests.
  *
  * Each fixture is built like the compile pipeline would emit it — `body_md`
  * is the rewritten markdown with structural anchors, `body_resolved_json`

@@ -1,10 +1,7 @@
 /**
- * PRD-138 — Rejected tab body.
- *
- * Self-contained component: mounts when PRD-134's tab shell selects the
- * `rejected` tab. Owns its own filter state internally; callers pass an
- * `initialFilters` prop (typically derived from a URL hash by PRD-134's
- * shell) so the URL→state plumbing belongs to whoever mounts this tab.
+ * Rejected tab body, mounted by `InboxPage` when the `rejected` tab is active.
+ * Owns its filter state internally; the URL→state plumbing belongs to whoever
+ * mounts this tab and passes `initialFilters`.
  */
 import { type ReactElement, useState } from 'react';
 import { useTranslation } from 'react-i18next';

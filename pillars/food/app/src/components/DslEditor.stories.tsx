@@ -1,10 +1,9 @@
 /**
- * DslEditor stories — covers the 120-A scaffold, the 120-C `issues`
- * surface (squiggles + tooltip + gutter), the 120-D chip widgets, and
- * the read-only mode.
+ * DslEditor stories — cover the scaffold, the `issues` surface (squiggles
+ * + tooltip + gutter), the chip widgets, and the read-only mode.
  *
- * `apps/pops-storybook/.storybook/main.ts` discovers stories from
- * `packages/*\/src/**\/*.stories.@(ts|tsx)`, so this file lives next to
+ * `libs/ui/.storybook/main.ts` discovers stories from
+ * `pillars/*\/*\/src/**\/*.stories.@(ts|tsx)`, so this file lives next to
  * the component (same convention `RecipeRenderer.stories.tsx` adopted).
  *
  * Stories use a `StoryHost` wrapper that owns the document via

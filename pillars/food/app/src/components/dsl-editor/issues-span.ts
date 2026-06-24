@@ -1,5 +1,5 @@
 /**
- * `spanToRange` — convert a PRD-114 `SourceSpan` (1-indexed line + column,
+ * `spanToRange` — convert a DSL `SourceSpan` (1-indexed line + column,
  * `endCol` exclusive) into a CodeMirror `{ from, to }` offset pair.
  *
  * Returns `null` when the span points outside the current document. Span

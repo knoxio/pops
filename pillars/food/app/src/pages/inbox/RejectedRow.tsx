@@ -1,9 +1,7 @@
 /**
- * PRD-138 — single row in the Rejected tab.
- *
- * Pure presentational: parent owns the `undo` callback + the `isUndoing`
- * state. Title falls back to the synthetic `<no title>` placeholder per
- * the PRD when the version never had one assigned (rejected pre-extract).
+ * Single row in the Rejected tab. Title falls back to the synthetic
+ * `<no title>` placeholder when the version never had one assigned — a
+ * source rejected before extraction has no title.
  */
 import { type ReactElement } from 'react';
 import { Link } from 'react-router';

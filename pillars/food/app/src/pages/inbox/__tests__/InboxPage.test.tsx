@@ -1,12 +1,3 @@
-/**
- * PRD-134 — RTL coverage for the page shell.
- *
- *   - default `?tab` → Drafts tab body
- *   - `?tab=rejected` → Rejected tab body
- *   - invalid `?tab` is normalised to `drafts` and the URL is updated
- *   - tab change pushes the new `?tab` into the URL
- *   - pendingCount renders from `inbox.pendingCount`
- */
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -90,7 +81,7 @@ beforeEach(() => {
   inboxFailedErrorCodesMock.mockResolvedValue({ data: { items: [] } });
 });
 
-describe('InboxPage — PRD-134', () => {
+describe('InboxPage', () => {
   it('defaults to the Drafts tab when no ?tab is set', () => {
     render(<Wrapper initial="/food/inbox" />);
     expect(screen.getByTestId('drafts-tab')).toBeInTheDocument();

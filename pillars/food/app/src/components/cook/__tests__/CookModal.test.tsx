@@ -1,10 +1,6 @@
 /**
- * PRD-144 — RTL coverage for `CookModal`.
- *
  * Mocks the food SDK (`cookPrepareCook` / `cookMarkCooked`) so both are
- * controllable per test. Covers: open-from-recipe-detail pre-fill,
- * yieldless-recipe field hiding, submit happy path, server-error
- * surfacing, submit-disabled when scale is empty.
+ * controllable per test.
  */
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, waitFor } from '@testing-library/react';

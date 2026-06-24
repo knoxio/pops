@@ -1,8 +1,7 @@
 /**
- * Inner body of the PRD-148 graph explorer. Owns the layout-switch
- * between the force-directed canvas and the radial focus view, plus
- * the empty/loading/error states. Lifted out of `SubGraphPage.tsx` so
- * each file stays under the per-file lint cap.
+ * Inner body of the substitution graph explorer. Owns the layout-switch
+ * between the force-directed canvas and the radial focus view, plus the
+ * empty/loading/error states.
  */
 import { useTranslation } from 'react-i18next';
 

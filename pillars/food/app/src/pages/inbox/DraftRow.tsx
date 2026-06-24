@@ -1,11 +1,7 @@
 /**
- * PRD-134 — single row in the Drafts tab list.
- *
- * Click anywhere on the row except the kind chip → navigate to
- * `/food/inbox/:sourceId` (the inspector, PRD-135). The kind chip itself
- * opens the source URL in a new tab for `url-*` kinds, or opens PRD-138's
- * `ViewSourceDialog` inline for text / screenshot kinds — so triagers can
- * peek before deciding to invest time.
+ * The kind chip stops row-click propagation: `url-*` kinds open the source
+ * in a new tab, text / screenshot kinds open `ViewSourceDialog` inline.
+ * The rest of the row navigates to the inspector at `/food/inbox/:sourceId`.
  */
 import { type ReactElement, useState } from 'react';
 import { Link } from 'react-router';

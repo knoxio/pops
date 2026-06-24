@@ -1,16 +1,15 @@
 /**
- * `/food/data/substitutions/graph` — PRD-148.
+ * `/food/data/substitutions/graph`.
  *
  * Top-level page. Lifts header filters and side-panel selection into URL
  * search params so the page is shareable + back-navigable. The graphView
- * query (PRD-148) returns the minimum spanning subgraph for the
- * current filters; node/edge selection drives which side panel is shown.
+ * query returns the minimum spanning subgraph for the current filters;
+ * node/edge selection drives which side panel is shown.
  *
  * State model:
  *   - `?scope` (default `global`) drives header + query.
- *   - `?recipeId` is read but the picker UI ships disabled until PRD-119
- *     lands `food.recipes.list`. Selecting `scope=recipe` shows an empty
- *     state explaining the picker arrives with PRD-119.
+ *   - `?recipeId` is read but the recipe picker UI is not built yet;
+ *     selecting `scope=recipe` shows a placeholder instead of a graph.
  *   - `?contextTag` / `?q` drive the context dropdown + search box.
  *   - `?node=<slug>` triggers the radial focus view + node side panel.
  *   - `?edge=<id>` opens the edge side panel on load.

@@ -1,8 +1,9 @@
 /**
- * Local UI shapes for the send-to-list modal — PRD-142.
+ * Local UI shapes for the send-to-list modal.
  *
- * The wire-shape `SendPreview` is inferred from `food.recipes.prepareSendToList`
- * via tRPC; this module exposes the form-state shape the modal manages.
+ * The wire shapes come from the generated REST client (see
+ * `./useSendToListData.ts`); this module exposes the form-state shape the
+ * modal manages.
  */
 export type TargetKind = 'existing' | 'new';
 

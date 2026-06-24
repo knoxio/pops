@@ -39,16 +39,16 @@ export interface UseDslEditorViewOptions {
    * Accessible name for CodeMirror's contenteditable surface (the
    * `.cm-content` element). Attached via `EditorView.contentAttributes`
    * so it lands on the role=textbox node where axe-core expects it,
-   * rather than the wrapper div (PRD-120 part F).
+   * rather than the wrapper div.
    */
   ariaLabel?: string;
   /**
-   * Imperative cursor move target — set by PRD-135's decision pane when the
-   * user clicks a proposed-slug entry. The hook watches the entire object
+   * Imperative cursor move target — set by the decision pane when the user
+   * clicks a proposed-slug entry. The hook watches the entire object
    * identity, so callers should provide a stable reference and bump the
    * `nonce` (or supply a fresh object) when they want the cursor to move.
    * `line` is 1-indexed; `col` is 1-indexed inside the line, matching the
-   * `SourceSpan` shape PRD-114 emits.
+   * `SourceSpan` shape the parser emits.
    */
   pendingCursor?: { line: number; col: number; nonce: number };
 }
@@ -216,7 +216,7 @@ function mountEditorView(args: MountEditorViewArgs): () => void {
 function createEditorView(host: HTMLDivElement, args: CreateEditorViewArgs): EditorView {
   const { options, compartments, emit, sourcesRef } = args;
   // Initial `options.issues` is seeded by `useSyncEffects` (one dispatch
-  // post-mount); seeding here would double-render — see PR #2716.
+  // post-mount); seeding here too would double-render.
   const compact = detectCompactInitial();
   return new EditorView({
     state: EditorState.create({

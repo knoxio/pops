@@ -16,7 +16,7 @@ function ScaleProbe() {
   );
 }
 
-describe('PRD-119-B — RecipeScaleProvider', () => {
+describe('recipe-crud-pages — RecipeScaleProvider', () => {
   it('defaults scaleFactor to 1', () => {
     render(
       <RecipeScaleProvider>
@@ -35,7 +35,7 @@ describe('PRD-119-B — RecipeScaleProvider', () => {
     expect(screen.getByTestId('scale')).toHaveTextContent('2.5');
   });
 
-  it('exposes a setter to downstream consumers (PRD-142/144 forward-compat)', async () => {
+  it('exposes a setter to downstream cook-flow consumers (forward-compat)', async () => {
     render(
       <RecipeScaleProvider>
         <ScaleProbe />

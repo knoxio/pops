@@ -1,10 +1,8 @@
 import { formatDistanceToNowStrict, parseISO } from 'date-fns';
 /**
- * Single row in the existing-list picker — PRD-142 §UI.
+ * Single row in the existing-list picker (pillars/food/docs/prds/send-to-list).
  *
- * Shows name + item count + last-updated relative time + an inline badge
- * when the recipe was already sent to this list previously (soft warning,
- * never blocks selection).
+ * The already-sent badge is a soft warning — it never blocks selection.
  */
 import { type ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';

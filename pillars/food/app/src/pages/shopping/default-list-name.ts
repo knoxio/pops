@@ -3,7 +3,7 @@
  * server-side default used when the user accepts whatever's in the input
  * box.
  *
- * Format mirrors `apps/pops-api/src/modules/food/shopping/list-name.ts`.
+ * Format mirrors `pillars/food/src/api/modules/shopping/list-name.ts`.
  */
 const MONTHS_SHORT = [
   'Jan',

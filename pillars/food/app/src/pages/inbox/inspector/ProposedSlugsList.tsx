@@ -1,9 +1,6 @@
 /**
- * PRD-135 — proposed-slug list with cursor-move.
- *
- * Clicking an entry calls back into the parent with the `fromLoc` so the
- * decision pane can bump the editor's `pendingCursor` prop and move the
- * cursor to the source span (PRD-120's imperative cursor target).
+ * Clicking an entry calls back with its `fromLoc` so the editor's
+ * `pendingCursor` prop moves the cursor to the matching source span.
  */
 import { type ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';

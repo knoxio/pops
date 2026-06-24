@@ -1,11 +1,8 @@
 /**
- * PRD-134 — colour-coded pill that shows a draft's quality band + tooltip.
- *
- * Hover shows the top 3 signals from PRD-137's `scoreDraft` result so
- * triagers can see *why* a draft landed in a band without opening the
- * inspector. The pill itself is the band literal; the tooltip is a
- * native `title` attribute (Radix Tooltip would add a portal cost
- * disproportionate to a transient hover hint).
+ * Colour-coded pill showing a draft's quality band. Hover surfaces the top
+ * signals from `scoreDraft` so triagers see why a draft landed in a band
+ * without opening the inspector. The tooltip is a native `title` attribute,
+ * not a Radix Tooltip — a portal is disproportionate to a transient hover hint.
  */
 import { type ReactElement } from 'react';
 

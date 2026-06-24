@@ -1,12 +1,8 @@
 /**
- * PRD-123 Phase D — UnitsSection smoke tests.
+ * Mocks the generated food SDK (src/food-api) so the section renders against
+ * controlled data without a live registry-mounted backend.
  *
- * Mocks the generated food SDK so the section renders against controlled
- * data and asserts:
- *   - the seeded badge + disabled delete render for seeded rows
- *   - the search input feeds into the listUnits query input
- *   - the create dialog submits via the SDK
- *   - server errors propagate to the dialog alert
+ * See pillars/food/docs/prds/conversion-table.
  */
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, waitFor, within } from '@testing-library/react';
@@ -61,7 +57,7 @@ beforeEach(() => {
   conversionsDeleteUnitMock.mockResolvedValue({ data: { ok: true } });
 });
 
-describe('PRD-123 Phase D — UnitsSection', () => {
+describe('UnitsSection', () => {
   it('renders the table with the seeded badge for seeded rows', async () => {
     seedList([
       row({ id: 1, fromUnit: 'cup', toUnit: 'ml', ratio: 240, seeded: true }),
@@ -125,7 +121,7 @@ describe('PRD-123 Phase D — UnitsSection', () => {
     await userEvent.type(within(dialog).getByLabelText(/^ratio$/i), '240');
     await userEvent.click(within(dialog).getByRole('button', { name: /save/i }));
     await waitFor(() => expect(conversionsCreateUnitMock).toHaveBeenCalledTimes(1));
-    // The mutation has not resolved yet — dialog must still be open.
+    // Dialog must stay open while the create mutation is in flight.
     expect(screen.queryByRole('dialog')).toBeInTheDocument();
     resolveCreate?.({ data: { data: row({ id: 1 }) } });
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
