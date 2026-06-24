@@ -19,9 +19,9 @@ export type CreateEntityBody = {
 };
 
 /**
- * The wire shape served by every entities route — the `toEntity` projection.
- * `notionId`, `ownerUri`, and `ownerUriStaleAt` are deliberately NOT exposed
- * (internal/integration columns), matching core's `EntitySchema`.
+ * The wire shape served by every entities route. `notionId`, `ownerUri`, and
+ * `ownerUriStaleAt` are deliberately NOT exposed (internal/integration
+ * columns).
  */
 export type Entity = {
   abn?: string | null;
