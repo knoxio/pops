@@ -1,8 +1,8 @@
 //! Environment-resolved runtime configuration for the contacts pillar.
 //!
 //! Every knob has a deterministic default so the binary boots with zero env
-//! in local/dev and CI. Production overrides arrive via the docker-compose
-//! service definition (a later node wires that).
+//! in local/dev and CI. Production overrides arrive via the contacts service
+//! definition in `infra/docker-compose.yml`.
 
 use std::env;
 
@@ -10,7 +10,7 @@ use std::env;
 ///
 /// `3008` is the `ai` pillar and `3009` is the orchestrator, so contacts
 /// takes the next free slot. Kept in lock-step with `PILLAR_UPSTREAMS`
-/// (`apps/pops-shell/scripts/generate-nginx-conf.ts`).
+/// (`pillars/shell/scripts/generate-nginx-conf.ts`).
 pub const DEFAULT_PORT: u16 = 3010;
 
 /// Default on-disk SQLite location. Overridden in-cluster by
@@ -22,10 +22,8 @@ pub const DEFAULT_SQLITE_PATH: &str = "contacts.db";
 pub const DEFAULT_VERSION: &str = "0.0.0-dev";
 
 /// Registry base URL used when neither `POPS_REGISTRY_URL` nor `CORE_URL` is
-/// set. Matches the TS SDK fallback (`bootstrap/bootstrap.ts`) and the
-/// `registry-api` compose service name (the pillar formerly named `core`).
-/// During the core→registry rename window the registry container also answers
-/// to the legacy `core-api` alias, so an un-rebuilt deploy resolves either.
+/// set. Matches the TS SDK fallback (`libs/sdk/src/bootstrap/bootstrap.ts`)
+/// and the `registry-api` compose service name.
 pub const DEFAULT_REGISTRY_URL: &str = "http://registry-api:3001";
 
 /// Resolved configuration for one process lifetime.

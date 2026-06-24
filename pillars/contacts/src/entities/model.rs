@@ -2,18 +2,16 @@
 //!
 //! The wire [`Entity`] is camelCase JSON with `aliases`/`defaultTags` as string
 //! arrays; the stored [`EntityRow`] is snake_case with `aliases` as opaque CSV
-//! and `default_tags` as opaque JSON text. The two array columns are encoded
-//! exactly as core's TS service encodes them (`join(', ')` for aliases,
-//! `JSON.stringify` for tags) so a migrated row round-trips byte-for-byte and a
-//! contact created here reads identically in any other consumer.
+//! (`join(', ')`) and `default_tags` as opaque JSON text (`JSON.stringify`).
+//! Both array columns are decoded only when projecting to the wire shape, and
+//! the encoding is stable so a row round-trips byte-for-byte.
 
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
-/// The entity discriminator. Mirrors `ENTITY_TYPES` in core's contract; a
-/// contact is the superset of core's + finance's entities so the full set is
-/// accepted. Stored verbatim as the `type` column (no enum coercion at the DB
-/// layer — validation happens at the route boundary).
+/// The accepted entity discriminators. Stored verbatim as the `type` column
+/// (no enum coercion at the DB layer — validation happens at the route
+/// boundary).
 pub const ENTITY_TYPES: [&str; 7] = [
     "company",
     "person",
@@ -24,13 +22,12 @@ pub const ENTITY_TYPES: [&str; 7] = [
     "organisation",
 ];
 
-/// Default `type` applied when a create omits it. Matches the core column
-/// default and the TS `CreateEntityBody` default.
+/// Default `type` applied when a create omits it.
 pub const DEFAULT_ENTITY_TYPE: &str = "company";
 
-/// The wire shape served by every entities route — the `toEntity` projection.
-/// `notionId`, `ownerUri`, and `ownerUriStaleAt` are deliberately NOT exposed
-/// (internal/integration columns), matching core's `EntitySchema`.
+/// The wire shape served by every entities route. `notionId`, `ownerUri`, and
+/// `ownerUriStaleAt` are deliberately NOT exposed (internal/integration
+/// columns).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct Entity {
@@ -104,8 +101,8 @@ impl From<EntityLookupRow> for EntityLookup {
     }
 }
 
-/// Decode the CSV `aliases` column into a trimmed, empty-filtered vector.
-/// Mirrors core's `parseAliases`: split on `,`, trim, drop empties.
+/// Decode the CSV `aliases` column into a trimmed, empty-filtered vector:
+/// split on `,`, trim, drop empties.
 pub fn decode_aliases(raw: Option<&str>) -> Vec<String> {
     let Some(raw) = raw else {
         return Vec::new();
@@ -118,7 +115,7 @@ pub fn decode_aliases(raw: Option<&str>) -> Vec<String> {
 }
 
 /// Encode an alias vector to the CSV column value (`join(', ')`), or `None`
-/// when empty — matching core's `aliases?.length ? aliases.join(', ') : null`.
+/// when empty.
 pub fn encode_aliases(aliases: &[String]) -> Option<String> {
     if aliases.is_empty() {
         None
@@ -137,7 +134,7 @@ pub fn decode_default_tags(raw: Option<&str>) -> Vec<String> {
 }
 
 /// Encode a tag vector to the JSON column value (`JSON.stringify`), or `None`
-/// when empty — matching core's `defaultTags?.length ? JSON.stringify(...) : null`.
+/// when empty.
 pub fn encode_default_tags(tags: &[String]) -> Option<String> {
     if tags.is_empty() {
         None

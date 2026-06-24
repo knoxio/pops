@@ -1,9 +1,9 @@
 //! SQLite connection pool boot + migration application.
 //!
-//! N0 opens the pool, sets the durability/concurrency pragmas every pillar
+//! Opens the pool, sets the durability/concurrency pragmas every pillar
 //! DB runs with (WAL journaling, enforced foreign keys, a busy timeout so
 //! concurrent writers retry rather than error), and applies the committed
-//! migration journal on boot. The entities schema arrives in N1.
+//! migration journal on boot.
 
 use sqlx::sqlite::{SqliteConnectOptions, SqlitePoolOptions};
 use sqlx::{ConnectOptions, SqlitePool};
