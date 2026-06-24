@@ -2,7 +2,7 @@ import type { JobType } from 'bullmq';
 
 import type { PartialReason } from '../../../contract/queue/index.js';
 /**
- * PRD-125 — `IngestStatus.state` derivation.
+ * `IngestStatus.state` derivation.
  *
  * Combines BullMQ's job state (live for ~`removeOnComplete`/`removeOnFail`
  * count) with the DB row state (authoritative once the job has aged out

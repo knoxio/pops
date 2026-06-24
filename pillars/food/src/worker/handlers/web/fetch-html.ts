@@ -1,11 +1,11 @@
 /**
- * PRD-127 — minimal HTML fetcher shared by the JSON-LD path and the
- * LLM-fallback path (PRD-128). Uses the Undici `fetch` global (Node 20+):
+ * Minimal HTML fetcher shared by the JSON-LD path and the LLM-fallback
+ * path. Uses the Undici `fetch` global (Node 20+):
  *
- *   - 15 s timeout (per-request, enforced via AbortSignal.timeout).
- *   - Follows up to 5 redirects (Undici default 20; we cap explicitly).
+ *   - Per-request timeout enforced via AbortSignal.timeout.
+ *   - Caps redirect hops explicitly (Undici default is 20).
  *   - Rejects non-`text/html*` content types.
- *   - Rejects bodies larger than 5 MB while streaming so we don't buffer
+ *   - Streams the body and rejects oversized responses so we don't buffer
  *     a hostile gigabyte.
  *   - Identifiable User-Agent string.
  */

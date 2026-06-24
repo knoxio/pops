@@ -1,5 +1,5 @@
 /**
- * PRD-127 — duration parsing.
+ * Duration parsing.
  *
  * Recipe JSON-LD declares durations as ISO 8601 strings (`PT5M`, `PT1H30M`,
  * `PT45S`). Real-world sites often violate the spec and emit plain text

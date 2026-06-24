@@ -1,8 +1,7 @@
 /**
- * PRD-108 invariant + FIFO tests — exercises the batch / recipe_run /
+ * Batch invariant + FIFO tests — exercises the batch / recipe_run /
  * batch_consumption schema and the consumeForRun + markRunComplete helpers
- * against an in-memory SQLite seeded with PRD-106 + PRD-107 + PRD-108
- * migrations.
+ * against an in-memory SQLite seeded with the food migrations.
  */
 
 import { eq } from 'drizzle-orm';
@@ -63,7 +62,7 @@ function setupForCook(
   return { variantId: variant.id, recipeVersionId: version.id };
 }
 
-describe('PRD-108 — batch model invariants', () => {
+describe('batch model invariants', () => {
   let db: FoodDb;
   let raw: Database.Database;
 
@@ -72,7 +71,7 @@ describe('PRD-108 — batch model invariants', () => {
   });
 
   describe('schema applied cleanly', () => {
-    it('creates PRD-108 tables', () => {
+    it('creates the batch tables', () => {
       const tables = raw
         .prepare(`SELECT name FROM sqlite_master WHERE type='table' ORDER BY name`)
         .all() as { name: string }[];
@@ -250,7 +249,6 @@ describe('PRD-108 — batch model invariants', () => {
 
       const updated = db.select().from(batches).all();
       const byId = new Map(updated.map((r) => [r.id, r.qtyRemaining] as const));
-      // Untouched: rollback worked.
       expect(byId.get(a)).toBe(200);
       expect(byId.get(b)).toBe(100);
     });

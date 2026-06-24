@@ -1,6 +1,3 @@
-/**
- * PRD-127 — recipeYield parser unit tests.
- */
 import { describe, expect, it } from 'vitest';
 
 import { parseYield } from '../handlers/web/parse-yield.js';

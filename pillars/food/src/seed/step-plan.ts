@@ -1,5 +1,5 @@
 /**
- * PRD-113 seed step — plan_slots + plan_entries.
+ * Seed step — plan_slots + plan_entries.
  *
  * Seeds the default slot vocabulary directly (bypassing `addSlot` because
  * the service forbids touching `is_default = 1` rows) plus the one

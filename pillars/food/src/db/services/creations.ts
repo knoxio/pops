@@ -1,21 +1,18 @@
 /**
- * PRD-116 amendment (driven by PRD-137 + PRD-135).
- *
  * `listCreationsForVersion` returns the ingredient, variant, and recipe
  * slugs that were registered as part of this version's compile.
  *
- * **Sourcing strategy** — PRD-137 §"creationCount sourcing" left the
- * implementation choice to PRD-116. We pick the **timestamp-window join**
- * (the non-denormalised option) so no schema migration is needed:
+ * Sourcing strategy — the **timestamp-window join** (the non-denormalised
+ * option) so no schema migration is needed:
  *
  *   1. Read the version's `compiled_at`.
  *   2. Read every `slug_registry` row whose `created_at` falls within a
  *      tight window ending at `compiled_at` (covers ingredients + recipes).
  *   3. Read every `ingredient_variants` row in the same window (variants
- *      are NOT in `slug_registry`; PRD-106 lookups join `ingredient_variants`
+ *      are NOT in `slug_registry`; lookups join `ingredient_variants`
  *      via `ingredients.slug → ingredients.id → ingredient_variants`).
  *
- * **Timestamp format normalisation.** PRD-116's compile writer stamps
+ * Timestamp format normalisation. The compile writer stamps
  * `recipe_versions.compiled_at` via `new Date().toISOString()` →
  * `2026-06-10T12:00:00.000Z`. SQLite's `datetime('now')` (used by
  * `slug_registry.created_at` and `ingredient_variants.created_at`) emits
@@ -24,30 +21,26 @@
  * `created_at <= compiled_at` would let rows registered AFTER the compile
  * still satisfy the upper bound. The helper coerces `compiled_at` to the
  * SQLite UTC shape (`YYYY-MM-DD HH:MM:SS`) before constructing either
- * window bound (Copilot R1).
+ * window bound.
  *
- * Why the window is safe enough in POPS:
+ * Why the window is safe enough:
  *   - better-sqlite3 is single-process; compiles never overlap on the same
  *     handle, so the window can't pick up slugs from a concurrent compile.
  *   - The compile transaction registers `slug_registry` + variant rows,
  *     then updates `recipe_versions.compiled_at` — registry timestamps
  *     land strictly before `compiled_at`. The lower bound is a configurable
  *     fudge factor capturing the longest plausible compile transaction
- *     (default 60s — PRD-113's seed compiles are sub-100ms).
- *   - Uncompiled versions (`compiled_at IS NULL`) return zero — PRD-137's
- *     `CREATIONS_HIGH` only fires on count > 5 so this under-attribution
- *     is harmless until the recipe compiles cleanly.
+ *     (default 60s — seed compiles are sub-100ms).
+ *   - Uncompiled versions (`compiled_at IS NULL`) return zero — the
+ *     `CREATIONS_HIGH` quality signal only fires on count > 5 so this
+ *     under-attribution is harmless until the recipe compiles cleanly.
  *
  * Limitations the caller should know:
  *   - Two compiles within the same 60s window over-count (each one sees
- *     the other's creations). PRD-113's seed runs serially; user-driven
- *     compiles are one-at-a-time in single-user POPS.
+ *     the other's creations). Seed runs serially; user-driven compiles are
+ *     one-at-a-time in single-user POPS.
  *   - Rows deregistered by a later compile still count while present.
- *     PRD-106 never deletes slugs once registered, so this is monotonic.
- *
- * If over-counting ever matters for UX, the fallback in PRD-137 §2
- * (`creation_count` column on `recipe_versions`) is a single-migration
- * follow-up; the function signature here stays stable.
+ *     Slugs are never deleted once registered, so this is monotonic.
  */
 import { and, eq, gte, inArray, lte, or, sql } from 'drizzle-orm';
 
@@ -90,12 +83,11 @@ export function countCreationsForVersion(
 }
 
 /**
- * Batched creation counter for PRD-134's inbox queue. Returns a Map keyed
- * by versionId — versions whose `compiled_at` is null are absent (counted
- * as 0 by callers). Single round-trip per source table (slug_registry,
- * ingredient_variants), regardless of the input cardinality. Addresses
- * the per-row N+1 that the loop-and-count approach would create
- * (Copilot R1 on `gather-quality-inputs.ts`).
+ * Batched creation counter for the inbox queue. Returns a Map keyed by
+ * versionId — versions whose `compiled_at` is null are absent (counted as
+ * 0 by callers). Single round-trip per source table (`slug_registry`,
+ * `ingredient_variants`), regardless of the input cardinality, avoiding
+ * the per-row N+1 that a loop-and-count approach would create.
  */
 export function countCreationsForVersions(
   db: FoodDb,

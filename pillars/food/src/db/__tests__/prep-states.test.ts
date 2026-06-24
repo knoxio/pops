@@ -1,22 +1,13 @@
 /**
  * Invariant tests for the prep-states service against an in-memory SQLite
  * seeded with the canonical `prep_states` migration. Pure DB + service
- * layer — no tRPC, no Express, no auth middleware.
+ * layer — no API process, no auth middleware.
  *
- * Higher-level tRPC coverage lives in pops-api's own integration suite
- * until the cutover PR routes it through this package.
- *
- * The `prep_states` CREATE TABLE is read from the package-local migration
- * copy at `packages/food-db/migrations/0058_high_sentinel.sql`. A drift
- * guard in `food-db-quality.yml` keeps that file byte-identical to the
- * shared journal copy at
- * `apps/pops-api/src/db/drizzle-migrations/0058_high_sentinel.sql` until
- * the eventual journal-split + deletion PR retires the shared one.
- *
- * The 0058 SQL also creates ingredients/variants/aliases/slug_registry —
- * the test re-uses the full file because the additional tables are
- * harmless to a prep_states unit suite and applying the same SQL the
- * shared journal applies is the strongest possible match.
+ * The `prep_states` CREATE TABLE is read from the migration at
+ * `pillars/food/migrations/0058_high_sentinel.sql`. That SQL also creates
+ * ingredients/variants/aliases/slug_registry — the test re-uses the full
+ * file because the extra tables are harmless to a prep_states unit suite
+ * and applying the real migration SQL is the strongest possible match.
  */
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';

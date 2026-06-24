@@ -1,5 +1,5 @@
 /**
- * Hydrated list helper for the substitutions tab (PRD-122-D).
+ * Hydrated list helper for the substitutions tab.
  *
  * The base `listSubstitutions` returns raw FK ids on each endpoint. This
  * helper widens each row with the slug + display name resolved from the

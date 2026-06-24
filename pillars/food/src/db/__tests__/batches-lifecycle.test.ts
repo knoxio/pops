@@ -1,5 +1,5 @@
 /**
- * PRD-145 — batch lifecycle integration tests.
+ * Batch lifecycle integration tests.
  *
  * Covers every service entry point + every error branch + the
  * service-enforced `deleted_at IS NOT NULL → qty_remaining = 0`
@@ -67,7 +67,7 @@ function seedFridgeFreezerVariant(
   return { variantId: variant.id, recipeVersionId: version.id };
 }
 
-describe('PRD-145 — createBatchManual', () => {
+describe('createBatchManual', () => {
   let db: FoodDb;
   let variantId: number;
 
@@ -181,7 +181,7 @@ describe('PRD-145 — createBatchManual', () => {
   });
 });
 
-describe('PRD-145 — createBatchFromRun', () => {
+describe('createBatchFromRun', () => {
   it('wraps markRunComplete and writes yielded_batch_id', () => {
     const db = freshDb();
     const { variantId, recipeVersionId } = seedFridgeFreezerVariant(db);
@@ -213,7 +213,7 @@ describe('PRD-145 — createBatchFromRun', () => {
   });
 });
 
-describe('PRD-145 — relocateBatch', () => {
+describe('relocateBatch', () => {
   let db: FoodDb;
   let variantId: number;
 
@@ -293,7 +293,7 @@ describe('PRD-145 — relocateBatch', () => {
   });
 });
 
-describe('PRD-145 — editBatch', () => {
+describe('editBatch', () => {
   let db: FoodDb;
   let variantId: number;
   let recipeVersionId: number;
@@ -383,7 +383,7 @@ describe('PRD-145 — editBatch', () => {
   });
 });
 
-describe('PRD-145 — adjustBatchQty', () => {
+describe('adjustBatchQty', () => {
   let db: FoodDb;
   let variantId: number;
 
@@ -459,7 +459,7 @@ describe('PRD-145 — adjustBatchQty', () => {
   });
 });
 
-describe('PRD-145 — deleteBatch + invariant', () => {
+describe('deleteBatch + invariant', () => {
   let db: FoodDb;
 
   beforeEach(() => {
@@ -514,7 +514,6 @@ describe('PRD-145 — deleteBatch + invariant', () => {
     ]);
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    // The single consumption row should target the non-deleted batch b.
     expect(result.consumptions.map((c) => c.batchId)).toEqual([b.batchId]);
   });
 
@@ -534,7 +533,7 @@ describe('PRD-145 — deleteBatch + invariant', () => {
   });
 });
 
-describe('PRD-145 — notes audit-trail truncation', () => {
+describe('notes audit-trail truncation', () => {
   it('front-truncates to 500 chars with leading ellipsis when overflowing', () => {
     const db = freshDb();
     const { variantId } = seedFridgeFreezerVariant(db);

@@ -1,23 +1,20 @@
 /**
- * PRD-125 — Zod schemas for `food.ingest.*` tRPC procedures.
+ * Zod schemas for the `ingest.*` REST surface. Kept in a sibling file so
+ * the contract stays tight.
  *
- * Mirrors the shape of `@pops/food-contracts`'s runtime types. Kept in a
- * sibling file so the router stays tight.
- *
- * IngestJobResult validation deliberately accepts `meta` as `z.any()` —
- * the per-handler PRDs (127–132) own the `stages` payload shape and we
- * don't want the producer rejecting handler innovations. The router only
- * cares about the discriminator + the fields it writes to `ingest_sources`.
+ * `meta.stages` is left open (`z.record(z.unknown())`) on purpose: each
+ * ingest handler owns its own stage payload shape and the producer must
+ * not reject handler innovations. The contract only pins the discriminator
+ * + the fields written to `ingest_sources`.
  */
 import { z } from 'zod';
 
-/** Subset of valid screenshot mime types — matches PRD-110's `screenshot.<ext>` amendment. */
+/** Screenshot mime types the ingest pipeline accepts. */
 export const ScreenshotMimeType = z.enum(['image/jpeg', 'image/png', 'image/webp']);
 
-/** Mirrors `PartialReason` from `@pops/food-contracts` so the wire surface
- *  rejects values outside the contract. The handler PRDs (127–132) emit
- *  exactly these strings; widening here would let a misbehaving worker leak
- *  arbitrary strings into the inbox UI. */
+/** Closed `PartialReason` set: ingest handlers emit exactly these strings.
+ *  Widening it would let a misbehaving worker leak arbitrary strings into
+ *  the inbox UI. */
 export const PartialReasonSchema = z.enum([
   'auth-dead',
   'rate-limited',

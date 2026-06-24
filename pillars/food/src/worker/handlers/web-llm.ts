@@ -1,12 +1,12 @@
 import { buildWebLlmDsl } from './web-llm-dsl.js';
 /**
- * PRD-128 — Web URL LLM-fallback handler.
+ * Web URL LLM-fallback handler
+ * (`pillars/food/docs/prds/web-llm-fallback`).
  *
- * PRD-127 owns the JSON-LD primary path and the `url-web` dispatch
- * stub at `handlers/web-url.ts`; this module ships `processWithLlm`
- * which 127 will plug in as the JSON-LD-miss fallback once both PRDs
- * land. The post-merge wiring is a single-line dispatcher edit + a
- * helper-import dedup; both are tracked in the roadmap claim.
+ * `web-url.ts` owns the JSON-LD primary path; this module's
+ * `processWithLlm` is the JSON-LD-miss fallback. It is not yet wired
+ * into the `url-web` dispatch — `web-url.ts` still returns
+ * `JsonLdMissing` instead of calling here.
  */
 import { extractWithClaudeWebLlm } from './web-llm-extract.js';
 import { extractReadable } from './web-llm-readability.js';
@@ -74,8 +74,8 @@ function recordExtractStage(
 }
 
 /**
- * Reads the already-fetched HTML (PRD-127 owns the fetch step + share
- * of `fetchHtml`), runs readability → Claude → DSL, returns the final
+ * Reads the already-fetched HTML (`web-url.ts` owns the fetch step via
+ * `fetchHtml`), runs readability → Claude → DSL, returns the final
  * `IngestJobResult`. `finalUrl` is the post-redirect URL the dispatcher
  * captured during fetch; passed through to `extractReadable` so
  * relative links resolve.

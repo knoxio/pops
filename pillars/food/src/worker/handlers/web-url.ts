@@ -1,11 +1,13 @@
 /**
- * PRD-127 — Web URL → JSON-LD → DSL handler.
+ * Web URL → JSON-LD → DSL handler
+ * (`pillars/food/docs/prds/web-jsonld`).
  *
  * The fast path: fetch the page, look for a schema.org Recipe JSON-LD
  * block, map it to the DSL deterministically. When JSON-LD is missing
  * or malformed, this handler currently returns a `JsonLdMissing` failure
- * so the dispatch shell makes the absence visible — PRD-128 will replace
- * that branch with the LLM fallback.
+ * so the dispatch shell makes the absence visible — the LLM fallback in
+ * `web-llm.ts` (`pillars/food/docs/prds/web-llm-fallback`) will replace
+ * that branch once wired.
  *
  * No LLM call lives here; no `ai_inference_log` rows are written.
  */

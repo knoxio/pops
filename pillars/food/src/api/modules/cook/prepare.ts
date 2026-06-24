@@ -11,7 +11,7 @@ import {
  * initial render. Returns recipe + yield default + per-line consumption
  * needs at `scaleFactor=1`; the client multiplies as the user adjusts.
  *
- * See PRD-144 §`prepareCook` server-side flow.
+ * See pillars/food/docs/prds/cook-event-recording.
  */
 import type { FoodDb } from '../../../db/index.js';
 import type { CookPreparation } from '../../../domain/types/cook.js';

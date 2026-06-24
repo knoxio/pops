@@ -1,16 +1,13 @@
 /**
- * PRD-135 — type contracts for the per-draft inspector (`food.inbox.getForReview`).
+ * Type contracts for the per-draft inspector (`food.inbox.getForReview`).
  *
- * Split from the query implementation so the inspector's wire shapes stay
- * stable while the composer module mutates. Consumed by the API router type
- * inference (TS2883 forces the named export pattern across the package
- * boundary).
+ * Consumed by the API router type inference, where TS2883 forces the named
+ * export pattern across the package boundary.
  *
- * The PRD spec described `compile_error.loc` as `{ line, col }` for brevity
- * but the underlying compile pipeline uses the full `SourceSpan` shape
- * (`startLine` / `startCol` / `endLine` / `endCol`). The inspector exposes
- * the real shape so the editor's existing diagnostic plumbing — which
- * already expects `SourceSpan` — stays parameter-stable.
+ * `compile_error.loc` uses the full `SourceSpan` shape (`startLine` /
+ * `startCol` / `endLine` / `endCol`), not a `{ line, col }` pair, so the
+ * editor's existing diagnostic plumbing — which already expects
+ * `SourceSpan` — stays parameter-stable.
  */
 import type { PartialReason } from '../../contract/queue/index.js';
 import type { SourceSpan } from '../../dsl/ast.js';
@@ -20,7 +17,7 @@ import type { QualityResult } from '../../inbox/quality.js';
 export type IngestKind = 'url-web' | 'url-instagram' | 'text' | 'screenshot';
 
 /**
- * Inspector-level state derivation. Mirrors PRD-125's `IngestStatus.state`
+ * Inspector-level state derivation. Mirrors the worker's `IngestStatus.state`
  * minus the BullMQ branch — the inspector can't reach Redis from the DB
  * layer, so in-flight rows surface as `processing` rather than discriminating
  * pending vs processing. The inspector polls at 60s while non-terminal so it
@@ -55,9 +52,9 @@ export interface InspectorSourceView {
   errorCode: string | null;
   errorMessage: string | null;
   attempts: number;
-  /** Full PRD-125 stages JSON (parsed). `null` when `extracted_json` is null or unparseable. */
+  /** Full stages JSON (parsed). `null` when `extracted_json` is null or unparseable. */
   meta: Record<string, unknown> | null;
-  /** PRD-133 rows where `context_id = 'ingest_source:' || sourceId`. */
+  /** Inference rows where `context_id = 'ingest_source:' || sourceId`. */
   inferenceLogs: InspectorAiInferenceLogRow[];
   totalCostUsd: number;
 }
@@ -69,7 +66,7 @@ export interface InspectorProposedSlugRow {
   createdAt: string;
 }
 
-/** PRD-135 enriched view of PRD-116's creations — adds parent slug + default unit. */
+/** Enriched view of a compile's creations — adds parent slug + default unit. */
 export interface InspectorResolverCreationRow {
   kind: 'ingredient' | 'variant';
   slug: string;
@@ -78,7 +75,7 @@ export interface InspectorResolverCreationRow {
   createdAt: string;
 }
 
-/** Parsed shape of `recipe_versions.compile_error` per PRD-135 §Data. */
+/** Parsed shape of `recipe_versions.compile_error`. */
 export interface InspectorCompileErrorParsed {
   phase: CompilePhase;
   errors: Array<{ code: string; message: string; loc?: SourceSpan }>;

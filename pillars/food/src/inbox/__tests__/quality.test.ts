@@ -1,7 +1,7 @@
 /**
- * PRD-137 rubric pin. The rubric table in the PRD is the contract — every
- * weight, threshold, and band boundary is exercised here so a future tweak
- * cannot land silently.
+ * Rubric pin. The rubric table is the contract — every weight, threshold, and
+ * band boundary is exercised here so a future tweak cannot land silently.
+ * Spec: pillars/food/docs/prds/quality-heuristic.
  */
 import { describe, expect, it } from 'vitest';
 
@@ -12,7 +12,7 @@ import {
   type QualitySignalCode,
 } from '../quality.js';
 
-/** A maximally-clean baseline: text ingest, fresh, no caveats, full DSL. */
+/** A maximally-clean baseline: url-web ingest, fresh, no caveats, full DSL. */
 function cleanInputs(overrides: Partial<QualityInputs> = {}): QualityInputs {
   return {
     ingestKind: 'url-web',
@@ -34,7 +34,7 @@ function signalCodes(inputs: QualityInputs): QualitySignalCode[] {
   return scoreDraft(inputs).signals.map((s) => s.code);
 }
 
-describe('PRD-137 — scoreDraft purity', () => {
+describe('scoreDraft purity', () => {
   it('is deterministic for identical inputs', () => {
     const a = scoreDraft(cleanInputs());
     const b = scoreDraft(cleanInputs());
@@ -49,8 +49,7 @@ describe('PRD-137 — scoreDraft purity', () => {
   });
 
   it('clamps the raw score to [0, 100]', () => {
-    // Auth-dead is -100 alone, so raw would be 0; combined with COMPILE_FAILED
-    // (-90) the raw goes to -90 → clamps to 0, band = blocked.
+    // Stacked negative weights drive raw below zero; the floor clamps to 0.
     const result = scoreDraft(
       cleanInputs({
         partialReason: 'auth-dead',
@@ -63,15 +62,14 @@ describe('PRD-137 — scoreDraft purity', () => {
   });
 
   it('clamps the raw score to 100 when bonuses overflow', () => {
-    // url-web baseline = 100; AGE_FRESH (+2) pushes to 102 → clamps to 100.
+    // Positive kind + age bonuses push raw above 100; the ceiling clamps it.
     const result = scoreDraft(cleanInputs({ ingestKind: 'text' }));
-    // text: 100 + 5 (kind) + 2 (age) = 107 → 100.
     expect(result.score).toBe(100);
     expect(result.band).toBe('clean');
   });
 });
 
-describe('PRD-137 — every signal in isolation', () => {
+describe('every signal in isolation', () => {
   // Each test asserts: only this signal fires, and the score reflects exactly
   // its weight delta vs. the baseline.
   const cases: Array<{ code: QualitySignalCode; tweak: Partial<QualityInputs> }> = [
@@ -112,44 +110,32 @@ describe('PRD-137 — every signal in isolation', () => {
   }
 });
 
-describe('PRD-137 — band boundaries', () => {
+describe('band boundaries', () => {
   it('100 → clean (clean closed at 100)', () => {
     expect(scoreDraft(cleanInputs()).band).toBe('clean');
   });
 
   it('80 → clean (lower boundary of clean is inclusive)', () => {
-    // Make score exactly 80: drop a -20 NO_TITLE on the baseline.
     const result = scoreDraft(cleanInputs({ hasTitle: false }));
-    // 100 + 2 (fresh) - 20 = 82; we want 80, so also disable fresh.
-    // ingestAgeMinutes must be >= 1440 and <= 20160 to avoid AGE_*.
+    // ingestAgeMinutes in [AGE_FRESH_MAX, AGE_STALE_MIN] suppresses both age
+    // signals, so the title penalty lands the score exactly on the floor.
     const exact = scoreDraft(cleanInputs({ hasTitle: false, ingestAgeMinutes: 1440 }));
     expect(exact.score).toBe(80);
     expect(exact.band).toBe('clean');
     expect(result.band).toBe('clean');
   });
 
-  it('79 → minor (just below the clean floor, pinned exactly)', () => {
-    // PRD-137 §Rubric — clean is half-open at the lower bound (`score >= 80`),
-    // so 79 must land in `minor`. Build the score by composing weights that
-    // sum to exactly -21 against the clean baseline (drop NO_TITLE -20 +
-    // PARTIAL_RATE_LIMITED -5 + INGEST_KIND_TEXT +5 + drop AGE_FRESH +2
-    // = -20; instead use NO_TITLE -20 + PARTIAL_RATE_LIMITED -5 + AGE_FRESH +2
-    // + INGEST_KIND_TEXT +5 wait — let's compute step by step):
-    //   start 100
-    //   - 20 NO_TITLE        = 80
-    //   - 5  rate-limited    = 75
-    //   + 5  INGEST_KIND_TEXT = 80   → still clean. Try again:
-    //   100 - 20 (NO_TITLE) - 5 (rate-limited) + 5 (text) - 2 (stale) + 0 = 78 → minor.
-    // Easier: 100 - 20 (NO_TITLE) - 5 (instagram) + 0 + ingestAgeMinutes=1440
-    //   = 100 - 20 - 5 = 75 → minor. Pin 79 via:
-    //   100 - 20 NO_TITLE - 5 rate-limited + 5 text - 2 stale + 1 = impossible
-    //   integer weights → 79 isn't reachable. Pick 78 (closest reachable):
+  it('just below the clean floor → minor (pinned at 78)', () => {
+    // Clean is half-open at the lower bound (`score >= 80`), so anything below
+    // 80 must land in `minor`. Integer weights cannot land on exactly 79, so
+    // pin 78 — the closest reachable point below the floor — and assert it
+    // demotes to `minor`.
     const r = scoreDraft(
       cleanInputs({
-        hasTitle: false, // -20
-        partialReason: 'rate-limited', // -5
-        ingestKind: 'text', // +5
-        ingestAgeMinutes: 30_000, // AGE_STALE -2
+        hasTitle: false,
+        partialReason: 'rate-limited',
+        ingestKind: 'text',
+        ingestAgeMinutes: 30_000,
       })
     );
     expect(r.score).toBe(78);
@@ -157,7 +143,6 @@ describe('PRD-137 — band boundaries', () => {
   });
 
   it('50 → minor (lower boundary of minor is inclusive)', () => {
-    // 100 - 40 (uncompiled) - 5 (instagram) - 5 (rate-limited) = 50.
     const r = scoreDraft(
       cleanInputs({
         compileStatus: 'uncompiled',
@@ -170,12 +155,10 @@ describe('PRD-137 — band boundaries', () => {
     expect(r.band).toBe('minor');
   });
 
-  it('49 → attention (just below the minor floor)', () => {
-    // PRD-137 §Rubric — `minor` requires `score >= 50`; 49 must be
-    // `attention`. Integer weights mean 49 isn't reachable from common
-    // combinations; we pin 48 (the closest reachable below the boundary)
-    // and assert it lands in `attention`.
-    //   100 - 40 (uncompiled) - 5 (instagram) - 5 (rate-limited) - 2 (stale) = 48.
+  it('just below the minor floor → attention (pinned at 48)', () => {
+    // `minor` requires `score >= 50`. Integer weights cannot land on exactly
+    // 49, so pin 48 — the closest reachable point below the floor — and assert
+    // it demotes to `attention`.
     const r = scoreDraft(
       cleanInputs({
         compileStatus: 'uncompiled',
@@ -189,10 +172,8 @@ describe('PRD-137 — band boundaries', () => {
   });
 
   it('20 → attention (lower boundary of attention is inclusive)', () => {
-    // 100 - 50 (empty-extraction) - 25 (caption-only)... wait, only one partial
-    // reason can fire. Use multiple non-partial signals: 100 - 40 (empty-ings)
-    //   - 30 (empty-steps) - 15 (no-yield) + 5 (text) + 2 (fresh) = 22, not 20.
-    // Reach exactly 20: 100 - 40 - 30 - 15 + 5 = 20 (drop AGE_FRESH).
+    // Stack non-partial penalties (only one partial reason can ever fire) and
+    // suppress the age bonus so the score lands exactly on the attention floor.
     const r = scoreDraft(
       cleanInputs({
         ingestKind: 'text',
@@ -207,16 +188,15 @@ describe('PRD-137 — band boundaries', () => {
   });
 
   it('score < 20 → blocked (just below the attention floor)', () => {
-    // Integer weights mean 19 isn't reachable from common combinations;
-    // we pin 18 (the closest reachable below the boundary) and assert
-    // both score and band.
+    // Integer weights cannot land on exactly 19, so pin 18 — the closest
+    // reachable point below the floor — and assert both score and band.
     const r = scoreDraft(
       cleanInputs({
         ingestKind: 'text',
         ingredientLineCount: 0,
         stepCount: 0,
         hasYield: false,
-        ingestAgeMinutes: 30_000, // stale: -2
+        ingestAgeMinutes: 30_000,
       })
     );
     expect(r.score).toBe(18);
@@ -224,12 +204,11 @@ describe('PRD-137 — band boundaries', () => {
   });
 });
 
-describe('PRD-137 — explicit edge cases from the PRD table', () => {
-  it('auth-dead alone forces the blocked band even with a clean baseline', () => {
-    // PRD-137 §Edge Cases: "auth-dead clamps to 0 → blocked". The clamp is
-    // semantic — band → blocked — not a literal score=0 (any positive
-    // signals can still nudge it above zero). On a clean baseline the
-    // residual is whatever AGE_FRESH contributes.
+describe('explicit edge cases from the rubric table', () => {
+  it('auth-dead alone lands a clean baseline in the blocked band', () => {
+    // The PARTIAL_AUTH_DEAD weight alone sinks a clean baseline below the
+    // attention floor, so the band is blocked. There is no band override:
+    // positive signals still apply, so the residual is whatever AGE_FRESH adds.
     const r = scoreDraft(cleanInputs({ partialReason: 'auth-dead' }));
     expect(r.band).toBe('blocked');
     expect(r.score).toBeLessThan(20);
@@ -250,7 +229,6 @@ describe('PRD-137 — explicit edge cases from the PRD table', () => {
         stepCount: 0,
       })
     );
-    // 100 - 40 - 30 - 20 - 15 + 2 (fresh) = -3 → clamp 0.
     expect(r.score).toBe(0);
     expect(r.band).toBe('blocked');
   });
@@ -271,14 +249,12 @@ describe('PRD-137 — explicit edge cases from the PRD table', () => {
         ingestAgeMinutes: 1440,
       })
     );
-    // 100 - 25 (slugs many) - 15 (vision) - 5 (instagram) - 15 (no yield) = 40.
     expect(r.score).toBe(40);
     expect(r.band).toBe('attention');
   });
 
   it('30-day-old clean draft → still clean (AGE_STALE is a nudge, not a demoter)', () => {
     const r = scoreDraft(cleanInputs({ ingestAgeMinutes: 30 * 24 * 60 }));
-    // 100 - 2 = 98 → clean.
     expect(r.score).toBe(98);
     expect(r.band).toBe('clean');
   });
@@ -302,15 +278,15 @@ describe('PRD-137 — explicit edge cases from the PRD table', () => {
   });
 });
 
-describe('PRD-137 — signal list ordering + weight contract', () => {
+describe('signal list ordering + weight contract', () => {
   it('orders signals by descending |weight|', () => {
     const r = scoreDraft(
       cleanInputs({
-        compileStatus: 'failed', // -90
+        compileStatus: 'failed',
         compileErrorCount: 2,
-        hasTitle: false, // -20
-        proposedSlugCount: 5, // -25 PROPOSED_SLUGS_MANY
-        ingestKind: 'text', // +5
+        hasTitle: false,
+        proposedSlugCount: 5,
+        ingestKind: 'text',
       })
     );
     const weights = r.signals.map((s) => Math.abs(s.weight));
@@ -332,9 +308,9 @@ describe('PRD-137 — signal list ordering + weight contract', () => {
   });
 });
 
-describe('PRD-137 — property check: score → band consistency', () => {
-  // Sample 200 randomised valid inputs and assert the score is always
-  // consistent with its band per the rubric's half-open intervals.
+describe('property check: score → band consistency', () => {
+  // Sample randomised valid inputs and assert the score is always consistent
+  // with its band per the rubric's half-open intervals.
   function band(score: number): string {
     if (score >= 80) return 'clean';
     if (score >= 50) return 'minor';

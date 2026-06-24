@@ -1,14 +1,12 @@
 /**
- * Cross-pillar HTTP client for the lists pillar — used by send-to-list to
- * write shopping-list items over REST instead of reaching into the lists
- * DB. Pillars trust the docker network (the dispatcher authenticates), so
- * no per-request auth header is sent. The base URL is resolved from the
- * `POPS_PILLARS` registry.
+ * Cross-pillar HTTP client for the lists pillar — send-to-list writes
+ * shopping-list items over REST. Pillars trust the docker network (the
+ * dispatcher authenticates), so no per-request auth header is sent. The base
+ * URL is resolved from the `POPS_PILLARS` registry.
  *
- * Each call is its own atomic operation on the lists side; the single
- * cross-pillar transaction the old `@pops/app-lists-db` path had is gone by
- * design (PRD: lists owns its own consistency now). `upsertByRef` makes the
- * merge-or-insert atomic per item so retries are idempotent.
+ * Each call is its own atomic operation on the lists side; lists owns its own
+ * consistency, so there is no single cross-pillar transaction. `upsertByRef`
+ * makes the merge-or-insert atomic per item so retries are idempotent.
  */
 import { parsePillarsEnv } from '../../../pillars/env.js';
 

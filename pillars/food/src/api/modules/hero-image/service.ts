@@ -5,8 +5,8 @@
  *   - generates two derived thumbnails with sharp (320px webp, 640px webp)
  *   - updates `recipes.hero_image_path` and removes any stale prior original
  *
- * sharp lives in this package (browser-bundled `@pops/app-food` can't
- * carry it), so the heavy work is done here.
+ * sharp lives in the pillar API (the browser-bundled app can't carry it),
+ * so the heavy work is done here.
  */
 import {
   existsSync,
@@ -40,7 +40,7 @@ const DEFAULT_MAX_BYTES = 8 * 1024 * 1024;
 export interface UploadHeroInput {
   recipeId: number;
   mimeType: string;
-  /** Raw decoded image bytes. The tRPC router decodes the base64 wire field. */
+  /** Raw decoded image bytes. The REST handler decodes the base64 wire field. */
   buffer: Buffer;
 }
 

@@ -1,9 +1,10 @@
 /**
- * PRD-128 — Claude extraction + strict JSON validation for the web-llm
- * fallback. Single call per ingest. Markdown-fenced output is rejected
- * (the prompt explicitly says "Output ONLY the JSON"); zod violations
- * surface as `LlmExtractFailed` with the raw response preserved in
- * `meta.json.llm_raw_output` for the review queue.
+ * Claude extraction + strict JSON validation for the web-llm fallback
+ * (`pillars/food/docs/prds/web-llm-fallback`). Single call per ingest.
+ * Markdown-fenced output is rejected (the prompt explicitly says
+ * "Output ONLY the JSON"); zod violations surface as `LlmExtractFailed`
+ * with the raw response preserved in `meta.llm_raw_output` for the
+ * review queue.
  */
 import { ZodError } from 'zod';
 

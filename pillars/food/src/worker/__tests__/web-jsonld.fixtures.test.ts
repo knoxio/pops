@@ -1,28 +1,9 @@
-/**
- * PRD-127 fixture suite.
- *
- * For each saved recipe page:
- *   1. Run the JSON-LD extractor — assert a Recipe node was found.
- *   2. Run the deterministic DSL mapper — assert the produced DSL parses
- *      cleanly via PRD-114's `parseRecipeDsl` (the same parser PRD-116's
- *      `compileRecipeVersion` consumes; a parse failure here would block
- *      compile against a real DB downstream).
- *   3. Smoke-check the produced DSL shape (@recipe header, @yield, ≥1
- *      @ingredient, ≥1 @step).
- *
- * A separate test exercises the no-Recipe fallback path (extractor returns
- * null → the handler emits `JsonLdMissing` which PRD-128 will replace with
- * its LLM fallback).
- */
 import { readFileSync, readdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { describe, expect, it } from 'vitest';
 
-// PRD-114 parser. PRD-119-API extracted the DSL pipeline out of `@pops/app-food`
-// into `@pops/app-food-db` so the backend (and this worker) can pull it in
-// without React + CodeMirror getting dragged along.
 import { parseRecipeDsl } from '../../dsl/index.js';
 import { runWebUrlIngestWith } from '../handlers/web-url.js';
 import { extractRecipeJsonLd } from '../handlers/web/extract-json-ld.js';
@@ -49,7 +30,7 @@ function loadFixtures(): FixtureCase[] {
     }));
 }
 
-describe('PRD-127 — JSON-LD fixture suite', () => {
+describe('JSON-LD fixture suite', () => {
   const fixtures = loadFixtures();
 
   it('loads ≥10 fixtures with Recipe JSON-LD', () => {
@@ -88,7 +69,7 @@ describe('PRD-127 — JSON-LD fixture suite', () => {
   }
 });
 
-describe('PRD-127 — fallback signalling', () => {
+describe('fallback signalling', () => {
   it('extractor returns null when no Recipe JSON-LD is present', () => {
     const html = readFileSync(join(FIXTURE_DIR, '11-no-jsonld.html'), 'utf8');
     expect(extractRecipeJsonLd(html)).toBeNull();
@@ -116,7 +97,7 @@ describe('PRD-127 — fallback signalling', () => {
   });
 });
 
-describe('PRD-127 — observability', () => {
+describe('observability', () => {
   it('no ai_inference_log row is implied — the handler never emits an LLM marker', async () => {
     const html = readFileSync(join(FIXTURE_DIR, '01-classic.html'), 'utf8');
     const result = await runWebUrlIngestWith(

@@ -1,6 +1,5 @@
 /**
- * Wire shapes for `food.recipes.prepareSendToList` + `food.recipes.sendToList`
- * — PRD-142.
+ * Wire shapes for `food.recipes.prepareSendToList` + `food.recipes.sendToList`.
  */
 export interface PreviewItem {
   /** Human-readable label combining qty + unit + ingredient + variant + prep. */

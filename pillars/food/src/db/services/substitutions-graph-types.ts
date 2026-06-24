@@ -1,6 +1,6 @@
 /**
- * Public shapes for the PRD-148 graph-view query. Split out of the
- * service module so consumers (the tRPC router) can import types
+ * Public shapes for the substitution graph-view query. Split out of the
+ * service module so consumers (the REST router) can import types
  * without pulling in drizzle.
  */
 import type { SubstitutionScope } from './substitutions.js';

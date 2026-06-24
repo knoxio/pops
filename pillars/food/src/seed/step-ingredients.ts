@@ -1,5 +1,5 @@
 /**
- * PRD-113 seed step — ingredients + variants.
+ * Seed step — ingredients + variants.
  *
  * Walks the (parent → children) tree and inserts each ingredient via
  * `createIngredient`, then `createVariant` per variant. Per-ingredient

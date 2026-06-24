@@ -1,11 +1,12 @@
 /**
- * `food.batches.searchForConsume` resolver — PRD-146.
+ * Backing read for the `batches.searchForConsume` contract operation.
+ * See pillars/food/docs/prds/fifo-consumption-ui.
  *
  * Joined read projection used by `BatchOverridePicker` to surface
  * batches a user can pick when overriding a shortfall. FIFO-ordered
  * server-side (`expires_at ASC NULLS LAST, produced_at ASC`) so the
- * picker dropdown defaults to the same row PRD-108's `consumeForRun`
- * would draw next.
+ * picker dropdown defaults to the same row `consumeForRun`
+ * (pillars/food/docs/prds/cook-event-recording) would draw next.
  *
  * Filters: soft-deleted batches (`deleted_at IS NOT NULL`) and empty
  * batches (`qty_remaining <= qtyGreaterThan`, default 0) are excluded.

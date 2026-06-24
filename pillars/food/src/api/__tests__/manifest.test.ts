@@ -1,11 +1,9 @@
 /**
- * Manifest payload tests for the food pillar (PRD-243 US-02).
+ * Manifest payload tests for the food pillar.
  *
- * `buildFoodManifest` was extracted from `server.ts` so the new `nav`
- * and `pages` UI dimensions live next to the existing payload fields.
- * These tests verify the payload still passes the wire schema AND
- * carries the nav + pages descriptors expected by PRD-243's shell
- * rewrite (US-03).
+ * Verify `buildFoodManifest` passes the wire schema AND carries the nav +
+ * pages descriptors the shell consumes (see
+ * pillars/food/docs/prds/app-shell).
  */
 import { describe, expect, it } from 'vitest';
 
@@ -36,7 +34,7 @@ describe('buildFoodManifest', () => {
     expect(() => ManifestPayloadSchema.parse(buildFoodManifest('not-a-semver'))).toThrow();
   });
 
-  describe('PRD-243 US-02 nav + pages dimensions', () => {
+  describe('nav + pages dimensions', () => {
     it('declares a nav block matching the shell-side food navConfig', () => {
       const manifest = buildFoodManifest('0.1.0');
       expect(manifest.nav?.id).toBe('food');
@@ -101,7 +99,7 @@ describe('buildFoodManifest', () => {
       }
     });
 
-    it('does NOT declare assetsBaseUrl (deferred to US-05)', () => {
+    it('does NOT declare assetsBaseUrl', () => {
       const manifest = buildFoodManifest('0.1.0');
       expect(manifest.assetsBaseUrl).toBeUndefined();
     });

@@ -1,5 +1,5 @@
 /**
- * PRD-113 seed step — prep_states.
+ * Seed step — prep_states.
  *
  * Calls `createPrepState` for each canonical entry so the slug_registry row
  * is recorded via the service's transaction.

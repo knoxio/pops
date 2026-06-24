@@ -1,5 +1,5 @@
 /**
- * PRD-113 fixture set — prep states. Canonical 15 from PRD-106.
+ * Canonical prep-state fixtures.
  */
 
 export interface PrepStateFixture {

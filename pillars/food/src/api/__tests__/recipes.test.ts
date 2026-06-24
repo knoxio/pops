@@ -1,5 +1,5 @@
 /**
- * Integration tests for the `recipes.*` REST surface (PRD-119). Covers the
+ * Integration tests for the `recipes.*` REST surface. Covers the
  * create→list→draft→save→promote lifecycle plus the not-found / bad-DSL
  * error mapping. DSL parse/compile internals are covered by the dsl tests;
  * here we assert the wire envelopes + HTTP status mapping.

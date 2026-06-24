@@ -1,10 +1,10 @@
 /**
- * PRD-125 — `food.ingest.cancel` and `food.ingest.retry` implementations.
+ * `cancel` and `retry` implementations for the ingest control routes.
  *
  * `cancel` is best-effort: it removes the BullMQ job if still queued /
  * processing; the worker is responsible for honouring cancellation between
- * pipeline stages (PRD-126). `retry` re-enqueues with the same input,
- * increments `attempts`, and reuses the same `sourceId`.
+ * pipeline stages. `retry` re-enqueues with the same input, increments
+ * `attempts`, and reuses the same `sourceId`.
  */
 import { readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -48,9 +48,8 @@ function findOnDiskScreenshot(
   return null;
 }
 
-// Note: BullMQ uses `waiting-children` (hyphen), not `waiting_children`
-// (underscore) as the state literal. Earlier code listed the wrong
-// spelling and silently never matched.
+// BullMQ uses `waiting-children` (hyphen), not `waiting_children`
+// (underscore) as the state literal.
 const CANCELLABLE_STATES = [
   'waiting',
   'delayed',
@@ -67,11 +66,9 @@ async function findJobBySourceId(
 > {
   const queue = getFoodIngestQueue();
   if (queue === null) return null;
-  // Scan the SAME states `cancelIngest` recognises as cancellable —
-  // earlier `findJobBySourceId` only looked at `waiting/delayed/active`
-  // and silently lost any job stuck in `waiting_children` / `prioritized`.
-  // BullMQ's `getJobs` overload doesn't accept readonly arrays — copy
-  // into a mutable array.
+  // Scan the SAME states `cancelIngest` recognises as cancellable, so a job
+  // stuck in `waiting-children` / `prioritized` is still found. BullMQ's
+  // `getJobs` overload doesn't accept readonly arrays — copy into a mutable one.
   const jobs = await queue.getJobs([...CANCELLABLE_STATES], 0, 99);
   for (const job of jobs) {
     const data: unknown = job.data;

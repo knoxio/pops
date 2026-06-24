@@ -1,10 +1,9 @@
 /**
  * Handlers for the `aliases.*` sub-router.
  *
- * Error convention (ported from the pops-api aliases router): SQLite UNIQUE
- * on create/rename (an alias already exists for that target) → 409. The
- * list filters accept a `(targetKind, targetId)` pair which is folded back
- * into the service's `{ kind, id }` target shape.
+ * SQLite UNIQUE on create/rename (an alias already exists for that target)
+ * maps to 409. The list filters accept a `(targetKind, targetId)` pair which
+ * is folded back into the service's `{ kind, id }` target shape.
  */
 import { aliasesService } from '../../db/index.js';
 import { ConflictError } from '../shared/errors.js';

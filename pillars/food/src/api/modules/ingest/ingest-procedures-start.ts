@@ -1,5 +1,5 @@
 /**
- * PRD-125 — `food.ingest.start` implementation.
+ * `start` implementation for the ingest route.
  *
  * Always creates the `ingest_sources` row first (defensive: the row records
  * the attempt regardless of whether enqueue succeeds). For screenshot
@@ -109,7 +109,7 @@ export async function startIngest(
   // If enqueue throws (Redis down, queue closed, BullMQ transient error),
   // roll back the row + the disk artefact so a retry on the user's side
   // doesn't leave a phantom `pending` row that no worker will ever pick
-  // up. Re-throw so the tRPC layer translates to SERVICE_UNAVAILABLE.
+  // up. Re-throw so the route layer translates to SERVICE_UNAVAILABLE.
   let enqueued: EnqueueResult;
   try {
     enqueued = await enqueueIngestJob(jobDataFor(input, row.id, screenshotPath));

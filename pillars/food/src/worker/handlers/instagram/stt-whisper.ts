@@ -1,15 +1,14 @@
 /**
- * PRD-130 — `faster-whisper` subprocess wrapper.
+ * `faster-whisper` subprocess wrapper.
  *
- * Spawns `python3 -m faster_whisper.cli` with the flags called out in the
- * PRD, parses the resulting `transcript.vtt`, and returns the concatenated
- * cues as a flat transcript string. Failures (non-zero exit, timeout,
- * missing output) raise — the orchestrator's try/catch routes them to the
+ * Spawns `python3 -m faster_whisper.cli`, parses the resulting
+ * `transcript.vtt`, and returns the concatenated cues as a flat
+ * transcript string. Failures (non-zero exit, timeout, missing output)
+ * raise — the orchestrator's try/catch routes them to the
  * `transcriptOk=false` degradation branch.
  *
- * Mid-spawn cancellation: the same `AbortController` pattern PRD-129's
- * yt-dlp wrapper uses. The orchestrator polls `ctx.isCancelled()` between
- * stages; we don't need a poll inside the subprocess.
+ * Cancellation is polled by the orchestrator via `ctx.isCancelled()`
+ * between stages, so there is no poll inside the subprocess.
  */
 import { spawn } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
@@ -127,7 +126,6 @@ export function parseVtt(raw: string): string {
       continue;
     }
     if (/^\d+$/.test(line)) {
-      // Numeric cue identifier — skip.
       continue;
     }
     buffer.push(line);

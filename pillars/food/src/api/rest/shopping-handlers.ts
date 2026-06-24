@@ -1,7 +1,7 @@
 /**
- * Handlers for the `shopping.*` sub-router (PRD-152). `preview` maps a bad
- * date range to 400; `generate` returns the discriminated result on 200 and
- * writes to the lists pillar via the lazily-resolved ListsClient.
+ * Handlers for the `shopping.*` sub-router. `preview` maps a bad date range
+ * to 400; `generate` returns the discriminated result on 200 and writes to
+ * the lists pillar via the lazily-resolved ListsClient.
  */
 import { type ListsClient } from '../modules/recipes/send-to-list/lists-client.js';
 import { generateFromPlan } from '../modules/shopping/generate.js';

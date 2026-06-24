@@ -1,15 +1,6 @@
 /**
- * Cross-PRD type contracts for batch lifecycle (PRD-145) + FIFO
- * consumption UI (PRD-146).
- *
- * Owned jointly by PRD-145 (CRUD + lifecycle types) and PRD-146
- * (`BatchForConsumeRow`, `LineResolution`). The tRPC `food.batches.*`
- * router and the cook-modal components consume this file.
- *
- * Note: PRD-145 also ships the `batches.deleted_at` SQL migration —
- * that's NOT in scope for the prep PR that originally landed this
- * file. The `deletedAt` column on `BatchDetail` reflects the post-145
- * schema; reads will return `null` until 145's ALTER TABLE merges.
+ * Type contracts for batch lifecycle and the FIFO consumption UI, shared
+ * between the contract/router and the cook-modal components.
  */
 
 export type BatchLocation = 'pantry' | 'fridge' | 'freezer' | 'other';
@@ -84,9 +75,8 @@ export type BatchMutationResult = { ok: true } | { ok: false; reason: BatchError
 export type BatchAdjustResult = { ok: true; newQty: number } | { ok: false; reason: BatchError };
 
 /**
- * PRD-146 — search result row for the `BatchOverridePicker` widget.
- * Returned by `food.batches.searchForConsume`. FIFO-ordered server-side
- * by `expires_at ASC NULLS LAST, produced_at ASC`.
+ * Search result row for the `BatchOverridePicker` widget. FIFO-ordered
+ * server-side by `expires_at ASC NULLS LAST, produced_at ASC`.
  */
 export interface BatchForConsumeRow {
   id: number;
@@ -105,16 +95,10 @@ export interface BatchForConsumeRow {
 }
 
 /**
- * PRD-146 — line-keyed consume need surfaced to the cook modal.
- *
- * Adds display fields and `lineIndex` (`recipe_lines.position`, 1-based)
- * to PRD-108's variant/prep/qty `ConsumptionNeed` so the UI can render a
- * per-line picker and the resolution map can be keyed by lineIndex.
- * Quantities are already at the user's current scale factor.
- *
- * Produced by PRD-144's `prepareCook` query alongside any
- * pre-flight `LineShortfall[]`. PRD-146's UI does not derive aggregation
- * itself — the server is the source of truth for per-line need shapes.
+ * Line-keyed consume need surfaced to the cook modal. `lineIndex` is
+ * `recipe_lines.position` (1-based), keying the per-line picker and the
+ * resolution map. Quantities are already at the user's current scale
+ * factor; the server owns the per-line need shapes.
  */
 export interface LineConsumeNeed {
   lineIndex: number;
@@ -130,10 +114,9 @@ export interface LineConsumeNeed {
 }
 
 /**
- * PRD-146 — line-keyed shortfall surfaced to `ShortfallList`.
- *
- * `available` reflects what FIFO would cover if applied. `available=0`
- * means no matching non-empty, non-deleted batch exists for the line's
+ * Line-keyed shortfall surfaced to `ShortfallList`. `available` reflects
+ * what FIFO would cover if applied; `available=0` means no matching
+ * non-empty, non-deleted batch exists for the line's
  * `(variantId, prepStateId)` pair.
  */
 export interface LineShortfall {
@@ -148,10 +131,10 @@ export interface LineShortfall {
 }
 
 /**
- * PRD-146 — per-line resolution state held by `useCookResolution`.
+ * Per-line resolution state held by `useCookResolution`.
  *
- * `fifo` = accept PRD-108's default; `batch-override` = user picked a
- * specific batch; `external` = user marks the line as consumed
+ * `fifo` = accept the default FIFO consumption; `batch-override` = user
+ * picked a specific batch; `external` = user marks the line as consumed
  * outside the batch system; `partial` = some FIFO + some external.
  */
 export type LineResolution =
@@ -161,9 +144,9 @@ export type LineResolution =
       batchId: number;
       consumeQty: number;
       /**
-       * PRD-149 — set when the override came from the Substitutions section
-       * of `BatchOverridePicker`. Carried through to `food.cook.markCooked`
-       * so the server can validate the edge + append an audit note.
+       * Set when the override came from the Substitutions section of
+       * `BatchOverridePicker`. Carried through to the mark-cooked mutation
+       * so the server can validate the edge and append an audit note.
        */
       substitutionEdgeId?: number;
     }
@@ -173,6 +156,6 @@ export type LineResolution =
       batchId: number;
       consumeQty: number;
       externalQty: number;
-      /** PRD-149 — see `batch-override` variant. */
+      /** See the `batch-override` variant. */
       substitutionEdgeId?: number;
     };

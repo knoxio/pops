@@ -1,9 +1,8 @@
 /**
- * Save / promote / archive flows — PRD-119.
+ * Save / promote / archive flows.
  *
- * Thin wrappers around PRD-107's recipe + version services. The compile
- * step on `saveDraft` is what feeds the editor's error squiggles
- * (PRD-120-C `issues` prop).
+ * Thin wrappers around the recipe + version services. The compile step on
+ * `saveDraft` is what feeds the editor's error squiggles (`issues` prop).
  */
 import { eq } from 'drizzle-orm';
 

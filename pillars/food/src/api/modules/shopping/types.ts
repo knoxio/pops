@@ -1,6 +1,6 @@
 /**
  * Wire shapes for `food.shopping.previewFromPlan` and
- * `food.shopping.generateFromPlan` — PRD-152.
+ * `food.shopping.generateFromPlan`.
  *
  * The preview is computed twice: once server-side for the picker page, and a
  * second time as the first step of `generateFromPlan` so the server never
@@ -23,8 +23,8 @@ export interface GeneratorItem {
   canonicalUnit: CanonicalUnit;
   /**
    * True when the source `recipe_lines` row had all three canonical qty
-   * fields null — PRD-116 couldn't compute a canonical qty even though it
-   * set `canonical_unit` to the ingredient's default unit.
+   * fields null — no canonical qty could be computed even though
+   * `canonical_unit` was set to the ingredient's default unit.
    */
   isUnconverted: boolean;
   /** For unconverted items: the original DSL qty. */
@@ -54,7 +54,7 @@ export interface GeneratorPreview {
   sections: GeneratorSection[];
   /**
    * Ingredients that landed in the Other bucket — emitted so the UI can wire
-   * each row's [Tag it] link to PRD-122 without an extra round-trip.
+   * each row's [Tag it] link without an extra round-trip.
    */
   uncategorisedIngredientIds: number[];
   /** Distinct recipe titles in range, ordered by first plan entry date — used by the default list-name and item-notes provenance string. */

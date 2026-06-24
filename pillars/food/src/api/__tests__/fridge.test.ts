@@ -1,7 +1,7 @@
 /**
- * Integration tests for the `fridge.*` REST surface — PRD-147 view +
+ * Integration tests for the `fridge.*` REST surface — view +
  * recipes-using-batch. Both read-only; grouping/query logic lives in the
- * lifted `modules/fridge/` helpers and is covered by db-level tests.
+ * `modules/fridge/` helpers and is covered by db-level tests.
  */
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';

@@ -1,6 +1,6 @@
 /**
- * PRD-151 — ingredient_tags service invariants. Exercises the migration +
- * service layer against an in-memory SQLite seeded with the food schema.
+ * ingredient_tags service invariants. Exercises the migration + service
+ * layer against an in-memory SQLite seeded with the food schema.
  *
  * Covers:
  *   - PK uniqueness (idempotent re-insert is a no-op)
@@ -48,7 +48,7 @@ function seedIngredient(db: FoodDb, slug: string, name: string): number {
   return id;
 }
 
-describe('PRD-151 — ingredient_tags service invariants', () => {
+describe('ingredient_tags service invariants', () => {
   let db: FoodDb;
   let raw: Database.Database;
 

@@ -1,5 +1,5 @@
 /**
- * PRD-127 — ingredient-line heuristic.
+ * Ingredient-line heuristic.
  *
  * JSON-LD ingredient lines are free-form strings:
  *
@@ -9,9 +9,9 @@
  *   - "1 cup (240ml) milk"
  *   - "salt"
  *
- * The mapping is deliberately dumb (per the PRD): split into qty + unit +
- * descriptor; let the resolver auto-create the ingredient slug; the user
- * cleans up the noisy descriptors from the review queue.
+ * The mapping is deliberately dumb: split into qty + unit + descriptor;
+ * let the resolver auto-create the ingredient slug; the user cleans up the
+ * noisy descriptors from the review queue.
  */
 import { slugify } from './slugify.js';
 

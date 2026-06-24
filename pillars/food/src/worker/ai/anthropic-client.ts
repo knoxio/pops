@@ -1,10 +1,9 @@
 /**
  * Lazy Anthropic SDK client + vision-call helper for the food worker.
  *
- * Lives in `src/ai/` because every handler PRD that calls Claude
- * (127–132) needs the same SDK setup. Read keys lazily (not at module
- * load) so tests can run without `ANTHROPIC_API_KEY` set and so the SDK
- * isn't instantiated until the first call lands.
+ * Read keys lazily (not at module load) so tests can run without
+ * `ANTHROPIC_API_KEY` set and so the SDK isn't instantiated until the first
+ * call lands.
  *
  * The returned `costUsd` is computed locally from the hard-coded pricing
  * below (callers persist it on the recipe meta). Cross-pillar telemetry —
@@ -23,10 +22,10 @@ import type { Message } from '@anthropic-ai/sdk/resources/messages';
 export const SCREENSHOT_OPERATION = 'recipe-extract-screenshot';
 
 /**
- * Hard-coded Haiku 4.5 pricing in USD per million tokens.
- * Sourced from Anthropic's public pricing page as of 2026-06. The
- * follow-up that wires the worker into PRD-133's logging wrapper
- * also replaces this with the `ai_model_pricing` DB lookup.
+ * Hard-coded Haiku 4.5 pricing in USD per million tokens, from Anthropic's
+ * public pricing page. This is only a local estimate persisted on the recipe
+ * meta; the authoritative cost lives in the ai pillar's `ai_model_pricing`
+ * table, applied independently by `callWithLogging`.
  */
 const HAIKU_4_5_PRICING_USD_PER_MTOK = {
   input: 0.25,

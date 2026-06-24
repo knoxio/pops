@@ -1,5 +1,5 @@
 /**
- * Map typed PRD-107 / PRD-116 errors → HttpError or structured results.
+ * Map typed recipe + version service errors → HttpError or structured results.
  */
 import {
   CannotEditPublishedVersion,
@@ -18,7 +18,7 @@ export class MissingRecipeHeaderError extends Error {
 }
 
 /**
- * Map a create-recipe failure to a TRPCError. `MissingRecipeHeader` is the
+ * Map a create-recipe failure to an HttpError. `MissingRecipeHeader` is the
  * editor's most common rejection — it gets BAD_REQUEST with a `cause` so the
  * client can show the underlying parse-error span when surfacing the error
  * inline.
@@ -31,7 +31,7 @@ export function mapCreateRecipeError(err: unknown): never {
   throw err as Error;
 }
 
-// PRD-107's `updateDraftVersion` / `promoteVersion` throw an untyped
+// `updateDraftVersion` / `promoteVersion` throw an untyped
 // `Error("recipe_version #<id> not found")` when the id doesn't exist.
 // Detect that shape so we can map it cleanly instead of leaking a 500.
 function isMissingVersionError(err: unknown): boolean {
@@ -59,9 +59,9 @@ export function mapSaveDraftError(err: unknown): never {
  * the page. All four failure modes are user-actionable.
  *
  * `ConcurrentPromotion` arrives from `promoteVersion` as a structured result
- * (PRD-136 amendment to PRD-107) and is forwarded by the caller; this mapper
- * only handles the still-thrown variants: `CannotPromoteUncompiledVersion`
- * and the "not found" pre-validation Error.
+ * and is forwarded by the caller; this mapper only handles the still-thrown
+ * variants: `CannotPromoteUncompiledVersion` and the "not found"
+ * pre-validation Error.
  */
 export function promoteFailure(reason: PromoteReason): PromoteResult {
   return { ok: false, reason };

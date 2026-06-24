@@ -1,7 +1,3 @@
-/**
- * PRD-130 — degradation truth-table tests, one assertion per documented
- * row of the §Degradation table.
- */
 import { describe, expect, it } from 'vitest';
 
 import { derivePartialReason } from '../handlers/instagram/degradation.js';

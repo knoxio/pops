@@ -1,5 +1,5 @@
 /**
- * PRD-135 — source-side reads + state derivation for the inspector.
+ * Source-side reads + state derivation for the inspector.
  *
  * Reads the `ingest_sources` row. Derives `InspectorIngestState` from the DB
  * row only (no BullMQ): a row with an `error_code` is `failed`; a row with a
@@ -7,9 +7,8 @@
  * `extracted_json.partialReason` is set); otherwise `processing`. The
  * inspector's 60s poll while non-terminal closes the gap with the worker.
  *
- * AI inference cost is no longer surfaced here: food's local `ai_inference_log`
- * was dropped once telemetry moved to the ai pillar via `@pops/ai-telemetry`
- * (#3490). `readInferenceLogs` returns an empty set so `totalCostUsd` is 0.
+ * AI inference cost is not surfaced here — telemetry lives in the ai pillar.
+ * `readInferenceLogs` returns an empty set so `totalCostUsd` is 0.
  */
 import { eq } from 'drizzle-orm';
 

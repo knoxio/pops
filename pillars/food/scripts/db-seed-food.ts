@@ -1,14 +1,9 @@
 /**
- * Food-only seed runner (PRD-113 phase 1 + 3).
+ * Food-only seed runner.
  *
- * Wipes food tables in the SQLite file at `SQLITE_PATH` (or the dev
- * default `./data/pops.db` relative to `apps/pops-api`) and invokes
- * `seedFood`. Distinct from `apps/pops-api/scripts/db-seed.ts` — leaves
- * finance, inventory, media, and ai_inference rows alone.
- *
- * Run via `mise run db:seed:food` from the repo root. The mise task `cd`s
- * into `apps/pops-api` so `./data/pops.db` resolves correctly without an
- * env override.
+ * Wipes food's tables in the SQLite file at `SQLITE_PATH` and invokes
+ * `seedFood`. Run via `mise run db:seed:food` from the repo root, which
+ * sets `SQLITE_PATH` to the food pillar's dev DB.
  */
 import { existsSync } from 'node:fs';
 
@@ -33,12 +28,11 @@ if (!existsSync(DB_PATH)) {
 }
 
 // Wipe only food tables. Children first; `foreign_keys = OFF` makes the
-// order purely defensive. PRD-116 (recipe_lines / recipe_steps /
-// recipe_version_proposed_slugs) and PRD-123 (unit_conversions /
-// ingredient_weights) tables are wiped too so re-running the seed stays
-// idempotent — the conversion tables carry a UNIQUE on (from_unit,to_unit)
-// / a partial UNIQUE on (ingredient_id, variant_id, unit) that would
-// otherwise collide on the second run.
+// order purely defensive. The conversion tables (unit_conversions,
+// ingredient_weights) must be wiped too so re-running the seed stays
+// idempotent — they carry a UNIQUE on (from_unit,to_unit) / a partial
+// UNIQUE on (ingredient_id, variant_id, unit) that would otherwise collide
+// on the second run.
 const FOOD_TABLES = [
   'batch_consumptions',
   'recipe_runs',
@@ -76,9 +70,8 @@ try {
       db.exec(`DELETE FROM "${table}"`);
     }
     const drizzleDb = drizzle(db);
-    // Phase 2: drive PRD-116's compile + PRD-107's promote inline so the
-    // seed DB ends up with materialised recipe_lines / recipe_steps and
-    // every recipe's v1 promoted to `current`.
+    // Pass compileRecipeVersion so the seed DB ends up with materialised
+    // recipe_lines / recipe_steps and every recipe's v1 promoted to `current`.
     const summary = seedFood(drizzleDb, { compileRecipeVersion });
     console.warn('\n✅ Food seed complete\n');
     console.warn('📊 Counts:');

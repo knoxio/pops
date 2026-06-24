@@ -1,11 +1,10 @@
 /**
  * Handlers for the `conversions.*` sub-router.
  *
- * Error convention (ported from the pops-api conversions router): SQLite
- * UNIQUE failures on create → 409 ConflictError; `expectRow` "no row"
- * misses on update → 404 NotFoundError; `SeededRowProtected` on delete →
- * the `{ ok: false, reason: 'seeded' }` body (200). Unknown delete ids are
- * a silent idempotent `{ ok: true }`, matching the upstream no-op.
+ * SQLite UNIQUE failures on create map to 409 ConflictError; `expectRow`
+ * "no row" misses on update map to 404 NotFoundError; `SeededRowProtected`
+ * on delete maps to the `{ ok: false, reason: 'seeded' }` body (200).
+ * Unknown delete ids are a silent idempotent `{ ok: true }`.
  */
 import { conversionsQueries, conversionsService, SeededRowProtected } from '../../db/index.js';
 import { toIngredientWeight, toUnitConversion } from '../modules/conversions/types.js';

@@ -1,11 +1,11 @@
 /**
- * Drift check for `src/manifest.generated.ts` (Theme 13 PRD-155).
+ * Drift check for `src/contract/manifest.generated.ts`.
  *
  * Re-renders the manifest in-memory, normalises via oxfmt (mirroring
  * what `generate:manifest` does after writing), byte-compares against
  * the committed file, and exits non-zero on mismatch with a regenerate
- * instruction. Wired into the contract package's `build` script so a
- * stale committed manifest fails CI.
+ * instruction. Wired into the pillar's `build` script so a stale
+ * committed manifest fails CI.
  */
 import { execFileSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';

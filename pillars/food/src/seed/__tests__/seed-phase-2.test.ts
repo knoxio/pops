@@ -1,21 +1,21 @@
 /**
- * PRD-113 phase-2 — seed-driven cross-PRD compile smoke test.
+ * Seed-driven compile smoke test.
  *
- * `seedFood` accepts a `compileRecipeVersion` callback. Production: the CLI
- * passes PRD-116's real implementation. This test does the same and asserts
- * the full compile path runs against the fixture set:
+ * `seedFood` accepts a `compileRecipeVersion` callback; the CLI passes the real
+ * compiler. This test does the same and asserts the full compile path runs
+ * against the fixture set:
  *
  *   - every recipe ends up `compile_status='compiled'` and v1 is promoted to
- *     `current` (PRD-107 promote service)
+ *     `current`
  *   - `recipe_lines` and `recipe_steps` get populated per fixture
- *   - the smash-burger plate's compile honours PRD-115's recipe-as-ingredient
- *     resolution, with one `recipe_lines.is_recipe_ref=1` row pointing at
- *     smash-patty (whose currentVersionId was set moments before)
+ *   - the smash-burger plate's compile honours recipe-as-ingredient resolution,
+ *     with one `recipe_lines.is_recipe_ref=1` row pointing at smash-patty (whose
+ *     currentVersionId was set moments before)
  *   - no `recipe_version_proposed_slugs` survive — auto-created yield slugs
  *     resolve cleanly on the recompile pass
  *   - cycle detection on smash-burger passes (no loops back into itself)
- *   - PRD-123 conversion seeds let `normaliseLineQty` resolve qty:unit pairs
- *     like `kg` → `g` and variant-specific `tsp` → `g`
+ *   - conversion seeds let `normaliseLineQty` resolve qty:unit pairs like
+ *     `kg` → `g` and variant-specific `tsp` → `g`
  */
 
 import { and, eq, sql } from 'drizzle-orm';
@@ -51,16 +51,15 @@ function selectRecipeId(db: FoodDb, slug: string): number {
   return id;
 }
 
-describe('PRD-113 phase-2 — seed + compile smoke', () => {
+describe('seed + compile smoke', () => {
   let db: FoodDb;
   let raw: Database.Database;
   let summary: SeedFoodSummary;
 
   // The seed is deterministic and every assertion below is read-only, so a
-  // single rebuild keeps the test suite light — important because the
-  // compile path drives 5 transactions through better-sqlite3 in series and
-  // running it per-`it` would dominate the wall-clock budget for the whole
-  // package's parallel vitest pool.
+  // single rebuild keeps the test suite light — the compile path drives several
+  // transactions through better-sqlite3 in series, so running it per-`it` would
+  // dominate the wall-clock budget for the whole package's parallel vitest pool.
   beforeAll(() => {
     ({ db, raw } = freshDb());
     summary = seedFood(db, { compileRecipeVersion });
@@ -68,10 +67,9 @@ describe('PRD-113 phase-2 — seed + compile smoke', () => {
 
   describe('summary + counts', () => {
     it('returns non-skipped summary and seeds the required Phase-2 fixtures', () => {
-      // Assert by slug rather than exact count so adding a sample recipe in a
-      // later phase doesn't false-fail this test — the invariant we care
-      // about is "Phase-2 compile works for every seeded fixture", not the
-      // fixture count itself.
+      // Assert by slug rather than exact count so adding a sample recipe
+      // doesn't false-fail this test — the invariant is "Phase-2 compile works
+      // for every seeded fixture", not the fixture count itself.
       expect(summary.skipped).toBe(false);
       const REQUIRED_SLUGS = [
         'smash-patty',
@@ -89,7 +87,7 @@ describe('PRD-113 phase-2 — seed + compile smoke', () => {
       expect(summary.recipes).toBeGreaterThanOrEqual(REQUIRED_SLUGS.length);
     });
 
-    it('seeds PRD-123 conversion rows alongside the recipes', () => {
+    it('seeds conversion rows alongside the recipes', () => {
       const ucRows = db
         .select({ n: sql<number>`count(*)` })
         .from(unitConversions)
@@ -182,7 +180,7 @@ describe('PRD-113 phase-2 — seed + compile smoke', () => {
     });
   });
 
-  describe('recipe-as-ingredient (PRD-115)', () => {
+  describe('recipe-as-ingredient', () => {
     it('smash-burger has one recipe_lines row pointing at smash-patty', () => {
       const burgerId = selectRecipeId(db, 'smash-burger');
       const pattyId = selectRecipeId(db, 'smash-patty');
@@ -208,7 +206,7 @@ describe('PRD-113 phase-2 — seed + compile smoke', () => {
     });
   });
 
-  describe('cycle detection (PRD-117)', () => {
+  describe('cycle detection', () => {
     it('smash-burger has no recipe cycle', () => {
       const burgerId = selectRecipeId(db, 'smash-burger');
       const versionRow = db

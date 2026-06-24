@@ -1,12 +1,9 @@
 import { extractWithTextFallback, MIN_CAPTION_LENGTH_FOR_FALLBACK } from './text-fallback.js';
 /**
- * PRD-130 — the "extract a recipe" half of the orchestrator. Split out
- * of `orchestrator.ts` to keep each file under the per-file lint cap.
- *
- * Tries the Claude vision call first; on any failure, falls through to
- * the text-LLM fallback when the caption is long enough; if neither
- * produces a recipe, the orchestrator returns
- * `errorCode='AllExtractionPathsFailed'`.
+ * The "extract a recipe" half of the orchestrator. Tries the Claude
+ * vision call first; on any failure, falls through to the text-LLM
+ * fallback when the caption is long enough; if neither produces a recipe,
+ * the orchestrator returns `errorCode='AllExtractionPathsFailed'`.
  */
 import { extractWithClaudeVision } from './vision.js';
 

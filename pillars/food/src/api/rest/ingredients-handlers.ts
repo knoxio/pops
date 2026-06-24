@@ -1,12 +1,11 @@
 /**
  * Handlers for the `ingredients.*` sub-router.
  *
- * Error convention (ported from the pops-api ingredients router):
- * `InvalidSlugError` / `IngredientCycleError` / `IngredientHierarchyDepthExceeded`
- * → 400; `SlugAlreadyRegisteredError` → 409; SQLite FK (ingredient in use)
- * → 409; `expectRow` miss on update / change-parent of an unknown id → 404.
- * Delete is soft-blocked: when variants or aliases remain it answers
- * `{ ok:false, blockers }` rather than deleting.
+ * Error mapping: `InvalidSlugError` / `IngredientCycleError` /
+ * `IngredientHierarchyDepthExceeded` → 400; `SlugAlreadyRegisteredError` →
+ * 409; SQLite FK (ingredient in use) → 409; `expectRow` miss on update /
+ * change-parent of an unknown id → 404. Delete is soft-blocked: when variants
+ * or aliases remain it answers `{ ok:false, blockers }` rather than deleting.
  */
 import {
   IngredientCycleError,

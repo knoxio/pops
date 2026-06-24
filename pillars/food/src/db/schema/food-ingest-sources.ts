@@ -33,17 +33,17 @@ export const ingestSources = sqliteTable(
     // row persists; only the files are gone. Path columns stay populated to
     // describe where the files used to be.
     archivedAt: text('archived_at'),
-    // PRD-125 amendment driven by PRD-138 — meta-JSON-only path doesn't
-    // survive BullMQ TTL, so the failure-band columns persist directly.
-    // Populated by `food.ingest.workerComplete` on `ok: false`.
+    // Failure-band columns persist directly because the meta-JSON-only path
+    // doesn't survive BullMQ TTL. Populated by `food.ingest.workerComplete`
+    // on `ok: false`.
     errorCode: text('error_code'),
     errorMessage: text('error_message'),
     // Initialised to 0 by `food.ingest.start`; incremented by `food.ingest.retry`.
     attempts: integer('attempts').notNull().default(0),
-    // PRD-136 — set when `food.inbox.approve` succeeds. NULL while the source
-    // is pending review or rejected (reject is non-terminal — the row can be
-    // un-rejected later). Used by PRD-134's Drafts-tab query to filter out
-    // approved sources without a JOIN through `recipes.current_version_id`.
+    // Set when `food.inbox.approve` succeeds. NULL while the source is pending
+    // review or rejected (reject is non-terminal — the row can be un-rejected
+    // later). Lets the Drafts-tab query filter out approved sources without a
+    // JOIN through `recipes.current_version_id`.
     reviewedAt: text('reviewed_at'),
   },
   (t) => [

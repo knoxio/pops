@@ -1,15 +1,13 @@
 /**
- * Pure-zod schemas for the `cook.*` REST surface (PRD-144 / PRD-146 / PRD-149).
+ * Pure-zod schemas for the `cook.*` REST surface.
  *
- * Lives in `contract/` (zod-only — no `src/api/` or `src/db/` imports) so it
- * honours the package boundary and can be imported by both the ts-rest
- * contract and the lifted procedures.
+ * Zod-only (no `src/api` or `src/db` imports) so it stays importable by both
+ * the ts-rest contract and the request handlers.
  *
  * Input range constraints (`scaleFactor > 0`, `yield.qty >= 0`, `rating in
  * 1..5`) are enforced server-side in `markCooked` so the corresponding
- * `MarkCookedError` codes stay reachable. Per the PRD-142 / PRD-145 lesson,
- * zod's job here is shape + finiteness; the service is the authoritative
- * range validator.
+ * `MarkCookedError` codes stay reachable: zod's job here is shape +
+ * finiteness, the service is the authoritative range validator.
  */
 import { z } from 'zod';
 
@@ -27,7 +25,7 @@ const ConsumptionOverrideSchema = z.discriminatedUnion('kind', [
     batchId: z.number().int().positive(),
     consumeQty: z.number().finite().nonnegative(),
     unit: UNIT,
-    /** PRD-149 — substitution edge that produced this override. */
+    /** Substitution edge that produced this override, if any. */
     substitutionEdgeId: SubstitutionEdgeId,
   }),
   z.object({
@@ -43,7 +41,7 @@ const ConsumptionOverrideSchema = z.discriminatedUnion('kind', [
     consumeQty: z.number().finite().nonnegative(),
     externalQty: z.number().finite().nonnegative(),
     unit: UNIT,
-    /** PRD-149 — substitution edge that produced this override. */
+    /** Substitution edge that produced this override, if any. */
     substitutionEdgeId: SubstitutionEdgeId,
   }),
 ]);

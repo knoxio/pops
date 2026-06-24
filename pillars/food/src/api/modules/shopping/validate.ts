@@ -1,5 +1,5 @@
 /**
- * Date-range validation — PRD-152.
+ * Date-range validation.
  *
  * Both ends inclusive. End must be ≥ start; range ≤ 90 days (cap).
  * Returns a discriminated result so the caller can route to either the

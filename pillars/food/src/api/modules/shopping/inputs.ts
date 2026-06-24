@@ -1,5 +1,5 @@
 /**
- * Zod inputs for the `food.shopping.*` procedures (PRD-152).
+ * Zod inputs for the `food.shopping.*` procedures.
  */
 import { z } from 'zod';
 

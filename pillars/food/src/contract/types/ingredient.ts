@@ -1,15 +1,10 @@
 /**
- * A canonical ingredient. Mirrors the intended API response (camelCase) for
- * the food pillar.
+ * A canonical ingredient, as exposed on the food pillar API (camelCase).
  *
- * The contract shape is deliberately narrower than the live ingredient
- * row in `@pops/app-food-db`, which carries a numeric primary key, a
- * canonical slug, a strict `defaultUnit` enum (`g | ml | count`), a
- * parent hierarchy, density, and free-form notes. The contract pins an
- * opaque string `id`, a nullable free-form `category` (the parent
- * ingredient surfaced as a label), and a nullable free-form `unit`. The
- * runtime persistence model can evolve underneath; this surface is what
- * downstream consumers code against.
+ * This contract surface is deliberately narrower than the persisted
+ * ingredient row in `src/db`: `id` is an opaque string, `category` is the
+ * parent ingredient surfaced as a nullable free-form label, and `unit` is
+ * a nullable free-form string.
  */
 export interface Ingredient {
   id: string;

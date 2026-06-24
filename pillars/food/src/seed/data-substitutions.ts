@@ -1,10 +1,9 @@
 /**
- * PRD-113 fixture set — substitutions.
+ * Substitution fixtures.
  *
- * Mix of global and recipe-scoped edges. Every PRD-109 context tag (savory,
- * sweet, baking, frying, dressing, marinade, garnish, vegan, dairy-free,
- * gluten-free) appears on at least one edge so theme README success
- * criterion #4's "verified by integration tests" is satisfied at seed time.
+ * Mix of global and recipe-scoped edges. Every context tag (savory, sweet,
+ * baking, frying, dressing, marinade, garnish, vegan, dairy-free,
+ * gluten-free) appears on at least one edge.
  */
 
 export type FoodContextTag =

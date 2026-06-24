@@ -1,6 +1,6 @@
 /**
- * `plan.*` sub-router — PRD-143 meal planning. The week view is a
- * denormalised read; mutations return the service's discriminated
+ * `plan.*` sub-router — meal planning. The week view is a denormalised
+ * read; mutations return the service's discriminated
  * `{ ok, ... }` result on 200 (the FE narrows on the reason). Only
  * `weekView` can 400 (a date that passes the regex but isn't a real day).
  */

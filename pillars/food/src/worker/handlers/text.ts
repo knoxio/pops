@@ -112,9 +112,9 @@ function successResult(
 }
 
 /**
- * PRD-132 — text ingest. The whole pipeline is a length check + one
- * Claude call + DSL render. Cancellation between stages only; mid-call
- * cancellation is out of scope per PRD §Business Rules.
+ * Text ingest (`pillars/food/docs/prds/text-ingest`). The whole pipeline
+ * is a length check + one Claude call + DSL render. Cancellation between
+ * stages only; mid-call cancellation is out of scope.
  */
 export const runTextIngest: IngestHandler<'text'> = async (data, ctx) => {
   const trimmed = (data.body ?? '').trim();

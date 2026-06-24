@@ -1,9 +1,6 @@
 /**
- * Cross-PRD type contracts for the fridge view (PRD-147).
- *
- * Owned by PRD-147. The tRPC router in pops-api and the
- * `FridgePage` + sub-components in @pops/app-food share these wire
- * shapes.
+ * Type contracts for the fridge view, shared between the contract/router
+ * and the `FridgePage` and its sub-components.
  */
 
 import type { BatchLocation, BatchSourceType, BatchUnit } from './batches.js';

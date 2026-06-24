@@ -1,5 +1,6 @@
 /**
- * Per-line cookability evaluator — PRD-150.
+ * Per-line cookability evaluator —
+ * pillars/food/docs/prds/cook-solver.
  *
  * For each non-optional line, asks two questions in order:
  *

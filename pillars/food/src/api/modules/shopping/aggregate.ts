@@ -1,13 +1,13 @@
 /**
  * Aggregator — walks every plan entry's recipe lines, scales by
  * `planned_servings / recipe_versions.servings` (falling back to 1.0 when
- * servings is null per PRD-152), groups by
- * `(ingredient_id, variant_id, canonical_unit)`, and emits two collections:
+ * servings is null), groups by `(ingredient_id, variant_id, canonical_unit)`,
+ * and emits two collections:
  *
  *   - `canonical[]`: rows where the source line had a non-null canonical qty
  *     (`qty_g | qty_ml | qty_count`).
  *   - `unconverted[]`: rows where the source line had all three canonical qty
- *     fields null — one row per source line (no merging, mirrors PRD-142).
+ *     fields null — one row per source line (no merging).
  *
  * Optional lines (`recipe_lines.optional = 1`) are filtered out at the SQL
  * boundary so they never enter the need set.
@@ -33,7 +33,7 @@ export interface UnconvertedNeed {
   ingredientName: string;
   variantId: number | null;
   variantName: string | null;
-  /** Always derived from the line's canonical_unit (PRD-116 NOT NULL). */
+  /** Always derived from the line's canonical_unit (NOT NULL). */
   canonicalUnit: CanonicalUnit;
   originalQty: number;
   originalUnit: string;

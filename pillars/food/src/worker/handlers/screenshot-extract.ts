@@ -1,12 +1,12 @@
 /**
- * PRD-131 screenshot extraction pipeline.
+ * Screenshot extraction pipeline
+ * (`pillars/food/docs/prds/screenshot-ingest`).
  *
  * Runs file read → Claude vision → JSON parse → zod validation,
  * returning the structured `ParsedRecipe` (or a typed failure) for the
  * handler to combine with DSL build + meta-JSON assembly. Keeping DSL
- * build out of this module lets the handler insert a cancellation
- * check between the vision call and the DSL build (see PRD-131
- * cancellation contract).
+ * build out of this module lets the handler insert a cancellation check
+ * between the vision call and the DSL build.
  */
 import { readFile } from 'node:fs/promises';
 

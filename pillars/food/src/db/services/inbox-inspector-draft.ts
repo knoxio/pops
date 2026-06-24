@@ -1,12 +1,12 @@
 /**
- * PRD-135 — draft-side reads for the inspector.
+ * Draft-side reads for the inspector (pillars/food/docs/prds/draft-inspector).
  *
  * Composes the inspector's `InspectorDraftView` from the most-recent
- * `recipe_versions` row linked to the source (per PRD-135 §Route). Joins
- * the parent recipe for slug + archived-at and folds in proposed slugs,
- * the rejection row, the auto-create banner data (PRD-115 / PRD-116
- * creations enriched with parent slug + default unit), and the PRD-137
- * quality breakdown via `gatherQualityInputsForVersions + scoreDraft`.
+ * `recipe_versions` row linked to the source. Joins the parent recipe for
+ * slug + archived-at and folds in proposed slugs, the rejection row, the
+ * auto-create banner data (creations enriched with parent slug + default
+ * unit), and the quality breakdown via
+ * `gatherQualityInputsForVersions + scoreDraft`.
  */
 import { desc, eq, inArray } from 'drizzle-orm';
 
@@ -69,9 +69,9 @@ export function buildDraftView(db: FoodDb, sourceId: number): InspectorDraftView
 }
 
 function readDraftVersionRow(db: FoodDb, sourceId: number): DraftVersionRow | null {
-  // PRD-135 §Route: "the draft version is the most-recent `recipe_versions`
-  // row for that recipe with `source_id = :sourceId`". A retry that
-  // overwrites the prior draft surfaces with the new versionNo automatically.
+  // The draft version is the most-recent `recipe_versions` row for that
+  // recipe with `source_id = :sourceId`. A retry that overwrites the prior
+  // draft surfaces with the new versionNo automatically.
   const rows = db
     .select({
       versionId: recipeVersions.id,
@@ -106,9 +106,8 @@ function readProposedSlugs(db: FoodDb, versionId: number): InspectorProposedSlug
     .where(eq(recipeVersionProposedSlugs.recipeVersionId, versionId))
     .all();
   // Match the rest of the inspector service: malformed JSON returns a safe
-  // fallback span rather than throwing and tanking the whole read (Copilot
-  // R1). Mirrors the resilience pattern in `parseExtractedMeta` /
-  // `parseCompileErrorJson`.
+  // fallback span rather than throwing and tanking the whole read. Mirrors
+  // the resilience pattern in `parseExtractedMeta` / `parseCompileErrorJson`.
   return rows.map((r) => ({
     slug: r.slug,
     suggestedKind: r.suggestedKind,
@@ -157,9 +156,9 @@ function computeQuality(db: FoodDb, versionId: number): InspectorDraftView['qual
 }
 
 function readEnrichedCreations(db: FoodDb, versionId: number): InspectorResolverCreationRow[] {
-  // PRD-135 §Data — only ingredient + variant rows feed the auto-create
-  // banner. `kind='recipe'` rows are filtered out (the user reviews them
-  // via the recipe nav, not the banner).
+  // Only ingredient + variant rows feed the auto-create banner.
+  // `kind='recipe'` rows are filtered out (the user reviews them via the
+  // recipe nav, not the banner).
   const raw = listCreationsForVersion(db, versionId).filter(
     (r) => r.kind === 'ingredient' || r.kind === 'variant'
   );

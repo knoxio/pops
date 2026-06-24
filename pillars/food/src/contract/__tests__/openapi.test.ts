@@ -38,7 +38,7 @@ describe('@pops/food openapi projection', () => {
     }
   });
 
-  it('describes the conversions surface migrated off the pops-api router', () => {
+  it('describes the conversions surface', () => {
     expect(openapi.paths['/conversions/units']?.['get']).toBeDefined();
     expect(openapi.paths['/conversions/resolve']?.['get']).toBeDefined();
   });

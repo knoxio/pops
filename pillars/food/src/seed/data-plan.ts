@@ -1,9 +1,8 @@
 /**
- * PRD-113 fixture set — plan slots + plan entries.
+ * Plan-slot + plan-entry fixtures.
  *
  * Plan slots: the default vocabulary (breakfast/lunch/dinner/snack/prep-
- * session). `is_default = 1` so `deleteSlot` refuses them (PRD-111 service
- * invariant).
+ * session). `is_default = 1` so `deleteSlot` refuses them.
  *
  * Plan entries: a mix of slotted (Mon-Fri dinners + a Sunday prep-session)
  * and ad-hoc lunches. Dates are anchored to a stable Monday so the seed is
@@ -27,7 +26,7 @@ export const PLAN_SLOT_FIXTURES: readonly PlanSlotFixture[] = [
   { slug: 'dinner', name: 'Dinner', displayOrder: 30, isDefault: 1 },
   { slug: 'snack', name: 'Snack', displayOrder: 40, isDefault: 1 },
   { slug: 'prep-session', name: 'Prep session', displayOrder: 50, isDefault: 1 },
-  // User-added slot to exercise the `is_default = 0` path (PRD-111 amendment).
+  // User-added slot to exercise the `is_default = 0` path.
   { slug: 'late-night', name: 'Late night', displayOrder: 60, isDefault: 0 },
 ];
 

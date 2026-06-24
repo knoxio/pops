@@ -1,9 +1,4 @@
-/**
- * Graph-view composition helpers for the substitutions router.
- *
- * Extracted from `substitutions.ts` so the router file fits under the
- * per-file lint cap after PRD-149 added the `resolveForLine` procedure.
- */
+/** Graph-view composition helpers for the substitutions handlers. */
 import type { GraphViewEdgeRow, GraphViewSide } from '../../../db/index.js';
 
 export interface GraphViewNode {

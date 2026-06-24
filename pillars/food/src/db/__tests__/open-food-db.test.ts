@@ -5,11 +5,10 @@
  * the resulting schema, and confirms the helper is idempotent when
  * re-run against the same DB.
  *
- * Uses real tmpdir-backed files (not `:memory:`) because the Phase 2
- * follow-ups (PR 2's pops-api boot wire-up, PR 3's consumer cutover,
- * and the eventual ATTACH-based backfill window) will exercise this
- * helper against on-disk DBs and shared paths. Keep parity here so
- * surprises surface in tests, not in production.
+ * Uses real tmpdir-backed files (not `:memory:`) because the helper runs
+ * against on-disk DBs in production — the parent-directory creation and the
+ * re-open idempotency path only exist for real files, so surprises surface
+ * in tests, not in production.
  */
 import { existsSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -106,10 +105,9 @@ describe('openFoodDb', () => {
       expect(conv?.fromUnit).toBe('cup');
       expect(conv?.toUnit).toBe('ml');
 
-      // The cross-pillar FK to ingredients is intentionally omitted from
-      // the migration (the ingredients cluster still lives in pops.db),
+      // The FK to ingredients is intentionally omitted from the migration,
       // so this insert succeeds even though ingredient_id=999 has no
-      // matching row in food.db.
+      // matching row.
       const weight = db
         .insert(ingredientWeights)
         .values({ ingredientId: 999, unit: 'medium', grams: 50 })

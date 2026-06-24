@@ -1,13 +1,13 @@
 /**
- * PRD-130 — Claude vision call.
+ * Claude vision call.
  *
  * One multimodal `messages.create` request: caption + transcript text +
- * up to 5 base64-encoded keyframes (the highest-scoring scene-detection
- * picks by ffmpeg ordering). Response is strict-parsed via `JSON.parse`
- * and validated with the local zod schema; anything else raises.
+ * the leading base64-encoded keyframes in ffmpeg's scene-detection order.
+ * Response is strict-parsed via `JSON.parse` and validated with the local
+ * zod schema; anything else raises.
  *
- * Keyframes beyond `MAX_KEYFRAMES_TO_VISION` are dropped — the PRD caps
- * the vision payload at 5 even when ffmpeg produced 10.
+ * Keyframes beyond `MAX_KEYFRAMES_TO_VISION` are dropped to cap the
+ * vision payload even when ffmpeg produced more.
  */
 import { readFile } from 'node:fs/promises';
 import { extname } from 'node:path';

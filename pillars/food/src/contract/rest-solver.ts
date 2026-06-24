@@ -1,6 +1,6 @@
 /**
  * `solver.*` sub-router — `canICook` ranks cookable recipes by how many
- * substitutions each needs given current batch inventory (PRD-150).
+ * substitutions each needs given current batch inventory.
  *
  * Modelled as `POST /solver/can-i-cook` with a JSON body rather than a GET:
  * the filter set is array-shaped (recipeTypes, tags), which rides far more

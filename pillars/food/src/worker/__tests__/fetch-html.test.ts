@@ -1,6 +1,3 @@
-/**
- * PRD-127 — fetchHtml unit tests.
- */
 import { describe, expect, it } from 'vitest';
 
 import { fetchHtml } from '../handlers/web/fetch-html.js';

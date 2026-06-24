@@ -1,25 +1,19 @@
 /**
- * PRD-125 — server-side `food.ingest.workerComplete` execution.
+ * Server-side `workerComplete` execution.
  *
  * Two outcomes:
  *
  *   - `ok: true` — creates a draft recipe + first version via
- *     `recipesService.createRecipe` (from `@pops/app-food-db`) and
- *     updates the `ingest_sources` row in ONE transaction. The version
- *     is left uncompiled; PRD-119's promote flow runs the compile
- *     pipeline lazily when the user approves the draft from the inbox.
+ *     `recipesService.createRecipe` (from `src/db`) and updates the
+ *     `ingest_sources` row in ONE transaction. The version is left
+ *     uncompiled; the promote flow runs the compile pipeline lazily when
+ *     the user approves the draft from the inbox.
  *   - `ok: false` — writes the `meta` rollup + `error_code` + `error_message`
- *     to `ingest_sources` (PRD-138 amendment columns). Returns
- *     `{ ok: false, reason }` to the worker.
+ *     to `ingest_sources`. Returns `{ ok: false, reason }` to the worker.
  *
  * Each branch is idempotent. BullMQ retries the callback on transient
  * network errors, so a second `ok:true` call sees the previously-set
  * `draft_recipe_id` and returns it instead of re-inserting the slug.
- *
- * `compileRecipeVersion` lives in `@pops/app-food` (frontend-bound
- * package, depends on @pops/api-client) — calling it here would close a
- * `pops-api → @pops/app-food → @pops/api-client → @pops/api` package
- * cycle. PRD-119's tRPC handler will own that call site.
  */
 import { eq } from 'drizzle-orm';
 
@@ -29,13 +23,12 @@ import type { IngestJobResult } from '../../../contract/queue/index.js';
 
 const INGEST_RECIPE_SLUG_PREFIX = 'ingest-source-';
 /** Lightweight match against `@recipe(... title="...")` — the DSL grammar in
- *  `pillars/food/app/src/dsl/parse-recipe.ts` declares `title` as a named
- *  arg inside `@recipe(...)`. We deliberately don't call the full parser to
- *  avoid depending on `@pops/app-food` (which would close the cycle through
- *  @pops/api-client); the regex is permissive enough for any author-written
- *  `title="..."` inside the `@recipe(...)` header. Falls back to a generic
- *  title when the worker emits a body the parser would reject — the inbox
- *  surfaces the literal DSL anyway. */
+ *  `pillars/food/app/src/dsl/dsl-parser.ts` declares `title` as a named arg
+ *  inside `@recipe(...)`. We deliberately don't call the full parser (which
+ *  lives in the app package); the regex is permissive enough for any
+ *  author-written `title="..."` inside the `@recipe(...)` header. Falls back
+ *  to a generic title when the worker emits a body the parser would reject —
+ *  the inbox surfaces the literal DSL anyway. */
 const TITLE_RE = /@recipe\s*\([^)]*\btitle\s*=\s*"([^"]+)"/;
 
 function deriveSlug(sourceId: number): string {
@@ -119,9 +112,8 @@ function applySuccess(
     });
     // Persist `partialReason` nested inside the meta blob so
     // `extractPartialReason` (status / list) can recover it after BullMQ
-    // TTL expiry. The IngestMeta envelope is permissive — handler PRDs
-    // 127–132 own the `stages` payload; this field is the only one the
-    // producer side needs to surface to the inbox UI.
+    // TTL expiry. The IngestMeta envelope is permissive; `partialReason` is
+    // the only field the producer side needs to surface to the inbox UI.
     const persistedMeta =
       result.partialReason === undefined
         ? result.meta

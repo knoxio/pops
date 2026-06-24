@@ -19,7 +19,7 @@ import { expectRow, type FoodDb } from './internal.js';
 /**
  * Discriminated result for `promoteVersion`. `ConcurrentPromotion` is the
  * only runtime race the partial-UNIQUE can surface; modelling it as a
- * structured result (PRD-136 amendment to PRD-107) lets callers that need to
+ * structured result lets callers that need to
  * compose promote with other tx side-effects (the inbox approve flow) branch
  * without a try/catch around `db.transaction`. `CannotPromoteUncompiledVersion`
  * is still thrown — that indicates a caller didn't pre-validate
@@ -124,15 +124,14 @@ export function archiveVersion(db: FoodDb, versionId: number): RecipeVersionRow 
  * version, sets the new one to current, updates `recipes.current_version_id`.
  *
  * Accepts either a top-level `FoodDb` or a transactional handle — when called
- * inside an outer transaction (e.g. PRD-136's inbox approve flow) the work
+ * inside an outer transaction (e.g. the inbox approve flow) the work
  * runs in a SAVEPOINT so both commits/rollbacks are atomic with the outer tx.
  *
  * Refuses to promote a version whose `compile_status` is not `'compiled'`
  * (throws `CannotPromoteUncompiledVersion`). On a partial-UNIQUE conflict
  * from a concurrent promotion, returns `{ ok: false, reason: 'ConcurrentPromotion' }`
- * — the structured shape lets composing callers (PRD-136) branch without a
- * try/catch around the outer tx. PRD-119's tRPC wrapper consumes the same
- * shape directly.
+ * — the structured shape lets composing callers branch without a
+ * try/catch around the outer tx.
  */
 /**
  * Internal sentinel: thrown inside the tx callback when the partial-UNIQUE

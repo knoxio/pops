@@ -1,5 +1,6 @@
 /**
- * Zod input schema for `food.solver.canICook` — PRD-150.
+ * Zod input schema for `food.solver.canICook` —
+ * pillars/food/docs/prds/cook-solver.
  *
  * All filters are optional. The `recipeTypes` enum mirrors
  * `recipes.recipe_type` so an invalid type fails fast at the boundary

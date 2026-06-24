@@ -1,9 +1,6 @@
 /**
- * PRD-130 — zod schema for the LLM JSON output (vision + text-fallback).
- *
- * Local copy until PRD-132's `extractedRecipeSchema` lands and PRD-130
- * can dedupe. The shape matches PRD-128's schema exactly so swapping is
- * a one-import change.
+ * Zod schema for the LLM JSON output of both the vision and
+ * text-fallback extraction paths.
  */
 import { z } from 'zod';
 

@@ -1,12 +1,11 @@
 /**
- * Manifest type generator for `@pops/food-contract` (Theme 13 PRD-155).
+ * Manifest type generator for the food contract.
  *
- * Emits `src/manifest.generated.ts` from the contract's hand-maintained
- * surface (`types/recipe.ts`, `errors.ts`, `router.ts`) plus the version
- * declared in `package.json`. The output is committed, then piped
+ * Emits `src/contract/manifest.generated.ts` from the contract's
+ * hand-maintained surface (`types/recipe.ts`, `errors.ts`, `router.ts`) plus
+ * the version declared in `package.json`. The output is committed, then piped
  * through `oxfmt` so the committed file matches the workspace formatting
- * rules. CI's `verify:manifest` job re-renders + oxfmts in-memory and
- * byte-compares.
+ * rules. `verify:manifest` re-renders + oxfmts in-memory and byte-compares.
  *
  * Imports below intentionally pull `Recipe`, `FoodError`, and
  * `FoodRouter` so that running the generator validates that the

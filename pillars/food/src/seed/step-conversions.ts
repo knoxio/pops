@@ -1,5 +1,5 @@
 /**
- * PRD-113 phase-2 seed step — PRD-123 conversion fixtures.
+ * Seed step — conversion fixtures.
  *
  * Inserts `unit_conversions` and `ingredient_weights` rows via the
  * conversions service so the same insert paths the CRUD UI uses get

@@ -3,25 +3,12 @@ import { bootstrapPillar, type PillarBootstrapHandle } from '@pops/pillar-sdk/bo
 /**
  * Entry point for the food pillar HTTP server.
  *
- * Phase 3 PR 1 of the food pillar migration boots the process with
- * the minimal `/health` + `/pillars` surface so the new container can
- * be wired into docker-compose + Watchtower without depending on the
- * (still-unfinished) tRPC + URI-dispatcher migration.
+ * The process opens its OWN `food.db` connection via `openFoodDb`.
  *
- * The process opens its OWN `food.db` connection via `openFoodDb`
- * rather than reaching back into pops-api's singleton — that's the
- * whole point of phase 3.
- *
- * Theme 13 PRD-158 adds an opt-in registry handshake via
- * `bootstrapPillar`. When `POPS_REGISTRY_ENABLED=true`, the process
- * builds a hand-rolled food manifest (PRD-155 will generate this
- * later) and registers with the central registry on boot. SIGTERM
- * triggers `pillarHandle.stop()` so the heartbeat clears and the
- * registry sees an explicit deregister.
- *
- * The runtime tRPC surface is still pending, so `routes.queries`
- * and `routes.mutations` are empty for now — bootstrap registers
- * the pillar's identity, health probe, and contract pin.
+ * When `POPS_REGISTRY_ENABLED=true`, `bootstrapPillar` registers the
+ * pillar with the central registry on boot. SIGTERM triggers
+ * `pillarHandle.stop()` so the heartbeat clears and the registry sees an
+ * explicit deregister.
  */
 import { openFoodDb } from '../db/index.js';
 import { createFoodApiApp } from './app.js';
@@ -31,8 +18,8 @@ import { parseBareOrigin } from './pillars/env.js';
 import { closeFoodIngestQueue } from './queue.js';
 
 function resolvePort(): number {
-  // 3001 is core-api, 3002 is inventory-api, 3003 is media-api,
-  // 3004 is finance-api, 3005 is food-api, 3007 is cerebrum-api.
+  // 3001 is registry, 3002 is inventory, 3003 is media,
+  // 3004 is finance, 3005 is food, 3007 is cerebrum.
   const raw = process.env['PORT'];
   if (raw === undefined || raw === '') return 3005;
   const parsed = Number(raw);

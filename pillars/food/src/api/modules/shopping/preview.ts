@@ -1,5 +1,5 @@
 /**
- * `food.shopping.previewFromPlan` orchestrator — PRD-152.
+ * `food.shopping.previewFromPlan` orchestrator.
  *
  * Single round-trip computation:
  *   1. Validate dates.

@@ -1,8 +1,3 @@
-/**
- * PRD-130 — dispatcher entry-point tests. Exercises the `runInstagramIngest`
- * shell that lives at `handlers/instagram.ts` and is what the dispatch
- * table registers.
- */
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { runInstagramIngest } from '../handlers/instagram.js';

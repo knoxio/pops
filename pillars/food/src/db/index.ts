@@ -43,7 +43,7 @@ export * as substitutionsHydrate from './services/substitutions-hydrate.js';
 export * as variantsService from './services/variants.js';
 
 // Named result + view types — re-exported so consumers can name the
-// tRPC router's inferred types without reaching for deep import paths.
+// contract's inferred types without reaching for deep import paths.
 export {
   DEFAULT_CREATION_WINDOW_SECONDS,
   countCreationsForVersion,

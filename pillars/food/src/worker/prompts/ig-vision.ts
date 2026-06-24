@@ -1,9 +1,8 @@
 /**
- * PRD-130 — Instagram vision prompt template + version constant.
+ * Instagram vision prompt template + version constant.
  *
- * Surface mirrors PRD-133's prompt-registry expectations: every change to
- * the body MUST bump `PROMPT_VERSION_IG_VISION`. The viewer at
- * `/food/prompts` reads both literals.
+ * Every change to the body MUST bump `PROMPT_VERSION_IG_VISION`: the version
+ * is recorded on the extraction so a result ties back to the exact template.
  */
 
 export const PROMPT_VERSION_IG_VISION = 'ig-vision-v1.0';

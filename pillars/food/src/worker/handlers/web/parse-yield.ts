@@ -1,5 +1,5 @@
 /**
- * PRD-127 — `recipeYield` parsing.
+ * `recipeYield` parsing.
  *
  * The field is one of:
  *   - A number: `4`.
@@ -8,8 +8,7 @@
  *
  * Returns `{ qty, unit }` where unit is a DSL slug. If only a number is
  * present, unit defaults to `"serving"`. If no number can be extracted,
- * we fall back to `{ qty: 4, unit: 'serving' }` per the PRD: "Pick first
- * number (4). Fallback to 4 if unparseable."
+ * we fall back to `{ qty: 4, unit: 'serving' }`.
  */
 export interface YieldParse {
   qty: number;
@@ -24,7 +23,6 @@ export function parseYield(input: unknown): YieldParse {
   if (raw === null) return { qty: 4, unit: 'serving' };
   const number = NUMBER_RE.exec(raw);
   if (number === null) {
-    // No number anywhere → unparseable. Per PRD: fall back to 4 servings.
     return { qty: 4, unit: 'serving' };
   }
   const qty = Math.max(1, Math.round(Number(number[1] ?? '0')));

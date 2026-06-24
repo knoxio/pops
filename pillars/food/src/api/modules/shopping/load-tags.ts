@@ -1,7 +1,7 @@
 /**
  * Bulk-load `store-section:*` and other tags for every ingredient that
  * appears in the need set. Single query, indexed by `ingredient_tags.tag`
- * via PRD-151's `idx_ingredient_tags_namespace` expression index for the
+ * via the `idx_ingredient_tags_namespace` expression index for the
  * `store-section:` prefix.
  *
  * Returns a map keyed by `ingredient_id` so the sectioner can look up each

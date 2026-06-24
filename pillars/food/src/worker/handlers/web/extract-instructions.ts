@@ -1,5 +1,6 @@
 /**
- * PRD-127 — flatten the `recipeInstructions` field.
+ * Flatten the `recipeInstructions` field.
+ * See pillars/food/docs/prds/web-jsonld.
  *
  * Schema.org permits several shapes:
  *   - `"recipeInstructions": "Do step one. Do step two."` (one string)
@@ -7,14 +8,13 @@
  *   - `"recipeInstructions": [{ "@type": "HowToStep", "text": "..." }, ...]`
  *   - `"recipeInstructions": [{ "@type": "HowToSection", "itemListElement": [HowToStep, ...] }, ...]`
  *
- * v1 flattens HowToSection into its steps. Section names are dropped.
+ * HowToSection is flattened into its steps; section names are dropped.
  * Single-string instructions get split by sentence boundary as a coarse
  * fallback so the user gets multiple step rows to work with.
  */
 export function extractInstructionTexts(input: unknown): string[] {
   const collected: string[] = [];
   walk(input, collected);
-  // Strip HTML tags, normalise whitespace, drop empties.
   return collected
     .map((s) => stripHtml(s))
     .map((s) => s.replace(/\s+/g, ' ').trim())

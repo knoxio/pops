@@ -1,13 +1,13 @@
 /**
- * PRD-129 — Instagram acquisition (yt-dlp + cookies).
+ * Instagram acquisition (yt-dlp + cookies); see
+ * `pillars/food/docs/prds/instagram-acquisition`.
  *
  * Downloads a single Instagram reel by spawning the pinned `yt-dlp` from
- * the worker container (PRD-126's runtime stage) with a cookie file
- * mounted in by the operator. Returns a structured `AcquisitionResult`
- * the PRD-130 STT/vision pipeline can consume directly; on failure it
- * carries enough information for the worker shell to either delay-retry
- * (rate-limited) or surface a partial draft (auth-dead) without burning
- * BullMQ retries on hopeless attempts.
+ * the worker container with a cookie file mounted in by the operator.
+ * Returns a structured `AcquisitionResult` the STT/vision pipeline
+ * consumes directly; on failure it carries enough information for the
+ * worker shell to either delay-retry (rate-limited) or surface a partial
+ * draft (auth-dead) without burning BullMQ retries on hopeless attempts.
  *
  * Cancellation is cooperative: cheap checks before and after spawn,
  * SIGTERM + workdir cleanup mid-spawn.
@@ -41,7 +41,7 @@ export type AcquisitionResult =
  * Reads the `description` field out of yt-dlp's `*.info.json` artefact.
  * Returns `null` when the file lacks a description or the JSON parse
  * fails — callers treat that as "no caption available" rather than a
- * hard error (PRD-130 routes to STT + vision in that case).
+ * hard error (the orchestrator routes to STT + vision in that case).
  */
 export async function readCaption(infoJsonPath: string): Promise<string | null> {
   try {
@@ -173,11 +173,9 @@ function startCancellationPoll(
 }
 
 /**
- * PRD-129 entry point. Spawns yt-dlp, classifies the outcome, and
- * returns a typed `AcquisitionResult`. The PRD-130 STT + vision
- * pipeline consumes this directly; the v1 worker handler wraps the
- * failure variants into `IngestJobResult` so the dispatch round-trip
- * stays green until 130 lands.
+ * Acquisition entry point. Spawns yt-dlp, classifies the outcome, and
+ * returns a typed `AcquisitionResult` the STT + vision orchestrator
+ * consumes directly.
  *
  * Cancellation: `ctx.isCancelled()` is checked before spawn, polled
  * while yt-dlp is running (and forwards to a SIGTERM/SIGKILL via the

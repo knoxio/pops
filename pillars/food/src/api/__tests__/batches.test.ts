@@ -1,8 +1,8 @@
 /**
- * Integration tests for the `batches.*` REST surface — PRD-145 lifecycle +
- * PRD-146 picker. Lifecycle mutations return the service's discriminated
- * `{ ok, ... }` result (200); `create` answers 201/400; `get` 404s on a
- * missing batch. Lifecycle invariants live in the db tests.
+ * Integration tests for the `batches.*` REST surface. Lifecycle mutations
+ * return the service's discriminated `{ ok, ... }` result (200); `create`
+ * answers 201/400; `get` 404s on a missing batch. Lifecycle invariants live
+ * in the db tests.
  */
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';

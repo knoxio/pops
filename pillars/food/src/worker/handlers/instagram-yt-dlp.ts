@@ -1,5 +1,5 @@
 /**
- * PRD-129 — yt-dlp spawn wrapper + stderr classifiers.
+ * yt-dlp spawn wrapper + stderr classifiers.
  *
  * Split out of `instagram-acquisition.ts` to keep that file's
  * orchestration logic small. The classifiers are pure and easy to test
@@ -95,7 +95,7 @@ function makeKillSwitch(
 }
 
 /**
- * Spawns yt-dlp with PRD-129's pinned flags and captures stdout/stderr.
+ * Spawns yt-dlp with the pinned flags and captures stdout/stderr.
  * Returns `exitCode=-1` whenever the child is terminated by a signal
  * (timeout SIGTERM/SIGKILL or abort-signal kill) — use `timedOut` to
  * distinguish a timeout from an external abort. On a clean exit the

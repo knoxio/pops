@@ -2,10 +2,10 @@ import { composeLabel } from './compose-label.js';
 import { buildCanonicalItem, buildUnconvertedItem, formatQty } from './label.js';
 
 /**
- * Bridges PRD-142's aggregate output into the row-shaped `SendItem`
- * structures the send loop iterates over. Carries the ingredient + variant
- * names alongside the wire-shape `PreviewItem` so the merge step can
- * regenerate the label after summing without re-querying.
+ * Bridges the aggregate output into the row-shaped `SendItem` structures the
+ * send loop iterates over. Carries the ingredient + variant names alongside
+ * the wire-shape `PreviewItem` so the merge step can regenerate the label
+ * after summing without re-querying.
  */
 import type { AggregateResult, UnconvertedAggregate } from './aggregate.js';
 import type { AggregatedCanonical, PreviewItem } from './types.js';
@@ -59,9 +59,8 @@ function unconvertedToSendItem(row: UnconvertedAggregate): SendItem {
 }
 
 /**
- * Rebuild a list-item label after a merge bumps the qty. Mirrors
- * `composeLabel` from `label.ts` but exposed here so the send loop
- * doesn't have to import two helpers.
+ * Rebuild a list-item label after a merge bumps the qty, reusing the shared
+ * `composeLabel` so the regenerated label matches the preview format.
  */
 export function relabelAfterMerge(item: SendItem, newQty: number): string {
   return composeLabel({

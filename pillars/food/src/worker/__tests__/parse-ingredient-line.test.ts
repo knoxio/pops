@@ -1,6 +1,3 @@
-/**
- * PRD-127 — ingredient-line heuristic unit tests.
- */
 import { describe, expect, it } from 'vitest';
 
 import { parseIngredientLine } from '../handlers/web/parse-ingredient-line.js';

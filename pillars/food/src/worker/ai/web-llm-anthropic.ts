@@ -1,10 +1,5 @@
 /**
- * PRD-128 — Anthropic SDK wrapper scoped to the web-llm handler.
- *
- * Parallel branch coordination: PRD-132's `ai/anthropic.ts` introduces
- * the canonical wrapper. To avoid path collision while both PRDs are
- * in flight, this file ships a self-contained equivalent here; the
- * post-merge dedup task (recorded in the roadmap claim) collapses them.
+ * Anthropic SDK wrapper scoped to the web-llm handler.
  *
  * The structural `AnthropicLike` subset lets handlers + tests pass
  * fakes without depending on the SDK's full `Anthropic` type, which is

@@ -1,16 +1,11 @@
 /**
- * Read-side helpers for the aliases tab (PRD-122-C).
+ * Read-side helpers for the aliases tab.
  *
  * `listAliasesWithTargets` is the denormalised view rendered by the
  * `/food/data/aliases` table. Resolving target labels per-row on the
  * client would mean either an N+1 lookup or a paged fetch of the full
  * ingredient + variant tables — both worse than the targeted IN-list
- * lookup this helper performs. SQLite optimises the lookup trivially
- * at the row counts the table will see.
- *
- * Lives alongside `aliases.ts` instead of inside it to keep both files
- * under the 200-line lint cap. The split mirrors PRD-106's
- * `ingredients` / `ingredients-queries` pattern.
+ * lookup this helper performs.
  */
 import { eq, inArray } from 'drizzle-orm';
 
@@ -93,7 +88,7 @@ export function listAliasesWithTargets(
   if (rows.length === 0) return [];
   // Dedupe the FK lists before the IN-lookup — many aliases can point at
   // the same ingredient or variant, and a duplicate-laden IN-list
-  // bloats the SQL for no gain (Copilot review on PR #2724).
+  // bloats the SQL for no gain.
   const ingIds = new Set<number>();
   const varIds = new Set<number>();
   for (const row of rows) {

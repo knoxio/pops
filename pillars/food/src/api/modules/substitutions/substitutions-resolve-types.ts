@@ -1,8 +1,7 @@
 /**
- * Shared types for `substitutions-resolve` — PRD-150.
- *
- * Split out so the public service file and its SQL-loader sibling can
- * both import without a circular reference.
+ * Shared types for `substitutions-resolve`. Split out so the public
+ * service file and its SQL-loader sibling can both import without a
+ * circular reference.
  */
 export type SubstitutionScope = 'global' | 'recipe';
 
@@ -28,7 +27,7 @@ export interface SubstitutionEdge {
   contextTags: readonly string[];
   scope: SubstitutionScope;
   recipeId: number | null;
-  /** PRD-149 — edge notes rendered in the picker row tooltip. */
+  /** Edge notes rendered in the picker row tooltip. */
   notes: string | null;
 }
 
@@ -53,10 +52,10 @@ export interface SubstitutionCandidate {
   toIngredientId: number | null;
   toVariantId: number | null;
   scope: SubstitutionScope;
-  /** PRD-149 — surfaced so the cook picker can render the edge's tags inline. */
+  /** Surfaced so the cook picker can render the edge's tags inline. */
   contextTags: readonly string[];
-  /** PRD-149 — null for global-scoped edges, the owning recipe for recipe-scoped. */
+  /** Null for global-scoped edges, the owning recipe for recipe-scoped. */
   recipeId: number | null;
-  /** PRD-149 — edge notes rendered in the picker row tooltip. */
+  /** Edge notes rendered in the picker row tooltip. */
   notes: string | null;
 }

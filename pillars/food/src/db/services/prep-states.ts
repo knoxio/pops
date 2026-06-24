@@ -52,7 +52,7 @@ export function listPrepStates(db: FoodDb): PrepStateRow[] {
 /**
  * Return a single prep state row by id. Throws `PrepStateNotFoundError`
  * when no row matches — callers in the router layer map the typed error
- * onto the appropriate tRPC code.
+ * onto the appropriate REST status.
  */
 export function getPrepState(db: FoodDb, id: number): PrepStateRow {
   const row = db.select().from(prepStates).where(eq(prepStates.id, id)).get();

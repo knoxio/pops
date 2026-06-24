@@ -1,7 +1,6 @@
 /**
- * PRD-151 — seed step: apply `store-section:*` tags to the seeded
- * ingredients per the PRD-151 vocabulary table. Runs after
- * `seedIngredientsAndVariants` so the slug→id map is populated.
+ * Seed step — apply `store-section:*` tags to the seeded ingredients. Runs
+ * after `seedIngredientsAndVariants` so the slug→id map is populated.
  *
  * Only sections with seeded ingredients are seeded (produce, dairy, meat,
  * pantry). Sections like `frozen` or `bakery` populate as the user tags
@@ -10,7 +9,7 @@
  *
  * Ingredient slugs that don't appear in the seed (e.g. when a future
  * fixture file drops one) are silently skipped — the seed shouldn't fail
- * because PRD-113 reshuffled its ingredient list.
+ * because the ingredient list was reshuffled.
  */
 import { addTagToIngredient } from '../db/services/ingredient-tags.js';
 
@@ -19,7 +18,7 @@ import type { SeedContext } from './types.js';
 
 /**
  * `ingredient_slug → tag[]` covering the seeded fixture set. Each tag is the
- * canonical `store-section:<slug>` value PRD-152's generator groups on.
+ * canonical `store-section:<slug>` value the shopping-list generator groups on.
  *
  * Convention follows aisle layout, not taxonomy: eggs sit with dairy.
  */

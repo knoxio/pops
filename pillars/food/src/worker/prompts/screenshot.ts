@@ -1,11 +1,9 @@
 /**
- * PRD-131 — Claude vision prompt for the screenshot ingest path.
+ * Claude vision prompt for the screenshot ingest path.
  *
- * The prompt is exported as a TS constant so PRD-133's `/food/prompts`
- * viewer can mirror it without round-tripping through git. Bump
- * `PROMPT_VERSION_SCREENSHOT` whenever the prompt body changes — the version
- * is recorded in `meta.stages.vision.prompt_version` and reported through
- * `@pops/ai-telemetry` to the ai pillar.
+ * Bump `PROMPT_VERSION_SCREENSHOT` whenever the prompt body changes — the
+ * version is recorded in `meta.stages.vision.prompt_version` and reported
+ * through `@pops/ai-telemetry` to the ai pillar.
  */
 
 /** Bump on every meaningful change to {@link SCREENSHOT_PROMPT}. */

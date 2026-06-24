@@ -1,5 +1,5 @@
 /**
- * `recipes.prepareSendToList` server logic — PRD-142.
+ * `recipes.prepareSendToList` server logic.
  *
  * Returns the preview the modal renders. Throws `HttpError(404)` for unknown
  * versions and `HttpError(400)` for uncompiled ones. The send-side procedure

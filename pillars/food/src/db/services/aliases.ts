@@ -143,12 +143,6 @@ export function bulkApproveAliases(
   return { updatedCount: result.length };
 }
 
-/**
- * Joined alias view + the helper that materialises it live in
- * `./aliases-queries.ts` (PRD-122-C). Kept separate so this file stays
- * under the 200-line lint cap. Re-export from the barrel for ergonomic
- * importing.
- */
 export { listAliasesWithTargets, type AliasWithTargetRow } from './aliases-queries.js';
 
 /**
@@ -161,10 +155,8 @@ export function aliasIsOrphaned(row: IngredientAliasRow): boolean {
 }
 
 /**
- * Used by the substitutions tab's text search and elsewhere — returns
- * aliases whose text matches a substring (case-insensitive via the
- * NOCASE index on `alias`). Convenience over `listAliases({search})`
- * with an explicit OR over alias OR slug-of-target for future expansion.
+ * Returns aliases whose text matches a substring (case-insensitive via the
+ * NOCASE index on `alias`). Used by the substitutions tab's text search.
  */
 export function searchAliases(db: FoodDb, query: string, limit = 25): IngredientAliasRow[] {
   if (query.length === 0) return [];

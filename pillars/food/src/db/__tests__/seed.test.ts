@@ -1,22 +1,20 @@
 /**
- * PRD-113 phase-1 + phase-3 seed tests.
+ * Seed-fixture tests.
  *
- * Applies every food + lists migration to an in-memory SQLite, runs
- * `seedFood`, then asserts:
+ * Applies every food migration to an in-memory SQLite, runs `seedFood`, then
+ * asserts:
  *
  *   - the returned summary counts match expected per-table volumes
  *   - the slug_registry holds an entry for every ingredient/recipe/prep-state
  *   - the depth-cap (≤ 2 in fixtures, ≤ 3 in DB) is respected
- *   - every PRD-109 context tag declared in the theme README success
- *     criterion #4 is covered by at least one seeded substitution
+ *   - every required substitution context tag is covered by at least one
+ *     seeded substitution
  *   - batches mix NULL `expires_at` (shelf-stable) and explicit expiry rows
  *   - plan_entries mix slotted and ad-hoc (the prep-session entries)
- *   - phase-3 ingest_sources rows are linked both ways (recipe_versions
- *     .source_id and ingest_sources.draft_recipe_id), covering both url-web
- *     and url-instagram kinds
+ *   - ingest_sources rows are linked both ways (recipe_versions.source_id and
+ *     ingest_sources.draft_recipe_id), covering both url-web and url-instagram
+ *     kinds
  *   - re-running seedFood is a no-op (skipped + zero counts)
- *
- * No Redis, no API process — pure schema + service exercise.
  */
 
 import { eq, isNotNull, isNull, sql } from 'drizzle-orm';
@@ -42,7 +40,7 @@ function freshDb(): { db: FoodDb; raw: Database.Database } {
   return openFoodDb(':memory:');
 }
 
-describe('PRD-113 phase-1 seed', () => {
+describe('seedFood fixtures', () => {
   let db: FoodDb;
   let raw: Database.Database;
   let summary: SeedFoodSummary;
@@ -53,20 +51,20 @@ describe('PRD-113 phase-1 seed', () => {
   });
 
   describe('summary counts', () => {
-    it('seeds the canonical 15 prep_states (PRD-106)', () => {
+    it('seeds the canonical 15 prep_states', () => {
       expect(summary.prepStates).toBe(15);
     });
-    it('seeds at least 20 ingredients (PRD-113 spec)', () => {
+    it('seeds at least 20 ingredients', () => {
       expect(summary.ingredients).toBeGreaterThanOrEqual(20);
     });
-    it('seeds at least 30 aliases (PRD-113 spec)', () => {
+    it('seeds at least 30 aliases', () => {
       expect(summary.aliases).toBeGreaterThanOrEqual(30);
     });
     it('seeds at least 5 recipes (smash-patty + smash-burger + pasta + roast + eggs)', () => {
       expect(summary.recipes).toBeGreaterThanOrEqual(5);
       expect(summary.recipeVersions).toBe(summary.recipes);
     });
-    it('seeds PRD-123 conversion fixtures (unit_conversions + ingredient_weights)', () => {
+    it('seeds conversion fixtures (unit_conversions + ingredient_weights)', () => {
       expect(summary.unitConversions).toBeGreaterThanOrEqual(10);
       expect(summary.ingredientWeights).toBeGreaterThanOrEqual(4);
     });
@@ -78,16 +76,16 @@ describe('PRD-113 phase-1 seed', () => {
     it('seeds plan slots including the user-added "late-night" slot', () => {
       expect(summary.planSlots).toBe(6);
     });
-    it('seeds the two phase-3 ingest_sources fixtures', () => {
+    it('seeds the two ingest_sources fixtures', () => {
       expect(summary.ingestSources).toBe(2);
     });
-    it('seeds at least 4 store-section tags (PRD-151)', () => {
+    it('seeds at least 4 store-section tags', () => {
       // produce, dairy, meat, pantry — the 4 sections with seeded ingredients.
       expect(summary.ingredientTags).toBeGreaterThanOrEqual(4);
     });
   });
 
-  describe('ingredient_tags (PRD-151)', () => {
+  describe('ingredient_tags', () => {
     it('seeds the four store-sections that have seeded ingredients', () => {
       const sections = raw
         .prepare(
@@ -115,7 +113,7 @@ describe('PRD-113 phase-1 seed', () => {
     });
   });
 
-  describe('ingest_sources (phase 3)', () => {
+  describe('ingest_sources', () => {
     it('inserts both fixture kinds (url-instagram + url-web)', () => {
       const kinds = db
         .select({ kind: ingestSources.kind })
@@ -136,7 +134,7 @@ describe('PRD-113 phase-1 seed', () => {
     });
 
     it('wires recipe_versions.source_id for ingest-originated drafts', () => {
-      // PRD-135's inbox-inspector scope is `recipe_versions.source_id IS NOT NULL`.
+      // The inbox-inspector scope is `recipe_versions.source_id IS NOT NULL`.
       const linked = db
         .select({ n: sql<number>`count(*)` })
         .from(recipeVersions)
@@ -191,10 +189,9 @@ describe('PRD-113 phase-1 seed', () => {
       }
     });
 
-    it("stores media paths in PRD-110's `<source_id>/<filename>` layout", () => {
-      // PRD-110 § Filesystem Layout — relative paths are prefixed with the
-      // per-source subdir (e.g. `42/video.mp4`). Catches a regression where
-      // a future change writes bare filenames.
+    it('stores media paths in the `<source_id>/<filename>` layout', () => {
+      // Relative media paths are prefixed with the per-source subdir (e.g.
+      // `42/video.mp4`), never bare filenames.
       const rows = raw
         .prepare(`SELECT id, transcript_path, keyframes_dir, video_path FROM ingest_sources`)
         .all() as {
@@ -231,8 +228,8 @@ describe('PRD-113 phase-1 seed', () => {
     });
 
     it('only ingest-sourced recipes appear in the inbox-scope query', () => {
-      // Replicates PRD-135's intended SELECT verbatim — drafts whose
-      // recipe_versions.source_id IS NOT NULL.
+      // The inbox SELECT surfaces only drafts whose recipe_versions.source_id
+      // IS NOT NULL.
       const inbox = raw
         .prepare(
           `SELECT r.slug FROM recipes r
@@ -287,7 +284,7 @@ describe('PRD-113 phase-1 seed', () => {
     });
   });
 
-  describe('substitution context tag coverage (theme README criterion #4)', () => {
+  describe('substitution context tag coverage', () => {
     const REQUIRED_TAGS = [
       'savory',
       'sweet',
@@ -464,7 +461,7 @@ describe('PRD-113 phase-1 seed', () => {
         .get() as { n: number };
       expect(orphans.n).toBe(0);
     });
-    it('persists source="user" (PRD-106 enum has no "seed" value)', () => {
+    it('persists source="user" (the source enum has no "seed" value)', () => {
       const sourceMix = raw
         .prepare(`SELECT source, COUNT(*) AS n FROM ingredient_aliases GROUP BY source`)
         .all() as { source: string; n: number }[];

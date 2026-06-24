@@ -1,18 +1,19 @@
 /**
- * PRD-128 — DSL builder for the LLM-extracted recipe.
+ * DSL builder for the LLM-extracted recipe
+ * (`pillars/food/docs/prds/web-llm-fallback`).
  *
- * Pure function: `ExtractedRecipe` → PRD-114 DSL string. Scoped to the
- * web-llm handler to avoid colliding with PRD-132's concurrent
- * `build-dsl.ts` (same shape, parallel branches — post-merge dedup
- * task is in the roadmap claim).
+ * Pure function: `ExtractedRecipe` → DSL string
+ * (`pillars/food/docs/prds/dsl-parser`). Scoped to the web-llm handler;
+ * `build-dsl.ts` and `screenshot-dsl.ts` carry parallel copies of the
+ * same shape.
  *
  * Invariants worth knowing:
  *   - Slug derivation is best-effort kebab-case; collision is the
- *     compiler's problem (PRD-115/-116 propose suffixes for unknowns).
+ *     compiler's problem, not this pure function's.
  *   - `prep_state_slug` outside the curated list is pushed to `notes`,
- *     original preserved per PRD-128 edge-case table.
+ *     original preserved.
  *   - Step bodies that contain `@<slug>` references pass through
- *     verbatim — PRD-114's grammar accepts both `@N` and `@slug`.
+ *     verbatim — the grammar accepts both `@N` and `@slug`.
  */
 import { isCuratedPrepState } from './web-llm-recipe.js';
 
@@ -99,7 +100,7 @@ function renderRecipeHeader(recipe: ExtractedRecipe, slug: string): string {
 }
 
 /**
- * Builds the PRD-114 DSL string for a Claude-extracted recipe. Returns
+ * Builds the DSL string for a Claude-extracted recipe. Returns
  * the DSL plus the derived slug + a count of how many ingredients had
  * their `prep_state_slug` rewritten into `notes` (surfaced in meta JSON
  * so the review queue can show the operator what was rerouted).

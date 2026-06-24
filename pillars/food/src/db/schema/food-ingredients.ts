@@ -131,6 +131,6 @@ export const ingredientTags = sqliteTable(
     // Namespace expression index added by hand in the migration —
     // ON ingredient_tags(SUBSTR(tag, 1, INSTR(tag || ':', ':') - 1))
     //   WHERE INSTR(tag, ':') > 0
-    // supports PRD-152's `WHERE tag LIKE 'store-section:%'` lookups.
+    // supports the `WHERE tag LIKE 'store-section:%'` lookups.
   ]
 );

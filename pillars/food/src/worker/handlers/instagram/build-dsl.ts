@@ -1,12 +1,11 @@
 import { disambiguateSlug, slugify } from '../web/slugify.js';
 
 /**
- * PRD-130 — pure ExtractedRecipe → PRD-114 DSL assembly.
- *
- * Local copy until PRD-132's `buildDsl` lands. The output shape is
- * deliberately compatible: slug from title with `-2`/`-3`/... collision
- * suffixes against the reserved set, yield ingredient = recipe slug,
- * one `@ingredient` block per parsed entry, one `@step` per parsed step.
+ * Pure ExtractedRecipe → recipe DSL assembly (grammar in
+ * pillars/food/docs/prds/dsl-parser): slug from title with `-2`/`-3`/...
+ * collision suffixes against the reserved set, yield ingredient = recipe
+ * slug, one `@ingredient` block per parsed entry, one `@step` per parsed
+ * step.
  */
 import type { ExtractedIngredient, ExtractedRecipe, ExtractedStep } from './extracted-recipe.js';
 

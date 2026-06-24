@@ -1,9 +1,8 @@
 /**
- * Read helpers for the drafts list + proposed-slug list — PRD-119.
+ * Read helpers for the drafts list + proposed-slug list.
  *
- * Split out of `queries.ts` purely to keep each file under the per-file
- * 200-line lint cap. Imports + the public function signatures are
- * unchanged from the consumer's view.
+ * Split out of `queries.ts` to keep each file under the per-file 200-line
+ * lint cap.
  */
 import { and, desc, eq } from 'drizzle-orm';
 
@@ -65,8 +64,8 @@ export function listProposedSlugs(db: FoodDb, versionId: number): ProposedSlugRo
   return rows.map((r) => ({
     slug: r.slug,
     suggestedKind: r.suggestedKind,
-    // PRD-116 stores `SourceSpan` as JSON; client treats it as the inline-
-    // diagnostic location for the PRD-120-C `issues` prop.
+    // Column stores `SourceSpan` as JSON; the client treats it as the
+    // inline-diagnostic location for the editor's `issues` prop.
     fromLoc: JSON.parse(r.fromLocJson) as ProposedSlugRow['fromLoc'],
     createdAt: r.createdAt,
   }));

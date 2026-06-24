@@ -8,13 +8,12 @@ import {
 } from './inbox-queries-drafts-types.js';
 
 /**
- * PRD-134 — in-memory score, filter, sort, and paginate pipeline for the
- * Drafts inbox tab.
+ * In-memory score, filter, sort, and paginate pipeline for the Drafts
+ * inbox tab.
  *
- * The PRD chose in-memory scoring + filtering because the heuristic band is
- * not a column — it's derived per row from PRD-137's `scoreDraft`. SQL
- * narrows by `kind` (and the always-on pending-draft predicate); the rest
- * lives here.
+ * Scoring + filtering happen in memory because the heuristic band is not a
+ * column — it's derived per row from `scoreDraft`. SQL narrows by `kind`
+ * (and the always-on pending-draft predicate); the rest lives here.
  *
  * `partialReason` lives in `ingest_sources.extracted_json` so the SQL side
  * can't push the predicate down without a JSON1 extract; the in-memory

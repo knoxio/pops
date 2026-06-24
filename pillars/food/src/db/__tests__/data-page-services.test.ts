@@ -1,7 +1,7 @@
 /**
- * PRD-122 — service-layer additions powering the data management page.
+ * Service-layer additions powering the data management page.
  *
- * Covers the new services that the UI tabs will consume:
+ * Covers the services the UI tabs consume:
  *   - aliases:                createAlias, updateAliasText, deleteAlias,
  *                             listAliases (search/source/target filters),
  *                             mergeAliases, bulkApproveAliases
@@ -86,7 +86,7 @@ function seedFixtures(db: FoodDb): Seed {
   };
 }
 
-describe('PRD-122 — data-page services', () => {
+describe('data-page services', () => {
   let db: FoodDb;
   let raw: Database.Database;
   let seed: Seed;
@@ -360,8 +360,8 @@ describe('PRD-122 — data-page services', () => {
     });
 
     it('listSubstitutions includes wildcard edges (empty context_tags) when filtering by a tag', () => {
-      // PRD-109 amendment: empty context_tags = "applies in any context".
-      // Tag-filtered queries must surface wildcards alongside specific matches.
+      // Empty context_tags = "applies in any context". Tag-filtered queries
+      // must surface wildcards alongside specific matches.
       createSubstitution(db, {
         from: { ingredientId: seed.bananaId },
         to: { ingredientId: seed.appleId },

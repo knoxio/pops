@@ -1,5 +1,5 @@
 /**
- * PRD-116 — compile pipeline invariants.
+ * Compile pipeline invariants (spec: pillars/food/docs/prds/lines-materialisation).
  *
  * Each test runs `compileRecipeVersion` against a seeded recipe_versions
  * row and asserts BOTH the returned `CompileResult` and the resulting DB
@@ -65,7 +65,7 @@ const HAPPY_DSL = `@recipe(slug="happy", title="Happy", servings=2)
 @step("Garnish with @1 sliced.")
 `;
 
-describe('PRD-116 — compile pipeline: happy path', () => {
+describe('compile pipeline: happy path', () => {
   let db: FoodDb;
 
   beforeEach(() => {
@@ -123,7 +123,7 @@ describe('PRD-116 — compile pipeline: happy path', () => {
     expect(butter?.canonicalUnit).toBe('g');
   });
 
-  it('PRD-123 conversion: cup is rewritten via unit_conversions when seeded', () => {
+  it('conversion: cup is rewritten via unit_conversions when seeded', () => {
     createUnitConversion(db, { fromUnit: 'cup', toUnit: 'ml', ratio: 240, isSeeded: true });
     const versionId = makeRecipe(
       db,
@@ -144,7 +144,7 @@ describe('PRD-116 — compile pipeline: happy path', () => {
     expect(lines[0]?.canonicalUnit).toBe('ml');
   });
 
-  it('PRD-123 conversion: ingredient_weights "medium" → qty_g for the right ingredient', () => {
+  it('conversion: ingredient_weights "medium" → qty_g for the right ingredient', () => {
     const onion = createIngredient(db, { name: 'Onion', slug: 'onion', defaultUnit: 'count' });
     createIngredientWeight(db, {
       ingredientId: onion.id,
@@ -208,7 +208,7 @@ describe('PRD-116 — compile pipeline: happy path', () => {
   });
 });
 
-describe('PRD-116 — compile pipeline: idempotency + replace', () => {
+describe('compile pipeline: idempotency + replace', () => {
   let db: FoodDb;
 
   beforeEach(() => {
@@ -237,7 +237,6 @@ describe('PRD-116 — compile pipeline: idempotency + replace', () => {
   it('replace semantics: shrinking the DSL purges the old rows', () => {
     const versionId = makeRecipe(db, 'happy', HAPPY_DSL);
     compileRecipeVersion(versionId, db);
-    // Edit body_dsl down to 3 lines.
     db.update(recipeVersions)
       .set({
         bodyDsl: `@recipe(slug="happy", title="Happy", servings=2)
@@ -260,7 +259,7 @@ describe('PRD-116 — compile pipeline: idempotency + replace', () => {
   });
 });
 
-describe('PRD-116 — compile pipeline: failure phases', () => {
+describe('compile pipeline: failure phases', () => {
   let db: FoodDb;
 
   beforeEach(() => {
@@ -271,8 +270,8 @@ describe('PRD-116 — compile pipeline: failure phases', () => {
   it('parse phase: empty DSL fails with MissingRecipeHeader + clears stale proposedSlugs', () => {
     const versionId = makeRecipe(db, 'broken', '');
     // Seed a stale proposed-slug row from a notional prior compile so we can
-    // verify the parse-failure path clears it (PRD-116 invariant — a parse
-    // failure leaves the version's review-queue surface empty).
+    // verify the parse-failure path clears it: a parse failure must leave the
+    // version's review-queue surface empty.
     db.insert(recipeVersionProposedSlugs)
       .values({
         recipeVersionId: versionId,
@@ -341,7 +340,6 @@ describe('PRD-116 — compile pipeline: failure phases', () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.creationCount).toBeGreaterThanOrEqual(1);
-    // After compile, the auto-created ingredient exists.
     const lines = db
       .select()
       .from(recipeLines)
@@ -361,8 +359,6 @@ describe('PRD-116 — compile pipeline: failure phases', () => {
 `
     );
     compileRecipeVersion(versionId, db);
-    // Edit body_dsl and recompile — proposedSlugs from the prior compile
-    // should be cleared and replaced.
     db.update(recipeVersions)
       .set({
         bodyDsl: `@recipe(slug="bad-prep-2", title="Bad prep 2")

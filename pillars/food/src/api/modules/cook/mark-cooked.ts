@@ -1,13 +1,13 @@
 /**
- * `food.cook.markCooked` — transactional cook mutation per PRD-144.
+ * `food.cook.markCooked` — transactional cook mutation.
  *
  * One Drizzle transaction wraps:
  *   1. recipe_runs INSERT (with scale + rating + notes)
- *   2. consumption-override application (per PRD-146's deferred slice)
- *   3. PRD-108's `consumeForRun` against the remaining (non-overridden,
+ *   2. consumption-override application
+ *   3. `consumeForRun` against the remaining (non-overridden,
  *      non-optional) needs
- *   4. PRD-145's `createBatchFromRun` (sets `completed_at` for yieldless
- *      too and INSERTs the yielded batch when `yield` is given)
+ *   4. `createBatchFromRun` (sets `completed_at` for yieldless too and
+ *      INSERTs the yielded batch when `yield` is given)
  *   5. plan_entries.recipe_run_id link
  *
  * Failures roll the whole thing back via a private sentinel.
@@ -97,8 +97,8 @@ function runCookTransaction(
   finaliseRunRow(tx, run.id, args, overrides.auditLines);
   // Plan-entry link is a conditional UPDATE on `recipe_run_id IS NULL`
   // so a parallel cook racing past preflight can't overwrite the first
-  // run's id (Copilot R1). On zero affected rows we roll back via the
-  // shared rollback sentinel.
+  // run's id. On zero affected rows we roll back via the shared rollback
+  // sentinel.
   if (!linkPlanEntry(tx, run.id, args.planEntryId)) {
     throw new MarkCookedRollback('PlanEntryAlreadyCooked');
   }
@@ -128,9 +128,9 @@ function finaliseRunRow(
   args: MarkCookedArgs,
   auditLines: readonly string[]
 ): void {
-  // `createBatchFromRun` (via PRD-108's `markRunComplete`) sets
-  // `recipe_runs.notes` + `rating` to null because the wrapper doesn't
-  // thread them through. Compose the final values here.
+  // `createBatchFromRun` (via `markRunComplete`) sets `recipe_runs.notes`
+  // + `rating` to null because the wrapper doesn't thread them through.
+  // Compose the final values here.
   const finalNotes = composeFinalNotes(args.notes ?? null, auditLines);
   const rating = args.rating ?? null;
   if (rating === null && finalNotes === null) return;

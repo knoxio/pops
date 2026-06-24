@@ -1,9 +1,10 @@
 /**
- * `inbox.*` sub-router — recipe-ingest triage (PRD-134/135/136/138). Pure
- * DB reads/writes. Mutations + inspector return the service's discriminated
- * `{ ok, ... }` result on 200. List endpoints are POST-with-body (array
- * filters + cursor). `getForReview.review` is fully modelled in
- * `rest-inbox-review-schemas.ts` so `api-types` describes the wire shape.
+ * `inbox.*` sub-router — recipe-ingest triage. Pure DB reads/writes.
+ * Mutations + inspector return the service's discriminated `{ ok, ... }`
+ * result on 200. List endpoints are POST-with-body (array filters +
+ * cursor). `getForReview.review` is fully modelled in
+ * `rest-inbox-review-schemas.ts` so the generated api-types describe the
+ * wire shape.
  */
 import { initContract } from '@ts-rest/core';
 import { z } from 'zod';

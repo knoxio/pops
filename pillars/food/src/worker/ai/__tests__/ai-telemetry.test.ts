@@ -7,8 +7,9 @@
  * `operation`/`domain`/`provider`, keeps the raw recipe text out of telemetry,
  * and returns its result unchanged.
  *
- * `text.test.ts` (recipe-extract-text / recipe-extract-ig-text-fallback) and
- * `web-llm.test.ts` (recipe-extract-web-llm) cover the other two operations.
+ * `../../handlers/__tests__/text.test.ts` (recipe-extract-text) and
+ * `../../handlers/__tests__/web-llm.test.ts` (recipe-extract-web-llm) cover the
+ * remaining text-path operations.
  */
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
@@ -111,7 +112,6 @@ describe('screenshot vision — telemetry', () => {
     expect(record.status).toBe('success');
     expect(record.inputTokens).toBe(321);
     expect(record.outputTokens).toBe(88);
-    // 321/1e6 * 1 + 88/1e6 * 5 = 0.000761 with the fake per-Mtok pricing.
     expect(record.costUsd).toBeCloseTo(0.000761, 9);
   });
 

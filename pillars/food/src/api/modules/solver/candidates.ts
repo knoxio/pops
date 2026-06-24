@@ -1,6 +1,6 @@
 /**
  * Pre-filter the recipe candidate set for `food.solver.canICook` —
- * PRD-150.
+ * pillars/food/docs/prds/cook-solver.
  *
  * Eligibility = non-archived recipe with a `current_version_id`
  * pointing at a `compiled` version. Optional client filters

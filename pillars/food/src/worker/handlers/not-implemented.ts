@@ -1,9 +1,9 @@
 import type { IngestJobData, IngestJobResult } from '../../contract/queue/index.js';
 
 /**
- * Shared NotImplemented stub. PRDs 127–132 replace each per-kind handler
- * with the real pipeline. Until then every dispatch lands here so the
- * worker → pops-api round-trip is end-to-end exercisable.
+ * Shared NotImplemented stub. No live dispatch kind routes here — every
+ * `IngestJobData['kind']` has a real handler. Retained as the sentinel
+ * `extractor_version` the dispatch tests assert real handlers never emit.
  *
  * `extractor_version` carries the worker's own version so the inbox can
  * tell apart a deliberate stub from an old worker image still in flight.

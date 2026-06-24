@@ -1,7 +1,7 @@
 /**
- * Integration tests for the `plan.*` REST surface (PRD-143). Covers slot
- * CRUD, the week view, and a promoted-recipe addEntry happy path plus the
- * discriminated error results. Plan-service invariants live in the db tests.
+ * Integration tests for the `plan.*` REST surface. Covers slot CRUD, the week
+ * view, and a promoted-recipe addEntry happy path plus the discriminated error
+ * results. Plan-service invariants live in the db tests.
  */
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';

@@ -1,10 +1,10 @@
 /**
- * PRD-137 integration test — exercises `gatherQualityInputsForVersions`
- * against an in-memory SQLite seeded with the full Epic 00 + Epic 02
- * migration stack. Confirms the batched JOINs return one row per input
- * versionId with the correct shape, derive `partialReason` from
- * `extracted_json`, count creation slugs via the window join, and
- * collapse to a sensible default when the source row is missing.
+ * Integration test — exercises `gatherQualityInputsForVersions` against an
+ * in-memory SQLite seeded with the food migration stack. Confirms the
+ * batched JOINs return one row per input versionId with the correct shape,
+ * derive `partialReason` from `extracted_json`, count creation slugs via the
+ * window join, and collapse to a sensible default when the source row is
+ * missing. Spec: pillars/food/docs/prds/quality-heuristic.
  */
 
 import { beforeEach, describe, expect, it } from 'vitest';
@@ -104,7 +104,7 @@ function seedSlugRegistry(
     .run(args.slug, args.kind, args.targetId, args.createdAt);
 }
 
-/** PRD-106-shaped ingredient — minimum columns to satisfy the FK on recipe_lines. */
+/** Minimum ingredient columns to satisfy the FK on recipe_lines. */
 function seedIngredient(raw: Database.Database, slug: string): number {
   const row = raw
     .prepare(
@@ -142,7 +142,7 @@ function insertSteps(raw: Database.Database, versionId: number, n: number): void
 
 const NOW = new Date('2026-06-10T12:00:00Z');
 
-describe('PRD-137 — gatherQualityInputsForVersions', () => {
+describe('gatherQualityInputsForVersions', () => {
   let db: FoodDb;
   let raw: Database.Database;
 
@@ -306,7 +306,6 @@ describe('PRD-137 — gatherQualityInputsForVersions', () => {
   it('computes ingestAgeMinutes correctly against the override "now"', () => {
     const sourceId = seedIngestSource(db, { ingestedAt: '2026-06-10 10:00:00' });
     const v = seedRecipeAndVersion(db, 'aged', { sourceId });
-    // NOW is 2026-06-10T12:00:00Z → 120 minutes.
     const inputs = gatherQualityInputsForVersions(db, [v.versionId], NOW).get(v.versionId);
     expect(inputs?.ingestAgeMinutes).toBe(120);
   });
@@ -344,7 +343,7 @@ describe('PRD-137 — gatherQualityInputsForVersions', () => {
   });
 });
 
-describe('PRD-137 — schema sanity', () => {
+describe('schema sanity', () => {
   it('migrations apply cleanly + slug_registry is empty by default', () => {
     const { db } = freshDb();
     const rows = db.select().from(slugRegistry).all();

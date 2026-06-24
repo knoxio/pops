@@ -1,11 +1,10 @@
 /**
- * Creation flows: `create`, `createNewDraft`, `restoreVersion` — PRD-119.
+ * Creation flows: `create`, `createNewDraft`, `restoreVersion`.
  *
- * Each kicks the PRD-107 services that already own the recipe + version
- * row inserts; the new pieces here are (a) parsing the DSL header to
- * extract the slug + recipe metadata, and (b) running PRD-116's compile
- * pipeline against the freshly-written draft so the editor's first
- * response carries the `CompileResult`.
+ * Each delegates row inserts to the recipe + version services, then parses
+ * the DSL header for slug + metadata and runs the compile pipeline against
+ * the freshly-written draft so the editor's first response carries the
+ * `CompileResult`.
  */
 import { and, eq } from 'drizzle-orm';
 
@@ -37,9 +36,9 @@ function parseOrReject(dsl: string): { header: RecipeHeader; ast: RecipeAst } {
   if (parsed.ok) {
     return { header: parsed.ast.recipe, ast: parsed.ast };
   }
-  // The editor surfaces every parse error inline (PRD-120-C). On create
-  // we reject with BAD_REQUEST so the toast can show a single message;
-  // saveDraft is the path that returns the full per-error CompileResult.
+  // The editor surfaces every parse error inline. On create we reject with
+  // BAD_REQUEST so the toast can show a single message; saveDraft is the
+  // path that returns the full per-error CompileResult.
   const first = parsed.errors[0];
   const message =
     first?.code === 'MissingRecipeHeader'

@@ -1,5 +1,6 @@
 /**
- * 11 sample recipes covering the grammar's positive surface — PRD-114 AC.
+ * Sample recipes covering the grammar's positive surface
+ * (spec: pillars/food/docs/prds/dsl-parser).
  */
 
 export const SIMPLE_PLATE = `@recipe(

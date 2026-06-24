@@ -1,5 +1,5 @@
 /**
- * PRD-113 fixture set — ingredients + variants (part 2: produce + bread).
+ * Ingredient + variant fixtures (part 2: produce + bread).
  *
  * Hosts the depth-2 hierarchy (tomato → roma + cherry; potato → desiree) and
  * the per-variant shelf-life overrides for corn (fresh-cob vs canned vs

@@ -1,9 +1,10 @@
 /**
- * Wire types for `food.solver.canICook` — PRD-150.
+ * Wire types for `food.solver.canICook` —
+ * pillars/food/docs/prds/cook-solver.
  *
- * Kept separate from the orchestrator so the tRPC router and the
+ * Kept separate from the orchestrator so the REST router and the
  * frontend can both depend on the types without pulling in service
- * code. Mirrors the shapes defined in PRD-150's README.
+ * code.
  */
 
 export type RecipeTypeLiteral =

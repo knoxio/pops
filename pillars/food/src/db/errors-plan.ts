@@ -1,9 +1,6 @@
 /**
- * PRD-111 — Plan entry + slot errors.
- *
- * Split from `errors.ts` to keep individual files under the max-lines lint
- * threshold. Re-exported from `errors.ts` so consumers don't need to
- * know about the split.
+ * Plan entry + slot errors. Re-exported from `errors.ts`, which is the
+ * barrel consumers import from.
  */
 
 export class PlanEntryNotFound extends Error {

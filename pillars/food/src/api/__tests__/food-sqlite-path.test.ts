@@ -1,6 +1,6 @@
 /**
- * Resolver tests — guards the precedence chain so future pillar work
- * doesn't accidentally drift food-api away from pops-api's resolver.
+ * Resolver tests — guards the FOOD_SQLITE_PATH > SQLITE_PATH-derived >
+ * default precedence chain.
  */
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 

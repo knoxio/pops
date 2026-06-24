@@ -1,6 +1,3 @@
-/**
- * PRD-127 — mapJsonLdToDsl unit tests.
- */
 import { describe, expect, it } from 'vitest';
 
 import { parseRecipeDsl } from '../../dsl/index.js';

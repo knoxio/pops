@@ -12,7 +12,7 @@ export interface ConsumptionNeed {
   variantId: number;
   /** null = default/whole bucket; matches `batches.prep_state_id IS NULL`. */
   prepStateId: number | null;
-  /** Quantity needed, in canonical metric (from recipe_lines / yield). */
+  /** Quantity needed, in canonical metric (from `recipe_lines` / yield). */
   qty: number;
   canonicalUnit: 'g' | 'ml' | 'count';
 }

@@ -1,7 +1,6 @@
 /**
- * Shared label composer for PRD-142 — used by the preview builder and the
- * merge-time relabel step. Format pinned by PRD-142 §`prepareSendToList`
- * server-side flow step 6:
+ * Shared label composer — used by the preview builder and the merge-time
+ * relabel step. Format pinned by pillars/food/docs/prds/send-to-list:
  *
  *   "<qty> <unit> <ingredient_name>[ <variant_name>][ (<prep_label>)]"
  */

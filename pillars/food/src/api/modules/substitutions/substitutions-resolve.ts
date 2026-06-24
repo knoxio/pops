@@ -1,10 +1,9 @@
 /**
- * Shared per-line substitution resolver — PRD-150.
+ * Shared per-line substitution resolver.
  *
- * Canonical home for the substitution-resolution logic that PRD-150's
- * solver and PRD-149's cook-time picker both consume. Reads PRD-109's
- * `substitutions` table with the override semantics carried forward
- * from PRD-149:
+ * Canonical home for the substitution-resolution logic that the solver
+ * and the cook-time picker both consume. Reads the `substitutions`
+ * table with these override semantics:
  *
  *   - A line is identified by its `(ingredientId, variantId,
  *     prepStateId)` triple. Subs match when their `from` side equals
@@ -14,9 +13,9 @@
  *   - `scope = 'recipe'` rows override `scope = 'global'` rows for the
  *     same `(from, to)` pair within that recipe. Other global edges
  *     out of the same `from` are unaffected.
- *   - Context tags follow PRD-109's OR-overlap rule: an empty
- *     `context_tags` array is a wildcard; otherwise the sub matches
- *     iff at least one of its tags overlaps the recipe's `recipe_tags`.
+ *   - Context tags follow the OR-overlap rule: an empty `context_tags`
+ *     array is a wildcard; otherwise the sub matches iff at least one
+ *     of its tags overlaps the recipe's `recipe_tags`.
  *
  * The public surface is split into three layers:
  *
@@ -29,7 +28,7 @@
  *     `(variantId, prepStateId|null)`.
  *
  * SQL + type plumbing lives in sibling files (`-loaders.ts`,
- * `-types.ts`) so each file stays under the per-file lint cap.
+ * `-types.ts`).
  */
 export {
   buildInventoryKey,
@@ -95,10 +94,10 @@ function toCandidate(edge: SubstitutionEdge): SubstitutionCandidate {
 }
 
 /**
- * Apply PRD-109's `(from, to)`-pair override semantics + context-tag
- * filter to a line's candidate set. Recipe-scoped edges supersede the
- * global edge with the same pair key; other global edges from the
- * same `from` survive unchanged.
+ * Apply the `(from, to)`-pair override semantics + context-tag filter
+ * to a line's candidate set. Recipe-scoped edges supersede the global
+ * edge with the same pair key; other global edges from the same `from`
+ * survive unchanged.
  */
 export function resolveCandidatesForLine(
   index: SubstitutionsIndex,

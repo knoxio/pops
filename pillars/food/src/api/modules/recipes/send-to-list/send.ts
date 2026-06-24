@@ -1,8 +1,8 @@
 /**
- * `recipes.sendToList` server logic — PRD-142, rewired onto the lists REST
- * API. Discriminated result so the handler surfaces validation failures
- * inline. Each item is its own atomic `upsert-by-ref`/`add` call; there is
- * no longer a single cross-pillar transaction (lists owns its consistency).
+ * `recipes.sendToList` server logic, over the lists REST API. Discriminated
+ * result so the handler surfaces validation failures inline. Each item is its
+ * own atomic `upsert-by-ref`/`add` call; there is no single cross-pillar
+ * transaction (lists owns its consistency).
  */
 import { type FoodDb } from '../../../../db/index.js';
 import { aggregateLinesForSend } from './aggregate.js';

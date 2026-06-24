@@ -30,10 +30,7 @@ export const QueryBool = z.preprocess((v) => v === true || v === 'true', z.boole
  */
 export const QueryPositiveInt = z.coerce.number().int().positive();
 
-/**
- * Error envelope. `messageKey` carries the i18n key the FE resolves to a
- * localised string (preserved from the tRPC `data.messageKey` wire shape).
- */
+/** Error envelope. `messageKey` carries the i18n key the FE resolves to a localised string. */
 export const ErrorBodySchema = z.object({
   message: z.string(),
   code: z.string().optional(),

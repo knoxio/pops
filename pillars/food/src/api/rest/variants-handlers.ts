@@ -1,11 +1,10 @@
 /**
  * Handlers for the `variants.*` sub-router.
  *
- * Error convention (ported from the pops-api variants router):
- * `InvalidSlugError` → 400; SQLite UNIQUE (per-ingredient slug collision)
- * → 409; SQLite FK (variant referenced by a batch / recipe line / alias /
- * substitution) → 409; `expectRow` miss on update of an unknown id → 404;
- * delete of an unknown id → 404.
+ * Error mapping: `InvalidSlugError` → 400; SQLite UNIQUE (per-ingredient slug
+ * collision) → 409; SQLite FK (variant referenced by a batch / recipe line /
+ * alias / substitution) → 409; `expectRow` miss on update of an unknown id →
+ * 404; delete of an unknown id → 404.
  */
 import { InvalidSlugError, variantsService } from '../../db/index.js';
 import { ConflictError, HttpError, NotFoundError } from '../shared/errors.js';

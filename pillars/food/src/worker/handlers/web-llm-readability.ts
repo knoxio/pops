@@ -1,5 +1,5 @@
 /**
- * PRD-128 — readability extraction.
+ * Readability extraction (`pillars/food/docs/prds/web-llm-fallback`).
  *
  * Wraps Mozilla Readability in a JSDOM container, returns the cleaned
  * article body or null when the page doesn't have enough content to be
@@ -20,10 +20,10 @@ export interface ReadableArticle {
 
 /**
  * Returns a readable article extracted from `html` rooted at `baseUrl`,
- * or null when Readability finds no article body or the body is too
- * short to be useful (PRD-128 §Acceptance: reject below 200 chars).
+ * or null when Readability finds no article body or the body is shorter
+ * than `WEB_LLM_MIN_READABLE_CHARS`.
  *
- * Long extractions (>15K chars) are truncated to the first 15K so the
+ * Extractions past `WEB_LLM_MAX_INPUT_CHARS` are truncated so the
  * downstream Claude prompt stays under a sensible token budget — the
  * meta-JSON `truncated` flag surfaces this to the review queue.
  */

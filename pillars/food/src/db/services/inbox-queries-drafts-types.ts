@@ -2,12 +2,10 @@ import { type QualityBand, type QualitySignal, type CompileStatus } from '../../
 
 import type { PartialReason } from '../../contract/queue/index.js';
 /**
- * PRD-134 — shared types + the cursor codec for the Drafts inbox tab.
- *
- * Kept in a sibling file so `inbox-queries-drafts.ts` (the entry point) and
+ * Shared types + the cursor codec for the Drafts inbox tab. Imported by both
+ * `inbox-queries-drafts.ts` (the entry point) and
  * `inbox-queries-drafts-helpers.ts` (the in-memory score + sort + paginate
- * pipeline) both reach for the same shapes — and so each module stays under
- * the per-file lint cap.
+ * pipeline).
  */
 import type { IngestSourceKind } from '../schema.js';
 

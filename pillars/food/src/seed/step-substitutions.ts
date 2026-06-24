@@ -1,5 +1,5 @@
 /**
- * PRD-113 seed step — substitutions.
+ * Seed step — substitutions.
  *
  * Maps fixture endpoints (slug-based) to (ingredient_id | variant_id) and
  * calls `createSubstitution`. Recipe-scoped fixtures resolve the recipe id
@@ -44,8 +44,8 @@ function resolveRecipeId(
 ): number | null {
   if ((fixture.scope ?? 'global') !== 'recipe') return null;
   // Defensive: a fixture declaring scope='recipe' without recipeSlug would
-  // otherwise silently insert a recipe-scoped sub with NULL recipe_id —
-  // violating PRD-109 invariants. Fail loud at seed time.
+  // otherwise silently insert a recipe-scoped sub with NULL recipe_id. Fail
+  // loud at seed time.
   if (fixture.recipeSlug === undefined) {
     throw new Error(`Sub fixture has scope='recipe' but no recipeSlug`);
   }

@@ -6,9 +6,9 @@ import type { MessageCreateParamsNonStreaming } from '@anthropic-ai/sdk/resource
  * Thin wrapper around the Anthropic SDK so handlers don't reach for the
  * raw `Anthropic` import (keeps test mocks centralised on this module).
  *
- * `maxRetries: 0` matches the convention in `apps/pops-api` — retries
- * belong in the BullMQ job lifecycle, not the SDK, so a transient 429
- * surfaces here, the job throws, and BullMQ schedules the next attempt.
+ * `maxRetries: 0` because retries belong in the BullMQ job lifecycle, not
+ * the SDK — a transient 429 surfaces here, the job throws, and BullMQ
+ * schedules the next attempt.
  *
  * The response shape declared here is a structural subset of the SDK's
  * `Message` — handlers only read `content[].text` and `usage.input_tokens` /

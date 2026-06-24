@@ -1,20 +1,14 @@
 /**
- * Apply PRD-146 `ConsumptionOverride[]` rows inside PRD-144's
- * `markCooked` transaction.
- *
- * Per the PRD-146 claim, the override-processing logic for the cook
- * mutation lives here — PRD-146 owns the modal-side resolution UX, and
- * delegates the persistence step to PRD-144 so the whole cook-finalisation
- * surface stays single-owner.
+ * Apply `ConsumptionOverride[]` rows inside the `markCooked` transaction.
  *
  *   - `batch-override` → INSERT one `batch_consumptions` row + decrement
  *     the chosen batch's `qty_remaining`.
  *   - `external`       → append an audit line to `recipe_runs.notes`.
  *   - `partial`        → both of the above on a single line.
  *
- * The function returns the set of `recipe_lines.position` values that the
- * override array covered. The remaining lines fall through to PRD-108's
- * FIFO `consumeForRun`.
+ * Returns the set of `recipe_lines.position` values that the override
+ * array covered. The remaining lines fall through to the FIFO
+ * `consumeForRun` drain.
  */
 import { eq } from 'drizzle-orm';
 
@@ -49,15 +43,15 @@ export function applyConsumptionOverrides(
   for (const o of args.overrides) {
     const line = lineIndex.get(o.lineIndex);
     if (line === undefined) continue; // line position not in this version — silently skip
-    // PRD-146 §"Integration with PRD-144's cook mutation": optional
-    // lines never reach FIFO (see `computeRemainingNeeds` filter) so any
-    // override the modal sent for one is silently dropped. Without this
-    // guard a batch-override on an optional line would write a stray
-    // `batch_consumptions` row that no longer maps to a tracked need.
+    // Optional lines never reach FIFO (see `computeRemainingNeeds`
+    // filter) so any override the modal sent for one is silently dropped.
+    // Without this guard a batch-override on an optional line would write
+    // a stray `batch_consumptions` row that no longer maps to a tracked
+    // need.
     if (line.optional) continue;
     // Refuse to mark a line "covered" unless the override accounts for
-    // the full scaled need (Copilot R2). Without this gate a client can
-    // send `consumeQty: 1` on a 200g line, get added to `coveredLineIndices`,
+    // the full scaled need. Without this gate a client can send
+    // `consumeQty: 1` on a 200g line, get added to `coveredLineIndices`,
     // and silently bypass FIFO for the remaining 199g.
     if (!overrideCoversLine(o, line, args.scaleFactor)) {
       return { ok: false, reason: 'ShortfallUnresolved' };
@@ -170,7 +164,7 @@ function overrideCoversLine(
   scaleFactor: number
 ): boolean {
   const required = line.needQty * scaleFactor;
-  if (required <= 0) return true; // nothing to cover — treat as covered.
+  if (required <= 0) return true;
   if (override.kind === 'external') {
     if (override.externalUnit !== line.canonicalUnit) return false;
     return Math.abs(override.externalQty - required) <= QTY_EPSILON;
@@ -190,9 +184,10 @@ interface DrawArgs {
   expectedVariantId: number | null;
   expectedPrepStateId: number | null;
   /**
-   * PRD-149 — set true when the override carries a `substitutionEdgeId`,
-   * since the sub batch's prep state may legitimately differ from the
-   * line's per the prep-mismatch-is-informational rule.
+   * Set true when the override carries a `substitutionEdgeId`, since the
+   * sub batch's prep state may legitimately differ from the line's per the
+   * prep-mismatch-is-informational rule
+   * (pillars/food/docs/prds/cook-time-substitutions).
    */
   ignorePrepStateMismatch?: boolean;
 }
@@ -226,9 +221,9 @@ function drawFromBatch(args: DrawArgs): { ok: true } | { ok: false } {
   if (batch.deletedAt !== null) return { ok: false };
   if (batch.unit !== unit) return { ok: false };
   // Reject overrides that point at a batch with a different variant /
-  // prep state than the recipe line they're covering (Copilot R1).
-  // Without this guard a client could "cover" a tomato line by drawing
-  // from an unrelated chicken batch.
+  // prep state than the recipe line they're covering. Without this guard
+  // a client could "cover" a tomato line by drawing from an unrelated
+  // chicken batch.
   if (expectedVariantId !== null && batch.variantId !== expectedVariantId) return { ok: false };
   if (ignorePrepStateMismatch !== true && batch.prepStateId !== expectedPrepStateId) {
     return { ok: false };

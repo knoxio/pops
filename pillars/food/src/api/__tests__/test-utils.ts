@@ -1,11 +1,10 @@
 /**
  * Supertest-backed REST client for the food pillar integration tests.
  *
- * Preserves the caller-shaped API the old tRPC tests used
- * (`client.conversions.createUnit({...})`) so per-test bodies stay
- * readable — only the transport changed. Non-2xx responses throw
- * `HttpError` with the parsed `{ status, body }` so tests assert on
- * `.rejects.toMatchObject({ status })` instead of the old TRPCError code.
+ * Exposes a caller-shaped API (`client.conversions.createUnit({...})`) so
+ * per-test bodies stay readable. Non-2xx responses throw `HttpError` with the
+ * parsed `{ status, body }` so tests assert on
+ * `.rejects.toMatchObject({ status })`.
  */
 import supertest from 'supertest';
 

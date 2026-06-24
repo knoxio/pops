@@ -1,5 +1,5 @@
 /**
- * Default list-name composer + provenance notes builder — PRD-152.
+ * Default list-name composer + provenance notes builder.
  *
  * Format: `"Shopping list — <d-MMM>"` for single-day ranges; otherwise
  * `"Shopping list — <d>-<d> <Mmm>"` when start + end share a month;
@@ -8,7 +8,7 @@
  * since the user can rename freely before generate.
  *
  * `notes` per item: `"Plan <start>-<end> · <recipe titles joined by ', '>"`
- * front-truncated to 500 chars with `"…"` per AC.
+ * front-truncated to 500 chars with `"…"`.
  */
 const MONTHS_SHORT = [
   'Jan',

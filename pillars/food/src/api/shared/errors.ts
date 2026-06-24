@@ -1,13 +1,9 @@
 /**
  * HTTP-shaped domain errors used by the food pillar's REST handlers.
  *
- * Intentionally NOT imported from `apps/pops-api/src/shared/errors.ts` —
- * the per-pillar container stands alone of pops-api in the dependency
- * graph. Each error carries an optional `messageKey` so the frontend can
- * resolve a localised string while the EN-AU fallback lives in `message`;
- * `mapHttpError` plumbs it through the REST error envelope so clients keep
- * receiving the `messageKey` they had under the tRPC `data.messageKey`
- * wire shape.
+ * Each error carries an optional `messageKey` so the frontend can resolve a
+ * localised string while the EN-AU fallback lives in `message`; `mapHttpError`
+ * plumbs it through the REST error envelope.
  */
 export class HttpError extends Error {
   /** i18n key the frontend uses to resolve a localised message. */

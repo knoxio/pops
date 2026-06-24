@@ -1,6 +1,3 @@
-/**
- * PRD-130 — VTT parser unit tests for the faster-whisper output.
- */
 import { describe, expect, it } from 'vitest';
 
 import { parseVtt } from '../handlers/instagram/stt-whisper.js';

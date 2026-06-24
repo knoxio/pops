@@ -1,6 +1,6 @@
 /**
- * PRD-107 invariant tests — exercises the recipe + version schema against
- * an in-memory SQLite seeded with PRD-106 + PRD-107 migrations.
+ * Recipe + version invariant tests — exercises the recipe + version schema
+ * against an in-memory SQLite seeded with the food migrations.
  */
 
 import { and, eq } from 'drizzle-orm';
@@ -50,7 +50,7 @@ function makeCompiledRecipe(
   return { recipeId: created.recipe.id, versionId: created.version.id };
 }
 
-describe('PRD-107 — recipe + version invariants', () => {
+describe('recipe + version invariants', () => {
   let db: FoodDb;
   let raw: Database.Database;
 
@@ -59,7 +59,7 @@ describe('PRD-107 — recipe + version invariants', () => {
   });
 
   describe('schema applied cleanly', () => {
-    it('creates all PRD-107 tables', () => {
+    it('creates the recipe tables', () => {
       const tables = raw
         .prepare(`SELECT name FROM sqlite_master WHERE type='table' ORDER BY name`)
         .all() as { name: string }[];
@@ -231,21 +231,18 @@ describe('PRD-107 — recipe + version invariants', () => {
     });
 
     it('rolls the archive step back when the update-to-current trips a constraint', () => {
-      // Regression — `promoteVersion` archives the previously-current row
-      // BEFORE flipping the new one to current. The fix (PRD-136 Copilot
-      // R1) wraps the writes in a drizzle transaction whose failure path
-      // is throw-based, so a constraint failure on the second update
-      // rolls the archive back too. Without it, returning `{ ok: false }`
-      // from inside the tx callback would commit the archive and leave
-      // the recipe with no current at all.
+      // `promoteVersion` archives the previously-current row BEFORE flipping
+      // the new one to current, both inside a throw-based drizzle transaction,
+      // so a constraint failure on the second update rolls the archive back
+      // too — leaving the recipe with its original current intact.
       //
-      // Trigger the conflict deterministically with a `RAISE(ABORT)`
-      // trigger on `UPDATE OF status` for the target row — same
-      // post-condition the partial-UNIQUE would enforce against a racing
-      // concurrent promote. The error code is `SQLITE_CONSTRAINT_TRIGGER`
-      // (not `SQLITE_CONSTRAINT_UNIQUE`), so `isUniqueConstraintError`
-      // re-throws and the test asserts on the post-condition instead of
-      // the return shape: v1 must remain `current` (archive rolled back).
+      // Trigger the conflict deterministically with a `RAISE(ABORT)` trigger
+      // on `UPDATE OF status` for the target row — same post-condition the
+      // partial-UNIQUE would enforce against a racing concurrent promote. The
+      // error code is `SQLITE_CONSTRAINT_TRIGGER` (not
+      // `SQLITE_CONSTRAINT_UNIQUE`), so `isUniqueConstraintError` re-throws and
+      // the test asserts on the post-condition rather than the return shape:
+      // v1 must remain `current` (archive rolled back).
       const { recipeId, versionId: v1 } = makeCompiledRecipe(db, 'pad-thai');
       promoteVersion(db, v1);
       const v2 = createNewVersion(db, {
@@ -350,7 +347,6 @@ describe('PRD-107 — recipe + version invariants', () => {
         firstVersion: { title: 't', bodyDsl: '@recipe(old-slug)' },
       });
       createIngredient(db, { name: 'Apple', slug: 'apple', defaultUnit: 'count' });
-      // Successful rename.
       renameRecipeSlug(db, 'old-slug', 'new-slug');
       expect(
         db.select().from(slugRegistry).where(eq(slugRegistry.slug, 'new-slug')).all()
@@ -358,9 +354,7 @@ describe('PRD-107 — recipe + version invariants', () => {
       expect(
         db.select().from(slugRegistry).where(eq(slugRegistry.slug, 'old-slug')).all()
       ).toHaveLength(0);
-      // Collision with an existing ingredient.
       expect(() => renameRecipeSlug(db, 'new-slug', 'apple')).toThrow(SlugAlreadyRegisteredError);
-      // The recipe still holds 'new-slug'.
       expect(db.select().from(recipes).where(eq(recipes.slug, 'new-slug')).all()).toHaveLength(1);
     });
   });

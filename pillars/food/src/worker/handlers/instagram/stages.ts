@@ -1,8 +1,6 @@
 /**
- * PRD-130 — per-stage runners (STT, keyframes) split out of the
- * orchestrator to keep each file under the per-file lint cap. Pure
- * functions: they only know how to run one subprocess, populate the
- * per-stage meta record, and report `ok`/`skipped`.
+ * Per-stage runners (STT, keyframes): each runs one subprocess,
+ * populates the per-stage meta record, and reports `ok`/`skipped`.
  */
 import { extractKeyframes } from './ffmpeg-keyframes.js';
 import { runWhisper } from './stt-whisper.js';

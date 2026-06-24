@@ -12,7 +12,7 @@ import type { Ingredient } from '../types/ingredient.js';
 import type { MealPlan } from '../types/meal-plan.js';
 import type { Recipe } from '../types/recipe.js';
 
-describe('@pops/food-contract round-trip', () => {
+describe('@pops/food contract round-trip', () => {
   it('Recipe ↔ RecipeSchema agree structurally', () => {
     expectTypeOf<z.infer<typeof RecipeSchema>>().toEqualTypeOf<Recipe>();
   });

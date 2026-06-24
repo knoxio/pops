@@ -1,13 +1,12 @@
 /**
- * PRD-130 — lazy Anthropic SDK client + the narrow structural subset
- * worker handlers consume.
+ * Lazy Anthropic SDK client plus the narrow structural subset worker
+ * handlers consume.
  *
  * The SDK's `Anthropic` class carries dozens of overloads on
  * `messages.create`. Worker handlers only need a tiny structural slice
- * (one call, JSON response), so the seam exposes `AnthropicLike`. Tests
- * pass a plain object satisfying that interface — the runtime cache is
- * populated lazily from the real SDK in production, or directly via
- * `setAnthropicClient` in tests.
+ * (one call, JSON response), so the seam exposes `AnthropicLike`: the
+ * cache is populated lazily from the real SDK, or directly via
+ * `setAnthropicClient`.
  */
 import type Anthropic from '@anthropic-ai/sdk';
 

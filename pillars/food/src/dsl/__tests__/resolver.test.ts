@@ -1,5 +1,5 @@
 /**
- * PRD-115 — resolver invariant tests.
+ * Resolver invariant tests (spec: pillars/food/docs/prds/dsl-resolver).
  *
  * Drives `resolveRecipeAst` against an in-memory SQLite seeded by the
  * food schema migrations. Covers each ResolveErrorCode plus the happy
@@ -49,11 +49,10 @@ function errorCodes(result: ResolveResult): ResolveErrorCode[] {
   return result.ok ? [] : result.errors.map((e) => e.code);
 }
 
-describe('PRD-115 — resolver: happy path', () => {
+describe('resolver: happy path', () => {
   let db: FoodDb;
   beforeEach(() => {
     db = freshDb();
-    // Seed: ingredients + prep_states + variants the recipes reference.
     const banana = createIngredient(db, { name: 'Banana', slug: 'banana', defaultUnit: 'count' });
     const apple = createIngredient(db, { name: 'Apple', slug: 'apple', defaultUnit: 'count' });
     createIngredient(db, { name: 'Butter', slug: 'butter', defaultUnit: 'g' });
@@ -144,7 +143,7 @@ describe('PRD-115 — resolver: happy path', () => {
   });
 });
 
-describe('PRD-115 — resolver: auto-creation', () => {
+describe('resolver: auto-creation', () => {
   let db: FoodDb;
   beforeEach(() => {
     db = freshDb();
@@ -198,7 +197,7 @@ describe('PRD-115 — resolver: auto-creation', () => {
   });
 });
 
-describe('PRD-115 — resolver: error codes', () => {
+describe('resolver: error codes', () => {
   let db: FoodDb;
   beforeEach(() => {
     db = freshDb();
@@ -260,7 +259,6 @@ describe('PRD-115 — resolver: error codes', () => {
   });
 
   it('VariantOnRecipeRef — variant on a recipe ref', () => {
-    // Seed an in-DB recipe with a current version yielding banana.
     const banana = createIngredient(db, {
       name: 'Banana2',
       slug: 'banana-2',
@@ -318,7 +316,7 @@ describe('PRD-115 — resolver: error codes', () => {
   });
 });
 
-describe('PRD-115 — resolver: mixed path', () => {
+describe('resolver: mixed path', () => {
   it('two unknown slugs produce two errors + two proposedSlugs and AST is still returned', () => {
     const db = freshDb();
     createIngredient(db, { name: 'Banana', slug: 'banana', defaultUnit: 'count' });
