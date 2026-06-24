@@ -1,13 +1,11 @@
 /**
- * Inference log retention + daily aggregation (PRD-092 US-08).
+ * Inference log retention + daily aggregation.
  *
  * Pure-ish service module:
  *  - `aggregateRowsToDaily` is a pure function over input rows used by the
  *    unit tests.
  *  - `runRetention` performs the full cycle (read → aggregate → upsert →
- *    delete) against the supplied core drizzle handle — every
- *    `ai_inference_log` read, `ai_inference_daily` upsert, and
- *    `ai_inference_log` delete lands on `core.db`.
+ *    delete) against the supplied ai-pillar drizzle handle.
  *
  * The job is idempotent: a re-run with no aged-out rows returns zero
  * deletions, and re-running over the same horizon adds to existing daily
@@ -149,8 +147,8 @@ export interface RunRetentionOptions {
  * Each batch runs in its own drizzle transaction: aggregation upsert + delete
  * are atomic per-batch. If a batch fails partway, only that batch rolls back;
  * the next invocation re-processes it. The transaction handle is passed
- * through to the package helpers so writes target the same `core.db`
- * connection that opened the batch.
+ * through to the `retention-db` helpers so writes target the same connection
+ * that opened the batch.
  */
 export function runRetention(db: AiDb, opts: RunRetentionOptions = {}): RetentionResult {
   const retentionDays = opts.retentionDays ?? getRetentionDays(db);

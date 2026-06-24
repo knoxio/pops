@@ -1,15 +1,9 @@
 /**
- * `ai-budgets.*` sub-router — AI budget config + live status
- * (`core.aiBudgets.*`).
+ * `aiBudgets` sub-router — AI budget config + live status.
  *
- * Mapping from the legacy tRPC router:
- *   - `list`            (query, no input) → `GET  /ai-budgets`
- *   - `getBudgetStatus` (query, no input) → `GET  /ai-budgets/status`
- *   - `upsert`          (mutation, body)  → `POST /ai-budgets`
- *
- * `upsert` carries its `id` in the body (the tRPC input shape), so it stays a
- * `POST` with that body rather than a path-id `PUT`. Output shapes mirror
- * `Budget` / `BudgetStatus` from `ai-budgets/service.ts` exactly.
+ * `upsert` carries its `id` in the body, so it stays a `POST` with that body
+ * rather than a path-id `PUT`. Output shapes mirror `Budget` / `BudgetStatus`
+ * from `api/modules/ai-budgets/service.ts` exactly.
  */
 import { initContract } from '@ts-rest/core';
 import { z } from 'zod';
@@ -18,7 +12,7 @@ import { ERR_RESPONSES, NonEmptyString } from './rest-schemas.js';
 
 const c = initContract();
 
-/** Mirrors `Budget` in `ai-budgets/service.ts`. */
+/** Mirrors `Budget` in `api/modules/ai-budgets/service.ts`. */
 const BudgetSchema = z.object({
   id: z.string(),
   scopeType: z.string(),
@@ -30,7 +24,7 @@ const BudgetSchema = z.object({
   updatedAt: z.string(),
 });
 
-/** Mirrors `BudgetStatus` in `ai-budgets/service.ts`. */
+/** Mirrors `BudgetStatus` in `api/modules/ai-budgets/service.ts`. */
 const BudgetStatusSchema = BudgetSchema.extend({
   currentTokenUsage: z.number(),
   currentCostUsage: z.number(),

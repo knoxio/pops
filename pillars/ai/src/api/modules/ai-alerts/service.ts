@@ -1,10 +1,10 @@
 /**
- * CRUD service for `ai_alert_rules` (PRD-092 US-07).
+ * CRUD service for `ai_alert_rules` (see pillars/ai/docs/prds/ai-observability).
  *
- * Exposes pure functions used by the tRPC router and seeding scripts.
+ * Exposes pure functions consumed by the REST handlers and seeding scripts.
  *
- * Reads + writes resolve against the request-scoped core drizzle handle
- * threaded in by the caller.
+ * Reads + writes resolve against the AiDb drizzle handle threaded in by the
+ * caller.
  */
 import { eq } from 'drizzle-orm';
 
@@ -101,7 +101,8 @@ export function deleteRule(db: AiDb, id: number): { success: boolean } {
 }
 
 /**
- * Idempotently seed default alert rules per PRD-092 US-07.
+ * Idempotently seed default alert rules
+ * (see pillars/ai/docs/prds/ai-observability).
  *
  * Returns the number of rules created. Only types that are not already
  * represented in the table are inserted, so the function can backfill a

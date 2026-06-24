@@ -1,19 +1,15 @@
 /**
- * Alert rule evaluator orchestrator (PRD-092 US-07).
+ * Alert rule evaluator orchestrator (see pillars/ai/docs/prds/ai-observability).
  *
  * Loads enabled rules, delegates to per-type evaluator functions, dedupes,
  * persists, and dispatches via channel handlers. The actual evaluation
- * logic lives in `./evaluators/*` to keep each file within the project
- * max-lines lint budget and to make each rule type independently testable.
+ * logic lives in `./evaluators/*` so each rule type is independently testable.
  *
- * In the monolith the orchestrator is invoked from the BullMQ scheduled
- * worker every 5 minutes. In the core pillar it is exposed via the
- * `core.aiAlerts.runNow` mutation and (optionally) the env-gated in-process
- * scheduler — see `./scheduler.ts`.
+ * Triggered by the `runNow` REST route handler and (optionally) the env-gated
+ * in-process scheduler — see `./scheduler.ts`.
  *
- * Reads + writes resolve against the request-scoped core drizzle handle
- * threaded in by the caller; the per-rule evaluator helpers receive the same
- * handle for ergonomics.
+ * Reads + writes resolve against the AiDb drizzle handle threaded in by the
+ * caller; the per-rule evaluator helpers receive the same handle.
  */
 import { eq } from 'drizzle-orm';
 

@@ -1,5 +1,5 @@
 /**
- * Latency-degradation rule evaluator (PRD-092 US-07).
+ * Latency-degradation rule evaluator (see pillars/ai/docs/prds/ai-observability).
  *
  * Computes the P95 latency for each model in the rolling window (filtered to
  * `success` + non-cached + latencyMs > 0) and fires a candidate per model
@@ -14,11 +14,10 @@ import { rollingWindowStart } from './shared.js';
 import type { AlertCandidate, AlertRule, AlertSeverity } from '../types.js';
 
 /**
- * Nearest-rank percentile. The previous implementation used
- * `Math.floor(p * n)` which selects the *max* element for common sample
- * sizes (e.g. `p=0.95`, `n=20` → idx 19), overstating P95 and producing
- * false-positive alerts. We use the standard nearest-rank formula:
- * `ceil(p * n) - 1`, clamped to the array bounds.
+ * Nearest-rank percentile via `ceil(p * n) - 1`, clamped to the array bounds.
+ * `floor(p * n)` is wrong here: for common sample sizes (e.g. `p=0.95`,
+ * `n=20` → idx 19) it selects the *max* element, overstating P95 and
+ * producing false-positive alerts.
  */
 export function percentile(sorted: number[], p: number): number {
   if (sorted.length === 0) return 0;

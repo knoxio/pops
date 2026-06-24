@@ -1,11 +1,10 @@
 /**
- * Tests for the AI alert evaluator + dispatchers (ported from
- * `apps/pops-api/src/modules/core/ai-alerts/evaluator.test.ts`).
+ * Tests for the AI alert evaluator + dispatchers.
  *
- * Runs against an in-memory `core.db` opened per-test; usage + budget rows
- * are seeded via the relocated services. The nudge dispatcher calls the
- * cerebrum REST SDK — tests stub the injectable nudge sink, so no cerebrum
- * db (in-memory or otherwise) is involved.
+ * Each test opens a fresh ai-pillar SQLite db on a temp path and seeds
+ * usage + budget rows via the ai services. The nudge dispatcher reaches
+ * cerebrum through an injectable {@link NudgeSink}, which tests stub, so
+ * no cerebrum db is ever involved.
  */
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';

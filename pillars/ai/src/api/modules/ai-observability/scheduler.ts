@@ -1,25 +1,17 @@
 /**
- * In-process, env-gated schedulers for the AI observability summary
- * (PRD-092 US-05) and inference-log retention (PRD-092 US-08) jobs.
+ * In-process, env-gated schedulers for the AI observability summary and
+ * inference-log retention jobs.
  *
- * The monolith registers these as repeatable BullMQ jobs on the
- * `pops-default` queue (see
- * `apps/pops-api/src/modules/core/ai-observability/{summary-,}scheduler.ts`).
- * The core pillar container has no BullMQ worker or Redis dependency, so
- * porting the queue registration as-is would drag Redis/BullMQ across the
- * pillar boundary — not an additive change.
+ * A self-contained `setInterval` loop calls the idempotent `runSummary` /
+ * `runRetention` service functions directly against the pillar's own DB
+ * handle. It is OFF by default and only starts when
+ * `AI_OBSERVABILITY_SCHEDULER_ENABLED=true`.
  *
- * Instead this provides a self-contained `setInterval` loop that calls the
- * idempotent `runSummary` / `runRetention` service functions directly
- * against the pillar's own core.db handle. It is OFF by default and only
- * starts when `AI_OBSERVABILITY_SCHEDULER_ENABLED=true`, mirroring the
- * boot-time registration in the monolith but env-gated.
+ * The pillar has no durable job runner, so this fires on a relative
+ * interval rather than cron at fixed UTC times (e.g. 03:00 summary, 04:00
+ * retention); add cron scheduling once one exists.
  *
- * TODO(core-pillar runbook — "ai-observability-summary / ai-log-retention
- * scheduler"): once the pillar has a durable job runner, replace this
- * interval loop with proper cron-scheduled jobs (03:00 UTC summary, 04:00
- * UTC retention) so timing matches the monolith rather than relative
- * intervals.
+ * Spec: pillars/ai/docs/prds/ai-observability
  */
 import { type AiDb } from '../../../db/index.js';
 import { logger } from '../../shared/logger.js';

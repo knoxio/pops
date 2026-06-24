@@ -5,7 +5,7 @@
  * sequentially, catching per-channel failures so a misconfigured channel
  * doesn't block delivery on the others.
  *
- * The default channel matrix matches PRD-092 US-07:
+ * Default channel matrix (see pillars/ai/docs/prds/ai-observability):
  *   - in-app nudges always receive every alert (warning + critical)
  *   - Telegram receives only `critical` alerts unless an env override is set
  *     (POPS_ALERTS_TELEGRAM_INCLUDE_WARNINGS=1)

@@ -1,5 +1,5 @@
 /**
- * Budget-threshold rule evaluator (PRD-092 US-07).
+ * Budget-threshold rule evaluator (see pillars/ai/docs/prds/ai-observability).
  *
  * Iterates every configured `ai_budgets` row, computes current-month usage
  * against the row's cost or token limit, and fires a candidate when the

@@ -1,13 +1,11 @@
 import { navConfig, routes } from './routes';
 
 /**
- * AI Ops frontend module manifest (PRD-055).
+ * AI Ops frontend module manifest.
  *
- * **App surface of the first-class `ai` pillar.** AI Ops was extracted out of
- * core into its own `pops-ai-api` container (port 3008); this dashboard's
- * generated client targets the `/ai-api` proxy. The shell loads this manifest
- * via `@pops/app-ai` in `WORKSPACE_BUNDLE_MAP` and mounts the routes under
- * `/ai/*`.
+ * **App surface of the `ai` pillar.** This dashboard's generated client targets
+ * the `/ai-api` proxy. The shell loads this manifest via `@pops/app-ai` in
+ * `WORKSPACE_BUNDLE_MAP` and mounts the routes under `/ai/*`.
  */
 import type { ModuleManifest } from '@pops/types';
 

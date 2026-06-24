@@ -1,15 +1,10 @@
 /**
- * Integration tests for the `ai-budgets.*` REST surface (`core.aiBudgets.*`),
- * driven through the real Express app via supertest.
- *
- * Mirrors the legacy tRPC service coverage on the REST transport: upsert
- * round-trips (including global-scope canonicalisation of `scopeValue` to
- * null), list, and live status (percentage-used + projected-exhaustion) with
- * usage seeded into `ai_inference_log`. Validation 400 is asserted at the
- * contract boundary (bad scopeType / empty id).
- *
- * Auth gating is intentionally NOT asserted: REST runs under docker-net trust
- * (non-identity domain), so there is no `ctx.user` to bounce on.
+ * Integration tests for the `ai-budgets.*` REST surface, driven through the real
+ * Express app via supertest: upsert round-trips (including global-scope
+ * canonicalisation of `scopeValue` to null), list, and live status
+ * (percentage-used + projected-exhaustion) with usage seeded into
+ * `ai_inference_log`. Validation 400 is asserted at the contract boundary
+ * (bad scopeType / empty id).
  */
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';

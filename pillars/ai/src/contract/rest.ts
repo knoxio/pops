@@ -1,12 +1,11 @@
 /**
  * The ai pillar's ts-rest contract — the canonical wire surface served by the
- * `pops-ai` container (PRD-055).
+ * `pops-ai` container.
  *
- * Composes the AI-ops telemetry routers moved out of core (usage reads,
- * observability, providers, budgets, alerts) plus the two routes this pillar
- * OWNS: the cross-pillar ingest `POST /ai-usage/record` (`aiIngest`) and the
- * pricing read `GET /ai-pricing/:p/:m` (`aiPricing`), and the per-pillar
- * `settings.*` RU+reset surface for its own `ai.*` keys.
+ * Composes the AI-ops telemetry routers (usage reads, observability, providers,
+ * budgets, alerts), the cross-pillar ingest `POST /ai-usage/record`
+ * (`aiIngest`), the pricing read `GET /ai-pricing/:p/:m` (`aiPricing`), and the
+ * per-pillar `settings.*` RU+reset surface for its own `ai.*` keys.
  */
 import { initContract } from '@ts-rest/core';
 

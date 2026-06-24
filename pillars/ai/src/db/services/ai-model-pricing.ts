@@ -8,12 +8,6 @@
  * cache TTL (default 5 minutes) bounds staleness when ops edit pricing
  * via the dashboard.
  *
- * Per `docs/themes/13-pillar-finale/notes/infra-hot-path-migration.md`
- * row 5 the `ai_model_pricing` table is owned by the core pillar (per
- * PRD-186). This module is the SDK surface for that ownership; the
- * physical table cutover from the shared `pops.db` into `core.db` lands
- * with the PRD-186 sibling PR.
- *
  * Cache invariants:
  *   - Each `(providerId, modelId)` key remembers the timestamp at which
  *     it was populated.
@@ -56,17 +50,17 @@ const DEFAULT_TTL_MS = 5 * 60 * 1000;
 const DEFAULT_FALLBACK: ModelPrice = { input: 1.0, output: 5.0 };
 
 /**
- * Build a process-local pricing lookup bound to the given core DB
+ * Build a process-local pricing lookup bound to the given ai pillar DB
  * handle. Each call to `lookup(provider, model)` either hits the cache
  * or refreshes the entire pricing table from SQLite.
  *
- * @param db - Core drizzle handle. Captured by closure; the same handle
- *   is used for every refresh against this cache.
+ * @param db - ai pillar drizzle handle. Captured by closure; the same
+ *   handle is used for every refresh against this cache.
  * @param options.ttlMs - Cache freshness window in milliseconds.
  *   Defaults to 5 minutes.
  * @param options.fallback - Returned when the cache is empty AND a
  *   refresh fails OR the requested key is unknown. Defaults to
- *   `{ input: 1.0, output: 5.0 }` to preserve historical behaviour.
+ *   `{ input: 1.0, output: 5.0 }`.
  * @param options.now - Optional clock override; tests use this to drive
  *   the TTL deterministically. Defaults to `Date.now`.
  */

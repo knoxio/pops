@@ -1,13 +1,13 @@
 /**
- * Hand-rolled ai pillar manifest payload (PRD-055 US-01).
+ * Hand-rolled ai pillar manifest payload.
  *
  * Lives in its own module (not inline in `server.ts`) so tests can import the
  * builder without triggering `server.ts`'s boot side-effects (`openAiDb`,
  * `app.listen`, signal handlers).
  *
- * The ai pillar is backend-serving; its UI (`@pops/app-ai`, the moved AI usage
- * dashboard) is loaded by the shell via the in-repo `WORKSPACE_BUNDLE_MAP`, so
- * — like core — this manifest omits the optional `nav`/`pages` dimensions.
+ * The ai pillar is backend-serving; its UI (`@pops/app-ai`) is loaded by the
+ * shell via its `bundle-map.tsx`, so this manifest omits the optional
+ * `nav`/`pages` dimensions.
  *
  * `contract.package` MUST be `@pops/ai` — the collapsed-pillar form the manifest
  * validator requires for pillar id `ai`, matching the npm package name.

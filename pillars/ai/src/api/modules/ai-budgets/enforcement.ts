@@ -1,15 +1,10 @@
 /**
- * Pre-call budget enforcement helpers (PRD-092 US-04).
+ * Pre-call budget enforcement helpers for the inference path.
  *
- * Split out of `service.ts` so the read-side CRUD/status code (mounted on
- * `core.aiBudgets`) and the inference-enforcement path can each stay
- * under the project's max-lines lint budget.
- *
- * Routing: `listApplicableBudgets`, the per-scope usage aggregation, the
+ * `listApplicableBudgets`, the per-scope usage aggregation, the
  * conflict-detection read in `migrateLegacyBudgetSettings`, and the
  * `findFallbackProvider` join over `ai_providers` + `ai_model_pricing`
- * all run against the request-scoped core drizzle handle threaded in by
- * the caller — both joined tables live in the relocated core db.
+ * all run against the pillar's `AiDb` handle threaded in by the caller.
  */
 import { and, asc, desc, eq } from 'drizzle-orm';
 

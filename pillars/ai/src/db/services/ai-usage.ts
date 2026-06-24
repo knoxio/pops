@@ -1,34 +1,22 @@
 /**
- * AI usage persistence against the core pillar's SQLite via drizzle.
+ * AI usage persistence against the ai pillar's SQLite via drizzle.
  *
- * Carries the three hot tables behind `core.aiUsage.*`:
+ * Carries the three hot tables behind `aiUsage.*`:
  *   - `ai_inference_log` — append-only per-call record written by the
  *     inference middleware on every provider invocation. The dashboard
  *     reads it for stats + history.
  *   - `ai_inference_daily` — aggregate roll-up written by the retention
- *     job (PRD-092 US-08) once raw rows pass the 90-day horizon. The
- *     dashboard reads it for the continuous timeline across the retention
- *     boundary. Helpers live in `./ai-usage-retention.ts`.
+ *     job once raw rows pass the 90-day horizon. The dashboard reads it
+ *     for the continuous timeline across the retention boundary. Helpers
+ *     live in `./ai-usage-retention.ts`.
  *   - `ai_budgets` — small CRUD surface that gates AI calls. Budgets are
  *     scoped global / per-provider / per-operation; consulted on the hot
  *     path before the middleware fires. CRUD lives in
  *     `./ai-usage-budgets.ts`.
  *
  * Services take a `AiDb` handle as their first argument; the calling
- * layer (pops-api modules) is responsible for resolving the singleton or
- * transaction handle to pass in. Mirrors `@pops/finance-db`'s service
- * signature pattern.
- *
- * Post-PRD-186 PR 3 + PR 3 follow-up: the hot inference-log write path,
- * the retention rollup, and the AI Ops `core.aiUsage` dashboard reads
- * (`getStats` / `getHistory`) all route through this module against
- * `getCoreDrizzle()`. A handful of `ai-observability` read paths
- * (`history.ts`, `group-stats.ts`, `summary.ts`, plus
- * `findFallbackProvider`) still query `ai_inference_log` /
- * `ai_inference_daily` directly via `getDrizzle()` and migrate in
- * subsequent PRs. The boot-time `pops.db -> core.db` backfill bridges
- * any pre-cutover rows; PR 4 drops the legacy `ai_*` tables from the
- * shared journal once those last read sites move over.
+ * REST handler layer resolves the singleton or transaction handle to
+ * pass in.
  */
 import { and, desc, gte, lte, sql, type SQL } from 'drizzle-orm';
 

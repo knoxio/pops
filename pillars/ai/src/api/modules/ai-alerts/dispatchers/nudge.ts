@@ -1,12 +1,11 @@
 /**
- * Cerebrum nudge dispatcher (PRD-092 US-07, PRD-084).
+ * Cerebrum nudge dispatcher.
  *
  * Surfaces the alert as a cerebrum nudge by calling the cerebrum REST SDK
  * (`pillar('cerebrum').nudges.create`, which maps to `POST /nudges` — the
- * "alert-driven single insert, no dedup" write). The nudge type is the
- * fixed string `insight` since PRD-084 reserves the four canonical detector
- * types and these nudges are observability events, not engram
- * recommendations (hence no engram IDs).
+ * alert-driven single insert, no dedup). The nudge type is the fixed string
+ * `insight` because the canonical detector types are reserved for engram
+ * recommendations; these nudges are observability events (hence no engram IDs).
  *
  * Best-effort / fire-and-forget: cerebrum being unavailable (a non-`ok`
  * `CallResult`) is logged and swallowed so an alert dispatch never throws.
@@ -18,7 +17,7 @@ import { logger } from '../../../shared/logger.js';
 
 import type { FiredAlert } from '../types.js';
 
-/** The cerebrum `nudges.create` request body (see `rest-nudges.ts`). */
+/** The cerebrum `nudges.create` request body (see `pillars/cerebrum/src/contract/rest-nudges.ts`). */
 export interface CerebrumNudgeCreateBody {
   type?: 'consolidation' | 'staleness' | 'pattern' | 'insight';
   title: string;
@@ -62,9 +61,8 @@ export interface DispatchNudgeOptions {
 /**
  * Build the cerebrum `nudges.create` body for a fired alert.
  *
- * The alert metadata that the legacy direct-write stored on the nudge's
- * `actionParams` is preserved on the `action.params` field so the cerebrum
- * nudge surface keeps the same provenance.
+ * Alert provenance (ids, rule, type, severity) rides on `action.params` so the
+ * cerebrum nudge surface can trace each nudge back to its originating alert.
  */
 export function buildNudgeBody(alert: FiredAlert): CerebrumNudgeCreateBody {
   const body = alert.scopeDetail ? `${alert.message} (${alert.scopeDetail})` : alert.message;

@@ -6,7 +6,7 @@
  * `getStats` / `getHistory`) need a cached-aware split: cached rows
  * count toward cache-hit tallies but never contribute to cost or token
  * spend. These helpers encapsulate the CASE-based aggregation so the
- * pops-api layer keeps a thin pass-through service.
+ * REST handler service stays a thin pass-through.
  */
 import { and, desc, gte, lt, sql, type SQL } from 'drizzle-orm';
 
@@ -51,7 +51,7 @@ function coalesceDashboardStats(
 
 /**
  * Dashboard-shaped variant of `sumInferenceLogUsage`. Returns the
- * 5-field cached-aware stats shape consumed by `core.aiUsage.getStats`.
+ * 5-field cached-aware stats shape consumed by `aiUsage.getStats`.
  * Cached rows contribute to `totalCacheHits` only; everything else is
  * summed across non-cached rows.
  */
@@ -115,7 +115,7 @@ function buildDateWindowCondition(filter: GroupInferenceLogByDateFilter): SQL | 
  * Dashboard-shaped daily roll-up of `ai_inference_log`. Returns one row
  * per UTC date in `[startDate, endDate]` (both inclusive, both
  * optional) newest-first. Mirrors {@link summarizeInferenceLogStats}'s
- * cached split per bucket. Used by `core.aiUsage.getHistory` to drive
+ * cached split per bucket. Used by `aiUsage.getHistory` to drive
  * the timeline chart.
  */
 export function groupInferenceLogByDate(

@@ -1,12 +1,3 @@
-/**
- * Tests for the AI budgets service + enforcement helpers (ported from
- * `apps/pops-api/src/modules/core/ai-budgets/service.test.ts`).
- *
- * Runs against an in-memory `core.db` opened per-test via `openAiDb`.
- * Usage / settings / providers are seeded through the relocated service
- * layer (or raw drizzle for the provider+pricing join) rather than the
- * monolith's `seedAiUsage` / `seedSetting` raw-SQL helpers.
- */
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';

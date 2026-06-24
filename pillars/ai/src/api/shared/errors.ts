@@ -1,9 +1,9 @@
 /**
- * HTTP-shaped domain errors used by ai-api router handlers.
+ * HTTP-shaped domain errors thrown by the REST handlers and translated into
+ * the wire envelope by `mapHttpError` in `../rest/error-mapping.ts`.
  *
- * The per-pillar container stands alone of every other pillar in the
- * dependency graph. The subset reproduced here is whatever the migrated
- * routers need.
+ * This pillar stands alone of every other pillar in the dependency graph, so
+ * these errors are defined locally rather than shared.
  */
 export class HttpError extends Error {
   constructor(

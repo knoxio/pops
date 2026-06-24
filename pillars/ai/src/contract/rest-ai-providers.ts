@@ -1,18 +1,10 @@
 /**
- * `ai-providers.*` sub-router — provider + model-pricing config and health
- * checks (`core.aiProviders.*`).
+ * `aiProviders` sub-router — provider + model-pricing config and health checks.
  *
- * Mapping from the legacy tRPC router:
- *   - `list`        (query, no input)      → `GET  /ai-providers`
- *   - `get`         (query, providerId)    → `GET  /ai-providers/:providerId`
- *   - `upsert`      (mutation, body)       → `POST /ai-providers`
- *   - `healthCheck` (mutation, providerId) → `POST /ai-providers/:providerId/health-check`
- *
- * `get` preserves the tRPC contract's NULLABLE 200 (an unknown providerId
- * resolves to `null`, NOT a 404) so the wire behaviour is identical. `upsert`
- * carries its `id` in the body (the tRPC input shape), so it stays a `POST`
- * rather than a path-id `PUT`. Output shapes mirror `ProviderWithModels` from
- * `ai-providers/service.ts` exactly.
+ * `get` returns a NULLABLE 200: an unknown providerId resolves to `null`, NOT a
+ * 404. `upsert` carries its `id` in the body, so it stays a `POST` rather than a
+ * path-id `PUT`. Output shapes mirror `ProviderWithModels` from
+ * `api/modules/ai-providers/service.ts` exactly.
  */
 import { initContract } from '@ts-rest/core';
 import { z } from 'zod';
@@ -21,7 +13,7 @@ import { ERR_RESPONSES, NonEmptyString } from './rest-schemas.js';
 
 const c = initContract();
 
-/** Mirrors `ModelPricing` in `ai-providers/service.ts`. */
+/** Mirrors `ModelPricing` in `api/modules/ai-providers/service.ts`. */
 const ModelPricingSchema = z.object({
   id: z.number(),
   modelId: z.string(),
@@ -32,7 +24,7 @@ const ModelPricingSchema = z.object({
   isDefault: z.boolean(),
 });
 
-/** Mirrors `ProviderWithModels` in `ai-providers/service.ts`. */
+/** Mirrors `ProviderWithModels` in `api/modules/ai-providers/service.ts`. */
 const ProviderWithModelsSchema = z.object({
   id: z.string(),
   name: z.string(),

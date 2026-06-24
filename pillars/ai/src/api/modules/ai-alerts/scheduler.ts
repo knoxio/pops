@@ -1,17 +1,10 @@
 /**
- * In-process, env-gated scheduler for the AI alert evaluator (PRD-092 US-07).
+ * In-process, env-gated scheduler for the AI alert evaluator
+ * (see pillars/ai/docs/prds/ai-observability).
  *
- * The monolith registers this as a repeatable BullMQ job on the
- * `pops-default` queue every 5 minutes (see
- * `apps/pops-api/src/modules/core/ai-alerts/scheduler.ts`). The core pillar
- * has no BullMQ worker or Redis dependency, so this provides a self-contained
- * `setInterval` loop that calls `runEvaluation` directly against the pillar's
- * own core.db handle. It is OFF by default and only starts when
- * `AI_ALERTS_SCHEDULER_ENABLED=true`.
- *
- * TODO(core-pillar runbook — "ai-alerts scheduler"): once the pillar has a
- * durable job runner, replace this interval loop with a proper cron-scheduled
- * job (every 5 minutes) so timing matches the monolith.
+ * A self-contained `setInterval` loop that calls `runEvaluation` directly
+ * against the pillar's own AiDb handle every 5 minutes. It is OFF by default
+ * and only starts when `AI_ALERTS_SCHEDULER_ENABLED=true`.
  */
 import { type AiDb } from '../../../db/index.js';
 import { logger } from '../../shared/logger.js';
@@ -19,7 +12,7 @@ import { runEvaluation } from './evaluator.js';
 
 const FIVE_MINUTES_MS = 5 * 60 * 1000;
 
-/** Default cadence: every 5 minutes (mirrors the monolith cron). */
+/** Default cadence: every 5 minutes. */
 export const AI_ALERTS_SCHEDULER_INTERVAL_MS = FIVE_MINUTES_MS;
 
 export interface AlertsSchedulerOptions {
