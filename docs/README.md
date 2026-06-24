@@ -103,4 +103,4 @@ POPS is a working multi-pillar REST platform. There is no tRPC, no `pops-api` mo
 
 Cross-pillar communication goes through `@pops/pillar-sdk` (`libs/sdk`). The only two structural units are **PILLAR** (`pillars/`) and **LIB** (`libs/`) — there is no `apps/` directory and no `packages/*`. Build is per-unit via mise + pnpm + cargo (no turbo).
 
-See the [roadmap implementation tracker](roadmap.md#implementation-tracker) for detailed status across all pillars.
+See the [roadmap](roadmap.md) for detailed status across all pillars.

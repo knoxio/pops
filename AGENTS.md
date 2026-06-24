@@ -11,7 +11,7 @@ These are non-negotiable. Each is stated once here; the rest of the doc is refer
 ### Workflow & shipping (mandatory, no exceptions)
 
 - **Never commit directly to `main`.** Every change goes through a PR. One branch = one focused task = one PR. Commits atomic and well-described.
-- **PRE-PUSH QUALITY GATE:** before every `git push`, run `mise lint` and `mise typecheck` — both MUST pass. For single-package scope, at minimum run `cd pillars/<id> && pnpm format --check && pnpm lint && pnpm typecheck` (or `pillars/shell` for the UI pillar). Do NOT push if any check fails — fix it, commit the fix, then push. A PR with red CI is not a PR. Verify CI passes locally before pushing (per `~/.claude/CLAUDE.md` "CI should never fail").
+- **PRE-PUSH QUALITY GATE:** before every `git push`, run `mise lint` and `mise typecheck` — both MUST pass. For single-package scope, at minimum run that package's checks: `cd pillars/<id> && pnpm typecheck && pnpm test` (lint + format are workspace-level only — `mise lint` + `oxfmt`; pillar packages define no `lint`/`format` scripts). Do NOT push if any check fails — fix it, commit the fix, then push. A PR with red CI is not a PR. Verify CI passes locally before pushing (per `~/.claude/CLAUDE.md` "CI should never fail").
 - **PRD-FIRST:** before writing any code (feature, fix, or behavior tweak), check the PRDs first. See [PRD-First Rule](#prd-first-rule) for the locate + confirm procedure. No PRD for what you're changing = a blocker. Write the PRD first.
 - **DOCUMENTATION SYNC:** every code change updates related docs. See [Documentation Sync](#documentation-sync). Status flows upward: PRD criteria → PRD → Theme → Roadmap.
 - **GAP TRACKING:** any implementation gap found while working a PRD becomes a GitHub issue before the PR merges. See [Gap Tracking](#gap-tracking).
@@ -92,7 +92,7 @@ POPS (Personal Operations System) is a self-hosted personal operations platform 
 | `mcp`          | 3002 | MCP gateway                                               | **binds :3002 in code** (`MCP_PORT ?? 3002`) — overlaps `inventory`; documents what the code says |
 | `shell`        | 5568 | React SPA host                                            | UI pillar; Vite + nginx, **not** the default 5173                                                 |
 
-The **seven data pillars** are registry, inventory, media, finance, food, lists, cerebrum.
+The **data pillars** (each owns a SQLite DB) are registry, inventory, media, finance, food, lists, cerebrum, ai, and the Rust `contacts` pillar. `orchestrator`, `mcp`, `shell`, and `docs` own no DB.
 
 **Pillar kinds (ADR-035):** a pillar is any service registered with `registry` that exposes `/manifest.json`. **Data** pillars own a domain DB; **bridge** pillars adapt external systems; **UI** pillars host frontend SPAs (`pops-shell` registers as `id: 'shell'`).
 
@@ -420,7 +420,7 @@ pages/
 - **Integer PKs** for domain tables; **TEXT UUIDs** for cross-domain FKs (finance transactions, entities).
 - **Timestamps** — `createdAt`/`updatedAt` as ISO 8601 TEXT columns.
 - **JSON columns** — stored as TEXT, parsed on read (e.g. tags, genres).
-- **Env vars** — read via `getEnv()`, which reads the Docker secret first, falling back to `process.env`.
+- **Env vars** — read via a pillar env accessor (e.g. `getEnv()`), which reads `process.env`. Production secrets are Docker file-based secrets mounted at `/run/secrets/` (see Security) — a separate mechanism, not read by `getEnv()`.
 - Schema changes go through Drizzle per pillar (generate/review/migrate flow — see Production hard rule).
 
 ---
