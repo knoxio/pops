@@ -1,10 +1,6 @@
 /**
- * PRD-138 — filter chip group for the Rejected tab.
- *
- * Three independent multi-/single-selects: reason (multi), kind (multi),
- * sinceDays (single, defaults to 30). Caller owns the filter object and
- * applies the change via React Router so URL hash drives the state per
- * PRD §Routes.
+ * Filter chip group for the Rejected tab: reason (multi), kind (multi),
+ * sinceDays (single). The caller owns the filter object.
  */
 import { type ReactElement } from 'react';
 

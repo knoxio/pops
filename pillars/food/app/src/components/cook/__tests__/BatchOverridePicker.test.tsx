@@ -1,13 +1,4 @@
 /**
- * PRD-149 — RTL coverage for the picker's section split.
- *
- *  - Both sections render with the right counts.
- *  - Substitutions section shows the prep-mismatch chip when applicable.
- *  - Selecting a substitution row routes through `onSelect` with the
- *    `substitution` discriminant + the candidate + the batch.
- *  - "Show all" expander reveals candidates beyond the 5-row cap.
- *  - Loading / empty / error states render their respective copy.
- *
  * The picker drives `batchesSearchForConsume` + `substitutionsResolveForLine`
  * through React Query, so the generated SDK module is mocked and each render
  * is wrapped in a `QueryClientProvider`.
@@ -159,7 +150,7 @@ function renderPicker(
   );
 }
 
-describe('BatchOverridePicker — PRD-149 sections', () => {
+describe('BatchOverridePicker — sections', () => {
   it('renders Same-variant + Substitutions sections with their counts', async () => {
     mockSearchItems([makeBatch({ id: 18 }), makeBatch({ id: 19 })]);
     mockResolution(

@@ -1,9 +1,3 @@
-/**
- * PRD-138 — single row in the Failed-ingests tab.
- *
- * Pure presentational. Retry + ViewSource callbacks delegated to the
- * parent so the row's render shape doesn't change with the data layer.
- */
 import { type ReactElement } from 'react';
 
 import { Badge, Button } from '@pops/ui';

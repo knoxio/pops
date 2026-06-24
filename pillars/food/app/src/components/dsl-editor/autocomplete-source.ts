@@ -3,7 +3,7 @@ import { collectStepIndexes } from './autocomplete-step-bodies';
 import { DSL_FUNCTION_SUGGESTIONS, DSL_UNIT_SUGGESTIONS } from './autocomplete-units';
 
 /**
- * DSL editor autocomplete — CompletionSource wiring (PRD-120 part B).
+ * DSL editor autocomplete — CompletionSource wiring.
  *
  * Single CodeMirror `CompletionSource` that classifies the cursor
  * position via `classifyCursor` (pure) and then fan-outs to whichever
@@ -31,9 +31,9 @@ export function buildDslCompletionSource(sources: DslAutocompleteSources) {
   return async function dslCompletionSource(
     context: CompletionContext
   ): Promise<CompletionResult | null> {
-    // Published versions render in read-only mode (PRD-107); the popup
-    // must not open even for explicit Ctrl-Space requests since the user
-    // can't apply a suggestion to a frozen document anyway.
+    // Published versions render in read-only mode; the popup must not open
+    // even for explicit Ctrl-Space requests since the user can't apply a
+    // suggestion to a frozen document anyway.
     if (context.state.readOnly) return null;
     const text = context.state.doc.toString();
     const ctx = classifyCursor(text, context.pos);
@@ -107,9 +107,9 @@ function slugResult(
   explicit: boolean
 ): CompletionResult | null {
   if (items.length === 0) {
-    // Surface the "Create new ingredient" affordance per PRD edge-cases
-    // table — but only when the user explicitly invoked autocomplete OR
-    // typed at least one character. Empty + implicit = no popup at all.
+    // Surface the "Create new ingredient" affordance, but only when the
+    // user explicitly invoked autocomplete OR typed at least one
+    // character. Empty + implicit = no popup at all.
     if (!explicit && ctx.query === '') return null;
     if (ctx.query === '') return null;
     return {

@@ -1,13 +1,4 @@
 /**
- * DslEditor — RTL smoke tests for PRD-120 part A.
- *
- * Focused on the acceptance criteria that 120-A owns: the editor mounts,
- * fires `onChange` after the debounce, swaps the document when
- * `initialValue` changes, and switches into read-only mode (banner +
- * blocked input) when `readOnly` is true. The PRD-120 part B suite at
- * the bottom of this file covers autocomplete wiring; the part D suite
- * covers chip widgets + mobile fallback.
- *
  * jsdom doesn't implement the parts of the DOM that CodeMirror leans on
  * for input events (range selection, beforeinput key handling), so the
  * "fires onChange" assertion drives the editor by dispatching a
@@ -28,10 +19,10 @@ import { DslEditor } from '../DslEditor';
 import type { DslAutocompleteSources } from '../dsl-editor/autocomplete-types';
 import type { CompileEditorIssue } from '../dsl-editor/issues-types';
 
-/** CodeMirror exposes `EditorView.findFromDOM(node)` which walks up from
- *  any descendant until it locates the live view. We use it to drive the
- *  editor with synthetic transactions since jsdom can't pump real input
- *  events through CodeMirror's contenteditable surface. */
+/** `EditorView.findFromDOM(node)` walks up from any descendant until it
+ *  locates the live view. We use it to drive the editor with synthetic
+ *  transactions since jsdom can't pump real input events through
+ *  CodeMirror's contenteditable surface. */
 function getEditorView(): EditorView {
   const surface = screen.getByTestId('dsl-editor-surface');
   const cmEditor = surface.querySelector('.cm-editor');
@@ -76,7 +67,7 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-describe('DslEditor — PRD-120 part A', () => {
+describe('DslEditor — core editing', () => {
   it('renders with the initial value populated', () => {
     render(<DslEditor initialValue='@recipe(slug="x", title="X")' onChange={() => {}} />);
     expect(screen.getByTestId('dsl-editor')).toBeInTheDocument();
@@ -165,7 +156,7 @@ describe('DslEditor — PRD-120 part A', () => {
     expect(screen.queryByTestId('dsl-editor-readonly-banner')).toBeNull();
   });
 
-  it('moves the cursor to pendingCursor.{line,col} and focuses (PRD-135 amendment)', () => {
+  it('moves the cursor to pendingCursor.{line,col} and focuses', () => {
     const dsl = ['line one', 'line two', 'line three'].join('\n');
     const { rerender } = render(<DslEditor initialValue={dsl} onChange={() => {}} />);
     const view = getEditorView();
@@ -209,10 +200,10 @@ describe('DslEditor — PRD-120 part A', () => {
   });
 });
 
-describe('DslEditor — PRD-120 part B autocomplete', () => {
+describe('DslEditor — autocomplete', () => {
   /** Build a fake `DslAutocompleteSources` with vitest spies so tests
-   *  can assert dispatch behaviour without exercising the live tRPC
-   *  React Query path that `useDslAutocompleteSources` wraps. */
+   *  can assert dispatch behaviour without exercising the live SDK
+   *  lookups that `useDslAutocompleteSources` wraps. */
   function makeSources(): {
     sources: DslAutocompleteSources;
     spies: {
@@ -286,7 +277,7 @@ describe('DslEditor — PRD-120 part B autocomplete', () => {
   });
 });
 
-describe('DslEditor — PRD-120 part D (chip widgets)', () => {
+describe('DslEditor — chip widgets', () => {
   beforeEach(() => {
     installMatchMedia(false);
   });
@@ -400,7 +391,7 @@ describe('DslEditor — PRD-120 part D (chip widgets)', () => {
   });
 });
 
-describe('DslEditor — PRD-120 part C (issues prop)', () => {
+describe('DslEditor — issues prop', () => {
   const SAMPLE = '@ingredient(1, banana:raw:foo, 1:cup)';
   const ERROR_ISSUE: CompileEditorIssue = {
     severity: 'error',
@@ -519,7 +510,7 @@ describe('DslEditor — PRD-120 part C (issues prop)', () => {
   });
 });
 
-describe('DslEditor — PRD-120 part F (read-only autocomplete + mobile drawer + a11y)', () => {
+describe('DslEditor — read-only autocomplete + mobile drawer + a11y', () => {
   beforeEach(() => {
     installMatchMedia(false);
   });

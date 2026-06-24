@@ -1,12 +1,3 @@
-/**
- * PRD-134 — unit tests for the filter URL-hash codec.
- *
- *   - default state encodes to the empty string (pristine URL)
- *   - encode → decode round-trips every documented filter axis
- *   - decode ignores unknown keys / bad arrays without throwing
- *   - decode falls back to the default state on malformed input
- *   - `toQueryInput` collapses the "all bands selected" UI default to `undefined`
- */
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -17,7 +8,7 @@ import {
   toQueryInput,
 } from '../drafts-filters.js';
 
-describe('PRD-134 — drafts URL-hash codec', () => {
+describe('drafts URL-hash codec', () => {
   it('encodes the default state to the empty string', () => {
     expect(encodeFiltersHash(DEFAULT_DRAFTS_FILTERS)).toBe('');
   });

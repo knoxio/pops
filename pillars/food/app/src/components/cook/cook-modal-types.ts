@@ -1,11 +1,9 @@
 /**
- * Local wire-shape mirrors for the cook modal — PRD-144.
+ * Local mirror of the `markCooked` request body for the cook modal.
  *
- * Mirrors `MarkCookedInputSchema` from the API package without pulling
- * `@pops/api` into this frontend package (cyclic dep — the api-client
- * re-exports the trpc procedures, but the request shape is the modal's
- * own concern). PRD-146 imports the same shape from this file when it
- * lands its real shortfall-resolution UX.
+ * Kept hand-maintained here rather than derived from the generated food
+ * SDK types so the modal owns the shape it builds before it hits the
+ * wire.
  */
 
 import type { ConsumptionOverride } from './cook-resolution-types.js';

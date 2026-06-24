@@ -1,13 +1,13 @@
 /**
- * Prompt template for PRD-130 (Instagram STT + vision pipeline).
+ * Instagram Reel ingest prompts (see pillars/food/docs/prds/instagram-stt-vision).
  *
  * Primary path: ffmpeg keyframes + faster-whisper transcript → Claude
- * vision. Fallback text-only variant ships as a separate version
- * (`PROMPT_VERSION_IG_VISION_TEXT_FALLBACK`) — both are registered with
- * the food prompt viewer (PRD-133).
+ * vision. The text-only variant (`PROMPT_VERSION_IG_VISION_TEXT_FALLBACK`)
+ * covers a failed vision call. Both are registered with the food prompt
+ * viewer (pillars/food/docs/prds/ai-usage-prompts).
  *
- * Bump version on any template change so `ai_inference_log` rows remain
- * reproducible.
+ * Bump the version constant on any template change so `ai_inference_log`
+ * rows stay reproducible.
  */
 export const PROMPT_VERSION_IG_VISION = 'ig-vision-v0.1';
 

@@ -1,6 +1,4 @@
 /**
- * PRD-123 Phase C — unit tests for the row-view projection helpers.
- *
  * Covers the pure `buildIngredientLookup` shape; the hook itself is
  * exercised end-to-end by the WeightsSection RTL suite.
  */
@@ -8,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 
 import { buildIngredientLookup } from '../useWeightRowViews';
 
-describe('PRD-123 Phase C — buildIngredientLookup', () => {
+describe('buildIngredientLookup', () => {
   it('indexes ingredients by id', () => {
     const lookup = buildIngredientLookup([
       { id: 1, name: 'Onion', slug: 'onion' },

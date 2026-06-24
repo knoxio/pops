@@ -1,10 +1,11 @@
 import { useMutation } from '@tanstack/react-query';
 /**
- * Mutation hook for the send-to-list modal — PRD-142.
+ * Mutation hook for the send-to-list modal
+ * (pillars/food/docs/prds/send-to-list).
  *
  * Surfaces a structured local error string (the modal renders inline; the
- * mutation itself never throws) and an `onSuccess(listId, listName)`
- * callback hook for the modal to close + toast.
+ * mutation itself never throws) and an `onSuccess(outcome)` callback for the
+ * modal to close + toast.
  */
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';

@@ -1,5 +1,5 @@
 /**
- * PRD-149 — one (substitution edge × batch) candidate row inside the
+ * One (substitution edge × batch) candidate row inside the
  * `BatchOverridePicker` Substitutions section. Rendered for each batch
  * under a sub candidate; "no batches" rows render the edge itself with
  * a disabled state so the user can see which subs exist but aren't

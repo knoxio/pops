@@ -4,8 +4,7 @@ import { issuesTheme } from './issues-theme';
 import { issuesHoverTooltip } from './issues-tooltip';
 
 /**
- * Public extension factory for the DSL editor's issues surface (PRD-120
- * part C).
+ * Public extension factory for the DSL editor's issues surface.
  *
  * `issuesExtension()` bundles every CodeMirror extension the issues
  * feature needs — the `StateField` holding the diagnostic list, inline

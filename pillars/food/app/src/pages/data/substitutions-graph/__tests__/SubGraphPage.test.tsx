@@ -1,5 +1,5 @@
 /**
- * PRD-148 — SubGraphPage RTL suite.
+ * SubGraphPage RTL suite (pillars/food/docs/prds/substitution-graph-explorer).
  *
  * Drives the page through `createMemoryRouter` so the `useSearchParams`
  * + URL-state machinery exercises React Router's real resolution path.
@@ -214,7 +214,6 @@ describe('SubGraphPage', () => {
     };
     renderAt('/food/data/substitutions/graph?node=butter');
     expect(await screen.findByRole('img', { name: /radial view: butter/i })).toBeInTheDocument();
-    // The stub force graph should NOT be rendered in radial mode.
     expect(screen.queryByTestId('stub-force-graph')).toBeNull();
   });
 
@@ -251,8 +250,6 @@ describe('SubGraphPage', () => {
     expect(clear).toBeInTheDocument();
     fireEvent.click(clear);
     await waitFor(() => {
-      // After clearing, the filter pass-through (covered in another test)
-      // should see undefined contextTag + search.
       const input = lastGraphQuery();
       expect(input).toMatchObject({ scope: 'global' });
       expect(input.contextTag).toBeUndefined();
@@ -281,9 +278,8 @@ describe('SubGraphPage', () => {
     fireEvent.change(searchBox, { target: { value: 'b' } });
     fireEvent.change(searchBox, { target: { value: 'bu' } });
     fireEvent.change(searchBox, { target: { value: 'but' } });
-    // No URL/query update should have fired yet — the input is local.
+    // No query update should have fired yet — the search box is local state, not URL.
     expect(lastGraphQuery().search).toBeUndefined();
-    // Advance past the 200ms debounce; the latest value should land.
     vi.advanceTimersByTime(220);
     await vi.runAllTimersAsync();
     vi.useRealTimers();

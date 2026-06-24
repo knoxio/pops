@@ -1,8 +1,10 @@
 /**
- * PRD-143 — one `(date, slot)` cell. Hosts the droppable target + the
- * sortable list of plan entries inside that cell + the `[+]` Add button.
- * Shared between the desktop week grid and the mobile day swiper so
- * drag-and-drop behaviour stays identical across viewports.
+ * One `(date, slot)` cell: the droppable target, the sortable list of plan
+ * entries inside it, and the `[+]` Add button. Shared between the desktop
+ * week grid and the mobile day swiper so drag-and-drop behaviour stays
+ * identical across viewports.
+ *
+ * Spec: pillars/food/docs/prds/planning-page
  */
 import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';

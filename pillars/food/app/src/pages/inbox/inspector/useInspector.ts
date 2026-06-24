@@ -1,14 +1,10 @@
 /**
- * PRD-135 — inspector data hook.
+ * Inspector data hook over `inbox.getForReview`, with conditional polling
+ * while the source's state is non-terminal (`pending` / `processing`).
+ * The Drafts tab only navigates to terminal sources, so the polling branch
+ * is reserved for direct URL navigation during an in-flight ingest.
  *
- * Mounts `inbox.getForReview` with conditional polling: 60 s while the
- * source's state is non-terminal (`pending` / `processing`), on-demand once
- * terminal. PRD-134's Drafts tab only navigates to terminal sources so the
- * polling branch is reserved for direct URL navigation during an in-flight
- * ingest.
- *
- * Exposes `invalidate()` so callers can refresh after Save, Approve, Reject,
- * Undo, or Re-run pipeline mutations.
+ * Exposes `invalidate()` so callers can refresh after a mutation.
  */
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 

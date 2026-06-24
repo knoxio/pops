@@ -1,17 +1,15 @@
 /**
- * `ShortfallRow` — PRD-146 + PRD-149.
- *
- * One row per unresolved shortfall. Surfaces the three resolution
- * radios (`batch-override`, `external`, `partial`) plus the
+ * `ShortfallRow` — one row per unresolved shortfall. Surfaces the three
+ * resolution radios (`batch-override`, `external`, `partial`) plus the
  * `BatchOverridePicker` mount when the user opts for a batch.
  *
  * `partial` mode adds `Batch qty` + `External qty` number inputs so the
  * user can split the need; defaults are `consumeQty = available`,
  * `externalQty = needed - available`.
  *
- * PRD-149 — when the user picks from the Substitutions section, the
- * resolution carries `substitutionEdgeId` and `consumeQty` is computed
- * from `lineQty × ratio` (capped at the chosen batch's remaining qty).
+ * When the user picks from the Substitutions section, the resolution
+ * carries `substitutionEdgeId` and `consumeQty` is computed from
+ * `lineQty × ratio` (capped at the chosen batch's remaining qty).
  */
 import { useState } from 'react';
 
@@ -58,11 +56,11 @@ function defaultBatchOverrideFor(
   return { kind: 'batch-override', batchId: batch.id, consumeQty };
 }
 
-// `candidate.ratio` matches the solver's convention (`line-evaluator.ts:88`):
-// 1 unit of substitute equals `ratio` units of the original ingredient.
-// So a shortfall of `needed` original units takes `needed / ratio` substitute
-// units to fully cover, and `consumed * ratio` substitute draws fill that many
-// original-units of need.
+// `candidate.ratio` matches the solver's convention (see the solver's
+// `line-evaluator.ts`): 1 unit of substitute equals `ratio` units of the
+// original ingredient. So a shortfall of `needed` original units takes
+// `needed / ratio` substitute units to fully cover, and `consumed * ratio`
+// substitute draws fill that many original-units of need.
 
 function substitutionPartialFor(
   shortfall: LineShortfall,

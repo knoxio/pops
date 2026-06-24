@@ -1,6 +1,5 @@
 /**
- * Pure-presentational dialog for the "Reorder ingredients" affordance —
- * PRD-120 part E.
+ * Pure-presentational dialog for the "Reorder ingredients" affordance.
  *
  * The dialog takes the current list of `@ingredient` declarations (from
  * the renumber scanner), surfaces up/down buttons for each row, and

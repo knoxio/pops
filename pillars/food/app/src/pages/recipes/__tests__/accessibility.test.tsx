@@ -1,14 +1,16 @@
 import { render } from '@testing-library/react';
 /**
- * PRD-119-E — axe-core accessibility sweep across the leaf components
- * of the recipe-CRUD flow. Each test renders a static (non-interactive)
- * variant and asserts zero a11y violations.
+ * axe-core accessibility sweep across the leaf components of the
+ * recipe-CRUD flow. Each test renders a static (non-interactive) variant
+ * and asserts zero a11y violations.
  *
  * Page-level components are intentionally NOT covered here because they
- * pull in tRPC mutations + async state machines that would require
+ * pull in REST mutations + async state machines that would require
  * heavyweight mocks for marginal value — the leaf components are where
  * a11y regressions actually surface (badges, labels, focus order, role
  * hierarchy). Page-level a11y is verified via Storybook addon-a11y.
+ *
+ * Spec: pillars/food/docs/prds/recipe-crud-pages
  */
 import axeCore from 'axe-core';
 import { createInstance } from 'i18next';
@@ -77,7 +79,7 @@ async function assertNoViolations(container: HTMLElement): Promise<void> {
   expect(results.violations).toEqual([]);
 }
 
-describe('PRD-119-E — leaf component accessibility', () => {
+describe('recipe-crud-pages — leaf component accessibility', () => {
   it('RecipeListCard — Default', async () => {
     const { container } = render(
       <Wrapper>

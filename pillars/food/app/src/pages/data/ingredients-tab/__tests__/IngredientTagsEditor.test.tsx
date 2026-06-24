@@ -1,13 +1,6 @@
 /**
- * PRD-151 — IngredientTagsEditor unit tests.
- *
  * Mocks the generated food SDK so the component is exercised against a
- * controlled stand-in. Covers:
- *   - initial render hydrates from the server-side list
- *   - adding a chip is local until Save
- *   - removing a chip toggles dirty + the Save button
- *   - autocomplete suggestions come from `distinct`
- *   - server-side BadTagFormat surfaces inline (no thrown error)
+ * controlled stand-in.
  */
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, waitFor } from '@testing-library/react';

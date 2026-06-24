@@ -3,7 +3,7 @@
  * ingredient row. State is fragmented per dialog so the parent component
  * can render only the controls relevant to the open modal.
  *
- * Each mutation invalidates the relevant tRPC caches on success so the
+ * Each mutation invalidates the relevant query caches on success so the
  * tree, detail panel, and blocker counts stay coherent.
  *
  * The mutation factories live in `useIngredientActionMutations.ts` to

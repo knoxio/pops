@@ -1,10 +1,6 @@
 /**
- * PRD-135 — auto-create banner.
- *
- * Lists each `InspectorResolverCreationRow` with a deep link into PRD-122's
- * `/food/data?focus=<slug>` route. Banner is purely informational —
- * approval is never gated on resolving auto-creations (Epic 03 key
- * decision).
+ * Banner is purely informational — approval is never gated on resolving
+ * auto-creations.
  */
 import { type ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';

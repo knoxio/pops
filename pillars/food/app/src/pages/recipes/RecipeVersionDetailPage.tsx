@@ -73,7 +73,7 @@ function RecipeVersionDetailBody({ slug, versionNo }: BodyProps): ReactElement {
 
   if (isLoading) return <Status text={t('recipes.detail.loading')} />;
   if (error !== null) {
-    // PRD-119-API throws NOT_FOUND with message "Recipe \"<slug>\" has no
+    // The API throws NOT_FOUND with message "Recipe \"<slug>\" has no
     // version <n>" for an out-of-range versionNo and "Recipe \"<slug>\"
     // not found" for an unknown slug. Either way, the user is looking at
     // a non-existent version, so we show the same not-found copy.
@@ -142,16 +142,16 @@ function VersionDetailHeader({
 }
 
 /**
- * tRPC's `useQuery.error` is a `TRPCClientErrorLike` whose `.data.code`
- * carries the structured status. Match on the code so the not-found
- * detection doesn't depend on the human-readable message.
+ * Detect a not-found from the query error. Prefers a structured `code`
+ * field when the error carries one, so detection doesn't depend on the
+ * human-readable message.
  */
 function isVersionLookupNotFound(err: unknown): boolean {
   if (err === null || typeof err !== 'object') return false;
   const data = (err as { data?: { code?: unknown } }).data;
   if (data && typeof data === 'object' && data.code === 'NOT_FOUND') return true;
-  // Fallback for non-tRPC errors (e.g. mocked test errors): match on the
-  // two server-side message shapes.
+  // Fallback (e.g. mocked test errors): match on the two server-side
+  // message shapes.
   if (err instanceof Error) {
     return /has no version|not found/i.test(err.message);
   }

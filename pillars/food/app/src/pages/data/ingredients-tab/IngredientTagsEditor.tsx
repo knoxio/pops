@@ -1,11 +1,10 @@
 /**
- * PRD-151 — Tags section embedded in PRD-122's ingredient detail panel.
+ * Tags section embedded in the ingredient detail panel.
  *
- * Chip list + an "+ Add tag" input wired to `food.ingredients.tags.distinct`
- * for autocomplete. The local draft is committed in one call via
- * `food.ingredients.tags.set` (full-set replacement, transactional). Errors
- * surface inline rather than through a thrown TRPCError — the router's
- * `set` procedure returns `{ ok: false, reason }` so the UI can map to
+ * Chip list + an "+ Add tag" input wired to the distinct-tags endpoint for
+ * autocomplete. The local draft is committed in one call (full-set
+ * replacement, transactional). Validation errors surface inline: the set
+ * endpoint returns `{ ok: false, reason }` so the UI maps the reason to
  * localised copy without a try/catch ladder.
  */
 import { useQuery } from '@tanstack/react-query';

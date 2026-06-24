@@ -1,10 +1,7 @@
 /**
- * PRD-138 — data + mutation hook for the Rejected tab.
- *
- * Splits the React Query plumbing out of `RejectedTab.tsx` so the page
- * component stays under the per-file line cap and the hook is testable on
- * its own. Optimistic Undo removes the row from the cached list pages
- * before the mutation resolves; failure restores it and surfaces a toast.
+ * Data + mutation hook for the Rejected tab. Optimistic Undo removes the row
+ * from the cached list pages before the mutation resolves; failure restores it
+ * and surfaces a toast.
  */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback } from 'react';

@@ -1,17 +1,3 @@
-/**
- * RTL coverage for SolvePage — PRD-150.
- *
- * Asserts that:
- *   - header renders + count caption reflects the query data
- *   - cookable recipes render in the order the server returned
- *   - clean (subsNeeded=0) cards label "No subs needed"
- *   - one-sub recipes inline the breakdown
- *   - multi-sub recipes hide subs behind an expander
- *   - clicking "Cook this" navigates to /food/recipes/:slug
- *   - excludeSubs toggle flips the input to the query and the
- *     resulting empty state surfaces a "Clear filters" affordance
- *   - bare-pantry empty state surfaces the Open-fridge link
- */
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -114,7 +100,7 @@ function render150(): void {
   );
 }
 
-describe('SolvePage — PRD-150', () => {
+describe('SolvePage — pillars/food/docs/prds/cook-solver', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });

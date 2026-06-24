@@ -1,14 +1,3 @@
-/**
- * PRD-146 — unit tests for `useCookResolution`.
- *
- *  - seeds `kind: 'fifo'` for every non-optional, fully-covered line
- *  - skips optional lines entirely
- *  - leaves shortfall lines unresolved (counted by
- *    `unresolvedShortfallCount`)
- *  - mark-cooked gate flips when every shortfall is resolved
- *  - scale-factor change resets the resolution map and bumps the
- *    `scaleResetSignal` so the UI can surface the reset banner
- */
 import { act, renderHook } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
@@ -144,7 +133,7 @@ describe('useCookResolution', () => {
     expect(result.current.unresolvedShortfallCount).toBe(0);
   });
 
-  it('skips optional shortfalls per PRD-108 silent-skip contract', () => {
+  it('skips optional shortfalls per the fifo-consumption-ui silent-skip contract', () => {
     const needs: LineConsumeNeed[] = [makeNeed({ lineIndex: 1, optional: true })];
     const shortfalls: LineShortfall[] = [makeShortfall({ lineIndex: 1 })];
 

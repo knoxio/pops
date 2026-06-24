@@ -1,5 +1,5 @@
 /**
- * Public types for the DSL chip scanner (PRD-120 part D).
+ * Public types for the DSL chip scanner.
  *
  * `Chip` is a single in-body decoration target with absolute document
  * offsets. `IngredientDeclaration` is the per-index lookup entry used to

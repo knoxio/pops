@@ -3,7 +3,7 @@
  * integer → plain; otherwise toFixed(2) + trailing-zero strip.
  *
  * Kept in lockstep with the server-side `formatQty` in
- * `apps/pops-api/src/modules/food/shopping/generate.ts` so the preview
+ * `pillars/food/src/api/modules/shopping/generate.ts` so the preview
  * label matches the row inserted in the generated list.
  */
 export function formatQty(qty: number): string {

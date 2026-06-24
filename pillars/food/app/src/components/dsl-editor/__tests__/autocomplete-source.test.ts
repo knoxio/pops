@@ -1,5 +1,5 @@
 /**
- * CompletionSource integration suite (PRD-120 part B).
+ * CompletionSource integration suite.
  *
  * Drives `buildDslCompletionSource` directly with a fake
  * `CompletionContext` so we can assert the result shape (options list,
@@ -156,7 +156,7 @@ describe('dslCompletionSource', () => {
     expect(result).toBeNull();
   });
 
-  describe('read-only mode (PRD-120 part F)', () => {
+  describe('read-only mode', () => {
     it('returns null at @ even when the cursor is in a function-name context', async () => {
       const { sources, searchSpy } = makeSources();
       const source = buildDslCompletionSource(sources);

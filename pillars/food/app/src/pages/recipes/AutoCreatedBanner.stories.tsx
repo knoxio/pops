@@ -1,8 +1,3 @@
-/**
- * Storybook for the auto-created-ingredients banner from
- * `RecipeEditPage`. The links target `/food/data?focus=<slug>` per
- * PRD-122-B's deep-link contract.
- */
 import { createInstance } from 'i18next';
 import { useMemo } from 'react';
 import { I18nextProvider, initReactI18next } from 'react-i18next';

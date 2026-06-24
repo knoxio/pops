@@ -62,7 +62,7 @@ beforeEach(() => {
   slugsSearchMock.mockResolvedValue({ data: { items: [] } });
 });
 
-describe('PRD-122-D — GlobalSearchBar', () => {
+describe('GlobalSearchBar', () => {
   it('renders a search input with the data-search testid', () => {
     renderInRouter('/food/data/ingredients');
     expect(screen.getByTestId('food-data-global-search')).toBeInTheDocument();
@@ -103,7 +103,7 @@ describe('PRD-122-D — GlobalSearchBar', () => {
     expect(router.state.location.search).toBe('?focus=diced');
   });
 
-  it('recipe results are shown with a badge but disabled (no recipe tab yet)', async () => {
+  it('recipe results are shown with a badge but disabled (recipe tab is not navigable)', async () => {
     slugsSearchMock.mockResolvedValue({
       data: {
         items: [{ slug: 'weeknight-pasta', kind: 'recipe', targetId: 1, name: 'Weeknight Pasta' }],

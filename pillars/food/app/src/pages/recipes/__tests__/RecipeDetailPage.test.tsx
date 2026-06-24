@@ -123,7 +123,7 @@ beforeEach(() => {
   recipesListDraftsMock.mockResolvedValue({ data: { drafts: [] } });
 });
 
-describe('PRD-119-B — RecipeDetailPage', () => {
+describe('recipe-crud-pages — RecipeDetailPage', () => {
   it('shows the loading state while the query resolves', () => {
     recipesGetForRenderingMock.mockReturnValue(new Promise(() => {}));
     render(

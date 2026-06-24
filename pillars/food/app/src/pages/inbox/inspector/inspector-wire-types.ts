@@ -1,10 +1,8 @@
 /**
- * Wire-derived view types for the inbox inspector (PRD-135).
- *
- * All projected from the generated food SDK's `inbox.getForReview`
- * response so the inspector UI stays in lockstep with the REST surface.
- * `InspectorResult` is the raw discriminated union; the rest narrow into
- * its `ok: true` member.
+ * Wire-derived view types for the inbox inspector. All projected from the
+ * generated food SDK's `inbox.getForReview` response so the inspector UI
+ * stays in lockstep with the REST surface. `InspectorResult` is the raw
+ * discriminated union; the rest narrow into its `ok: true` member.
  */
 import type { InboxGetForReviewResponses } from '../../../food-api/types.gen.js';
 

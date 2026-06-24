@@ -1,10 +1,3 @@
-/**
- * PRD-134 — RTL coverage for the inbox shell.
- *
- *   - tab strip renders all three tabs + highlights the active one
- *   - clicking a tab fires `onTabChange` with the right key
- *   - pendingCount renders the live number; null → loading placeholder
- */
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createInstance } from 'i18next';
@@ -65,7 +58,7 @@ function makeProps(over: Partial<Parameters<typeof InboxLayout>[0]> = {}) {
   };
 }
 
-describe('InboxLayout — PRD-134', () => {
+describe('InboxLayout', () => {
   it('renders the three tabs with active highlighting', () => {
     render(
       <I18nHost>

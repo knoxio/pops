@@ -1,8 +1,10 @@
 /**
- * PRD-124 follow-up — verifies the `RecipeEditPage` recipe edit shell
- * mounts the `HeroImageUploader` with the recipe's id + heroImagePath,
- * and that the upload/remove callbacks invalidate the rendering query
- * so the new path round-trips into the editor surface.
+ * Verifies the `RecipeEditPage` recipe edit shell mounts the
+ * `HeroImageUploader` with the recipe's id + heroImagePath, and that the
+ * upload/remove callbacks invalidate the rendering query so the new path
+ * round-trips into the editor surface.
+ *
+ * Spec: pillars/food/docs/prds/hero-image-upload
  */
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, waitFor } from '@testing-library/react';
@@ -119,7 +121,7 @@ beforeEach(() => {
   recipesListProposedSlugsMock.mockResolvedValue({ data: { items: [] } });
 });
 
-describe('PRD-124 follow-up — RecipeEditPage hero uploader mount', () => {
+describe('hero-image-upload — RecipeEditPage hero uploader mount', () => {
   it('mounts HeroImageUploader with recipe.id + heroImagePath once the draft opens', async () => {
     render(
       <Wrapper>

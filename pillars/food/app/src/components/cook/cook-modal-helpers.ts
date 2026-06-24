@@ -1,11 +1,11 @@
 import type { MarkCookedInput } from './cook-modal-types.js';
 /**
- * State helpers for `CookModal` — PRD-144.
+ * State helpers for `CookModal`.
  *
  * `initialForm` + `seedForm` keep the modal pure: the open effect calls
  * `seedForm` once with the resolved `CookPreparation`, then the user
  * mutates fields freely. `buildSubmitInput` snaps the form into the
- * `food.cook.markCooked` wire shape.
+ * `markCooked` wire shape.
  */
 import type {
   ConsumptionOverride,

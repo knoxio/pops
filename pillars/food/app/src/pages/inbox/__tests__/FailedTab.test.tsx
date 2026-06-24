@@ -1,13 +1,3 @@
-/**
- * PRD-138 — RTL coverage for the Failed tab.
- *
- *   - renders rows from listFailed
- *   - filter chips auto-populated from failedErrorCodes
- *   - Retry → ingest.retry({ sourceId }) + optimistic remove + success toast
- *   - Retry failure → optimistic removal rolled back + error toast
- *   - View source opens ViewSourceDialog (per-kind body rendered)
- *   - empty state copy
- */
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -96,7 +86,7 @@ beforeEach(() => {
   window.HTMLElement.prototype.scrollIntoView = vi.fn();
 });
 
-describe('FailedTab — PRD-138', () => {
+describe('FailedTab', () => {
   it('renders rows from listFailed', async () => {
     mockList([makeRow(), makeRow({ sourceId: 101, errorCode: 'Timeout' })]);
     mockCodes(['InstagramRateLimited', 'Timeout']);

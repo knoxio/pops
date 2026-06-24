@@ -1,5 +1,5 @@
 /**
- * Aliases table (PRD-122-C).
+ * Aliases table.
  *
  * Sortable header + per-row checkbox + inline edit + delete. Each
  * column header is a button that flips between asc/desc on the same key

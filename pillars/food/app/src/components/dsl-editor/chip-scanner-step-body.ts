@@ -1,10 +1,9 @@
 /**
- * Step-body chip extraction (PRD-120 part D).
+ * Step-body chip extraction.
  *
- * Extracted from `chip-scanner.ts` to keep both files under the per-file
- * line cap. The functions here walk the *interior* of a single
- * `@step("...")` body and emit chip ranges for `@N`, `@slug`,
- * `@time(qty:unit)`, and `@temperature(qty:unit)`. The outer scanner owns
+ * The functions here walk the *interior* of a single `@step("...")` body
+ * and emit chip ranges for `@N`, `@slug`, `@time(qty:unit)`, and
+ * `@temperature(qty:unit)`. The outer scanner (`chip-scanner.ts`) owns
  * step-body detection, escape-aware string termination, and the parallel
  * `@ingredient(N, ...)` sweep.
  */
@@ -56,7 +55,7 @@ function handleSlugOrFunc(source: string, at: number, end: number, out: Chip[]):
     return afterName;
   }
   // Slug followed by `(` is treated as an inline function. Only `@time`
-  // and `@temperature` are recognised (matches PRD-114's parser, which
+  // and `@temperature` are recognised (matches the DSL parser, which
   // emits `BadInline` for any other identifier). For unknown functions,
   // skip the whole `name(...)` span without emitting any chip. When the
   // closing `)` is missing (common mid-edit), advance past the body's

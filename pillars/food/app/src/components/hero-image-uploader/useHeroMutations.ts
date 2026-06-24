@@ -1,7 +1,7 @@
 /**
- * Wraps the food.heroImage upload + remove tRPC mutations and the
- * client-side file validation. Returns a single object so the parent
- * component reads only the four fields it actually needs.
+ * Wraps the hero-image upload + remove mutations and the client-side file
+ * validation. Returns a single object so the parent component reads only the
+ * four fields it actually needs.
  */
 import { useMutation } from '@tanstack/react-query';
 import { useCallback } from 'react';
@@ -29,7 +29,7 @@ function validateFile(file: File, maxBytes: number): ValidationResult {
   }
   if (file.size > maxBytes) {
     // Round up + clamp to 1 so the toast never tells the user the limit is
-    // "0 MB" when the configured cap is sub-1MB (rare, but seen in tests).
+    // "0 MB" when the configured cap is sub-1MB.
     const mb = Math.max(1, Math.ceil(maxBytes / (1024 * 1024)));
     return { ok: false, reason: `Image exceeds the ${mb} MB limit.` };
   }

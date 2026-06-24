@@ -1,9 +1,7 @@
 /**
- * Thin mount wrapper for PRD-142's `SendToListModal`.
- *
- * Owns the success-toast presentation so `RecipeDetailPage` can stay
- * declarative and under the per-file lint cap. Mirrors the
- * `ArchiveDialogPortal` pattern.
+ * Thin mount wrapper for `SendToListModal`. Owns the success-toast
+ * presentation so `RecipeDetailPage` can stay declarative and under the
+ * per-file lint cap. Mirrors the `ArchiveDialogPortal` pattern.
  */
 import { type ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';

@@ -11,7 +11,7 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-describe('PRD-119-A — useDebounce', () => {
+describe('recipe-crud-pages — useDebounce', () => {
   it('returns the initial value synchronously', () => {
     const { result } = renderHook(({ v }: { v: string }) => useDebounce(v, 200), {
       initialProps: { v: 'hello' },

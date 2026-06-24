@@ -4,11 +4,10 @@ import { Navigate } from 'react-router';
 import type { RouteObject } from 'react-router';
 
 /**
- * Local mirror of the shell's `IconName` union. The shell owns the canonical
- * vocabulary in `@pops/navigation/src/types.ts`; this copy is kept in sync
- * because depending on `@pops/navigation` would re-introduce a build cycle
- * with `@pops/api`. If a new icon ships in
- * `@pops/navigation`, mirror it here when this package needs to reference it.
+ * Local mirror of the shell's `IconName` union. The canonical vocabulary lives
+ * in `@pops/navigation` (libs/navigation/src/types.ts); this copy is mirrored to
+ * avoid a build cycle. When a new icon ships there, mirror it here if this
+ * package needs to reference it.
  */
 type IconName =
   | 'Activity'
@@ -165,21 +164,17 @@ export const routes: RouteObject[] = [
       { path: 'aliases', element: <AliasesTab /> },
       { path: 'prep-states', element: <PrepStatesTab /> },
       { path: 'substitutions', element: <SubstitutionsTab /> },
-      // PRD-148: graph visualisation lives at /food/data/substitutions/graph.
       // Declared as a sibling under `data` (not nested under `substitutions`)
       // so the active-tab resolver in FoodDataLayout still highlights the
       // Substitutions tab while the graph subroute is open.
+      // (pillars/food/docs/prds/substitution-graph-explorer)
       { path: 'substitutions/graph', element: <SubGraphPage /> },
       { path: 'conversions', element: <ConversionsTab /> },
-      // PRD-151 — read-only Tags vocabulary view. The per-ingredient
-      // chip editor lives inside the Ingredients tab's detail panel.
+      // Read-only vocabulary view; the per-ingredient chip editor lives inside
+      // the Ingredients tab's detail panel.
       { path: 'tags', element: <TagsTab /> },
     ],
   },
-  // PRD-119 — recipe CRUD pages. 119-A mounts the list page + placeholders
-  // for routes that 119-B/C/D will fill (detail, new, edit, drafts,
-  // historic versions). Wiring the routes up-front keeps internal links
-  // from breaking during the staged rollout.
   { path: 'recipes', element: <RecipeListPage /> },
   { path: 'recipes/new', element: <RecipeNewPage /> },
   { path: 'recipes/:slug', element: <RecipeDetailPage /> },
@@ -188,17 +183,11 @@ export const routes: RouteObject[] = [
   { path: 'recipes/:slug/drafts', element: <RecipeDraftsPage /> },
   { path: 'recipes/:slug/drafts/:draftNo', element: <RecipeDraftEditPage /> },
   { path: 'prompts', element: <PromptViewerPage /> },
-  // I5-prep scaffolds — `PlanPage` (PRD-143) + `FridgePage` (PRD-147)
-  // render `null` until their owning PRDs wire real UI. Routes mounted
-  // up-front so navConfig links + cross-PRD imports resolve today.
   { path: 'plan', element: <PlanPage /> },
   { path: 'fridge', element: <FridgePage /> },
-  // PRD-150 — `/food/solve` what-can-I-cook discovery surface.
   { path: 'solve', element: <SolvePage /> },
-  // PRD-152 — plan-derived shopping list generator.
   { path: 'shopping/from-plan', element: <FromPlanPage /> },
-  // PRD-134 — review queue page. PRD-135 — `:sourceId` per-draft inspector
-  // (three-pane provenance / editor / decision view).
   { path: 'inbox', element: <InboxPage /> },
+  // `:sourceId` opens the three-pane provenance / editor / decision inspector.
   { path: 'inbox/:sourceId', element: <InspectorPage /> },
 ];

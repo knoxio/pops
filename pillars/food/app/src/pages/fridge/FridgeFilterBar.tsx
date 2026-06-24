@@ -1,5 +1,5 @@
 /**
- * Header filter row for the FridgePage — PRD-147.
+ * Header filter row for the FridgePage.
  *
  * Hosts the search box, location chips, expiring-soon / yielded-only
  * toggles, and the "show all" reveal for empty + soft-deleted batches.

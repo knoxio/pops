@@ -7,9 +7,9 @@ interface Props {
 }
 
 /**
- * Shown after a save creates new ingredients/variants via PRD-115's
- * resolver `creations` flow. Links each new slug to
- * `/food/data?focus=<slug>` (PRD-122-B v1 owns the focus deep-link).
+ * Shown after a save auto-creates new ingredients/variants. Links each
+ * new slug to the data page's focus deep-link
+ * (`/food/data?focus=<slug>`, owned by pillars/food/docs/prds/data-page).
  * Dismissible — not persistent.
  */
 export function AutoCreatedBanner({ slugs }: Props): ReactElement | null {

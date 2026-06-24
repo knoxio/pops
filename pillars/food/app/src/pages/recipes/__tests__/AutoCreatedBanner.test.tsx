@@ -30,7 +30,7 @@ function Wrapper({ children }: { children: ReactElement }): ReactElement {
   );
 }
 
-describe('PRD-119-C — AutoCreatedBanner', () => {
+describe('recipe-crud-pages — AutoCreatedBanner', () => {
   it('renders nothing when the slug list is empty', () => {
     const { container } = render(
       <Wrapper>

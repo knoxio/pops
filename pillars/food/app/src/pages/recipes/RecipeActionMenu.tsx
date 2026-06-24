@@ -9,8 +9,7 @@ import type { ReactNode } from 'react';
  * Item shape mirrored from `@pops/ui`'s wrapper component. We can't
  * re-import its `DropdownMenuItem` interface name because the same
  * identifier is also re-exported as the underlying Radix component, so
- * a `type` import collapses to the value. PRD-119-E can replace this
- * mirror with the direct interface once the UI barrel is detangled.
+ * a `type` import collapses to the value.
  */
 export interface RecipeActionMenuItem {
   label: string;
@@ -24,17 +23,15 @@ interface Props {
   slug: string;
   draftCount: number;
   onArchive: () => void;
-  /** PRD-142 + PRD-144 inject their menu items here at the slot between Drafts and Archive. */
+  /** Items injected at the slot between Drafts and Archive (Cook now, Send to list). */
   extraItems?: RecipeActionMenuItem[];
 }
 
 /**
- * Top-right action menu on the recipe detail page. Canonical final order
- * (per roadmap line 489):
+ * Top-right action menu on the recipe detail page. Canonical order:
  *   Edit / Drafts / Cook now... / Send to shopping list... / Archive.
- * 119-B ships only Edit / Drafts / Archive — PRD-142 and PRD-144 plug
- * into the `extraItems` slot to add their own entries between Drafts and
- * Archive when those PRDs land.
+ * Edit / Drafts / Archive are fixed here; the Cook now and Send-to-list
+ * entries arrive through the `extraItems` slot between Drafts and Archive.
  *
  * Built on `@pops/ui`'s Radix-backed `DropdownMenu` so we get focus
  * trap, roving focus, typeahead, click-outside, and Escape-to-close for

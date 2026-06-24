@@ -1,10 +1,8 @@
 /**
- * `ConsumePreviewPanel` — PRD-146.
- *
- * Embeds inside PRD-144's `CookModal` between the field grid and the
- * action buttons. Lists every line whose resolution has a deterministic
- * disposition (FIFO, batch-override, partial, or external) so the user
- * can confirm what will be touched at submit time.
+ * `ConsumePreviewPanel` — embeds inside `CookModal` between the field
+ * grid and the action buttons. Lists every line whose resolution has a
+ * deterministic disposition (FIFO, batch-override, partial, or external)
+ * so the user can confirm what will be touched at submit time.
  *
  * Auto-collapses in the happy path (no shortfalls); defaults to
  * expanded when any shortfall exists.

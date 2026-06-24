@@ -1,9 +1,8 @@
 /**
- * `ShortfallList` — PRD-146.
- *
- * Lists every unresolved-need line with three resolution radios. The
- * parent `CookModal` reads `unresolvedShortfallCount` from
- * `useCookResolution` to gate Mark-cooked.
+ * `ShortfallList` — lists every unresolved-need line with three
+ * resolution radios. The parent `CookModal` reads
+ * `unresolvedShortfallCount` from `useCookResolution` to gate
+ * Mark-cooked.
  *
  * Expanded by default; collapsing is allowed but Mark-cooked stays
  * disabled regardless of panel visibility (state is independent).
@@ -21,7 +20,7 @@ export interface ShortfallListProps {
   shortfalls: readonly LineShortfall[];
   needsByLine: ReadonlyMap<number, LineConsumeNeed>;
   resolutionMap: ReadonlyMap<number, LineResolution>;
-  /** PRD-149 — threaded down to the per-row `BatchOverridePicker`. */
+  /** Threaded down to the per-row `BatchOverridePicker`. */
   recipeVersionId: number;
   onResolve: (lineIndex: number, resolution: LineResolution) => void;
   scaleResetSignal: number;

@@ -1,12 +1,10 @@
 /**
- * PRD-134 — tab strip + page header for `/food/inbox`.
+ * Tab strip + page header for `/food/inbox` (Drafts / Rejected / Failed).
  *
- * Three tabs: Drafts / Rejected / Failed. Active tab state is mirrored in
- * the URL `?tab=` query param so refresh + shared links preserve context.
- * The pending-count badge for the sidebar is *not* rendered here — the
- * navigation rail is owned by `pops-shell` and lacks the badge surface
- * today. PRD-134's sidebar AC is deferred to a follow-up nav-rail
- * extension; the API hook is in place via `food.inbox.pendingCount`.
+ * The sidebar pending-count badge is not rendered here: the navigation rail
+ * is owned by the shell and has no badge surface, so that part is deferred
+ * (see pillars/food/docs/prds/review-queue-page). The count itself comes
+ * from the `inboxPendingCount` endpoint, surfaced as the header subtitle.
  */
 import { type ReactElement, type ReactNode } from 'react';
 

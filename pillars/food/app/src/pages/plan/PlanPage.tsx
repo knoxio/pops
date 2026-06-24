@@ -1,10 +1,11 @@
 /**
- * PRD-143 — top-level planning page mounted at `/food/plan`.
+ * Top-level planning page mounted at `/food/plan`. Reads `?week=…` from the
+ * URL (defaulting to the current ISO week), drives navigation buttons, and
+ * renders the grid plus the add modal, edit sheet, and slot drawer. At
+ * narrow viewports (via `useIsMobile`) the week grid swaps for a
+ * day-at-a-time swiper.
  *
- * Reads `?week=…` from the URL (defaulting to current ISO week), drives
- * navigation buttons, and renders the grid + add modal + edit sheet +
- * slot drawer. At `<768px` (the PRD's mobile breakpoint) the week grid
- * swaps for a day-at-a-time swiper.
+ * Spec: pillars/food/docs/prds/planning-page
  */
 import { useCallback, useState, type ReactElement } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
@@ -130,7 +131,10 @@ interface HeaderProps {
   onToday: () => void;
   onDatePick: (date: string) => void;
   onManageSlots: () => void;
-  /** PRD-152 amendment — navigates to `/food/shopping/from-plan` with the current week pre-filled. */
+  /**
+   * Navigates to `/food/shopping/from-plan` with the current week pre-filled.
+   * Spec: pillars/food/docs/prds/plan-shopping-generator
+   */
   onMakeShoppingList: () => void;
 }
 

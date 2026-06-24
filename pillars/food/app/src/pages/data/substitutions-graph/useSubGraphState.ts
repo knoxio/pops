@@ -1,7 +1,6 @@
 /**
- * URL-state hook for the PRD-148 graph explorer. Reads search params,
- * exposes derived filter values + setters. Extracted from `SubGraphPage`
- * to keep the page component under the per-function lint cap.
+ * URL-state hook for the graph explorer. Reads search params, exposes
+ * derived filter values + setters.
  */
 import { useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router';

@@ -1,10 +1,7 @@
 /**
- * PRD-134 — shared tab-key constants for the `/food/inbox` shell.
- *
- * Three keys: `drafts` (default), `rejected`, `failed`. The `InboxPage`
- * reads `?tab=` and falls back to `drafts` for any unrecognised value,
- * normalising the URL via `router.replace` so the address bar reflects
- * the actual rendered tab.
+ * Shared tab-key constants for the `/food/inbox` shell. `InboxPage` reads
+ * `?tab=` and falls back to `drafts` for any unrecognised value, then
+ * normalises the URL so the address bar reflects the rendered tab.
  */
 export type InboxTabKey = 'drafts' | 'rejected' | 'failed';
 

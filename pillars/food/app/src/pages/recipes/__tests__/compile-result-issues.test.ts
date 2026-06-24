@@ -4,7 +4,7 @@ import { buildEditorIssues } from '../compile-result-issues.js';
 
 const SPAN = { startLine: 3, startCol: 1, endLine: 3, endCol: 8 };
 
-describe('PRD-119-C — compile-result-issues', () => {
+describe('recipe-crud-pages — compile-result-issues', () => {
   it('returns an empty array when no compile result and no proposed slugs', () => {
     expect(buildEditorIssues(null, [])).toEqual([]);
   });

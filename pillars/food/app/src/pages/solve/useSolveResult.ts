@@ -1,7 +1,8 @@
 /**
- * tRPC client wrapper for `food.solver.canICook` — PRD-150.
+ * Query wrapper for the food REST SDK's `solverCanICook` endpoint.
  *
- * Polls every 60s while the page is visible (PRD-150 §Polling). The
+ * Polls every 60s while the page is visible (see the Polling section of
+ * pillars/food/docs/prds/cook-solver). The
  * `refetchIntervalInBackground: false` flag pauses the timer when
  * `document.visibilityState !== 'visible'` so a backgrounded tab
  * doesn't burn solver budget.

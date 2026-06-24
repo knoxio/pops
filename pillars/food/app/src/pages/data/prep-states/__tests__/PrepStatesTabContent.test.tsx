@@ -1,11 +1,6 @@
 /**
- * RTL coverage for `/food/data/prep-states` (PRD-122-C / Tab 3).
- *
- * The tab is read-only beyond Add; the test confirms:
- *   - description renders in the header
- *   - rows render in slug-sorted order
- *   - the row Delete button is disabled and the tooltip text is wired up
- *   - the Add dialog submits via `food.prepStates.create`
+ * RTL coverage for `/food/data/prep-states`, the read-only-beyond-Add Prep
+ * states tab. Spec: pillars/food/docs/prds/data-page.
  */
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, waitFor, within } from '@testing-library/react';
@@ -87,9 +82,8 @@ describe('PrepStatesTabContent', () => {
     ensure().items = [{ id: 1, slug: 'diced', name: 'Diced' }];
     renderTab();
     const del = (await screen.findAllByRole('button', { name: /delete disabled/i }))[0];
-    // Per the keyboard-accessibility fix: the button is focusable
-    // (`aria-disabled` instead of HTML `disabled`) so the tooltip can
-    // appear on focus. Click is no-op'd via onClick.
+    // The button stays focusable (`aria-disabled`, not HTML `disabled`) so the
+    // explanatory tooltip can appear on focus; click is no-op'd via onClick.
     expect(del.getAttribute('aria-disabled')).toBe('true');
     expect(del).not.toBeDisabled();
     expect(screen.getByLabelText(/delete disabled — see tooltip/i)).toBeInTheDocument();

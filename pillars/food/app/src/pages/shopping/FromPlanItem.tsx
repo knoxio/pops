@@ -1,6 +1,3 @@
-/**
- * One row in the shopping preview — PRD-152.
- */
 import { type ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';

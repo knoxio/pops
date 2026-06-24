@@ -1,12 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
 /**
- * PRD-143 — plan entry edit sheet.
+ * Plan entry edit sheet: a right-side drawer on desktop, a bottom-sheet at
+ * narrow viewports (via `useIsMobile`). Surfaces servings, notes, a "Mark
+ * cooked" CTA that links into the cook flow
+ * (pillars/food/docs/prds/cook-event-recording), and delete. When the entry
+ * has a non-null `recipeRunId` the form is read-only and shows "Cooked on".
  *
- * Right-side drawer at `≥768px`; bottom-sheet at narrow viewports per the
- * PRD's mobile spec (`useIsMobile`). Surfaces servings + notes + "Mark
- * cooked" CTA (which links into PRD-144's cook flow) + delete. When the
- * entry has a non-null `recipe_run_id` the form is read-only and shows
- * "Cooked on".
+ * Spec: pillars/food/docs/prds/planning-page
  */
 import { useEffect, useState, type ReactElement } from 'react';
 import { Link } from 'react-router';

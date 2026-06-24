@@ -1,11 +1,8 @@
 /**
- * PRD-143 — RTL coverage for the planning page.
+ * RTL coverage for the planning page (spec: pillars/food/docs/prds/planning-page).
  *
- * Mocks the generated food SDK so the test pins exactly what every
- * endpoint returns and asserts the rendered grid, add modal, edit sheet,
- * and slot drawer wire the mutations correctly. The drag-and-drop
- * behavior is exercised at the @dnd-kit unit level via library coverage;
- * this test focuses on the wiring + happy paths the PRD calls out.
+ * Mocks the generated food SDK so every endpoint return is pinned. Drag-and-drop
+ * is covered at the @dnd-kit level, so this file focuses on wiring + happy paths.
  */
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, within } from '@testing-library/react';

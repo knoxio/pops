@@ -28,7 +28,7 @@ type CompileResult = RecipesSaveDraftResponses[200]['compile'];
  * current version is published, a fresh draft is created on mount via
  * `createNewDraft` (idempotent: same draft returned if one exists).
  * Save / promote / discard map straight to the matching mutations;
- * compile-result errors flow back as PRD-120-C `issues`.
+ * compile-result errors flow back to the editor as `issues`.
  */
 export function RecipeEditPage(): ReactElement {
   const { t } = useTranslation('food');

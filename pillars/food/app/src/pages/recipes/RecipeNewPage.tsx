@@ -40,7 +40,7 @@ export function RecipeNewPage(): ReactElement {
         toast.error(t('recipes.new.compileError'));
       }
       // Redirect in both paths — the draft exists either way, and the
-      // edit page surfaces compile errors inline via PRD-120-C `issues`.
+      // edit page surfaces compile errors inline via its `issues` prop.
       void navigate(`/food/recipes/${result.slug}/edit`);
     },
     onError: (err: Error) => {

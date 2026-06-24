@@ -92,7 +92,7 @@ beforeEach(() => {
   currentParams = { slug: 'pancakes', draftNo: '2' };
 });
 
-describe('PRD-119-D — RecipeDraftEditPage', () => {
+describe('recipe-crud-pages — RecipeDraftEditPage', () => {
   it('alerts when the URL is missing slug or draftNo', () => {
     currentParams = { slug: undefined, draftNo: undefined };
     render(

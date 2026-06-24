@@ -7,10 +7,9 @@
  * Why a text scanner instead of the AST?
  *
  *   1. `parseRecipeDsl` returns no AST on parse failure, and the editor
- *      mid-edit is constantly in transitional states (PRD-120 part D
- *      survey finding 1).
- *   2. `StepBodyPart` (PRD-114) carries no `SourceSpan` for `ref` parts —
- *      only the outer `StepBlock` does (survey finding 2).
+ *      mid-edit is constantly in transitional states.
+ *   2. `StepBodyPart` carries no `SourceSpan` for `ref` parts — only the
+ *      outer `StepBlock` does.
  *
  * The scanner walks the document directly, honours `\"` and `\\` escapes
  * inside step strings, and is robust to a half-typed document.

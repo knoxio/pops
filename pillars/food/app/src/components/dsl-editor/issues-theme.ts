@@ -1,5 +1,5 @@
 /**
- * Inline styles for the issues extension (PRD-120 part C).
+ * Inline styles for the issues extension.
  *
  * `EditorView.theme` keeps the rules scoped to a generated class so the
  * extension is self-contained — the editor pages don't need to import a

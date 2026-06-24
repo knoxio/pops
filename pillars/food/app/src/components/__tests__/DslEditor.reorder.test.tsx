@@ -1,10 +1,10 @@
 /**
- * DslEditor — reorder + renumber RTL tests for PRD-120 part E.
+ * DslEditor — reorder + renumber RTL tests.
  *
  * Exercises the toolbar button, the modal's reorder controls, and the
  * single-transaction renumber dispatch into the editor view. The pure
  * renumber transform has its own deep coverage in
- * `dsl/__tests__/renumber.test.ts`; these tests focus on the React/CM
+ * `src/dsl/__tests__/renumber.test.ts`; these tests focus on the React/CM
  * integration surface.
  */
 import { undo } from '@codemirror/commands';
@@ -43,7 +43,7 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-describe('DslEditor reorder — PRD-120 part E', () => {
+describe('DslEditor reorder', () => {
   it('hides the reorder button in read-only mode', () => {
     render(<DslEditor initialValue={SAMPLE} readOnly onChange={() => {}} />);
     expect(screen.queryByTestId('dsl-editor-reorder-open')).toBeNull();

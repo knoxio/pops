@@ -13,8 +13,8 @@ interface Props {
 }
 
 /**
- * Compact list-page card. NOT PRD-121's `RecipeRenderer` — that requires
- * the compiled lines + steps + JOINs. This card renders the wire-shape
+ * Compact list-page card. NOT `RecipeRenderer` — that requires the
+ * compiled lines + steps + JOINs. This card renders the wire-shape
  * `RecipeListItem` only and lets the user navigate to the detail page.
  */
 export function RecipeListCard({ item, t }: Props): ReactElement {
@@ -72,9 +72,8 @@ function Thumbnail({
       />
     );
   }
-  // PRD-124 stores hero_image_path as `<recipeId>/hero.<ext>`. The card
-  // variant lives at `<recipeId>/hero-card.webp`. Derive client-side per
-  // PRD-119's note: "thumbnail derivation is client-side".
+  // hero_image_path is stored as `<recipeId>/hero.<ext>`; the card
+  // variant lives at `<recipeId>/hero-card.webp`, derived client-side.
   const cardPath = heroImagePath.replace(/hero\.[^.]+$/, 'hero-card.webp');
   return (
     <img

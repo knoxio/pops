@@ -1,5 +1,5 @@
 /**
- * REST client wrapper for `fridge.view` — PRD-147.
+ * REST client wrapper for `fridgeView`.
  *
  * Owns the cache key for the fridge query so the mutation handlers in
  * the sibling modals can invalidate one place when a batch changes.
@@ -14,12 +14,12 @@ import type { FridgeViewResponses } from '../../food-api/types.gen.js';
 type FridgeViewOutput = FridgeViewResponses[200];
 
 /**
- * PRD-147's overview blurb mentions a prep-state filter, but the spec
- * body (filter chips, `fridge.view` schema) does not enumerate one.
- * Treating it as a documented deferral for v1 — re-instate by adding
- * `prepStateId` here, in the request body, and a SQL `prep_state_id =`
- * clause in `view-query.ts` once the design picks a single-select vs
- * multi-select shape.
+ * There is intentionally no prep-state filter: the
+ * `pillars/food/docs/prds/fridge-view` overview mentions one, but its
+ * filter-chip / `fridgeView` schema does not enumerate it. To add one,
+ * thread `prepStateId` here, into the request body, and into a
+ * `prep_state_id =` clause in
+ * `pillars/food/src/api/modules/fridge/view-query.ts`.
  */
 export interface FridgeFilterState {
   search: string;

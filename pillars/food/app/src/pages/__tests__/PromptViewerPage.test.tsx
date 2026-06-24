@@ -1,13 +1,10 @@
-/**
- * PRD-133 — RTL coverage for the read-only prompt viewer.
- */
 import { render, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
 import { FOOD_PROMPTS } from '../../ai/prompt-registry.js';
 import { PromptViewerPage } from '../PromptViewerPage.js';
 
-describe('PRD-133 — PromptViewerPage', () => {
+describe('PromptViewerPage', () => {
   it('renders the page header + editing-hint footer text', () => {
     render(<PromptViewerPage />);
     expect(

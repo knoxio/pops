@@ -1,5 +1,5 @@
 /**
- * Aliases tab toolbar (PRD-122-C).
+ * Aliases tab toolbar.
  *
  * Holds the source filter chips + the search box + the action buttons
  * (Add, Bulk approve LLM, Merge). Action buttons enable based on the

@@ -1,5 +1,5 @@
 /**
- * PRD-133 — Food prompt registry.
+ * Food prompt registry — see pillars/food/docs/prds/ai-usage-prompts.
  *
  * Single source of truth for the read-only `/food/prompts` viewer. Each
  * entry pins a prompt template + version + owning PRD. The viewer page

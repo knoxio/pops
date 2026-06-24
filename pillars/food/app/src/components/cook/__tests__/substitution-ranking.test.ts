@@ -1,7 +1,6 @@
 /**
- * PRD-149 — unit tests for the picker's candidate sort key.
- *
- * Pins the PRD's documented ordering:
+ * Pins the candidate sort key documented in
+ * `pillars/food/docs/prds/cook-time-substitutions`:
  *   1. |ratio - 1.0| ASC
  *   2. context-tag overlap with the recipe DESC
  *   3. earliest batch expiry ASC NULLS LAST

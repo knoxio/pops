@@ -1,8 +1,5 @@
 /**
- * PRD-138 — Failed-ingests tab body.
- *
- * Wraps the filter chips + row list + ViewSourceDialog. PRD-134's
- * `InboxLayout` mounts it when `?tab=failed` is selected.
+ * Failed-ingests tab body. `InboxPage` mounts it when `?tab=failed` is active.
  */
 import { type ReactElement, useState } from 'react';
 import { useTranslation } from 'react-i18next';

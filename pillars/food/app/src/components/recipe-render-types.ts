@@ -1,13 +1,13 @@
 /**
- * View types consumed by `RecipeRenderer` (PRD-121).
+ * View types consumed by `RecipeRenderer`.
  *
  * Every joined-row shape is projected from the generated food SDK's
- * `recipes.getForRendering` response (PRD-119) so the renderer stays in
- * lockstep with the REST wire surface. `ResolvedStepBody` is the FE-side
- * parse of each step's `bodyResolvedJson` blob — the wire ships it as an
- * opaque string, so the structured shape lives here (it mirrors the
- * compiler's emitted JSON). FE-only ergonomics (`RecipeRendererProps`,
- * `RecipeRendererVariant`) round out the set.
+ * `recipesGetForRendering` response so the renderer stays in lockstep with
+ * the REST wire surface. `ResolvedStepBody` is the FE-side parse of each
+ * step's `bodyResolvedJson` blob — the wire ships it as an opaque string,
+ * so the structured shape lives here (it mirrors the compiler's emitted
+ * JSON). FE-only ergonomics (`RecipeRendererProps`, `RecipeRendererVariant`)
+ * round out the set.
  */
 import type { QtyUnit } from '@pops/food/dsl';
 

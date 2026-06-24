@@ -1,8 +1,6 @@
 /**
- * RTL coverage for FridgePage — PRD-147.
+ * RTL coverage for FridgePage (pillars/food/docs/prds/fridge-view).
  *
- * Asserts the header renders, the empty state shows when there are no
- * batches, and a populated view renders sections with batch rows.
  * Heavier behavioural coverage (mutation flows, modal validation) lives
  * in the per-modal tests and the API integration tests.
  */
@@ -129,7 +127,7 @@ function viewWithOneTomato(): FridgeView {
   };
 }
 
-describe('FridgePage — PRD-147', () => {
+describe('FridgePage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     fridgeRecipesUsingBatchMock.mockResolvedValue({ data: { items: [] } });

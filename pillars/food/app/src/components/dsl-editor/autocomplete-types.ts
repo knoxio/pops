@@ -1,12 +1,12 @@
 /**
- * DSL editor autocomplete — public type surface (PRD-120 part B).
+ * DSL editor autocomplete — public type surface.
  *
  * The CodeMirror sources are pure: they call a small set of async lookups
- * to fetch suggestions and never touch tRPC or React Query directly.
- * `useDslAutocompleteSources()` builds production lookups against the
- * food routers; tests inject deterministic stubs implementing the same
- * shape. Keeping the contract narrow (three async methods) lets PRD-119
- * mount the editor without exposing every food endpoint to it.
+ * to fetch suggestions. `useDslAutocompleteSources()` builds production
+ * lookups against the food REST API; tests inject deterministic stubs
+ * implementing the same shape. Keeping the contract narrow (three async
+ * methods) lets a parent mount the editor without exposing every food
+ * endpoint to it.
  */
 export type SlugKind = 'ingredient' | 'recipe' | 'prep_state';
 
@@ -35,9 +35,7 @@ export interface PrepStateSuggestion {
 
 /**
  * Lookups the autocomplete extension calls. Implementations cache as they
- * see fit; the extension does not memoise on its own. Production wiring
- * (`useDslAutocompleteSources`) wraps tRPC + React Query so repeated calls
- * with the same args hit the in-memory cache.
+ * see fit; the extension does not memoise on its own.
  */
 export interface DslAutocompleteSources {
   searchSlugs: (query: string, kinds?: readonly SlugKind[]) => Promise<readonly SlugSuggestion[]>;

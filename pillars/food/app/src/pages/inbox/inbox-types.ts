@@ -1,11 +1,8 @@
 import type { IngestSourceKind } from '../../food-api-shared-types.js';
 /**
- * PRD-138 — shared types + tiny helpers for the Rejected / Failed tabs.
- *
- * The row + filter shapes live here so the tab page, row component, filter
- * component, and stories all import from one place — and so the public
- * surface stays stable when the underlying tRPC procedure types are
- * regenerated.
+ * Shared types + tiny helpers for the Rejected / Failed tabs. The row + filter
+ * shapes live here so the tab page, row, filter, and stories import from one
+ * place, keeping the surface stable when the generated API types regenerate.
  */
 import type {
   InboxListFailedResponses,

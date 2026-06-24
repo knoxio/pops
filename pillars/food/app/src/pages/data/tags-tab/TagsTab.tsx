@@ -1,15 +1,12 @@
 /**
- * PRD-151 — read-only Tags vocabulary tab at `/food/data/tags`.
+ * Read-only Tags vocabulary tab at `/food/data/tags`
+ * (pillars/food/docs/prds/store-section-taxonomy).
  *
  * Groups every distinct tag in the database by namespace (`store-section`,
  * `diet`, `allergen`, …) and tags without a `:` segment under
  * `(no namespace)`. Each row links into the drill-down panel which lists
  * the ingredients carrying the tag — useful for spotting drift
- * (`store-section:produce` vs `store-section:Produce`) before PRD-152's
- * generator surfaces the duplicate.
- *
- * v1 is read-only. Rename / merge / bulk operations are deferred to a
- * future PRD that introduces multi-select on the Ingredients tab too.
+ * (`store-section:produce` vs `store-section:Produce`).
  */
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';

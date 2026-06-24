@@ -1,11 +1,9 @@
 /**
- * `useCookResolution` — PRD-146.
- *
- * Holds the per-line `LineResolution` map for the cook modal. Seeds the
- * map with `kind: 'fifo'` for every line PRD-108's FIFO can fully
- * cover; lines with a matching `LineShortfall` start unresolved and the
- * UI prompts the user to pick `batch-override`, `external`, or
- * `partial` before Mark-cooked enables.
+ * `useCookResolution` — holds the per-line `LineResolution` map for the
+ * cook modal. Seeds the map with `kind: 'fifo'` for every line the
+ * default FIFO can fully cover; lines with a matching `LineShortfall`
+ * start unresolved and the UI prompts the user to pick `batch-override`,
+ * `external`, or `partial` before Mark-cooked enables.
  *
  * State is local to the modal session — closing discards it. A
  * `scaleFactor` change resets the entire map because the per-line `qty`

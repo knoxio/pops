@@ -1,5 +1,5 @@
 /**
- * `/food/solve` — PRD-150.
+ * `/food/solve` — see pillars/food/docs/prds/cook-solver.
  *
  * Discovery surface: walks every compiled, non-archived recipe against
  * the current pantry + substitution graph and lists the cookable
