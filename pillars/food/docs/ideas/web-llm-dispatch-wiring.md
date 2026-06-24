@@ -4,7 +4,7 @@ The web-LLM fallback pipeline (`processWithLlm`: readability → Claude → DSL,
 
 ```
 errorCode: 'JsonLdMissing',
-errorMessage: 'Page has no schema.org Recipe JSON-LD; LLM fallback (PRD-128) not yet wired.',
+errorMessage: 'Page has no schema.org Recipe JSON-LD; LLM fallback (`web-llm-fallback`) not yet wired.',
 ```
 
 Nothing outside the test file imports `processWithLlm`. Build this to close the loop.
@@ -20,7 +20,7 @@ Nothing outside the test file imports `processWithLlm`. Build this to close the 
 
 The PRD originally specified one end-to-end test with a real Claude call, gated on `RUN_LIVE_LLM_TESTS=1` and skipped in CI. It does not exist — every current test mocks the Anthropic client. Add it once the dispatch is wired, so the gate exercises the real fetch → readability → live model → DSL flow against a known JSON-LD-free fixture URL.
 
-## Out of scope (still deferred, originally PRD-128 non-goals)
+## Out of scope (still deferred, originally `web-llm-fallback` non-goals)
 
 - Site-specific extractors (custom prompt per site).
 - Hard cost-cap enforcement (abort on overrun) — observation only today.

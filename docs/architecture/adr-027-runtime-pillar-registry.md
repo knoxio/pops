@@ -38,6 +38,5 @@ The registry is a **directory** (look up baseUrl + manifest, then call directly)
 
 ## Related
 
-- [PRD-241 — Registry-driven `known-modules`](../themes/13-pillar-finale/prds/241-registry-driven-known-modules/README.md) covers **in-repo** discovery for workspace pillars: a build-time walk over `@pops/*-contract` packages that replaces the hand-curated `MANIFEST_SOURCES` literal. The workspace glob deliberately excludes `examples/`, so external pillars never appear in `packages/module-registry/src/generated.ts`. This ADR's runtime registry is the path for **external** (non-workspace) pillars — see PRD-241 US-03 for the boundary statement.
-- [PRD-228 — Dynamic pillar registration](../themes/13-pillar-finale/prds/228-dynamic-pillar-registration/README.md) implements the runtime register / heartbeat / deregister API external pillars call.
-- [PRD-233 — External pillar example (Rust)](../themes/13-pillar-finale/prds/233-external-pillar-example-repo/README.md) is the worked example that exercises the runtime path end-to-end.
+- [dynamic-pillar-registration](../themes/federation/prds/dynamic-pillar-registration/README.md) implements the runtime register / heartbeat / deregister API both workspace and external pillars call; the registry is the sole source of truth for the live pillar set (no hand-curated static list).
+- [external-pillar-example-repo](../themes/federation/prds/external-pillar-example-repo/README.md) is the worked example that exercises the runtime path end-to-end for a non-workspace (Rust) pillar.

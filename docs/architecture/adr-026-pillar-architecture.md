@@ -145,7 +145,7 @@ Inventory of cross-domain refs in the schema today + the planned cross-domain re
 | ----------------------------------------------- | ----------------------------------------------------- | ------------------------------------------------ |
 | `food.recipes.source_id → ingest_sources.id`    | within-pillar                                         | within-pillar (food-db owns both)                |
 | `food.batches.location → enum`                  | within-pillar hardcoded enum                          | stays — no plan to FK to inventory locations     |
-| `food → app-lists` (PRD-142 send-to-shopping)   | runtime tRPC call (already designed this way per PRD) | stays — pops-shell calls food-api then lists-api |
+| `food → app-lists` (`recipe-send-to-list`)      | runtime cross-pillar call (already designed this way) | stays — pops-shell calls food-api then lists-api |
 | Cerebrum engrams reference any entity           | URI scheme already                                    | URI scheme                                       |
 | AI Ops `ai_inference_log.context_id`            | string-namespaced reference (already not an FK)       | stays — moves to core-db                         |
 | Finance entities (people) used by other domains | not used today                                        | accessed via URI scheme when used                |

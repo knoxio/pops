@@ -1,12 +1,11 @@
 import { z } from 'zod';
 
 /**
- * Wire types for the registry handshake/discovery surface (PRD-161). Core
- * currently mounts only the raw dotted routes
- * `/core.registry.{register,heartbeat,deregister,list}` (see
- * `pillars/core/src/api/app.ts`); the canonical slash form
- * `/registry/{register,heartbeat,deregister,pillars}` is introduced in a later
- * phase and is not mounted yet.
+ * Wire types for the registry handshake/discovery surface (PRD-161). The
+ * registry pillar mounts each operation on BOTH the canonical slash form
+ * `/registry/{register,heartbeat,deregister,pillars}` and the legacy dotted
+ * `/core.registry.{register,heartbeat,deregister,list}` routes on the same
+ * handlers (see `pillars/registry/src/api/app.ts`).
  *
  * The input/output zod schemas live here so the router stays focused on
  * the procedure plumbing and the tests can import the shapes directly.

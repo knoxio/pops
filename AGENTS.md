@@ -10,11 +10,11 @@ POPS (Personal Operations System) is a self-hosted personal operations platform 
 
 > The `registry` pillar (`pillars/registry`, package `@pops/registry`, image `pops-registry`, container/DNS `registry-api`) was formerly named `core` (`pops-core` / `core-api`). The renamed container answers to BOTH the new `registry-api` name and the legacy `core-api` network alias during the rename rollout window, so older pillar images still resolve it.
 
-**Pillars (data) and their ports:** `registry` :3001 (registry / settings / users / service-accounts / features; formerly `core`) | `inventory` :3002 (items, locations, warranties, insurance) | `media` :3003 (movies, TV, watchlist, watch history, Plex/TMDB/TVDB) | `finance` :3004 (transactions, budgets, wishlists, entities, CSV import) | `food` :3005 (food domain + ingest worker) | `lists` :3006 | `cerebrum` :3007 (memory / retrieval / ego + worker). The standalone `orchestrator` :3009 (federated search + AI-tool registry) owns no DB.
+**Pillars and their ports:** `registry` :3001 (registry / settings / users / service-accounts / features; formerly `core`) | `inventory` :3002 (items, locations, warranties, insurance) | `media` :3003 (movies, TV, watchlist, watch history, Plex/TMDB/TVDB) | `finance` :3004 (transactions, budgets, wishlists, entities, CSV import) | `food` :3005 (food domain + ingest worker) | `lists` :3006 | `cerebrum` :3007 (memory / retrieval / ego + worker) | `ai` :3008 (AI-ops: providers, usage/telemetry, ingest) | `contacts` :3010 (Rust pillar — axum + OpenAPI, `src/entities` directory). The standalone `orchestrator` :3009 (federated search + AI-tool registry) owns no DB. The `mcp` gateway **binds :3002 in code** (`MCP_PORT ?? 3002`) — note the overlap with `inventory`; this documents what the code says.
 
 **Pillar kinds (ADR-035):** a pillar is any service registered with the `registry` pillar that exposes `/manifest.json`. **Data** pillars are the seven above; **bridge** pillars adapt external systems into the platform; **UI** pillars host frontend SPAs (`pops-shell` registers as `id: 'shell'`).
 
-The frontend is **one SPA** (`pops-shell`) that lazy-loads per-domain feature apps (`packages/app-*`), each consuming its pillar over a generated **Hey API** REST client. Cross-pillar calls go through the REST `@pops/pillar-sdk` `pillar()` client. There is **no tRPC** and **no `pops-api` monolith** — both were removed.
+The frontend is **one SPA** (the `shell` pillar at `pillars/shell`) that lazy-loads per-domain feature apps. Each data pillar ships its own frontend under `pillars/<id>/app`, consuming its pillar over a generated **Hey API** REST client. Cross-pillar calls go through the REST `@pops/pillar-sdk` `pillar()` client (`libs/sdk`). There is **no tRPC** and **no `pops-api` monolith** — both were removed.
 
 See `docs/roadmap.md` for the full implementation tracker.
 
@@ -79,7 +79,7 @@ Each pillar and app is its own package. Work inside the package you're touching:
 
 ```bash
 cd pillars/<id> && pnpm install && pnpm dev          # Run one pillar with watch mode
-cd apps/pops-shell && pnpm install && pnpm dev       # Vite dev server (the SPA host)
+cd pillars/shell && pnpm install && pnpm dev         # Vite dev server (the SPA host)
 
 # Typecheck / test a single package
 cd pillars/<id> && pnpm typecheck
@@ -87,7 +87,7 @@ cd pillars/<id> && pnpm test                         # single run
 cd pillars/<id> && pnpm test:watch                   # watch mode
 ```
 
-Tests live next to the code they cover (`pillars/<id>/src/**/__tests__/`, `packages/<pkg>/src/**`). A pillar applies its own migrations against a real in-memory/temp SQLite DB inside its own tests — no shared monolith test path.
+Tests live next to the code they cover (`pillars/<id>/src/**/__tests__/`, `libs/<lib>/src/**`). A pillar applies its own migrations against a real in-memory/temp SQLite DB inside its own tests — no shared monolith test path. The `contacts` pillar is Rust (axum) — run its tests with `cargo test` from `pillars/contacts`.
 
 ### Git Worktrees (manual)
 
@@ -127,32 +127,32 @@ Lives in private [`knoxio/homelab-infra`](https://github.com/knoxio/homelab-infr
 
 ## Repo Structure
 
+There are exactly **two unit kinds**: `pillars/` (services) and `libs/` (shared libraries). No `apps/`, no `packages/`, no turbo, no `pops-api` monolith. Build is mise per-unit + pnpm + cargo.
+
 ```
-pillars/                   # One REST pillar per folder. Each: own SQLite DB (src/db),
+pillars/                   # One pillar per folder. A TS pillar: own SQLite DB (src/db),
 │                          # zod → ts-rest contract (src/contract), OpenAPI snapshot (openapi/<id>.openapi.json),
-│                          # ./manifest export (self-registers with the registry pillar), Dockerfile, migrations/
+│                          # ./manifest export (self-registers with the registry pillar), its frontend (app/),
+│                          # docs (docs/), migrations/, Dockerfile, mise.toml. contacts is Rust (axum + OpenAPI).
 ├── registry/              # Registry / platform: registry, settings, users, service-accounts, features (formerly `core`)
 ├── inventory/  media/  finance/  food/  lists/  cerebrum/   # Domain data pillars (food + cerebrum run workers)
+├── ai/                    # AI-ops pillar (:3008): providers, usage/telemetry, ingest
+├── contacts/              # Rust pillar (:3010, axum + OpenAPI). src/entities, migrations/, Cargo.toml, tests/
+├── orchestrator/          # Federated search + AI-tool registry (GET /ai/tools); owns no DB
+├── shell/                 # UI pillar: React SPA host (Vite + nginx reverse proxy), lazy-loads each pillar's app/
+├── mcp/                   # MCP gateway (binds :3002 in code via MCP_PORT)
+├── docs/                  # OpenAPI docs browser (Stoplight Elements over each contract's snapshot)
+└── moltbot/               # Telegram bot config + skills (no Dockerfile, uses upstream image)
 
-apps/
-├── pops-shell/            # UI pillar: React SPA host (Vite + nginx reverse proxy), lazy-loads app-* feature apps
-├── pops-orchestrator/     # Federated search + AI-tool registry (GET /ai/tools); owns no DB
-├── pops-mcp/              # MCP gateway
-├── pops-cli/              # CLI tooling
-├── pops-docs/             # OpenAPI docs browser (Stoplight Elements over each contract's snapshot)
-└── moltbot/               # Telegram bot config + skills
-
-packages/
-├── app-{finance,media,inventory,food,lists,cerebrum,ai}/   # Per-domain frontend feature apps (Hey API clients per pillar)
-├── pillar-sdk/            # REST cross-pillar SDK: pillar() client + manifest/registry/discovery helpers
+libs/                      # Shared libraries (no service, no DB)
+├── sdk/                   # @pops/pillar-sdk — REST cross-pillar SDK: pillar() client + manifest/registry/discovery helpers
 ├── types/                 # ModuleManifest + pillar manifest types
 ├── db-types/              # Shared DB type helpers
-├── shared-schema/         # Shared zod schemas
-├── module-registry/       # Module/pillar registry helpers
 ├── ui/                    # @pops/ui component library (shadcn-based)
 ├── navigation/            # App navigation config
+├── module-registry/       # Module/pillar registry helpers
 ├── overlay-ego/           # Shared ego overlay
-└── wire-conformance/      # Wire-format conformance fixtures/tests
+├── settings/  pops-settings/  pops-ai/  ai-telemetry/  locales/   # Cross-pillar shared concerns
 
 infra/
 ├── docker-compose.yml     # Production compose (ghcr.io/knoxio/pops-<id> images + Watchtower)
@@ -160,12 +160,11 @@ infra/
 └── litestream/            # One <id>.yml backup-stream config per pillar SQLite DB
 ```
 
-- `pillars/<id>/` — a REST pillar: zod-backed ts-rest contract over its own SQLite DB (Drizzle), OpenAPI projection, `./manifest`, self-registration with the `registry` pillar
-- `apps/pops-shell/` — React SPA host with lazy-loaded `app-*` feature apps, served via nginx (the reverse proxy that fronts every public service)
-- `apps/pops-orchestrator/` — federated search + AI-tool registry (`GET /ai/tools`); stateless, owns no DB
-- `apps/moltbot/` — config + custom skills for Moltbot (no Dockerfile, uses upstream image)
-- `packages/app-*` — domain-specific frontend packages (pages, components, hooks) consuming their pillar over a generated Hey API client
-- `packages/pillar-sdk/` — the cross-pillar REST SDK; use `pillar('<id>')` for pillar-to-pillar calls
+- `pillars/<id>/` — a pillar: zod-backed ts-rest contract over its own SQLite DB (Drizzle), OpenAPI projection, `./manifest`, self-registration with the `registry` pillar. Each pillar ships its own frontend at `pillars/<id>/app` and its own docs at `pillars/<id>/docs`. The `contacts` pillar is Rust (axum + OpenAPI) instead of TS.
+- `pillars/shell/` — React SPA host that lazy-loads each pillar's `app/`, served via nginx (the reverse proxy that fronts every public service)
+- `pillars/orchestrator/` — federated search + AI-tool registry (`GET /ai/tools`); stateless, owns no DB
+- `pillars/moltbot/` — config + custom skills for Moltbot (no Dockerfile, uses upstream image)
+- `libs/sdk/` — the cross-pillar REST SDK (`@pops/pillar-sdk`); use `pillar('<id>')` for pillar-to-pillar calls
 - `infra/docker-compose.yml` — production compose, references `ghcr.io/knoxio/pops-*` images and includes Watchtower for auto-updates
 - `infra/litestream/<id>.yml` — per-pillar SQLite backup-stream config (mirrored into the deployer's Litestream config)
 - Server provisioning (ansible, secrets, Cloudflare Tunnel, backups) lives in private [`knoxio/homelab-infra`](https://github.com/knoxio/homelab-infra)
@@ -190,18 +189,20 @@ Interfaces: iPhone (PWA) | Telegram (Moltbot) | Web (Metabase)
     │
     Cloudflare Tunnel + Cloudflare Access (Zero Trust)
     │
-pops-shell (UI pillar): React SPA, Vite + nginx reverse proxy — fronts every service,
-    lazy-loads app-* feature apps, each on a generated Hey API REST client
+shell (UI pillar): React SPA, Vite + nginx reverse proxy — fronts every service,
+    lazy-loads each pillar's app/ frontend, on a generated Hey API REST client
     │
-REST pillars (Docker Compose) — each owns its SQLite DB, serves a ts-rest contract + OpenAPI,
-    self-registers with the registry pillar; cross-pillar calls via @pops/pillar-sdk pillar()
+REST pillars (Docker Compose) — each owns its SQLite DB, serves a ts-rest contract + OpenAPI
+    (contacts: Rust axum + OpenAPI), self-registers with the registry pillar;
+    cross-pillar calls via @pops/pillar-sdk pillar()
     registry :3001 (registry/platform; formerly core) | inventory :3002 | media :3003 | finance :3004
-    food :3005 (+worker) | lists :3006 | cerebrum :3007 (+worker)
+    food :3005 (+worker) | lists :3006 | cerebrum :3007 (+worker) | ai :3008 (AI-ops)
+    contacts :3010 (Rust)
     │
 Standalone services:
     orchestrator :3009 — federated search + AI-tool registry (GET /ai/tools), no DB
     metabase — dashboards & analytics | moltbot — Telegram AI assistant
-    mcp — MCP gateway | paperless-ngx — receipt archive + OCR
+    mcp — MCP gateway (binds :3002 in code via MCP_PORT) | paperless-ngx — receipt archive + OCR
     │
 Data Layer:
     One SQLite DB per pillar (each pillar is the source of truth for its own domain)
@@ -254,15 +255,15 @@ When a movie is added to the POPS library, automatically checks Plex Discover cl
 - `api/rest/`, `api/handlers.ts` — REST route handlers backing the contract
 - `api/modules/` — feature modules (discovery, rotation-sources, …)
 - `api/cron/` — scheduled syncs; `api/manifest.ts` — manifest + self-registration
-- `openapi/media.openapi.json` — projected OpenAPI snapshot consumed by `app-media`'s Hey API client
+- `openapi/media.openapi.json` — projected OpenAPI snapshot consumed by the media pillar's frontend (`pillars/media/app`) Hey API client
 
 ## Tech Stack
 
-- **Runtime:** Node.js
-- **Database:** SQLite via Drizzle ORM — one database per pillar; each pillar is the source of truth for its own domain
-- **API:** Per-pillar REST. zod → [ts-rest](https://ts-rest.com) contracts → OpenAPI projection. The frontend consumes generated **Hey API** (`@hey-api/openapi-ts`) clients; cross-pillar calls use the `@pops/pillar-sdk` `pillar()` client. No tRPC.
+- **Runtime:** Node.js for TS pillars; Rust (axum) for the `contacts` pillar
+- **Database:** SQLite via Drizzle ORM (TS pillars) — one database per pillar; each pillar is the source of truth for its own domain. `contacts` owns its own SQLite DB in Rust.
+- **API:** Per-pillar REST. TS pillars: zod → [ts-rest](https://ts-rest.com) contracts → OpenAPI projection; `contacts`: axum → OpenAPI. The frontend consumes generated **Hey API** (`@hey-api/openapi-ts`) clients; cross-pillar calls use the `@pops/pillar-sdk` `pillar()` client. No tRPC.
 - **Registry:** the `registry` pillar (formerly `core`) hosts the registry; every pillar self-registers via its `./manifest` on boot (ADR-035)
-- **Frontend:** one React SPA (`pops-shell`) lazy-loading per-domain feature apps (Vite, React Router, shadcn/ui)
+- **Frontend:** one React SPA (the `shell` pillar) lazy-loading each pillar's `app/` frontend (Vite, React Router, shadcn/ui)
 - **Dashboards:** Metabase (self-hosted, Docker)
 - **AI:** Claude API (categorization, retrieval, NL queries); orchestrator exposes an AI-tool registry at `GET /ai/tools`
 - **Media APIs:** Plex (local + Discover cloud), TMDB, TheTVDB, Radarr, Sonarr
@@ -275,7 +276,7 @@ When a movie is added to the POPS library, automatically checks Plex Discover cl
 
 ## Import Pipeline
 
-The user-facing entry point is the **Import Wizard** (multi-step UI in `app-finance`), which drives the import pipeline in `pillars/finance/src/api/modules/imports/`.
+The user-facing entry point is the **Import Wizard** (multi-step UI in the finance pillar's frontend, `pillars/finance/app`), which drives the import pipeline in `pillars/finance/src/api/modules/imports/`.
 
 ### Entity Matching Chain (`pillars/finance/src/api/modules/imports/`)
 
@@ -289,7 +290,7 @@ The user-facing entry point is the **Import Wizard** (multi-step UI in `app-fina
 6. **Punctuation stripping** — strip apostrophes, retry stages 2-5
 7. **AI fallback** — Claude Haiku API call, cached to disk + DB, rate-limited
 
-Hit rate: ~95-100% with aliases. AI fallback handles the rest. See `pillars/finance/docs/prds/021-entity-matching-engine/` for the full PRD.
+Hit rate: ~95-100% with aliases. AI fallback handles the rest. See `pillars/finance/docs/prds/entity-matching-engine/` for the full PRD.
 
 ## Security Rules (Do Not Violate)
 
@@ -311,19 +312,11 @@ Hit rate: ~95-100% with aliases. AI fallback handles the rest. See `pillars/fina
 - **Schema changes go through Drizzle, per pillar:** edit the pillar's schema → `drizzle-kit generate` → review → commit → deploy → the pillar auto-migrates its own SQLite DB on startup
 - **Each pillar backs up independently** via its `infra/litestream/<id>.yml` stream — there is no single database to back up
 
-## Phases
+## Current State
 
-| Phase                                             | Status      |
-| ------------------------------------------------- | ----------- |
-| 0 — Infrastructure                                | Done        |
-| 1 — Foundation                                    | Done        |
-| 2 — Core Apps (Finance, Media, Inventory, AI Ops) | In progress |
-| 3 — AI Layer                                      | Not started |
-| 4 — Expansion Apps                                | Not started |
-| 5 — Mobile & Hardware                             | Not started |
-| 6 — Long Tail                                     | Not started |
+The repo is a **federation of independent pillars** — that migration is complete and the fleet runs on this layout. There is no tRPC, no `pops-api` monolith, no shared `pops.db`, no `apps/` or `packages/` directory, and no turbo. Every pillar owns its SQLite DB, serves its own contract, and self-registers with the `registry` pillar, which is the **sole source of truth** for what is live. Day-to-day work is per-pillar feature/fix work plus shared-lib changes under `libs/`.
 
-See `docs/roadmap.md` for the detailed implementation tracker.
+`docs/roadmap.md` holds the implementation tracker (the single source of truth for status across all pillars).
 
 ## Development Workflow
 
@@ -333,10 +326,10 @@ Databases are **per pillar** — there is no global init/seed/clear. Each pillar
 
 ```bash
 cd pillars/<id> && pnpm dev      # Start one pillar (applies its own migrations)
-cd apps/pops-shell && pnpm dev   # Start the SPA host
+cd pillars/shell && pnpm dev     # Start the SPA host
 ```
 
-Seed/reset for tests is scoped per pillar — check that pillar's `package.json` scripts and `mise tasks`. E2E tests in `apps/pops-shell/e2e/` drive against the pillars they exercise.
+Seed/reset for tests is scoped per pillar — check that pillar's `package.json` scripts and `mise tasks`. E2E tests in `pillars/shell/e2e/` drive against the pillars they exercise.
 
 ### Process
 
@@ -374,54 +367,61 @@ For changes scoped to a single package, at minimum run that package's checks:
 # A pillar
 cd pillars/<id> && pnpm format --check && pnpm lint && pnpm typecheck
 
-# pops-shell
-cd apps/pops-shell && pnpm format --check && pnpm lint && pnpm typecheck
+# shell (UI pillar)
+cd pillars/shell && pnpm format --check && pnpm lint && pnpm typecheck
 ```
 
 **Do NOT push if any of these fail.** Fix the issue first, commit the fix, then push. A PR with red CI is not a PR — it's a draft at best. This is non-negotiable.
 
 ### PRD-First Rule (mandatory, no exceptions)
 
-**Every change must be checked against the PRDs and USs first.** Before writing code — whether you're shipping a feature, fixing a bug, or tweaking existing behavior — locate the relevant PRD and user story:
+**Every change must be checked against the PRDs first.** The docs model is **slug-only** — a PRD's id is its slug plus its path, there are no PRD numbers and no separate user-story (`us-*.md`) files. Acceptance criteria live **inline** in each PRD under `## Acceptance Criteria`. The hierarchy is **Theme → PRD** (an optional `epics/` grouping exists only when a theme has enough PRDs to warrant it). ADRs keep their frozen `adr-NNN` numbers.
+
+Docs live in two places:
+
+- **Pillar-scoped** docs under `pillars/<id>/docs/` (`README.md` domain overview, `prds/<slug>/README.md`, optional `epics/`, pillar-only `architecture/`, `runbooks/`, `ideas/`). This is where most PRDs live.
+- **Cross-cutting** docs under the central `docs/themes/{platform,foundation,federation}/` plus central `docs/architecture/` (ADRs), `_templates/`, `runbooks/` (cut-release), `vision.md`, `roadmap.md`.
+
+Before writing code — feature, bug fix, or behavior tweak — locate the relevant PRD:
 
 ```bash
-# Find the PRD covering what you're about to touch
-find docs/themes -name 'README.md' | xargs grep -li '<feature-keyword>'
-# Or browse by theme
-ls docs/themes/
+# Pillar-scoped PRDs (most common)
+ls pillars/<id>/docs/prds/
+# Cross-cutting PRDs by central theme
+ls docs/themes/{platform,foundation,federation}/prds/ 2>/dev/null
+# Search by keyword across all PRD specs
+grep -rli '<feature-keyword>' pillars/*/docs/prds docs/themes/*/prds
 ```
 
 Then confirm:
 
-1. **The PRD exists and is current.** If the area you're touching has no PRD, stop and write one before coding. If the PRD is stale (behavior described there no longer matches the goal spec), update the PRD before coding.
-2. **The user story covers what you're about to do.** If it doesn't, add or update the US. If you're changing behavior, update the acceptance criteria to reflect the new goal spec.
-3. **Your change matches the PRD's intent.** Not just what it says today — what it _should_ say. If the PRD intent is unclear, stop and clarify before implementing.
+1. **The PRD exists and is current.** If the area you're touching has no PRD, stop and write one (slug folder + `README.md` with inline `## Acceptance Criteria`) before coding. If the PRD is stale (behavior described no longer matches the goal spec), update it before coding.
+2. **The acceptance criteria cover what you're about to do.** If they don't, add or update the inline criteria to reflect the new goal spec.
+3. **Your change matches the PRD's intent.** Not just what it says today — what it _should_ say. If the intent is unclear, stop and clarify before implementing.
 
-**PRDs and USs are greenfield artifacts.** They describe the goal specification of the system and the correct implementation, not the change history. Do not treat them as a changelog. When code and PRD disagree, one of them is wrong — decide which, and fix it.
+**PRDs are greenfield artifacts.** They describe the goal specification of the system and the correct implementation, not the change history. Do not treat them as a changelog. When code and PRD disagree, one of them is wrong — decide which, and fix it.
 
 **Track every change through the docs.**
 
-- **Implementing** something new → mark the relevant acceptance criteria and US progress as you land the work.
-- **Fixing or changing** existing behavior → update the PRD/US to match the new correct behavior, even if the goal spec hasn't drifted. The docs should always describe the system as it is supposed to be after your change.
+- **Implementing** something new → tick the relevant inline acceptance criteria as you land the work.
+- **Fixing or changing** existing behavior → update the PRD's criteria to match the new correct behavior, even if the goal spec hasn't drifted. The docs should always describe the system as it is supposed to be after your change.
 
 If you cannot find a PRD for what you're changing, that's a blocker, not a shortcut. Write the PRD first.
 
 ### Documentation Sync Rule
 
-**Every code change must update related documentation.** When completing a user story, fixing a bug, or adding a feature:
+**Every code change must update related documentation.** When completing a PRD, fixing a bug, or adding a feature:
 
-1. **Check acceptance criteria** — tick off `- [ ]` → `- [x]` in the relevant user story file
-2. **Update US status** — `Partial` → `Done` when all criteria are checked
-3. **Update PRD status** — update the user story table in the PRD README when a US changes status
-4. **Update epic status** — update the PRD table in the epic when a PRD changes status
-5. **Update theme status** — update the epic table in the theme README when an epic changes status
-6. **Update roadmap** — update `docs/roadmap.md` implementation tracker when epic status changes
+1. **Check acceptance criteria** — tick off `- [ ]` → `- [x]` inline in the relevant PRD's `## Acceptance Criteria`
+2. **Update PRD status** — `In progress` → `Done` when every checkbox is ticked
+3. **Update theme status** — update the PRD's row in the theme `README.md` (the pillar's `docs/README.md`, or the central `docs/themes/<name>/README.md`) when the PRD changes status
+4. **Update roadmap** — update `docs/roadmap.md` implementation tracker when a PRD or theme changes status
 
-Documentation standards status flows upward: US → PRD → Epic → Theme → Roadmap.
+Status flows upward: PRD criteria → PRD → Theme → Roadmap. The roadmap implementation tracker is the single source of truth for status across all pillars.
 
 ### Gap Tracking Rule (mandatory, no exceptions)
 
-**Any implementation gap discovered during a US or PRD must become a GitHub issue before the PR is merged.**
+**Any implementation gap discovered while working a PRD must become a GitHub issue before the PR is merged.**
 
 A gap is any of:
 
@@ -431,7 +431,7 @@ A gap is any of:
 
 **The rules:**
 
-1. Create a GitHub issue for each gap: title format `drift-check(PRD-NNN) US-NN — <what's missing>`
+1. Create a GitHub issue for each gap: title format `drift-check(<prd-slug>) — <what's missing>` (e.g. `drift-check(entity-matching-engine) — punctuation stripping not applied`)
 2. Add a `## Gaps (tracked)` section to the PR description with links to all gap issues
 3. Never list gaps in a PR description without linked issues
 4. The gap issue does NOT block merging — but it MUST exist before merge
@@ -527,13 +527,13 @@ CI + GitHub Copilot are the merge gates. The user does **not** review PRs manual
 **Before writing any new UI element, run this search first:**
 
 ```bash
-find packages/ui/src -name '*.tsx' | xargs grep -l '<keyword>'
-ls packages/ui/src/components/
+find libs/ui/src -name '*.tsx' | xargs grep -l '<keyword>'
+ls libs/ui/src/components/
 ```
 
 If a suitable component exists, use or extend it. Do not create a new one.
 
-The `@pops/ui` library has: `Chip` (removable/colored tags), `Badge` (display-only labels), `Button`, `ButtonPrimitive`, `Select`, `Input`, `Dialog`, `WorkflowDialog`, `ChipInput`, and many more. Browse `packages/ui/src/components/` and Storybook before assuming something doesn't exist.
+The `@pops/ui` library has: `Chip` (removable/colored tags), `Badge` (display-only labels), `Button`, `ButtonPrimitive`, `Select`, `Input`, `Dialog`, `WorkflowDialog`, `ChipInput`, and many more. Browse `libs/ui/src/components/` and Storybook before assuming something doesn't exist.
 
 Reinventing these components causes:
 
@@ -559,7 +559,7 @@ If `@pops/ui` is missing a component you need, add it there with a `.stories.tsx
 
 - **Backend route/service/util** → Vitest unit test against real in-memory SQLite. Mock nothing that can be real.
 - **Frontend hook or stateful component** → Vitest + React Testing Library unit test.
-- **User-facing feature (new page, modal, workflow)** → Playwright E2E test covering the happy path. Add it to `apps/pops-shell/e2e/`.
+- **User-facing feature (new page, modal, workflow)** → Playwright E2E test covering the happy path. Add it to `pillars/shell/e2e/`.
 
 **The bar for "done":** if you cannot click through the feature yourself and show it working, it is not done. Tests are the documented proof that it works. Saying "I implemented it" without tests means you built something you cannot verify.
 
@@ -588,17 +588,20 @@ Full design context lives in `.impeccable.md`. Key principles for all UI work:
 
 Each pillar is its own service on its own port. The shell is the SPA host; the orchestrator is stateless. For a full stack, prefer `docker compose -f infra/docker-compose.dev.yml up -d --build`.
 
-| Service                                         | Port | Command                                 |
-| ----------------------------------------------- | ---- | --------------------------------------- |
-| **registry** (registry/platform; formerly core) | 3001 | `cd pillars/registry && pnpm dev`       |
-| **inventory**                                   | 3002 | `cd pillars/inventory && pnpm dev`      |
-| **media**                                       | 3003 | `cd pillars/media && pnpm dev`          |
-| **finance**                                     | 3004 | `cd pillars/finance && pnpm dev`        |
-| **food** (+ worker)                             | 3005 | `cd pillars/food && pnpm dev`           |
-| **lists**                                       | 3006 | `cd pillars/lists && pnpm dev`          |
-| **cerebrum** (+ worker)                         | 3007 | `cd pillars/cerebrum && pnpm dev`       |
-| **orchestrator** (no DB)                        | 3009 | `cd apps/pops-orchestrator && pnpm dev` |
-| **pops-shell** (Vite SPA host)                  | 5568 | `cd apps/pops-shell && pnpm dev`        |
+| Service                                         | Port | Command                               |
+| ----------------------------------------------- | ---- | ------------------------------------- |
+| **registry** (registry/platform; formerly core) | 3001 | `cd pillars/registry && pnpm dev`     |
+| **inventory**                                   | 3002 | `cd pillars/inventory && pnpm dev`    |
+| **media**                                       | 3003 | `cd pillars/media && pnpm dev`        |
+| **finance**                                     | 3004 | `cd pillars/finance && pnpm dev`      |
+| **food** (+ worker)                             | 3005 | `cd pillars/food && pnpm dev`         |
+| **lists**                                       | 3006 | `cd pillars/lists && pnpm dev`        |
+| **cerebrum** (+ worker)                         | 3007 | `cd pillars/cerebrum && pnpm dev`     |
+| **ai** (AI-ops)                                 | 3008 | `cd pillars/ai && pnpm dev`           |
+| **orchestrator** (no DB)                        | 3009 | `cd pillars/orchestrator && pnpm dev` |
+| **contacts** (Rust, axum + OpenAPI)             | 3010 | `cd pillars/contacts && cargo run`    |
+| **shell** (Vite SPA host)                       | 5568 | `cd pillars/shell && pnpm dev`        |
+| **mcp** (gateway; binds 3002 in code)           | 3002 | `cd pillars/mcp && pnpm dev`          |
 
 ### Node.js version
 

@@ -1,6 +1,6 @@
-# PRD-{NNN}: {Name}
+# {Name}
 
-> Epic: [{Epic name}](../../epics/NN-slug.md)
+> Epic: [{Epic name}](../../epics/{slug}.md)
 
 ## Overview
 
@@ -12,7 +12,7 @@
 
 ## API Surface
 
-{Endpoints, procedures, request/response shapes. Keep to the interface, not implementation.}
+{Endpoints, request/response shapes. Keep to the interface, not implementation.}
 
 ## Business Rules
 
@@ -25,12 +25,11 @@
 | ----------- | --------------------------- |
 | {Edge case} | {How the system handles it} |
 
-## User Stories
+## Acceptance Criteria
 
-| #   | Story                       | Summary            | Parallelisable           |
-| --- | --------------------------- | ------------------ | ------------------------ |
-| 01  | [us-01-slug](us-01-slug.md) | {One-line summary} | {Yes / Blocked by us-NN} |
-| 02  | [us-02-slug](us-02-slug.md) | {One-line summary} | {Yes / Blocked by us-NN} |
+- [ ] {Testable criterion 1}
+- [ ] {Testable criterion 2}
+- [ ] {Testable criterion 3}
 
 ## Out of Scope
 

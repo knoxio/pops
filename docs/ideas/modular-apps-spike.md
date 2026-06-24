@@ -1,6 +1,6 @@
 # Spike — POPS as a suite of modules on a shell
 
-Investigation only — recommendations, no code changes. Sibling spikes: [deployment-split](./deployment-split-spike.md), [feature-toggles](./feature-toggles-spike.md).
+Investigation only — recommendations, no code changes. Sibling spike: [feature-toggles](./feature-toggles-spike.md).
 
 Outcome: superseded by **Epic: Modular Module Runtime** ([docs/themes/foundation/epics/modular-module-runtime.md](../themes/foundation/epics/modular-module-runtime.md)). The spike below describes the goal-state architecture; PRDs 097–100 carry the implementation.
 
@@ -59,7 +59,7 @@ export const manifest: ModuleManifest = {
   schema: financeSchemas,
   dependsOn: ['core.entities'],
   provides: ['finance.transaction', 'finance.budget'],
-  settings: financeSettingsManifest, // PRD-093 SettingsManifest, plugged in as a slot
+  settings: financeSettingsManifest, // unified-settings SettingsManifest, plugged in as a slot
 };
 
 // packages/overlay-ego/src/index.ts
@@ -78,7 +78,7 @@ export const manifest: ModuleManifest = {
 };
 ```
 
-`SettingsManifest` ([PRD-093](../themes/01-foundation/prds/093-unified-settings/README.md)) plugs in as a `settings` slot inside `ModuleManifest`, not as a parallel concept.
+`SettingsManifest` ([unified-settings](../themes/foundation/prds/unified-settings/README.md)) plugs in as a `settings` slot inside `ModuleManifest`, not as a parallel concept.
 
 ## Backend modules — already siblings
 
@@ -88,7 +88,7 @@ Per-module migrations are deferred. `0038-0041` straddle cerebrum sub-modules; s
 
 ## Cross-module communication
 
-- Cross-module imports are forbidden at code level, enforced by [PRD-097](../themes/01-foundation/prds/097-module-import-boundaries/README.md) lint rules (not honour-system).
+- Cross-module imports are forbidden at code level, enforced by [module-import-boundaries](../themes/foundation/prds/module-import-boundaries/README.md) lint rules (not honour-system).
 - Cross-module data references go through tRPC contracts; FKs that cross module boundaries are nullable with `ON DELETE SET NULL`.
 - The URI resolver ([ADR-012](../architecture/adr-012-universal-object-uri.md)) and universal search degrade gracefully when a referenced module is absent.
 
@@ -111,7 +111,7 @@ Tier 2 (admin **Modules** page, install/remove from UI, hard-uninstall preflight
 - Smaller install footprint when features aren't wanted (fewer tables, fewer cron jobs, fewer required env vars)
 - Cross-module boundaries become explicit and lint-enforced
 - Pairs with [feature-toggles](./feature-toggles-spike.md): modules are coarse grain, toggles are fine grain
-- Pairs with [deployment-split](./deployment-split-spike.md): a split deploy repo can compose different POPS images for different hosts
+- A split-deploy repo can compose different POPS images for different hosts
 
 ## Disadvantages / risks
 
@@ -122,12 +122,12 @@ Tier 2 (admin **Modules** page, install/remove from UI, hard-uninstall preflight
 
 ## Recommendation
 
-Yes. PRDs under Epic 10:
+Yes. The relevant foundation PRDs:
 
-1. **PRD-097** — Cross-module import boundaries (lint). Ship first; honour-system is fragile.
-2. **PRD-098** — Module manifest type. Metadata-only contract; no runtime change. Prereq for the loader.
-3. **PRD-099** — Overlay surfaces + ego dual-surface. Extracts `packages/overlay-ego`, formalises overlay category.
-4. **PRD-100** — Tier 1 module runtime (`POPS_APPS` env loader). Manifest-driven router composition + dynamic frontend imports + not-installed fallback.
+1. **`module-import-boundaries`** — Cross-module import boundaries (lint). Ship first; honour-system is fragile.
+2. **`plugin-contract`** (module manifest type) — Metadata-only contract; no runtime change. Prereq for the loader.
+3. **`overlay-surfaces`** — Overlay surfaces + ego dual-surface. Extracts `packages/overlay-ego`, formalises overlay category.
+4. **`plugin-contract`** (Tier 1 module runtime, `POPS_APPS` env loader) — Manifest-driven router composition + dynamic frontend imports + not-installed fallback.
 
 Tier 2 (admin Modules page) and per-module migrations stay deferred.
 

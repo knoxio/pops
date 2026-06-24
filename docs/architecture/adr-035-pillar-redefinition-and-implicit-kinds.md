@@ -21,10 +21,10 @@ Two questions emerge:
 
 ### On encoding kind
 
-| Option                                                                   | Pros                                                                                                                                              | Cons                                                                                                                                                  |
-| ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Add `kind` column to `pillar_registry` (PRD-228 schema migration)**    | Explicit typing; per-kind validators; dashboards group cleanly                                                                                    | Premature encoding; what about pillars that straddle kinds; needs migration if a UI pillar later exposes procedures; redundant with manifest contents |
-| **Implicit kinds — discriminate by what the manifest declares (chosen)** | Zero schema change; the orchestrators already filter by capability not by label; categories stay descriptive not prescriptive; one less migration | "Kind" remains a human-only concept; cannot validate "UI pillars must NOT declare procedures" (not currently a useful constraint anyway)              |
+| Option                                                                                      | Pros                                                                                                                                              | Cons                                                                                                                                                  |
+| ------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Add `kind` column to `pillar_registry` (`dynamic-pillar-registration` schema migration)** | Explicit typing; per-kind validators; dashboards group cleanly                                                                                    | Premature encoding; what about pillars that straddle kinds; needs migration if a UI pillar later exposes procedures; redundant with manifest contents |
+| **Implicit kinds — discriminate by what the manifest declares (chosen)**                    | Zero schema change; the orchestrators already filter by capability not by label; categories stay descriptive not prescriptive; one less migration | "Kind" remains a human-only concept; cannot validate "UI pillars must NOT declare procedures" (not currently a useful constraint anyway)              |
 
 ### On renaming pillar
 
@@ -45,7 +45,7 @@ A **pillar** is any service registered with the central registry that exposes a 
 These three categories are **descriptive, not prescriptive**. They are human-reading conveniences for dashboards, ADRs, and writeups. They are not encoded in the schema, not enforced by the validator, and not used by the orchestrators. Concretely:
 
 - `pillar_registry` does NOT get a `kind` column.
-- The manifest schema (PRD-157) is unchanged.
+- The manifest schema (`manifest-schema-validator`) is unchanged.
 - Orchestrators continue to iterate by capability: federated search loops over pillars with non-empty `searchAdapters`; AI tool routing loops over `aiTools`; sink dispatcher loops over `sinks`.
 - A pillar declaring empty arrays for everything is simply not in any iteration set — that is the UI-pillar shape.
 
@@ -55,7 +55,7 @@ The name "pillar" is retained for continuity. ADR-026's original framing ("load-
 
 - **Enables:** the shell registers itself with the registry on boot, advertising a UI-pillar manifest (`searchAdapters: [], aiTools: [], sinks: []`, `baseUrl: <shell URL>`). External tools (iOS deep-link generator, kiosk discovery, federation visualiser) can discover the shell's URL the same way they discover any other pillar.
 - **Enables:** the iOS app, when it ships, becomes a UI pillar peer of the shell. Kiosk displays are also UI pillars. The "drop in a UI from another repo" question is reframed as "register a UI pillar with a manifest pointing at your hosted URL"; no new architectural surface needed.
-- **Enables:** PRD-228 implementation does not need a schema migration for `kind`. The registration endpoint stays simple.
+- **Enables:** `dynamic-pillar-registration` implementation does not need a schema migration for `kind`. The registration endpoint stays simple.
 - **Prevents:** kind-based validation logic ("UI pillars must not declare procedures"). If such a constraint becomes useful in future, it can be introduced via the manifest validator without touching the registry schema.
 - **Constrains:** the federation orchestrators MUST tolerate pillars with empty capability arrays. They already do (the iteration is `filter(p => p.manifest.X?.length > 0)`).
 - **Constrains:** descriptions of the system in docs / READMEs / writeups should use "pillar" consistently and explain the kinds in plain prose, not encode them anywhere.
@@ -67,5 +67,5 @@ The name "pillar" is retained for continuity. ADR-026's original framing ("load-
 - [ADR-027](adr-027-runtime-pillar-registry.md) — the registry this ADR clarifies the contents of
 - [ADR-032](adr-032-positioning-vs-self-hosted-os-family.md) — introduces bridge pillars as a concept; this ADR formally categorises them
 - [ADR-034](adr-034-sinks-manifest-dimension.md) — the sinks dimension bridge pillars use
-- PRD-157 — manifest schema (unchanged by this ADR)
-- PRD-228 — dynamic pillar registration (no schema changes needed from this ADR)
+- [manifest-schema-validator](../themes/federation/prds/manifest-schema-validator/README.md) — manifest schema (unchanged by this ADR)
+- [dynamic-pillar-registration](../themes/federation/prds/dynamic-pillar-registration/README.md) — dynamic pillar registration (no schema changes needed from this ADR)

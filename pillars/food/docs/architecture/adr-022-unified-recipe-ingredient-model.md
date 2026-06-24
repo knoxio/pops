@@ -65,19 +65,19 @@ So "caramelised onions" is a recipe (heat applied; output stored in jars). "Dice
 
 ### Negative
 
-- **Cycles are possible by construction.** Recipe A could in principle reference Recipe A's output as input. Mitigation: cycle detection at compile time via PRD-117 (iterative DFS over the recipe ↔ yield ↔ recipe graph), invoked between resolve (PRD-115) and materialise (PRD-116). Self-reference is caught earlier in the resolver with a clearer error.
+- **Cycles are possible by construction.** Recipe A could in principle reference Recipe A's output as input. Mitigation: cycle detection at compile time via `recipe-cycle-detection` (iterative DFS over the recipe ↔ yield ↔ recipe graph), invoked between resolve (`dsl-resolver`) and materialise (`lines-materialisation`). Self-reference is caught earlier in the resolver with a clearer error.
 - **Prep_state vs recipe boundary is fuzzy.** The convention above is judgement-dependent. Acceptable because misclassification is cheap to fix and rare in practice.
 - **Soft enum `recipe_type` carries UX semantics with no structural enforcement.** A buggy UI could let a plate be referenced as a component input. Trade-off accepted; the alternative — splitting tables — produces worse problems.
 
 ### Neutral
 
 - "Did Coles roast it or did I roast it" becomes a `batches.source_type` query, not a structural distinction. This is the correct level of granularity: provenance is per-batch, not per-ingredient.
-- A recipe with `yield_qty = 0` (e.g. a technique that doesn't produce a storable output) is allowed; cook events for such recipes do not create batches. PRD-108 invariant: `recipe_runs.yielded_batch_id` is set iff `yield_qty > 0`.
+- A recipe with `yield_qty = 0` (e.g. a technique that doesn't produce a storable output) is allowed; cook events for such recipes do not create batches. `batch-model` invariant: `recipe_runs.yielded_batch_id` is set iff `yield_qty > 0`.
 
 ## References
 
 - [Food spike](../ideas/food-app-spike.md) — original scoping discussion
 - [Food pillar](../README.md)
-- PRD-106 — ingredient model (the singular `ingredients` table)
-- PRD-107 — recipe model (`yield_ingredient_id`, cycle detection invariant)
-- PRD-108 — batch model (`source_type`, FIFO consumption, batch ↔ recipe_run linkage)
+- `ingredient-model` — ingredient model (the singular `ingredients` table)
+- `recipe-model` — recipe model (`yield_ingredient_id`, cycle detection invariant)
+- `batch-model` — batch model (`source_type`, FIFO consumption, batch ↔ recipe_run linkage)

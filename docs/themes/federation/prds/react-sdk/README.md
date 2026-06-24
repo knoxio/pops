@@ -117,7 +117,7 @@ The `pillar.snapshot` rule deliberately over-invalidates: on reconnect the bridg
 
 ## References
 
-- Epic: [FE pillar SDK + dispatcher generator](../../../13-pillar-finale/epics/10-fe-sdk-dispatcher-generator.md)
+- Area: SDK (`@pops/pillar-sdk`) — see the [Federation theme](../../README.md)
 - Client surface: `@pops/pillar-sdk/client` (`pillar()`, `PillarClientOptions`, `CallablePillar`)
 - Discovery surface: `@pops/pillar-sdk/discovery` (`pillarRegistry()`, `RegistrySnapshot`)
 - Registry SSE: `pillars/registry` (`GET /registry/subscribe`)

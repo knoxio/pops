@@ -25,9 +25,9 @@ Fixtures are physical infrastructure objects (power outlets, wall-mounted panels
 
 ## PRDs
 
-| PRD                                       | Summary                                     | Status |
-| ----------------------------------------- | ------------------------------------------- | ------ |
-| [PRD-104](../prds/104-fixtures/README.md) | Fixtures schema, migration, tRPC API, tests | Done   |
+| PRD                                                            | Summary                                     | Status |
+| -------------------------------------------------------------- | ------------------------------------------- | ------ |
+| [`fixtures-data-model`](../prds/fixtures-data-model/README.md) | Fixtures schema, migration, tRPC API, tests | Done   |
 
 ## Key Decisions
 

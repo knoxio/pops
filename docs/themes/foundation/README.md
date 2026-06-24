@@ -38,7 +38,7 @@ Project Bootstrap is prerequisite to everything. UI Component Library, API Serve
 
 ## PRD Index
 
-PRDs live under [`prds/`](prds/) as slug folders. Two early PRDs — [API Server](../01-foundation/prds/008-api-server/README.md) and [Drizzle ORM](../01-foundation/prds/011-drizzle-orm/README.md) — are tracked as historical numbered folders pending removal; the rest are greenfield slug PRDs here.
+PRDs live under [`prds/`](prds/) as slug folders. The API Server and Drizzle ORM concerns are now captured by their epics ([api-server](epics/api-server.md), [drizzle-orm](epics/drizzle-orm.md)); the rest are greenfield slug PRDs here.
 
 | PRD                                                                   | Epic                   | Summary                                                                                                      | Status  |
 | --------------------------------------------------------------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------ | ------- |

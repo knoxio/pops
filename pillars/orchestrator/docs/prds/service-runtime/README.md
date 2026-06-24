@@ -59,7 +59,7 @@ Every cross-pillar surface degrades rather than failing the whole request:
 - A single down/erroring pillar is dropped from the result; the survivors still answer.
 - A 500 from `POST /search` is reserved for an _unexpected_ throw in the pipeline, not for a pillar being unavailable.
 
-The detailed partial-failure response shape for the federated runner (`requestedPillars` / `respondedPillars` / `failedPillars` / `timeoutPillars`) is the SDK framework's contract — see [PRD-199](../../../../../docs/themes/13-pillar-finale/prds/199-partial-failure-semantics/README.md).
+The detailed partial-failure response shape for the federated runner (`requestedPillars` / `respondedPillars` / `failedPillars` / `timeoutPillars`) is the SDK framework's contract — see [partial-failure-semantics](../../../../../docs/themes/federation/prds/partial-failure-semantics/README.md).
 
 ## Edge cases
 

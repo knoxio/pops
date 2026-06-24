@@ -8,7 +8,7 @@
 
 Expose one cross-pillar search endpoint that fans a single query out to every search-capable pillar, then merges, ranks, and decorates the per-pillar results into sections for the frontend search panel. The orchestrator is the only place this fan-out lives — each pillar owns only its own `/search`; the orchestrator owns the federation across them.
 
-The reusable fan-out/merge primitives live in the SDK and are specified centrally (see [PRD-196](../../../../../docs/themes/13-pillar-finale/prds/196-search-adapter-manifest/README.md), [PRD-197](../../../../../docs/themes/13-pillar-finale/prds/197-federated-query-orchestrator/README.md), [PRD-198](../../../../../docs/themes/13-pillar-finale/prds/198-ranking-strategy/README.md), [PRD-199](../../../../../docs/themes/13-pillar-finale/prds/199-partial-failure-semantics/README.md)). This PRD covers the orchestrator's HTTP endpoint, its registry-driven membership, and its section-decoration rules.
+The reusable fan-out/merge primitives live in the SDK and are specified centrally (see [search-adapter-manifest](../../../../../docs/themes/federation/prds/search-adapter-manifest/README.md), [federated-query-orchestrator](../../../../../docs/themes/federation/prds/federated-query-orchestrator/README.md), [ranking-strategy](../../../../../docs/themes/federation/prds/ranking-strategy/README.md), [partial-failure-semantics](../../../../../docs/themes/federation/prds/partial-failure-semantics/README.md)). This PRD covers the orchestrator's HTTP endpoint, its registry-driven membership, and its section-decoration rules.
 
 ## API surface
 
@@ -85,7 +85,7 @@ A search-capable pillar **absent** from this table is still federated — it is 
 
 ## Partial failure (best-effort)
 
-Federation never fails the whole search because one pillar is down. A pillar that is unavailable, throws, or returns a non-ok SDK result is **logged and skipped**; the surviving pillars still answer. The route returns `500 { error: "search_failed" }` only for an _unexpected_ throw in the pipeline, never for a pillar being down. The detailed partial-failure summary shape is the SDK framework's contract — see [PRD-199](../../../../../docs/themes/13-pillar-finale/prds/199-partial-failure-semantics/README.md).
+Federation never fails the whole search because one pillar is down. A pillar that is unavailable, throws, or returns a non-ok SDK result is **logged and skipped**; the surviving pillars still answer. The route returns `500 { error: "search_failed" }` only for an _unexpected_ throw in the pipeline, never for a pillar being down. The detailed partial-failure summary shape is the SDK framework's contract — see [partial-failure-semantics](../../../../../docs/themes/federation/prds/partial-failure-semantics/README.md).
 
 ## Edge cases
 

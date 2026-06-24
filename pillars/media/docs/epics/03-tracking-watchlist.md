@@ -8,12 +8,12 @@ Build watch history tracking and watchlist management. Track what's been watched
 
 ## PRDs
 
-| #   | PRD                                                  | Summary                                                                                                          | Status |
-| --- | ---------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- | ------ |
-| 035 | [Watch History](../prds/035-watch-history/README.md) | Episode/movie watch tracking, chronological history page, mark-as-watched actions, undo toast                    | Done   |
-| 036 | [Watchlist](../prds/036-watchlist/README.md)         | Add/remove from watchlist, priority ordering, filters, auto-remove on watch (manual watches only, not Plex sync) | Done   |
+| #   | PRD                                              | Summary                                                                                                          | Status |
+| --- | ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------- | ------ |
+| 035 | [Watch History](../prds/watch-history/README.md) | Episode/movie watch tracking, chronological history page, mark-as-watched actions, undo toast                    | Done   |
+| 036 | [Watchlist](../prds/watchlist/README.md)         | Add/remove from watchlist, priority ordering, filters, auto-remove on watch (manual watches only, not Plex sync) | Done   |
 
-PRD-035 and PRD-036 can be built in parallel. PRD-036's auto-remove depends on PRD-035's watch tracking.
+`watch-history` and `watchlist` can be built in parallel. `watchlist`'s auto-remove depends on `watch-history`'s watch tracking.
 
 ## Dependencies
 

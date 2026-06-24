@@ -1,6 +1,6 @@
 # Idea: Re-enable Playwright e2e in CI (REST rewrite)
 
-> Spun out of [CI/CD Pipelines](../themes/00-platform/prds/cicd-pipelines/README.md)
+> Spun out of [CI/CD Pipelines](../themes/platform/prds/cicd-pipelines/README.md)
 
 ## Problem
 

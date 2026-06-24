@@ -6,11 +6,11 @@ Accepted — 2026-06-08
 
 ## Context
 
-PRD-109 (Substitution Model) introduces a directed graph of substitution edges: "A can stand in for B at ratio R, in these contexts". The graph is consumed at three different surfaces in the food theme:
+`substitution-model` (Substitution Model) introduces a directed graph of substitution edges: "A can stand in for B at ratio R, in these contexts". The graph is consumed at three different surfaces in the food theme:
 
-- **Cook time** — PRD-149's `BatchOverridePicker` surfaces substitutes when a recipe-line's same-variant batches are short or missing.
-- **Plan time** — PRD-150's solver answers "what can I cook tonight" by walking each recipe's lines against the fridge + the substitution graph.
-- **Authoring** — PRD-122's CRUD page lets the user curate substitution edges; PRD-148's graph explorer visualises them.
+- **Cook time** — `cook-time-substitutions`'s `BatchOverridePicker` surfaces substitutes when a recipe-line's same-variant batches are short or missing.
+- **Plan time** — `cook-solver`'s solver answers "what can I cook tonight" by walking each recipe's lines against the fridge + the substitution graph.
+- **Authoring** — `data-page`'s CRUD page lets the user curate substitution edges; `substitution-graph-explorer`'s graph explorer visualises them.
 
 A natural question arises: should substitution resolution traverse the graph transitively? If `butter → olive-oil → coconut-oil` edges exist, can a recipe needing butter be satisfied by coconut oil via the two-hop path?
 
@@ -27,11 +27,11 @@ A natural question arises: should substitution resolution traverse the graph tra
 
 Substitution resolution is **single-hop only**. The graph is consulted at depth 1 from the recipe-line's variant; multi-hop chains are not auto-resolved. If the user wants `coconut-oil` to be acceptable for a `butter` line, they must declare the direct edge `butter → coconut-oil` themselves.
 
-This rule is enforced by the substitution-resolve service (canonically PRD-150's `substitutions-resolve.ts`):
+This rule is enforced by the substitution-resolve service (canonically `cook-solver`'s `substitutions-resolve.ts`):
 
 - The service queries `substitutions WHERE from_* = <line's variant or ingredient>` and returns only matching `to_*` entities. It does NOT recurse into `substitutions WHERE from_* = <resolved to_*>`.
-- PRD-149's `BatchOverridePicker` and PRD-150's solver both consume this service; neither implements its own walk.
-- PRD-148's graph explorer renders edges as drawn (no virtual transitive edges).
+- `cook-time-substitutions`'s `BatchOverridePicker` and `cook-solver`'s solver both consume this service; neither implements its own walk.
+- `substitution-graph-explorer`'s graph explorer renders edges as drawn (no virtual transitive edges).
 
 ## Consequences
 
@@ -45,7 +45,7 @@ This rule is enforced by the substitution-resolve service (canonically PRD-150's
 **Negative:**
 
 - The user must declare more edges. For a fully-connected sub graph among 5 alternative oils, that's `5 × 4 = 20` directed edges instead of 1 + the implicit transitive closure.
-- Edge curation is a recurring task as the recipe library grows. Mitigation: PRD-122's CRUD UI + PRD-148's graph explorer surface the existing edges; the autocomplete picker prevents drift.
+- Edge curation is a recurring task as the recipe library grows. Mitigation: `data-page`'s CRUD UI + `substitution-graph-explorer`'s graph explorer surface the existing edges; the autocomplete picker prevents drift.
 
 **Revisitable:**
 
@@ -53,8 +53,8 @@ The single-hop rule is hardcoded in service-layer code rather than in the schema
 
 ## Cross-cutting consequences
 
-- **PRD-109** (schema): no transitive-closure column; just direct edges.
-- **PRD-122** (CRUD): users add direct edges; no "infer transitive closure" affordance.
-- **PRD-148** (graph explorer): renders edges as direct; doesn't synthesise virtual edges.
-- **PRD-149** (cook-time): picker shows depth-1 subs only.
-- **PRD-150** (solver): `canICook` walks depth-1 only.
+- **`substitution-model`** (schema): no transitive-closure column; just direct edges.
+- **`data-page`** (CRUD): users add direct edges; no "infer transitive closure" affordance.
+- **`substitution-graph-explorer`** (graph explorer): renders edges as direct; doesn't synthesise virtual edges.
+- **`cook-time-substitutions`** (cook-time): picker shows depth-1 subs only.
+- **`cook-solver`** (solver): `canICook` walks depth-1 only.

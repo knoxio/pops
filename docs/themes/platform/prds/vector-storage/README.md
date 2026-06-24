@@ -1,6 +1,6 @@
 # PRD: Vector Storage
 
-> Theme: [Platform](../../README.md) · Epic: [02 — Cortex Infrastructure](../../epics/02-cortex-infrastructure.md)
+> Theme: [Platform](../../README.md) · Epic: [Cortex Infrastructure](../../epics/cortex-infrastructure.md)
 > Status: Done
 > Owner pillar: `cerebrum`
 

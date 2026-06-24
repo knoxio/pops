@@ -1,6 +1,6 @@
 # PRD: CI/CD Pipelines
 
-> Epic: [00 — CI/CD Pipelines](../../epics/00-cicd-pipelines.md)
+> Epic: [CI/CD Pipelines](../../epics/cicd-pipelines.md)
 > Status: Done
 
 ## Overview

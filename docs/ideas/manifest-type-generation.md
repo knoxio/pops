@@ -1,6 +1,6 @@
 # Idea: richer manifest type generation
 
-Spun out of PRD-155 (manifest type generation, theme 13 / federation). The
+Spun out of the [manifest-type-generation](../themes/federation/prds/manifest-type-generation/README.md) PRD (federation theme). The
 shipped codegen is deliberately small: a hand-maintained string renderer emits a
 four-member `<Pillar>Contract` interface (`pillar`, `version`, `entities`,
 `errors`, `router`), normalised by `oxfmt` and drift-checked. The original PRD

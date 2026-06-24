@@ -1,7 +1,7 @@
 # Idea: Central Job-Queue Management & Repeatable Schedulers
 
 Spun out of the Job Queue Infrastructure PRD
-([docs/themes/00-platform/prds/job-queue/README.md](../themes/00-platform/prds/job-queue/README.md)).
+([docs/themes/platform/prds/job-queue/README.md](../themes/platform/prds/job-queue/README.md)).
 The per-pillar BullMQ producer/consumer model is built and shipped. The pieces
 below were specified in the original PRD but **do not exist in code** — they
 assume a central job service the federated architecture deliberately dropped.

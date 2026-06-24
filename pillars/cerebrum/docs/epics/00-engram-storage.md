@@ -4,16 +4,16 @@
 
 ## Scope
 
-Define the engram file format, template system, directory structure, and scope model. Implement CRUD operations for engrams as an API module in pops-api. After this epic, engrams can be created, read, updated, deleted, listed, and filtered by scope — all via tRPC procedures. The engram directory exists on the server with correct permissions, backup integration, and security boundaries.
+Define the engram file format, template system, directory structure, and scope model. Implement CRUD operations for engrams in the cerebrum pillar. After this epic, engrams can be created, read, updated, deleted, listed, and filtered by scope — all via the cerebrum REST contract. The engram directory exists on the server with correct permissions, backup integration, and security boundaries.
 
 ## PRDs
 
-| #   | PRD                                                                        | Summary                                                                                    | Status |
-| --- | -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ | ------ |
-| 077 | [Engram File Format & Directory](../prds/077-engram-file-format/README.md) | File format spec, YAML frontmatter schema, template system, directory layout, CRUD service | Done   |
-| 078 | [Scope Model](../prds/078-scope-model/README.md)                           | Hierarchical dot-notation scopes, scope rules, filtering, secret scope protection          | Done   |
+| #   | PRD                                                                    | Summary                                                                                    | Status |
+| --- | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ | ------ |
+| 077 | [Engram File Format & Directory](../prds/engram-file-format/README.md) | File format spec, YAML frontmatter schema, template system, directory layout, CRUD service | Done   |
+| 078 | [Scope Model](../prds/scope-model/README.md)                           | Hierarchical dot-notation scopes, scope rules, filtering, secret scope protection          | Done   |
 
-PRD-077 must complete before PRD-078 — scopes are stored in engram frontmatter, so the file format must be defined first.
+`engram-file-format` must complete before `scope-model` — scopes are stored in engram frontmatter, so the file format must be defined first.
 
 ## Dependencies
 

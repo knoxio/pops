@@ -1,6 +1,6 @@
 # Redis Container & Connection
 
-> Epic: [02 — Cortex Infrastructure](../../epics/02-cortex-infrastructure.md)
+> Epic: [Cortex Infrastructure](../../epics/cortex-infrastructure.md)
 > Status: Done
 > See: [ADR-016 — Redis as Queue and Cache Backend](../../../../architecture/adr-016-redis-queue-cache.md)
 

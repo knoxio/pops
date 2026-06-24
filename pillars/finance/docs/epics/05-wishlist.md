@@ -8,9 +8,9 @@ Build the wishlist — savings goals with target amounts and progress tracking. 
 
 ## PRDs
 
-| #   | PRD                                        | Summary                                                           | Status |
-| --- | ------------------------------------------ | ----------------------------------------------------------------- | ------ |
-| 026 | [Wishlist](../prds/026-wishlist/README.md) | Wishlist data model, CRUD page, target amounts, progress tracking | Done   |
+| #   | PRD                                    | Summary                                                           | Status |
+| --- | -------------------------------------- | ----------------------------------------------------------------- | ------ |
+| 026 | [Wishlist](../prds/wishlist/README.md) | Wishlist data model, CRUD page, target amounts, progress tracking | Done   |
 
 ## Dependencies
 

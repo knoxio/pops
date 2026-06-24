@@ -35,13 +35,13 @@ The orchestrator holds no domain state of its own. The only state it touches is 
 
 The reusable cross-pillar machinery — the federated-query runner, the cross-pillar ranking strategy, partial-failure semantics, the AI-tool manifest projection, and tool-call routing — lives in `@pops/pillar-sdk` and is specified centrally under the pillar-finale federation theme. This pillar **hosts** those primitives on an HTTP surface; it does not reimplement them. See:
 
-- [PRD-196 — Search adapter manifest](../../../docs/themes/13-pillar-finale/prds/196-search-adapter-manifest/README.md)
-- [PRD-197 — Federated query orchestrator](../../../docs/themes/13-pillar-finale/prds/197-federated-query-orchestrator/README.md)
-- [PRD-198 — Ranking strategy](../../../docs/themes/13-pillar-finale/prds/198-ranking-strategy/README.md)
-- [PRD-199 — Partial-failure semantics](../../../docs/themes/13-pillar-finale/prds/199-partial-failure-semantics/README.md)
-- [PRD-200 — AI-tool manifest](../../../docs/themes/13-pillar-finale/prds/200-ai-tool-manifest/README.md)
-- [PRD-201 — Dynamic tool list](../../../docs/themes/13-pillar-finale/prds/201-dynamic-tool-list/README.md)
-- [PRD-202 — Tool-call routing](../../../docs/themes/13-pillar-finale/prds/202-tool-call-routing/README.md)
+- [search-adapter-manifest](../../../docs/themes/federation/prds/search-adapter-manifest/README.md)
+- [federated-query-orchestrator](../../../docs/themes/federation/prds/federated-query-orchestrator/README.md)
+- [ranking-strategy](../../../docs/themes/federation/prds/ranking-strategy/README.md)
+- [partial-failure-semantics](../../../docs/themes/federation/prds/partial-failure-semantics/README.md)
+- [ai-tool-manifest](../../../docs/themes/federation/prds/ai-tool-manifest/README.md)
+- [dynamic-tool-list](../../../docs/themes/federation/prds/dynamic-tool-list/README.md)
+- [tool-call-routing](../../../docs/themes/federation/prds/tool-call-routing/README.md)
 
 ## PRDs
 

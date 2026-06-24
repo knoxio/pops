@@ -8,9 +8,9 @@ Build the transaction ledger — the core data model and UI for viewing, creatin
 
 ## PRDs
 
-| #   | PRD                                                | Summary                                                                               | Status |
-| --- | -------------------------------------------------- | ------------------------------------------------------------------------------------- | ------ |
-| 019 | [Transactions](../prds/019-transactions/README.md) | Transaction data model, ledger page with CRUD, filtering, sorting, inline tag editing | Done   |
+| #   | PRD                                            | Summary                                                                               | Status |
+| --- | ---------------------------------------------- | ------------------------------------------------------------------------------------- | ------ |
+| 019 | [Transactions](../prds/transactions/README.md) | Transaction data model, ledger page with CRUD, filtering, sorting, inline tag editing | Done   |
 
 ## Dependencies
 

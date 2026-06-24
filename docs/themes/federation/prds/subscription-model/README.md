@@ -1,6 +1,6 @@
 # Subscription model
 
-> Theme: [Pillar finale](../../README.md) · Epic: [Central registry](../../epics/02-central-registry.md)
+> Theme: [Federation](../../README.md) · Area: Registry protocol
 
 ## Purpose
 

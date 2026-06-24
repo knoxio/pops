@@ -1,6 +1,6 @@
 # Idea: Vector Storage — deferred pieces
 
-Captures the parts of the vector-storage spec that the original PRD/user-stories marked as done but that the shipped cerebrum implementation does not have. The built core lives in [PRD: Vector Storage](../themes/00-platform/prds/vector-storage/README.md).
+Captures the parts of the vector-storage spec that the original PRD/user-stories marked as done but that the shipped cerebrum implementation does not have. The built core lives in [PRD: Vector Storage](../themes/platform/prds/vector-storage/README.md).
 
 ## 1. Redis embedding caches
 

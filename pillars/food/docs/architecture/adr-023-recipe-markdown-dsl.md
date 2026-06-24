@@ -75,7 +75,7 @@ Reserved function names: `@recipe`, `@yield`, `@ingredient`, `@step`, `@time`, `
 - The compact descriptor `slug:variant:prep` is a single positional token. Each segment is a slug; missing trailing segments are omitted (so `banana` is just an ingredient, `banana:raw` is ingredient + variant, `banana:raw:mashed` is all three). Use `_` to skip a middle segment when needed: `banana:_:mashed` means default variant + mashed prep.
 - The compact quantity `qty:unit` is a single positional token. Numeric `qty`; `unit` is a unit slug.
 - Named args use `key=value`. Value may be quoted string, number, boolean, or `qty:unit` token.
-- References inside step bodies: `@N` resolves to the ingredient with `index=N` in this recipe; `@slug` resolves via the slug_registry (PRD-106).
+- References inside step bodies: `@N` resolves to the ingredient with `index=N` in this recipe; `@slug` resolves via the slug_registry (`ingredient-model`).
 - Markdown headings, paragraphs, and other markdown syntax outside `@func(...)` blocks are visual chrome only — they are preserved in the stored DSL and rendered, but ignored by the structural compiler.
 - Comments: `// ...` at start of line. Stripped during compile.
 
@@ -85,7 +85,7 @@ At save time, the compiler:
 
 1. Parses the DSL into an AST.
 2. Validates: `@recipe` is present and first; `@yield` is present; every `@ingredient` has a unique index; every `@N` or `@slug` reference resolves; quantities parse; units exist.
-3. Looks up each ingredient slug in the slug_registry (PRD-106). If a slug is unknown, the compile records it as a `proposed_slug` (Epic 03 review flow surfaces these for user approval — they do not block save when the recipe is `draft`; they DO block promotion from `draft` to `current`).
+3. Looks up each ingredient slug in the slug_registry (`ingredient-model`). If a slug is unknown, the compile records it as a `proposed_slug` (Epic 03 review flow surfaces these for user approval — they do not block save when the recipe is `draft`; they DO block promotion from `draft` to `current`).
 4. Resolves variant scoped to ingredient (variant slug `raw` under ingredient `banana` is distinct from `raw` under `apple`).
 5. Materializes `recipe_lines` and `recipe_steps` rows for this `recipe_version`.
 
@@ -93,7 +93,7 @@ The DSL source is canonical. Compile output is an index. A failed compile saves 
 
 ### File extension
 
-The canonical file extension for serialised DSL content is `.recipe`. The extension is a convention only — recipes are stored in SQLite (`recipe_versions.body_dsl` per PRD-107), not as files on disk. The extension applies on:
+The canonical file extension for serialised DSL content is `.recipe`. The extension is a convention only — recipes are stored in SQLite (`recipe_versions.body_dsl` per `recipe-model`), not as files on disk. The extension applies on:
 
 - Export: when a recipe is serialised to a single file (sharing, backup, hand-off), the file is `<slug>.recipe`.
 - Import: a file ending in `.recipe` is dispatched to the DSL parser without further sniffing.
@@ -103,7 +103,7 @@ If the storage model is later promoted to "recipes are files on disk" (the Cereb
 
 ### Renderer
 
-The renderer is out of scope for this ADR (lives in PRD-107 + an Epic 01 PRD), but the rule for ADR purposes: every `@func(...)` becomes a styled block or inline element. Authors never read the raw DSL except in an explicit "source view" — the editor and view always render to the cookbook-style form.
+The renderer is out of scope for this ADR (lives in `recipe-model` + an Epic 01 PRD), but the rule for ADR purposes: every `@func(...)` becomes a styled block or inline element. Authors never read the raw DSL except in an explicit "source view" — the editor and view always render to the cookbook-style form.
 
 ## Consequences
 
@@ -126,13 +126,13 @@ The renderer is out of scope for this ADR (lives in PRD-107 + an Epic 01 PRD), b
 
 ### Neutral
 
-- Slug uniqueness is enforced by the `slug_registry` table (PRD-106 amendment) so refs in the DSL are unambiguous.
+- Slug uniqueness is enforced by the `slug_registry` table (`ingredient-model` amendment) so refs in the DSL are unambiguous.
 - Variants stay scoped under their parent ingredient — variants do not appear in the global slug namespace.
 - Step-to-step references (`@step3`) are deferred. Not in v1 grammar.
 
 ## References
 
 - [ADR-022](./adr-022-unified-recipe-ingredient-model.md) — recipes-as-ingredients (the basis for `@ingredient(N, recipe-slug, qty:unit)` syntax)
-- [PRD-106](../prds/106-ingredient-model/README.md) — slug_registry table (amended as part of this ADR)
-- PRD-107 — Recipe & Version Model (stores `body_dsl`, materializes `recipe_lines` and `recipe_steps`)
+- [`ingredient-model`](../prds/ingredient-model/README.md) — slug_registry table (amended as part of this ADR)
+- `recipe-model` — Recipe & Version Model (stores `body_dsl`, materializes `recipe_lines` and `recipe_steps`)
 - Future PRD in Epic 01 — DSL-aware editor with autocomplete and chip rendering

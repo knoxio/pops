@@ -8,9 +8,9 @@ Adopt Drizzle ORM for type-safe database access and schema-as-code in every Type
 
 ## PRDs
 
-| PRD                                                               | Summary                                                               | Status |
-| ----------------------------------------------------------------- | --------------------------------------------------------------------- | ------ |
-| [Drizzle ORM](../../01-foundation/prds/011-drizzle-orm/README.md) | Schema files, type-safe queries, migration generation, type inference | Done   |
+| PRD         | Summary                                                               | Status |
+| ----------- | --------------------------------------------------------------------- | ------ |
+| Drizzle ORM | Schema files, type-safe queries, migration generation, type inference | Done   |
 
 ## Dependencies
 

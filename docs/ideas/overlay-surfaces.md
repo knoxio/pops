@@ -1,6 +1,6 @@
 # Overlay Surfaces — follow-ups
 
-Unbuilt extensions to the shipped overlay-surface model (see [PRD: Overlay Surfaces](../themes/01-foundation/prds/overlay-surfaces/README.md)). The core surface category, manifest-driven mount, generic overlay state map, manifest shortcuts, and the ego dual-surface are all built. These are the deferred pieces.
+Unbuilt extensions to the shipped overlay-surface model (see [PRD: Overlay Surfaces](../themes/foundation/prds/overlay-surfaces/README.md)). The core surface category, manifest-driven mount, generic overlay state map, manifest shortcuts, and the ego dual-surface are all built. These are the deferred pieces.
 
 ## Per-user shortcut rebinding
 

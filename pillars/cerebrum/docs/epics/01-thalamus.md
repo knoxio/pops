@@ -8,16 +8,16 @@ Build the indexing and retrieval middleware that makes engrams queryable. Thalam
 
 ## PRDs
 
-| #   | PRD                                                             | Summary                                                                                        | Status |
-| --- | --------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- | ------ |
-| 079 | [Engram Indexing & Sync](../prds/079-engram-indexing/README.md) | File watcher, frontmatter-to-SQLite sync, embedding trigger, cross-source indexing             | Done   |
-| 080 | [Retrieval Engine](../prds/080-retrieval-engine/README.md)      | Semantic search, structured queries, hybrid search, scope-filtered retrieval, context assembly | Done   |
+| #   | PRD                                                    | Summary                                                                                        | Status |
+| --- | ------------------------------------------------------ | ---------------------------------------------------------------------------------------------- | ------ |
+| 079 | [Engram Indexing & Sync](../prds/indexing/README.md)   | File watcher, frontmatter-to-SQLite sync, embedding trigger, cross-source indexing             | Done   |
+| 080 | [Retrieval Engine](../prds/retrieval-engine/README.md) | Semantic search, structured queries, hybrid search, scope-filtered retrieval, context assembly | Done   |
 
-PRD-079 must complete before PRD-080 — the retrieval engine queries indexes that the sync system builds.
+`indexing` must complete before `retrieval-engine` — the retrieval engine queries indexes that the sync system builds.
 
 ## Dependencies
 
-- **Requires:** Epic 00 (engram file format and directory), Infrastructure PRD-076 (sqlite-vec and embedding pipeline)
+- **Requires:** Epic 00 (engram file format and directory), Infrastructure `vector-storage` (sqlite-vec and embedding pipeline)
 - **Unlocks:** Epic 02 (Ingest uses Thalamus for deduplication checks), Epic 03 (Emit uses Thalamus for retrieval)
 
 ## Out of Scope

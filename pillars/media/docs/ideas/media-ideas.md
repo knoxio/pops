@@ -25,7 +25,7 @@ Evolve beyond simple weighted scoring:
 
 ## Plex User Rating Import for Recommendations
 
-The Plex API exposes per-item `rating` (user's own star rating) and `audienceRating` (community rating). The Plex client already maps these fields (`PlexMediaItem.rating`, `PlexMediaItem.audienceRating`) but the sync service discards them. These could be stored and used as additional signals in the recommendation algorithm (PRD-014 R3).
+The Plex API exposes per-item `rating` (user's own star rating) and `audienceRating` (community rating). The Plex client already maps these fields (`PlexMediaItem.rating`, `PlexMediaItem.audienceRating`) but the sync service discards them. These could be stored and used as additional signals in the recommendation algorithm ([discovery-recommendations](../prds/discovery-recommendations/README.md), R3).
 
 Possible approaches:
 
@@ -45,7 +45,7 @@ Capturing `viewOffset` would enable:
 - More accurate watch history (distinguish "watched 10 minutes and stopped" from "watched the whole thing")
 - Better recommendation signals (abandoning a movie halfway is a negative signal)
 
-Note: Epic 03 and PRD-012 explicitly scope out "Currently watching" / in-progress tracking. This would be a v2 feature.
+Note: Epic 03 and [watch-history](../prds/watch-history/README.md) explicitly scope out "Currently watching" / in-progress tracking. This would be a v2 feature.
 
 ## Plex Webhooks
 

@@ -1,6 +1,6 @@
 # PRD: `pillar()` client surface
 
-> Epic: [Unified consumption SDK](../../epics/05-unified-consumption-sdk.md)
+> Theme: [Federation](../../README.md) · Area: SDK (`@pops/pillar-sdk`)
 >
 > **Status:** Done (runtime + tests) — typed capability projection (`ContractFor<P>` / `declareContracts`) is unbuilt and tracked in [docs/ideas/client-surface.md](../../../../ideas/client-surface.md).
 
@@ -160,7 +160,7 @@ A `pillar('media').library.list(input)` call:
 - [x] `callDynamic(routerName, procName, input?, kind?)` runtime escape hatch routing through the same
       transport and sharing the same caches.
 - [x] `CallResult` exposes `ok | unavailable | degraded | contract-mismatch | not-found | conflict |
-  bad-request | unauthorized` with `isOk` / `isNotFound` / `isConflict` / `isBadRequest` /
+bad-request | unauthorized` with `isOk` / `isNotFound` / `isConflict` / `isBadRequest` /
       `isUnauthorized` narrowers.
 
 ### Discovery + transport

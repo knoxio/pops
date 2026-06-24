@@ -1,9 +1,9 @@
 /**
  * HTTP-JSON heartbeat handler for external pillars (Theme 13 PRD-228 US-02).
  *
- * External pillars POST the heartbeat route, currently
- * `/core.registry.heartbeat` (the canonical `/registry/heartbeat` lands in a
- * later phase and is not mounted yet), with their `pillarId`. Trust model
+ * External pillars POST the heartbeat route. Both the canonical
+ * `/registry/heartbeat` and the legacy `/core.registry.heartbeat` form are
+ * mounted on the same handler (see `app.ts`), with their `pillarId`. Trust model
  * (ADR-027): the docker network is the boundary; anything able to reach this
  * endpoint is already inside the compose network.
  *

@@ -1,6 +1,6 @@
 # Cross-language wire-format extensions
 
-Captures the parts of the original tRPC-era wire-format PRD (formerly PRD-231) that were never built, or that describe behaviour the REST fleet does not have. The shipped wire contract lives in [cross-language wire-format spec](../themes/13-pillar-finale/prds/cross-language-wire-format-spec/README.md). These are deferred — none is required for a non-TS pillar to federate today, as the Rust `contacts` pillar proves.
+Captures the parts of the original tRPC-era wire-format PRD (formerly PRD-231) that were never built, or that describe behaviour the REST fleet does not have. The shipped wire contract lives in [cross-language wire-format spec](../themes/federation/prds/cross-language-wire-format-spec/README.md). These are deferred — none is required for a non-TS pillar to federate today, as the Rust `contacts` pillar proves.
 
 ## Dropped because the fleet is REST, not tRPC
 

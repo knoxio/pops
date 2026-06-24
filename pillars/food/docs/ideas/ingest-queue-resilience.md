@@ -2,7 +2,7 @@
 
 Forward-looking gaps in the `food.ingest` producer/queue contract. The
 endpoints, queue, worker dispatch, and worker-complete callback already ship
-(see `prds/ingest-api`). These are the pieces the original PRD-125 spec
+(see `prds/ingest-api`). These are the pieces the original `ingest-api` spec
 described that are **not** built yet.
 
 ## Delayed retry from `retryAfterSec`

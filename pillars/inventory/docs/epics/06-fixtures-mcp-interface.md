@@ -10,13 +10,13 @@ Done means: a user can walk through their house, dictate locations, items, item-
 
 ## PRDs
 
-| #   | PRD                                                                    | Summary                                                           | Status |
-| --- | ---------------------------------------------------------------------- | ----------------------------------------------------------------- | ------ |
-| 103 | [Inventory MCP Write Tools](../prds/103-inventory-mcp-write/README.md) | MCP mutations for locations, items, and item-item connections     | Done   |
-| 104 | [Fixtures Data Model](../prds/104-fixtures-data-model/README.md)       | `fixtures` table, `item_fixture_connections` table, tRPC router   | Done   |
-| 105 | [Fixture MCP Tools](../prds/105-fixture-mcp/README.md)                 | MCP tools for fixture CRUD and item-fixture connection management | Done   |
+| #   | PRD                                                                             | Summary                                                           | Status |
+| --- | ------------------------------------------------------------------------------- | ----------------------------------------------------------------- | ------ |
+| 103 | [Inventory MCP Write Tools](../prds/mcp-write/README.md)                        | MCP mutations for locations, items, and item-item connections     | Done   |
+| 104 | [Fixtures Data Model](../prds/fixtures-data-model/README.md)                    | `fixtures` table, `item_fixture_connections` table, tRPC router   | Done   |
+| 105 | [Fixture MCP Tools](../../../../docs/themes/platform/prds/mcp-server/README.md) | MCP tools for fixture CRUD and item-fixture connection management | Done   |
 
-PRD-103 is independent and can start immediately. PRD-104 is independent of 103 but blocks PRD-105. PRDs 103 and 104 can be built in parallel.
+`mcp-write` is independent and can start immediately. `fixtures-data-model` is independent of 103 but blocks `mcp-server`. PRDs 103 and 104 can be built in parallel.
 
 ## Dependencies
 

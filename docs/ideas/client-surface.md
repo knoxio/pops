@@ -3,7 +3,7 @@
 Bind the `pillar()` client surface to per-pillar contract types so consumers stop hand-rolling the
 router shape they pass as `TRouter`.
 
-> Related PRD: [client-surface](../themes/13-pillar-finale/prds/client-surface/README.md)
+> Related PRD: [client-surface](../themes/federation/prds/client-surface/README.md)
 
 ## Problem
 
@@ -36,7 +36,7 @@ KnownPillarId` cannot itself close the set; the constraint has to come from the 
   consumer's `ContractFor` map, not from a `PILLARS` union. Design the helper around that.
 - `BaseContract` / `ProcedureShape` in `@pops/pillar-sdk/capabilities` still describe a tRPC
   procedure (`_def.inputs` / `_def.output` / `_def.kind`). The lake is REST-only; the projection
-  types need to be reconciled with how the manifest type generator (PRD-155) actually emits a
+  types need to be reconciled with how the manifest type generator (`manifest-type-generation`) actually emits a
   contract before this is wired, or the input/output projections will read the wrong fields.
 - The two `CallResult` definitions in the SDK have diverged: the runtime client
   (`client/errors.ts`) and the capabilities projection (`capabilities/call-result.ts`) carry

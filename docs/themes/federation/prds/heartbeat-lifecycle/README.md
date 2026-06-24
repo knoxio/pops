@@ -1,6 +1,6 @@
 # Heartbeat lifecycle
 
-> Theme: [Pillar finale](../../README.md) · Epic: [Central registry](../../epics/02-central-registry.md)
+> Theme: [Federation](../../README.md) · Area: Registry protocol
 > Status: **Done** (live-status engine shipped; one transition-event gap deferred — see [idea](../../../../ideas/heartbeat-ticker-event-emission.md))
 
 The runtime status engine inside the **registry pillar** (`pillars/registry`, port `:3001`). It turns heartbeat arrivals into observable health state. Every registered pillar POSTs a heartbeat to the registry every 10s; three missed heartbeats (~30s) flip a pillar from `healthy` to `unavailable`. Detection is hybrid:

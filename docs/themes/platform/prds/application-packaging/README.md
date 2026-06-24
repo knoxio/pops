@@ -1,7 +1,7 @@
 # PRD: Application Packaging & GHCR Contract
 
 > Theme: [Platform](../../README.md)
-> Epic: [00 — CI/CD Pipelines](../../epics/00-cicd-pipelines.md)
+> Epic: [CI/CD Pipelines](../../epics/cicd-pipelines.md)
 > Status: Done
 
 ## Overview
@@ -136,7 +136,7 @@ Releases are semver git tags on the POPS repo. A single product version covers t
 - **Automation**: `.github/scripts/release.sh` reads Conventional Commits since the last strict `vX.Y.Z` tag, computes the bump, and writes `release-notes.md`. `.github/workflows/release.yml` then creates an annotated `vX.Y.Z` tag at HEAD, pushes it, and runs `gh release create`. No commit lands on `main` and no PR ceremony is involved — the repo ruleset forbids direct pushes to `main`, so the workflow is **tag-only by design**. The GitHub Release is the canonical changelog (there is no in-repo `CHANGELOG.md`).
 - **Trigger gate**: `release.yml` runs `on: workflow_dispatch` only. (Auto-trigger on push to `main` was disabled during the pillar-colocation work so a half-renamed tag→publish chain couldn't reach the live host; restoring `push: branches: [main]` is tracked in [docs/ideas/application-packaging.md](../../../../ideas/application-packaging.md).)
 - **Publish on tag**: the new `vX.Y.Z` tag triggers `publish-images.yml`, which republishes every fleet image with the full version-tag set alongside `main` / `sha-<short>`.
-- **Runbook**: [docs/runbooks/DEPRECATED_cut-release.md](../../../../runbooks/DEPRECATED_cut-release.md) covers when to cut, the Conventional Commits cheat sheet, the manual escape hatch, and how a deployer pins a version. (The `DEPRECATED_` filename prefix is a leftover from the federation runbook reshuffle; the content is still current.)
+- **Runbook**: [docs/runbooks/cut-release.md](../../../../runbooks/cut-release.md) covers what a push to `main` already publishes, when (and why) to cut a versioned tag, the Conventional Commits cheat sheet, the manual escape hatch, and how a deployer pins a version.
 
 Breaking changes that warrant a release cut: service names, network names, volume names, secret names, env var renames, image names/registries. Internal app refactors that don't touch the compose contract don't need a cut — `main` and `sha-*` tags suffice for fresh deployers.
 
@@ -186,7 +186,7 @@ Breaking changes that warrant a release cut: service names, network names, volum
 
 ### Versioning & release
 
-- [x] Release runbook at `docs/runbooks/DEPRECATED_cut-release.md` covers when to cut, how to write the changelog, and how to tag.
+- [x] Release runbook at `docs/runbooks/cut-release.md` covers when to cut, how to write the changelog, and how to tag.
 - [x] The GitHub Release documents every `vX.Y.Z` with breaking-change call-outs — automated by `release.yml` from Conventional Commits.
 - [x] `README.md` documents pinning `POPS_IMAGE_TAG=vX.Y.Z` (or `vX.Y`, `vX`) for stability over freshness.
 - [x] At least one `vX.Y.Z` has been cut so the process is exercised end-to-end (444 release tags exist, including `v1.0.0` and `v1.1.0`).
@@ -198,5 +198,5 @@ Breaking changes that warrant a release cut: service names, network names, volum
 - Dev compose: [`infra/docker-compose.dev.yml`](../../../../../infra/docker-compose.dev.yml)
 - Compose validation in CI: [`.github/workflows/docker-build.yml`](../../../../../.github/workflows/docker-build.yml)
 - Release automation: [`.github/workflows/release.yml`](../../../../../.github/workflows/release.yml), [`.github/scripts/release.sh`](../../../../../.github/scripts/release.sh)
-- Release runbook: [`docs/runbooks/DEPRECATED_cut-release.md`](../../../../runbooks/DEPRECATED_cut-release.md)
+- Release runbook: [`docs/runbooks/cut-release.md`](../../../../runbooks/cut-release.md)
 - Server-side rollout (Watchtower config + GHCR auth): PRD-095 in `knoxio/homelab-infra`

@@ -1,6 +1,6 @@
 # PRD: Job Queue Infrastructure
 
-> Epic: [02 — Cortex Infrastructure](../../epics/02-cortex-infrastructure.md)
+> Epic: [Cortex Infrastructure](../../epics/cortex-infrastructure.md)
 > Status: Done (per-pillar queues shipped; central management surface is an [idea](../../../../ideas/job-queue.md))
 
 ## Overview

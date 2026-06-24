@@ -28,7 +28,7 @@ The layout ships as a fixed responsive grid: a `25/45/30` three-column split on 
 
 ## Per-signal `detail` strings on the quality card
 
-`QualityBandCard` renders the full (non-truncated) signal list with each signal's code and weight. The `detail` string each `QualitySignal` carries on the wire (e.g. "4 proposed slugs", "no yield specified") is plumbed through `getForReview` but not yet shown next to the signal — only the weight is rendered. Surfacing `detail` would make the band assignment self-explanatory without cross-referencing PRD-137.
+`QualityBandCard` renders the full (non-truncated) signal list with each signal's code and weight. The `detail` string each `QualitySignal` carries on the wire (e.g. "4 proposed slugs", "no yield specified") is plumbed through `getForReview` but not yet shown next to the signal — only the weight is rendered. Surfacing `detail` would make the band assignment self-explanatory without cross-referencing `quality-heuristic`.
 
 ## Terminal-state banners
 

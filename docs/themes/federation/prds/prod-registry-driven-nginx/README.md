@@ -1,6 +1,6 @@
 # Production registry-driven nginx
 
-> Theme: [Pillar finale](../../README.md) · Epic: [Central registry](../../epics/02-central-registry.md)
+> Theme: [Federation](../../README.md) · Area: Shell + dispatch
 >
 > Status: Done — boot-render + watcher run in the production `pops-shell` image; a self-registered pillar is routable on the next boot and every subsequent registry event reloads routes with no rebuild. Deployed-topology container e2e is deferred ([idea](../../../../ideas/prod-registry-driven-nginx.md)).
 

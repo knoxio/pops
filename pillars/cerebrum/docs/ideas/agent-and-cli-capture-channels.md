@@ -2,7 +2,7 @@
 
 The REST ingestion pipeline (`pillars/cerebrum/src/api/modules/ingest`, `rest-ingest.ts`) and the
 shell capture surface are built. The non-shell input channels and a few pipeline refinements
-described in the original PRD-081 are not. Collected here as forward work.
+described in the original `ingestion-pipeline` are not. Collected here as forward work.
 
 ## Agent capture via MCP
 
@@ -11,7 +11,7 @@ The MCP channel (`pillars/mcp`) exposes only read tools for cerebrum today
 The full write surface (`cerebrum.ingest`, `cerebrum.query`, `cerebrum.engrams.update`) is
 specified in [mcp-write-and-query-tools.md](mcp-write-and-query-tools.md); build that first.
 
-Additional capture-specific nuances from PRD-081 to fold in when wiring those tools:
+Additional capture-specific nuances from `ingestion-pipeline` to fold in when wiring those tools:
 
 - A lightweight `cerebrum.quick_capture` tool taking just `text` (and optional `source`),
   returning `{ id, path, type, scopes }`, distinct from the richer `cerebrum.ingest`.
@@ -38,7 +38,7 @@ Additional capture-specific nuances from PRD-081 to fold in when wiring those to
 ## JSON-body metadata lift (agent input)
 
 The normaliser renders a valid-JSON body as a fenced ` ```json ` block but does **not** lift
-keys out of it. PRD-081 wanted: when an agent posts a plain JSON object, lift `title`/`type`/
+keys out of it. `ingestion-pipeline` wanted: when an agent posts a plain JSON object, lift `title`/`type`/
 `scopes`/`tags` into the ingest request and persist the remaining keys as frontmatter custom
 fields (JSON arrays/primitives still fence but contribute no metadata). Build this on the
 `submit` path so structured agent payloads enrich the engram instead of being inert code blocks.
@@ -46,7 +46,7 @@ fields (JSON arrays/primitives still fence but contribute no metadata). Build th
 ## Configurable confidence thresholds
 
 Classification (0.6) and entity-extraction (0.7) thresholds are hardcoded constants — the pillar
-has no settings service to override them. PRD-081 wanted these configurable
+has no settings service to override them. `ingestion-pipeline` wanted these configurable
 (e.g. `engrams/.config/cortex.toml`). Wire them to the cerebrum settings group so operators can
 tune precision/recall without a redeploy. Also consider caching classification by content hash to
 avoid redundant LLM calls during reprocessing.

@@ -1,6 +1,6 @@
 # Sinks as a first-class manifest dimension
 
-> Theme: [Pillar finale](../../README.md) · Epic: [Bridge pillars (idea)](../../../../ideas/bridge-pillars.md)
+> Theme: [Federation](../../README.md) · Area: Manifest dimensions · Related idea: [Bridge pillars](../../../../ideas/bridge-pillars.md)
 > ADR: [ADR-034](../../../../architecture/adr-034-sinks-manifest-dimension.md)
 > Status: Partial — schema + dispatcher + handler helper shipped; cross-field uniqueness validator and any production publisher/subscriber are deferred (see [idea](../../../../ideas/sinks-manifest-dimension.md))
 

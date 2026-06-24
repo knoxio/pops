@@ -8,15 +8,15 @@ Build the automation system that triggers actions in response to events, thresho
 
 ## PRDs
 
-| #   | PRD                                                  | Summary                                                                                       | Status |
-| --- | ---------------------------------------------------- | --------------------------------------------------------------------------------------------- | ------ |
-| 089 | [Reflex System](../prds/089-reflex-system/README.md) | Reflex definitions, trigger types (event/threshold/scheduled), action dispatch, management UI | Done   |
+| #   | PRD                                              | Summary                                                                                       | Status |
+| --- | ------------------------------------------------ | --------------------------------------------------------------------------------------------- | ------ |
+| 089 | [Reflex System](../prds/reflex-system/README.md) | Reflex definitions, trigger types (event/threshold/scheduled), action dispatch, management UI | Done   |
 
 Single PRD — the reflex system is a unified event-action framework. Splitting by trigger type would create artificial seams in what is naturally a single dispatch loop.
 
 ## Dependencies
 
-- **Requires:** Epic 00 (engram events to trigger on), Epic 01 (Thalamus — threshold detection), Epic 04 (Glia — curation actions to dispatch), Infrastructure PRD-074 (BullMQ for job scheduling)
+- **Requires:** Epic 00 (engram events to trigger on), Epic 01 (Thalamus — threshold detection), Epic 04 (Glia — curation actions to dispatch), Infrastructure `job-queue` (BullMQ for job scheduling)
 - **Unlocks:** Fully autonomous system behaviour, scheduled outputs, event-driven curation
 
 ## Out of Scope

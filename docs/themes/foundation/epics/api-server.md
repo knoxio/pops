@@ -8,9 +8,9 @@ Establish the per-pillar REST server pattern: each pillar serves a ts-rest + zod
 
 ## PRDs
 
-| PRD                                                             | Summary                                                                      | Status |
-| --------------------------------------------------------------- | ---------------------------------------------------------------------------- | ------ |
-| [API Server](../../01-foundation/prds/008-api-server/README.md) | Domain module structure, router composition, middleware, module import rules | Done   |
+| PRD        | Summary                                                                      | Status |
+| ---------- | ---------------------------------------------------------------------------- | ------ |
+| API Server | Domain module structure, router composition, middleware, module import rules | Done   |
 
 ## Dependencies
 

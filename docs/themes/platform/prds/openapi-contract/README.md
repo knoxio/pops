@@ -1,6 +1,6 @@
 # PRD: OpenAPI Pillar Contract
 
-> Epic: [02 — Cortex Infrastructure](../../epics/02-cortex-infrastructure.md)
+> Epic: [Cortex Infrastructure](../../epics/cortex-infrastructure.md)
 > Status: Done
 
 ## Overview

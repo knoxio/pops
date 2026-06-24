@@ -8,7 +8,7 @@
 
 Host the aggregated AI-tool registry on an HTTP surface. `GET /ai/tools` returns a single flat list of every AI-callable tool the fleet currently exposes, projected from each registered, healthy pillar's `ai.tools` manifest dimension. The AI loop calls this once per request to know what tools it can route, then dispatches a chosen tool back to its owning pillar.
 
-The projection itself (walking manifests, filtering by health, caching) and the tool-call routing live in the SDK and are specified centrally — see [PRD-200](../../../../../docs/themes/13-pillar-finale/prds/200-ai-tool-manifest/README.md), [PRD-201](../../../../../docs/themes/13-pillar-finale/prds/201-dynamic-tool-list/README.md), and [PRD-202](../../../../../docs/themes/13-pillar-finale/prds/202-tool-call-routing/README.md). This PRD covers only the orchestrator's HTTP wrapper and its degraded-empty stance; it deliberately does not reimplement the projection.
+The projection itself (walking manifests, filtering by health, caching) and the tool-call routing live in the SDK and are specified centrally — see [ai-tool-manifest](../../../../../docs/themes/federation/prds/ai-tool-manifest/README.md), [dynamic-tool-list](../../../../../docs/themes/federation/prds/dynamic-tool-list/README.md), and [tool-call-routing](../../../../../docs/themes/federation/prds/tool-call-routing/README.md). This PRD covers only the orchestrator's HTTP wrapper and its degraded-empty stance; it deliberately does not reimplement the projection.
 
 ## API surface
 
@@ -36,7 +36,7 @@ A new AI-callable pillar needs no orchestrator edit: it registers, advertises `a
 
 ## Tool-call routing
 
-A chosen tool is routed back to its owning pillar by its qualified `<pillar>.<tool>` name over the pillar SDK. Failure is encoded, never thrown: the result discriminates `ok` / `pillar-unavailable` / `tool-error` / `unknown-tool`, and each invocation is bounded by a deadline. The routing contract is the SDK framework's — see [PRD-202](../../../../../docs/themes/13-pillar-finale/prds/202-tool-call-routing/README.md).
+A chosen tool is routed back to its owning pillar by its qualified `<pillar>.<tool>` name over the pillar SDK. Failure is encoded, never thrown: the result discriminates `ok` / `pillar-unavailable` / `tool-error` / `unknown-tool`, and each invocation is bounded by a deadline. The routing contract is the SDK framework's — see [tool-call-routing](../../../../../docs/themes/federation/prds/tool-call-routing/README.md).
 
 ## Degraded-empty stance
 

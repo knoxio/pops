@@ -34,7 +34,7 @@ Items from the original brainstorm that have been scoped into existing themes or
 
 ## Search context enrichment (Option B)
 
-Deferred from PRD-057/058 v1 design (2026-04-04).
+Deferred from the `search-engine` / `contextual-intelligence` v1 design (2026-04-04).
 
 v1 passes raw `SearchContext` (current app, page, entity, filters) to each adapter. Adapters use what they natively understand and ignore the rest. No cross-domain inference.
 
@@ -42,7 +42,7 @@ The idea for v2: before fan-out, an enrichment layer extracts semantic tags from
 
 Use case: viewing bedroom inventory, search "lamp" → finance adapter boosts purchases tagged "furniture" or from home goods retailers. Without enrichment, finance ignores the inventory context entirely.
 
-Build this when the AI overlay (PRD-054) exists — the enrichment layer is a natural consumer of the same AI infrastructure.
+Build this when the AI overlay (`ego-core`) exists — the enrichment layer is a natural consumer of the same AI infrastructure.
 
 ## Cross-communication patterns
 

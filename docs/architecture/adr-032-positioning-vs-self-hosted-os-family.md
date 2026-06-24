@@ -26,10 +26,10 @@ POPS is positioned as a **typed federation + AI-tool platform for self-hosted ap
 The differentiated layer — and the only layer worth defending — is:
 
 1. **Type-safe SDK across pillars** with full TS inference from contract → consumer (`pillar('finance').transactions.list()`).
-2. **Federated semantic search across domain pillars** (PRD-197 / PRD-198) with per-pillar ranking and explicit merge strategies.
-3. **AI-tool routing as a first-class manifest dimension** (PRD-201 / PRD-202) — every pillar declares its AI-callable surface; the orchestrator routes tool calls; the LLM consumes them.
+2. **Federated semantic search across domain pillars** (`federated-query-orchestrator` / `ranking-strategy`) with per-pillar ranking and explicit merge strategies.
+3. **AI-tool routing as a first-class manifest dimension** (`dynamic-tool-list` / `tool-call-routing`) — every pillar declares its AI-callable surface; the orchestrator routes tool calls; the LLM consumes them.
 4. **Per-pillar SQLite + container isolation** as the unit of work — not shared DB, not shared process. This is what makes BE-lego (ADR-026 culmination) structurally possible.
-5. **Contract-first publishing with codegen** (PRD-195, OpenAPI per pillar, manifest generated) so external pillars and non-TS consumers can integrate with strong types.
+5. **Contract-first publishing with codegen** (`type-generation-pipeline`, OpenAPI per pillar, manifest generated) so external pillars and non-TS consumers can integrate with strong types.
 
 The undifferentiated layer (container orchestration, nginx routing, deployment lifecycle, single-machine app management) is acknowledged as rebuilt infrastructure. It is kept because the cost is sunk and replacing it would also require abandoning the differentiated layer, but no further investment is made in catching up to HassOS supervisor or Umbrel app-store ergonomics.
 

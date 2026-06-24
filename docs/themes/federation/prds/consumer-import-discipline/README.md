@@ -19,7 +19,7 @@ existed at land time; the baseline may only ever shrink.
 This is the cross-pillar consumer slice of the workspace boundary set. The full
 unit-isolation rule set (lib→pillar inversion, deep-internal reaches, cycles,
 leaf-lib layering) is specified in
-[PRD module-import-boundaries](../../../01-foundation/prds/module-import-boundaries/README.md);
+[PRD module-import-boundaries](../../../foundation/prds/module-import-boundaries/README.md);
 this PRD owns the consumer-facing half of it: a pillar may consume another pillar
 only through its contract, and the retired per-pillar `*-db` / `*-contract` /
 `*-api` packages are tombstoned so no consumer re-imports them.

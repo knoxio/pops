@@ -1,6 +1,6 @@
 # Idea: Human-facing OpenAPI explorer
 
-> Spun out of [PRD: OpenAPI Pillar Contract](../themes/00-platform/prds/openapi-contract/README.md)
+> Spun out of [PRD: OpenAPI Pillar Contract](../themes/platform/prds/openapi-contract/README.md)
 
 ## What exists
 

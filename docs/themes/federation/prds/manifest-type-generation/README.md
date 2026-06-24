@@ -1,7 +1,6 @@
 # Manifest type generation
 
-> Epic: [Contract packages](../../epics/00-contract-packages.md)
-> Theme: [Pillar finale](../../README.md) (federation)
+> Theme: [Federation](../../README.md) · Area: SDK (`@pops/pillar-sdk`)
 
 ## Purpose
 

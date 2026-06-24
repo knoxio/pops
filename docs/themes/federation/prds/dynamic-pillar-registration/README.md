@@ -1,6 +1,6 @@
 # Dynamic pillar registration
 
-> Theme: [Federation](../../README.md) · Epic: [Central registry](../../../13-pillar-finale/epics/02-central-registry.md)
+> Theme: [Federation](../../README.md) · Area: Registry protocol
 
 > Status: Done
 
@@ -257,6 +257,6 @@ Contract this PRD guarantees to the dispatcher:
 ## References
 
 - [ADR-027](../../../../architecture/adr-027-runtime-pillar-registry.md) — the runtime registry as the path for external (non-workspace) pillars; docker network is the trust boundary, so no shared key is needed.
-- [Central registry epic](../../../13-pillar-finale/epics/02-central-registry.md) — dynamic pillar registration is the final BE-lego step.
+- [Federation theme](../../README.md) — dynamic pillar registration is the final BE-lego step of the registry-protocol area.
   </content>
   </invoke>

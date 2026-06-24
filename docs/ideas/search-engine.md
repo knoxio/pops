@@ -1,6 +1,6 @@
 # Search Engine — unbuilt slices
 
-Carved out of [Search Engine](../themes/01-foundation/prds/search-engine/README.md).
+Carved out of [Search Engine](../themes/foundation/prds/search-engine/README.md).
 The federation engine, contract, frontend registry, and the contacts adapter
 are built and federated live. The slices below are scaffolded or planned but not
 functional.

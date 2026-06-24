@@ -40,7 +40,7 @@ The theme README's `## Key Decisions` table records this protocol choice in a ro
 
 - 47 PRDs × ~5 USs each = 235 files NOT created. The theme directory has 47 PRD READMEs + 8 epic READMEs + 1 theme README = a navigable 56 files instead of ~290.
 - Acceptance criteria live next to the API + schema + business rules that produce them. A cold-read implementer doesn't switch files.
-- PRDs ARE more granular: PRD-115 (DSL resolver), PRD-116 (DSL materialiser), PRD-117 (cycle detection) are three sibling PRDs of what could have been one larger PRD with three USs. The granularity is the same; the file count is lower.
+- PRDs ARE more granular: `dsl-resolver` (DSL resolver), `lines-materialisation` (DSL materialiser), `recipe-cycle-detection` (cycle detection) are three sibling PRDs of what could have been one larger PRD with three USs. The granularity is the same; the file count is lower.
 
 **Negative:**
 

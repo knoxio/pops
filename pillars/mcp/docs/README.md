@@ -26,7 +26,7 @@ The gateway is intentionally thin: it owns no database and no business logic. Ev
 | Media — library / watchlist                 | `media`               | 2     |
 | Cerebrum — engrams / search                 | `cerebrum`            | 3     |
 
-Full per-tool surface, rules, and edge cases: [Tool Inventory PRD](prds/tool-inventory/README.md). Gateway plumbing (transport, lifecycle, container, CI publish, config) is the central platform spec — see [MCP Server PRD](../../../docs/themes/00-platform/prds/mcp-server/README.md); this tree does not duplicate it.
+Full per-tool surface, rules, and edge cases: [Tool Inventory PRD](prds/tool-inventory/README.md). Gateway plumbing (transport, lifecycle, container, CI publish, config) is the central platform spec — see [MCP Server PRD](../../../docs/themes/platform/prds/mcp-server/README.md); this tree does not duplicate it.
 
 ## Key Decisions
 
