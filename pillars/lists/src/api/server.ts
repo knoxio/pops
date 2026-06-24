@@ -3,25 +3,13 @@ import { bootstrapPillar, type PillarBootstrapHandle } from '@pops/pillar-sdk/bo
 /**
  * Entry point for the lists pillar HTTP server.
  *
- * Phase 3 PR 1 of the lists pillar migration boots the process with
- * the minimal `/health` + `/pillars` surface so the new container can
- * be wired into docker-compose + Watchtower without depending on the
- * (still-unfinished) tRPC + URI-dispatcher migration.
- *
  * The process opens its OWN `lists.db` connection via `openListsDb`
- * rather than reaching back into pops-api's singleton — that's the
- * whole point of phase 3.
+ * rather than sharing one — each pillar owns its database.
  *
- * Theme 13 PRD-158 adds an opt-in registry handshake via
- * `bootstrapPillar`. When `POPS_REGISTRY_ENABLED=true`, the process
- * builds a hand-rolled lists manifest (PRD-155 will generate this
- * later) and registers with the central registry on boot. SIGTERM
- * triggers `pillarHandle.stop()` so the heartbeat clears and the
- * registry sees an explicit deregister.
- *
- * The runtime tRPC surface is still pending, so `routes.queries`
- * and `routes.mutations` are empty for now — bootstrap registers
- * the pillar's identity, health probe, and contract pin.
+ * When `POPS_REGISTRY_ENABLED=true`, `bootstrapPillar` registers the
+ * pillar with the central registry on boot. SIGTERM triggers
+ * `pillarHandle.stop()` so the heartbeat clears and the registry sees an
+ * explicit deregister.
  */
 import { openListsDb } from '../db/index.js';
 import { createListsApiApp } from './app.js';
@@ -30,9 +18,6 @@ import { buildListsManifest } from './manifest.js';
 import { parseBareOrigin } from './pillars/env.js';
 
 function resolvePort(): number {
-  // 3001 is core-api, 3002 is inventory-api, 3003 is media-api,
-  // 3004 is finance-api, 3005 is food-api, 3006 is lists-api,
-  // 3007 is cerebrum-api.
   const raw = process.env['PORT'];
   if (raw === undefined || raw === '') return 3006;
   const parsed = Number(raw);
@@ -44,15 +29,12 @@ function resolvePort(): number {
 
 const port = resolvePort();
 const version = process.env['BUILD_VERSION'] ?? 'dev';
-// Normalise LISTS_SELF_BASE_URL (or the localhost fallback) through
-// the shared bare-origin parser so a misconfigured env crashes boot
-// loudly instead of publishing an invalid PillarRegistryEntry.baseUrl
-// that breaks downstream consumers appending `/uri/resolve`, `/health`,
-// etc. parseBareOrigin throws a PillarsEnvParseError prefixed with
-// `POPS_PILLARS:` — fine when the parser is consulted from
-// parsePillarsEnv, but misleading when the failing env is actually
-// LISTS_SELF_BASE_URL. Wrap + rethrow with a lists-api-scoped message
-// so operators look at the right env var.
+// Normalise LISTS_SELF_BASE_URL (or the localhost fallback) through the
+// shared bare-origin parser so a misconfigured env crashes boot loudly
+// instead of publishing an invalid PillarRegistryEntry.baseUrl. The
+// parser's own error is prefixed `POPS_PILLARS:`, which misleads when
+// the failing env is LISTS_SELF_BASE_URL — wrap + rethrow with a
+// lists-api-scoped message so operators look at the right env var.
 function resolveSelfBaseUrl(): string {
   const raw = process.env['LISTS_SELF_BASE_URL'] ?? `http://localhost:${port}`;
   try {

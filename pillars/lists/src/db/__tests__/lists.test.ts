@@ -1,6 +1,6 @@
 /**
- * PRD-112 invariant tests — exercise the migration + service layer against
- * an in-memory SQLite. No Redis, no API process, no external services.
+ * Invariant tests for the lists schema + service layer against an in-memory
+ * SQLite.
  */
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -51,7 +51,7 @@ function freshDb(): { db: ListsDb; raw: Database.Database } {
   return { db: drizzle(raw), raw };
 }
 
-describe('PRD-112 — lists schema + service layer', () => {
+describe('lists schema + service layer', () => {
   let db: ListsDb;
   let raw: Database.Database;
 
@@ -147,7 +147,8 @@ describe('PRD-112 — lists schema + service layer', () => {
 
   describe('archiveList / unarchiveList', () => {
     it('archive on an already-archived list refreshes archivedAt to now', () => {
-      // PRD-140 §Edge Cases — repeating archive updates the timestamp.
+      // Re-archiving an already-archived list refreshes archived_at to now
+      // (pillars/lists/docs/prds/crud-ui edge case).
       const list = createList(db, { name: 'A', kind: 'shopping', ownerApp: 'food' });
       const first = archiveList(db, list.id);
       expect(first.archivedAt).not.toBeNull();
@@ -155,7 +156,7 @@ describe('PRD-112 — lists schema + service layer', () => {
       // re-archive timestamp is provably newer.
       const startMs = Date.parse(first.archivedAt ?? '');
       while (Date.now() <= startMs) {
-        // tight loop — sub-ms wait
+        /* spin */
       }
       const second = archiveList(db, list.id);
       expect(second.archivedAt).not.toBeNull();
@@ -216,14 +217,12 @@ describe('PRD-112 — lists schema + service layer', () => {
     it('runs in a single transaction (items + list disappear atomically)', () => {
       const list = createList(db, { name: 'A', kind: 'shopping', ownerApp: 'food' });
       addItem(db, { listId: list.id, label: 'x' });
-      // Wrap with a hand-rolled tx and force a throw between the two deletes
-      // to verify rollback semantics: items must reappear if the list delete
-      // failed.
+      // Force a throw mid-transaction to verify rollback: the item must
+      // reappear if the list delete never committed.
       raw.exec('BEGIN');
       try {
         raw.prepare(`DELETE FROM list_items WHERE list_id = ?`).run(list.id);
         throw new Error('simulated rollback');
-        // unreachable, but documents intent
       } catch {
         raw.exec('ROLLBACK');
       }
@@ -283,21 +282,9 @@ describe('PRD-112 — lists schema + service layer', () => {
 
     it('rolls back the whole batch if any insert fails', () => {
       const list = createList(db, { name: 'A', kind: 'shopping', ownerApp: 'food' });
-      // Pre-existing valid items
       addItem(db, { listId: list.id, label: 'pre' });
       const before = listItemsForList(db, list.id).length;
-      // Force a failure on the second item by violating the FK (use a non-
-      // existent list id by tampering inside the bulk loop is awkward — use
-      // a raw insert to trigger CHECK violation instead).
-      expect(() =>
-        bulkAdd(db, list.id, [
-          { label: 'good' },
-          // ref_kind='ingredient' with non-null ref_id is fine; trip the
-          // CHECK by passing an invalid ref_kind via raw INSERT later — here
-          // we just confirm the happy path. Negative path below.
-          { label: 'also good' },
-        ])
-      ).not.toThrow();
+      expect(() => bulkAdd(db, list.id, [{ label: 'good' }, { label: 'also good' }])).not.toThrow();
       const after = listItemsForList(db, list.id).length;
       expect(after - before).toBe(2);
     });
@@ -330,7 +317,7 @@ describe('PRD-112 — lists schema + service layer', () => {
       listId = list.id;
     });
 
-    it('coerces (ref_kind=ingredient, ref_id=null) → free per PRD edge case', () => {
+    it('coerces (ref_kind=ingredient, ref_id=null) → free', () => {
       const item = addItem(db, { listId, label: 'milk', refKind: 'ingredient', refId: null });
       expect(item.refKind).toBe('free');
       expect(item.refId).toBeNull();
@@ -426,7 +413,7 @@ describe('PRD-112 — lists schema + service layer', () => {
     });
   });
 
-  describe('PRD-141 bulk mutations', () => {
+  describe('bulk mutations', () => {
     it('uncheckAllItems flips every checked row + returns the count', () => {
       const list = createList(db, { name: 'Shop', kind: 'shopping', ownerApp: 'food' });
       const a = addItem(db, { listId: list.id, label: 'a' });

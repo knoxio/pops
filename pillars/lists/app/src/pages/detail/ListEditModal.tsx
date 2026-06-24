@@ -4,13 +4,10 @@ import { useTranslation } from 'react-i18next';
 import { LIST_KINDS, type ListKind, type ListRow } from './types.js';
 
 /**
- * Edit modal: rename + change kind. Implements the "+ Archive / Restore"
- * button at the bottom per PRD-140 §Edit modal. The kind-change warning
- * surfaces when the user picks a kind different from the current one.
- *
- * No URL params here — the modal is controlled by the page's local state
- * (the `?edit=1` route convention from the PRD will land alongside 140-B
- * when the index page introduces the parent route shape).
+ * Edit modal: rename + change kind, with an Archive / Restore button at
+ * the bottom. The kind-change warning surfaces when the user picks a kind
+ * different from the current one. The modal is controlled by the page's
+ * local state, not URL params.
  */
 export interface ListEditModalProps {
   list: ListRow;

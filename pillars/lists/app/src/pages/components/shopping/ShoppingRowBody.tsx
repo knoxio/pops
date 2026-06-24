@@ -4,9 +4,8 @@ import { useTranslation } from 'react-i18next';
 import type { ListItemRow as ItemRow } from '../../detail/types.js';
 
 /**
- * Body of a `ShoppingItemRow` — qty/unit prefix (always visible per
- * PRD-141 §ShoppingItemRow), inline label editor when active, and the
- * notes-as-subline.
+ * Body of a `ShoppingItemRow` — always-visible qty/unit prefix, inline
+ * label editor when active, and the notes-as-subline.
  */
 export interface ShoppingRowBodyProps {
   row: ItemRow;

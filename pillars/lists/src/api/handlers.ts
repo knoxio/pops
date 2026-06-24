@@ -2,9 +2,7 @@
  * Request handlers for the lists pillar container.
  *
  * Logic lives here (not inline in `app.ts`) so tests can call into the
- * shape directly without booting Express. Phase 3 PR 1 ships the
- * `/health` + `/pillars` probes; subsequent PRs add the URI dispatcher
- * (`POST /uri/resolve`) and tRPC routers.
+ * shape directly without booting Express.
  */
 import { getPillarRegistry } from './pillars/registry.js';
 

@@ -128,7 +128,7 @@ beforeEach(() => {
   listCreateMock.mockReset();
 });
 
-describe('PRD-140 part B — ListsIndexPage', () => {
+describe('pillars/lists/docs/prds/crud-ui — ListsIndexPage', () => {
   it('renders the heading and the new-list CTA', async () => {
     mockSuccessAggregate([]);
     render(

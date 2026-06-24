@@ -143,7 +143,7 @@ beforeEach(() => {
   sdkMocks.itemsReorder.mockImplementation(async () => ok({ ok: true as const }));
 });
 
-describe('PRD-140-C — ListDetailPage', () => {
+describe('pillars/lists/docs/prds/crud-ui — ListDetailPage', () => {
   it('shows loading state then renders header + items', async () => {
     setListGet({
       list: makeList(),

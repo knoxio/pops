@@ -1,9 +1,10 @@
 /**
- * Shared types + constants for the `/lists` index page (PRD-140 part B).
+ * Shared types + constants for the `/lists` index page.
  *
- * Mirrors the `lists.list.list` tRPC input enum so the filter UI stays in
- * lock-step with the router. The router source of truth is at
- * `apps/pops-api/src/modules/lists/routers/list.ts`.
+ * Mirrors the contract's `KIND_ENUM` / `SORT_ENUM` so the filter UI stays in
+ * lock-step with the REST contract. Source of truth is
+ * `pillars/lists/src/contract/rest-schemas.ts` (list query input lives in
+ * `pillars/lists/src/contract/rest-list.ts`).
  */
 
 export const LIST_KINDS = ['shopping', 'packing', 'todo', 'generic'] as const;
@@ -19,10 +20,10 @@ export interface ListsIndexFilterState {
 }
 
 /**
- * PRD-140 §Index — kind filter "multi-select, default: all selected". The
- * chip strip reflects that visually (every chip starts active), and the
- * query hook collapses a fully-selected set to `undefined` so the router
- * skips the WHERE-IN clause entirely (same wire-shape as no filter).
+ * Kind filter is multi-select, default all selected. The chip strip reflects
+ * that visually (every chip starts active), and the query hook collapses a
+ * fully-selected set to `undefined` so the API skips the WHERE-IN clause
+ * entirely (same wire-shape as no filter).
  */
 export const DEFAULT_FILTERS: ListsIndexFilterState = {
   kinds: [...LIST_KINDS],

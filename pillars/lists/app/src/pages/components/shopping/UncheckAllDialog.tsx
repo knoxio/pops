@@ -2,9 +2,9 @@ import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
 /**
- * Confirm dialog for PRD-141's "Uncheck all" action. Mirrors the
- * generic `ListDeleteDialog` shape so the keyboard a11y model
- * (Escape closes, outside-click closes) stays consistent.
+ * Confirm dialog for the "Uncheck all" action. Mirrors the generic
+ * `ListDeleteDialog` shape so the keyboard a11y model (Escape closes,
+ * outside-click closes) stays consistent.
  */
 export interface UncheckAllDialogProps {
   checkedCount: number;

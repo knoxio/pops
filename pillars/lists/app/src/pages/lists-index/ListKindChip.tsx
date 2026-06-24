@@ -18,9 +18,8 @@ interface Props {
 }
 
 /**
- * Single-source chip for a list's `kind`. Used by `ListRow` (compact) and
- * future detail-page headers; keeping the variant + label resolution in one
- * place avoids drift if PRD-140 part C reuses it.
+ * Single-source chip for a list's `kind`. Keeping the variant + label
+ * resolution in one place avoids drift across the row and detail header.
  */
 export function ListKindChip({ kind }: Props): ReactElement {
   const { t } = useTranslation('lists');

@@ -1,8 +1,8 @@
 /**
  * Handlers for the `items.*` ts-rest sub-router (item CRUD + bulk).
  *
- * Pure pass-throughs to the PRD-112 list-items service; ts-rest takes
- * care of input validation. Service errors are funnelled through
+ * Pure pass-throughs to the list-items service; ts-rest takes care of
+ * input validation. Service errors are funnelled through
  * `tryMapServiceError` so HTTP semantics stay consistent across the
  * whole REST surface.
  */

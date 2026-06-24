@@ -1,10 +1,9 @@
 import type { ListItemRow } from '../../detail/types.js';
 
 /**
- * Client-side sort modes the shopping detail page exposes (PRD-141 §Sort
- * behaviours). Sort is a render-time transform; the server keeps
- * `position` as the canonical order so drag-to-reorder still works after
- * switching back to Manual.
+ * Client-side sort modes the shopping detail page exposes. Sort is a
+ * render-time transform; the server keeps `position` as the canonical
+ * order so drag-to-reorder still works after switching back to Manual.
  */
 export type ShoppingSortMode = 'manual' | 'unchecked-first' | 'recent-check';
 

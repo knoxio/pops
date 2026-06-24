@@ -19,15 +19,17 @@ export function listDetailQueryKey(id: number): readonly unknown[] {
 }
 
 /**
- * `/lists/:id` — generic list detail page (PRD-140-C) with PRD-141's
- * shopping dispatch.
+ * `/lists/:id` — generic list detail page with shopping dispatch.
  *
- * The page shell fetches `lists.list.get` (polling every 60s while
+ * The page shell fetches a list via `listGet` (polling every 60s while
  * visible) and owns the edit + delete dialog state. The body branches
  * by `list.kind`: `shopping` → `ShoppingDetailContent` (sort dropdown,
  * uncheck-all / clear-checked, denser rows, swipe-to-delete); every
  * other kind → `GenericDetailContent`. Future kind-specific paths
  * (todo, packing) layer in the same way without touching this file.
+ *
+ * Spec: pillars/lists/docs/prds/crud-ui,
+ * pillars/lists/docs/prds/shopping-specialisation.
  */
 export function ListDetailPage(): ReactElement {
   const { id } = useParams<{ id: string }>();

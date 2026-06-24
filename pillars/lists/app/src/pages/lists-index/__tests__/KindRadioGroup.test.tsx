@@ -40,7 +40,7 @@ function Harness({ onChange }: { onChange?: (next: ListKind) => void }): ReactEl
   );
 }
 
-describe('PRD-140 part B — KindRadioGroup', () => {
+describe('KindRadioGroup', () => {
   it('renders one option per kind', () => {
     render(
       <Wrapper>

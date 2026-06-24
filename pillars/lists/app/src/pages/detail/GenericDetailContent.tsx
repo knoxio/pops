@@ -9,9 +9,10 @@ import { ListItemsSection } from './ListItemsSection.js';
 
 /**
  * Generic kind path for `/lists/:id` — every kind that isn't `shopping`
- * (PRD-141 dispatches `shopping` to its specialised content). Owns the
- * page body, the edit + delete dialogs, and the error banners shared
- * with the shopping path.
+ * (`shopping` dispatches to its specialised content; see
+ * pillars/lists/docs/prds/shopping-specialisation). Owns the page body,
+ * the edit + delete dialogs, and the error banners shared with the
+ * shopping path.
  */
 export function GenericDetailContent(props: DetailContentProps): ReactElement {
   const { list, items, detailMx, itemMx, dialogs } = props;

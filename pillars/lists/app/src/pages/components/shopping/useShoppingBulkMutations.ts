@@ -8,11 +8,11 @@ import { listDetailQueryKey } from '../../ListDetailPage.js';
 import type { ListItemRow, ListRow } from '../../detail/types.js';
 
 /**
- * Optimistic wrappers for PRD-141's `uncheckAll` + `removeChecked`
- * mutations. Each patches the cached detail payload via the query cache
- * before the server round-trip lands. `onMutate` snapshots + applies the
- * optimistic write and returns the previous value; `onError` rolls back
- * from that snapshot.
+ * Optimistic wrappers for the `uncheckAll` + `removeChecked` mutations.
+ * Each patches the cached detail payload via the query cache before the
+ * server round-trip lands. `onMutate` snapshots + applies the optimistic
+ * write and returns the previous value; `onError` rolls back from that
+ * snapshot.
  */
 export interface ShoppingBulkMutations {
   uncheckAll: () => Promise<{ ok: boolean; count: number }>;

@@ -1,15 +1,15 @@
 import { useCallback, useState, type TouchEvent } from 'react';
 
 /**
- * Lightweight swipe-left-to-reveal-delete state for touch devices
- * (PRD-141 §ShoppingItemRow). The PRD calls out that swipe should NOT
- * trigger deletion on its own — single-stroke gestures don't delete to
- * prevent accidents. The user has to explicitly tap the revealed Delete
- * button.
+ * Lightweight swipe-left-to-reveal-delete state for touch devices. Swipe
+ * does NOT trigger deletion on its own — single-stroke gestures don't
+ * delete, to prevent accidents; the user has to explicitly tap the
+ * revealed Delete button.
  *
  * Threshold + axis-lock match the conventions Android Material List rows
- * use: trigger only on a primarily-horizontal drag of 48px+ left. Vertical
- * scrolls are ignored so the page still scrolls through the list normally.
+ * use: reveal only on a primarily-horizontal left drag past
+ * `SWIPE_THRESHOLD_PX`. Vertical scrolls are ignored so the page still
+ * scrolls through the list normally.
  */
 export interface SwipeDeleteState {
   isOpen: boolean;

@@ -4,7 +4,7 @@ import { assertModuleManifest } from '@pops/types';
 
 import { listsManifest } from '../manifest.js';
 
-describe('lists-contract /manifest — ModuleManifest export (PRD-241 US-01)', () => {
+describe('lists /manifest — ModuleManifest export (pillars/lists/docs/prds/shell-module)', () => {
   it('listsManifest passes assertModuleManifest with id=lists', () => {
     expect(() => assertModuleManifest(listsManifest, 'modules.lists')).not.toThrow();
     expect(listsManifest.id).toBe('lists');

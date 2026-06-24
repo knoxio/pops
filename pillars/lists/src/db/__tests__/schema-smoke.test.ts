@@ -11,7 +11,7 @@ import { describe, expect, it } from 'vitest';
 
 import { listItems, lists } from '../schema.js';
 
-describe('PRD-245 US-06 lists schema relocation', () => {
+describe('lists schema barrel resolves table names', () => {
   it.each([
     [lists, 'lists'],
     [listItems, 'list_items'],

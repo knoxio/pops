@@ -5,11 +5,9 @@
  * the resulting schema, and confirms the helper is idempotent when
  * re-run against the same DB.
  *
- * Uses real tmpdir-backed files (not `:memory:`) because the Phase 2
- * follow-ups (PR 2's pops-api boot wire-up, PR 3's consumer cutover,
- * and the eventual ATTACH-based backfill window) will exercise this
- * helper against on-disk DBs and shared paths. Keep parity here so
- * surprises surface in tests, not in production.
+ * Uses real tmpdir-backed files (not `:memory:`) because the helper runs
+ * against on-disk DBs in production; on-disk parity surfaces surprises here
+ * rather than at runtime.
  */
 import { existsSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';

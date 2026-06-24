@@ -2,8 +2,8 @@ import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
 /**
- * Confirm dialog for PRD-141's "Clear checked" action. Same dialog shell
- * as `UncheckAllDialog` — destructive variant of the confirm button.
+ * Confirm dialog for the "Clear checked" action. Same dialog shell as
+ * `UncheckAllDialog` — destructive variant of the confirm button.
  */
 export interface ClearCheckedDialogProps {
   checkedCount: number;

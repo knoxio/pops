@@ -2,8 +2,8 @@
  * Typed errors raised by the lists service layer.
  *
  * Plain Error subclasses — the service layer doesn't know about HTTP. The
- * pops-api router maps them to the appropriate status codes when surfacing
- * to clients.
+ * REST layer's `tryMapServiceError` / `runOrThrowHttp` (api/rest/error-mapping.ts)
+ * translate them into the HTTP status surfaced to clients.
  */
 
 export class ListNotFoundError extends Error {

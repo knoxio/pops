@@ -1,17 +1,9 @@
 /**
- * Standalone opener for the lists pillar's SQLite database.
+ * Opener for the lists pillar's SQLite database.
  *
- * Phase 2 PR 1 of the lists pillar migration scaffolds the per-pillar
- * connection so subsequent PRs can flip readers/writers over without
- * touching pops-api's existing singleton. The opener is intentionally
- * minimal — it relies on drizzle-orm's built-in `migrate` helper to
- * apply the in-package migrations journal at
- * `pillars/lists/db/migrations/meta/_journal.json`.
- *
- * No production consumer wires this up yet. Subsequent PRs add the
- * `LISTS_SQLITE_PATH` env-var read in pops-api (PR 2), the boot-time
- * call + consumer cutover (PR 3), and the Litestream replication config
- * (PR 4).
+ * Relies on drizzle-orm's built-in `migrate` helper to apply the
+ * in-package migrations journal at
+ * `pillars/lists/migrations/meta/_journal.json`.
  */
 import { mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -24,11 +16,9 @@ import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
 import type { ListsDb } from './services/internal.js';
 
 /**
- * Path to the migrations folder inside this package. Resolved relative
- * to this module's location (`src/open-lists-db.ts` in dev,
- * `dist/open-lists-db.js` after build) so it works both when consumed
- * via the workspace symlink and when bundled into a Docker image's
- * `node_modules/@pops/lists-db/`.
+ * Path to the migrations folder inside this pillar. Resolved relative
+ * to this module's location so it works both from `src` in dev and from
+ * the built `dist` layout.
  */
 function migrationsDir(): string {
   const here = dirname(fileURLToPath(import.meta.url));
@@ -55,10 +45,9 @@ export interface OpenedListsDb {
  * Side effects:
  *   - The parent directory of `path` is created if missing (recursive).
  *   - `journal_mode=WAL`, `foreign_keys=ON`, and `busy_timeout=5000`
- *     are enabled to match the shared singleton in
- *     `apps/pops-api/src/db.ts`.
+ *     are enabled.
  *   - Every migration in
- *     `pillars/lists/db/migrations/meta/_journal.json` is applied via
+ *     `pillars/lists/migrations/meta/_journal.json` is applied via
  *     drizzle's built-in migrator (idempotent — re-running against the
  *     same DB short-circuits on the `__drizzle_migrations` hash check).
  *

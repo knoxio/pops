@@ -3,9 +3,9 @@ import { useTranslation } from 'react-i18next';
 import { SHOPPING_SORT_MODES, type ShoppingSortMode } from './types.js';
 
 /**
- * Native `<select>` for the sort mode (PRD-141 §Sort behaviours). Native is
- * deliberate: zero deps + mobile OS picker UI + collapsing to an icon-only
- * trigger when the container is narrow is a CSS concern, not a JS one.
+ * Native `<select>` for the sort mode. Native is deliberate: zero deps +
+ * mobile OS picker UI + collapsing to an icon-only trigger when the
+ * container is narrow is a CSS concern, not a JS one.
  */
 export interface ShoppingSortDropdownProps {
   mode: ShoppingSortMode;

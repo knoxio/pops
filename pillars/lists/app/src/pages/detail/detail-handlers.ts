@@ -27,7 +27,7 @@ export interface DetailContentProps {
  * Detail-page-level action handlers wrapping the list mutations. Each
  * async handler swallows its rejection — failures already surface via
  * the `detailMx.errorMessage` banner, so re-throwing here would only
- * land in an unhandled promise rejection (PRD-140-C Copilot R1).
+ * land in an unhandled promise rejection.
  */
 export function useDetailHandlers({ list, detailMx, dialogs, itemMx }: DetailContentProps) {
   return {

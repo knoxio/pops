@@ -6,9 +6,8 @@ import { useMenuKeyboard } from './useMenuKeyboard.js';
 /**
  * Three-dot menu surfaced per item row: Edit / Move up / Move down / Delete.
  * Move up/down are also accessible via drag, but the menu is the keyboard +
- * mobile-fallback path (PRD-140 line 95). Keyboard model matches
- * `useMenuKeyboard` (arrow/Home/End across enabled items, first-item focus
- * on open).
+ * mobile-fallback path. Keyboard model matches `useMenuKeyboard`
+ * (arrow/Home/End across enabled items, first-item focus on open).
  */
 export interface ListItemMenuProps {
   canMoveUp: boolean;

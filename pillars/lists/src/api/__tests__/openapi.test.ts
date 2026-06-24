@@ -4,7 +4,7 @@
  * The route serves the committed `openapi/lists.openapi.json` projection
  * verbatim so the pillar SDK can build its operationId route map against the
  * live pillar. This asserts the document is reachable, is OpenAPI 3.x, and
- * carries a known operationId (`items.search`) from the migrated surface.
+ * carries a known operationId (`items.search`).
  */
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';

@@ -15,11 +15,8 @@ interface Props {
 }
 
 /**
- * Row card for the `/lists` index. Whole row is the link target per
- * PRD-140 §Index: clicking anywhere navigates to `/lists/:id`. The detail
- * route is owned by PRD-140 part C; until that lands, navigation 404s and
- * the user can return via the back button — the index query refetches the
- * new row on revisit.
+ * Row card for the `/lists` index. The whole row is the link target:
+ * clicking anywhere navigates to `/lists/:id`.
  */
 export function ListRow({ item, t }: Props): ReactElement {
   const archived = item.archivedAt !== null;

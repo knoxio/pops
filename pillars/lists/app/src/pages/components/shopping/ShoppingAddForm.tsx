@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { SHOPPING_UNIT_SUGGESTIONS } from './unit-suggestions.js';
 
 /**
- * Shopping add form (PRD-141 §ShoppingAddForm).
+ * Shopping add form.
  *
  * Differences vs the generic `ListItemAddForm`:
  *   - `[qty] [unit] [label]` ordering (qty first — most common
