@@ -1,16 +1,12 @@
 /**
  * Invariant tests for the connections service against an in-memory SQLite
  * seeded with the canonical `home_inventory` + `item_connections` tables.
- * Pure DB + service layer — no tRPC, no Express, no auth middleware.
- *
- * Higher-level integration coverage (auth, router, tRPC error mapping)
- * lives in pops-api's own suite; the writer move + reads cutover PRs
- * route those through `connectionsService.*`.
+ * Pure DB + service layer.
  *
  * The `home_inventory` and `item_connections` DDL is inlined here because
- * the canonical baseline migration (`0006_inventory_pillar_baseline`)
- * bundles unrelated FK tables. The locations migration is read from the
- * package's journal so the FK target exists.
+ * the canonical baseline migration bundles unrelated FK tables. The
+ * locations migration is read from the package's migrations dir so the FK
+ * target exists.
  */
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';

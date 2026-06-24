@@ -1,12 +1,8 @@
 /**
- * A warranty attached to an inventory item. Mirrors the API response
- * (camelCase) for the inventory pillar.
- *
- * The live persistence layer currently denormalises `warrantyExpires`
- * onto the item row; this contract pins the intended shape downstream
- * consumers should code against once the warranty migrates to its own
- * entity. `provider` is nullable because not every warranty exposes
- * a known vendor name.
+ * A warranty attached to an inventory item, in camelCase as the inventory
+ * pillar serves it. `provider` is nullable because not every warranty
+ * exposes a known vendor name. Kept structurally in sync with
+ * `WarrantySchema` (`../schemas/warranty.ts`) by the round-trip tests.
  */
 export interface Warranty {
   id: string;

@@ -46,10 +46,10 @@ export interface UploadPhotoInput {
   sortOrder: number;
 }
 
-/** Zod schema for the upload procedure (used by the tRPC router). */
+/** Zod schema for the base64 JSON upload request body. */
 export const UploadPhotoSchema = z.object({
   itemId: z.string().min(1, 'Item ID is required'),
-  /** Base64-encoded file bytes. The router decodes this to a Buffer. */
+  /** Base64-encoded file bytes. The REST handler decodes this to a Buffer. */
   fileBase64: z.string().min(1, 'File content is required'),
   caption: z.string().nullable().optional(),
   sortOrder: z.number().int().nonnegative().optional().default(0),

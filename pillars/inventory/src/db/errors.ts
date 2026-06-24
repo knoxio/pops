@@ -2,8 +2,7 @@
  * Typed errors raised by the inventory domain service layer.
  *
  * Plain Error subclasses — the service layer doesn't know about HTTP.
- * Pops-api routers map them to the appropriate tRPC codes when surfacing
- * to clients. Follows the standard typed-error pattern.
+ * The contract handlers map them to status codes when surfacing to clients.
  */
 
 export class LocationNotFoundError extends Error {

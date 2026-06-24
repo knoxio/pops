@@ -26,11 +26,11 @@ export const homeInventory = sqliteTable(
     resaleValue: real('resale_value'),
     purchaseTransactionId: text('purchase_transaction_id'),
     /**
-     * Soft cross-pillar reference to the owning finance pillar's transaction
-     * (PRD-251 H7). Shape: `pops://finance/transaction/<id>`. Resolution is
-     * deferred to the nightly reconciliation cron — never read-time. NULL
-     * when no purchase transaction is linked or when the legacy
-     * `purchase_transaction_id` could not be promoted by the backfill.
+     * Soft cross-pillar reference to the owning finance pillar's transaction.
+     * Shape: `pops://finance/transaction/<id>`. Resolution is deferred to the
+     * nightly reconciliation cron — never read-time. NULL when no purchase
+     * transaction is linked or when the legacy `purchase_transaction_id` could
+     * not be promoted by the backfill.
      */
     purchaseTransactionUri: text('purchase_transaction_uri'),
     /**
@@ -44,9 +44,9 @@ export const homeInventory = sqliteTable(
     purchasedFromName: text('purchased_from_name'),
     purchasePrice: real('purchase_price'),
     /**
-     * Soft cross-pillar reference to the owning core pillar's user/scope
-     * (PRD-251 H7). Shape: `pops://core/user/<email>`. Same reconciliation
-     * semantics as `purchaseTransactionUri`.
+     * Soft cross-pillar reference to the owning `core` pillar's user/scope.
+     * Shape: `pops://core/user/<email>`. Same reconciliation semantics as
+     * `purchaseTransactionUri`.
      */
     ownerUri: text('owner_uri'),
     /** Stale marker for `ownerUri`. See `purchaseTransactionStaleAt`. */

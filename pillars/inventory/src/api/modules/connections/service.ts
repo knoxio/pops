@@ -3,11 +3,10 @@
  *
  * All five operations (`listConnectionsForItem`, `traceConnections`,
  * `getConnectionGraph`, `connectItems`, `disconnectItems`) delegate to
- * `connectionsService` from the pillar's persistence barrel. The drizzle
- * handle is passed in from the tRPC context (`ctx.inventoryDb`) so the
- * service stands alone of pops-api in the dep graph.
+ * `connectionsService` from the pillar's persistence barrel (`src/db`). The
+ * drizzle handle is passed in as the `db` argument by the caller.
  *
- * Typed errors from the package layer are translated back to the in-tree
+ * Typed errors from the persistence layer are translated to the in-tree
  * `NotFoundError` / `ConflictError` instances so the router's `instanceof`
  * checks keep working:
  *  - `ConnectionItemNotFoundError`  -> `NotFoundError('Inventory item', id)`
@@ -27,7 +26,6 @@ import { ConflictError, NotFoundError } from '../../shared/errors.js';
 
 import type { GraphData, ItemConnectionRow, TraceNode } from './types.js';
 
-/** Count + rows for a paginated list. */
 export interface ConnectionListResult {
   rows: ItemConnectionRow[];
   total: number;

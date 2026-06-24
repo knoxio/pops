@@ -1,9 +1,8 @@
 /**
  * Typed errors raised by the item connections service layer.
  *
- * Plain Error subclasses — the service layer is HTTP-agnostic. Router
- * layers (pops-api, pops-inventory-api) map these to the appropriate
- * tRPC / HTTP codes. Mirrors the items / locations error pattern.
+ * Plain Error subclasses — the service layer is HTTP-agnostic. The contract
+ * router maps these to HTTP status codes.
  */
 
 export class ConnectionNotFoundError extends Error {

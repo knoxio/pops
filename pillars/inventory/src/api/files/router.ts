@@ -4,11 +4,9 @@
  * - `GET /api/inventory/documents/items/:itemId/:filename` — direct-upload docs
  * - `GET /inventory/documents/:id/thumbnail` — Paperless-ngx thumbnail proxy
  *
- * Relocated from the monolith (`apps/pops-api/src/routes/inventory/*`). These
- * are GET-only and validated by filename pattern, so they need no DB handle.
- * They are deliberately NOT ts-rest contract routes (mirrors media's
- * `/media/images`), so they add no OpenAPI surface. The pillar trusts the
- * docker network, so the monolith's "mount before auth" concern is moot.
+ * GET-only and validated by filename pattern, so they need no DB handle. They
+ * are deliberately NOT ts-rest contract routes (mirrors media's `/media/images`)
+ * so they add no OpenAPI surface.
  */
 import { resolve } from 'node:path';
 

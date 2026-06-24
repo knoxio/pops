@@ -1,10 +1,9 @@
 /**
  * Pillar registry view served by inventory-api.
  *
- * Wraps the local copy of `parsePillarsEnv` with a process-level cache
- * (same pattern pops-api uses). Adds the synthetic `inventory` entry
- * so the shell sees the host pillar in the `/pillars` listing without
- * having to special-case the call site.
+ * Wraps `parsePillarsEnv` with a process-level cache. Adds the synthetic
+ * `inventory` entry so the shell sees the host pillar in the `/pillars`
+ * listing without having to special-case the call site.
  */
 import { parseBareOrigin, parsePillarsEnv } from './env.js';
 

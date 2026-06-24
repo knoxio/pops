@@ -14,7 +14,7 @@ import type { Item } from '../types/item.js';
 import type { Location } from '../types/location.js';
 import type { Warranty } from '../types/warranty.js';
 
-describe('@pops/inventory-contract round-trip', () => {
+describe('inventory contract schemas round-trip', () => {
   it('Item ↔ ItemSchema agree structurally', () => {
     expectTypeOf<z.infer<typeof ItemSchema>>().toEqualTypeOf<Item>();
   });

@@ -34,17 +34,16 @@ export function toUploadedFile(row: ItemUploadedFileRow): ItemUploadedFile {
 export const ALLOWED_MIME_PREFIXES = ['application/pdf', 'image/', 'text/'] as const;
 
 /**
- * Hard cap on accepted upload bytes (10 MiB). Direct uploads are stored on
- * the API filesystem; we do not want to ship multi-hundred-MB blobs through
- * a tRPC base64 payload.
+ * Hard cap on accepted upload bytes. Direct uploads are stored on the API
+ * filesystem; the cap keeps large blobs out of the base64 request payload.
  */
 export const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
 
 /**
- * Read the maximum file size. Once the pillar grows its own settings
- * surface (PRD-240), this resolves through the settings registry so the
- * cap can be tuned per-deployment without a code change. Pillar boot
- * config will inject an override via env (`INVENTORY_MAX_FILE_SIZE_BYTES`).
+ * Read the maximum file size. The env override (`INVENTORY_MAX_FILE_SIZE_BYTES`)
+ * lets a deployment tune the cap without a code change; it falls back to the
+ * compiled default when unset or invalid. See
+ * docs/themes/foundation/prds/unified-settings for the broader settings story.
  */
 export function getMaxFileSizeBytes(): number {
   const raw = process.env['INVENTORY_MAX_FILE_SIZE_BYTES'];
@@ -65,7 +64,7 @@ export interface UploadDocumentInput {
   buffer: Buffer;
 }
 
-/** Zod schema for the upload procedure (used by the tRPC router). */
+/** Zod schema validating the upload request body in the REST handler. */
 export const UploadDocumentSchema = z.object({
   itemId: z.string().min(1, 'Item ID is required'),
   fileName: z.string().min(1, 'File name is required').max(255, 'File name too long'),

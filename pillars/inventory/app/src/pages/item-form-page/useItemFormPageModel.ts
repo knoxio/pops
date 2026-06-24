@@ -25,8 +25,7 @@ interface CreateLocationInput {
 
 /**
  * Shape consumed by the page's `ErrorView`, which distinguishes a missing
- * item (`data.code === 'NOT_FOUND'`) from any other failure. Reproduces the
- * `{ data: { code }, message }` envelope the pillar SDK used to surface.
+ * item (`data.code === 'NOT_FOUND'`) from any other failure.
  */
 interface FormQueryError {
   data: { code: string } | null;

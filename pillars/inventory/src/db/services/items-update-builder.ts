@@ -1,8 +1,6 @@
 /**
  * Update-payload builder for the items service.
  *
- * Mirrors the live writer (`apps/pops-inventory-api/.../update-builder.ts`).
- *
  * - `undefined` means "leave unchanged" (the key is not written)
  * - `null` means "clear the field" (the key is written as null)
  */

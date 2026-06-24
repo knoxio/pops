@@ -1,7 +1,7 @@
 /**
  * Generic per-URI reconciliation loop shared by the inventory cron's
- * purchase-transaction + owner walkers (PRD-251). Lives in a sibling file
- * so the outer cron stays under the file-size lint budget.
+ * purchase-transaction + owner walkers. Lives in a sibling file so the outer
+ * cron stays under the file-size lint budget.
  */
 import type { InventoryDb } from '../../db/index.js';
 

@@ -2,8 +2,7 @@
  * Request handlers for the inventory pillar container.
  *
  * Logic lives here (not inline in `app.ts`) so tests can call into the
- * shape directly without booting Express. Subsequent PRs add tRPC +
- * `/uri/resolve` handlers alongside the existing health + pillars probes.
+ * shape directly without booting Express.
  */
 import { getPillarRegistry } from './pillars/registry.js';
 

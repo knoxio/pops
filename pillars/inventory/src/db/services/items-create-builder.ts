@@ -1,9 +1,4 @@
-/**
- * Insert-payload builder for the items service.
- *
- * Mirrors the live writer (`apps/pops-inventory-api/.../create-builder.ts`)
- * so the consumer cutover stays mechanical.
- */
+/** Insert-payload builder for the items service. */
 import type { homeInventory } from '../schema.js';
 import type { CreateItemInput } from './items-types.js';
 

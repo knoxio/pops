@@ -5,9 +5,7 @@ import { useNavigate } from 'react-router';
 /**
  * ReportDashboardPage — inventory reporting hub at `/inventory/reports`.
  *
- * Shows the summary dashboard widgets (item count, values, expiring warranties,
- * recently added) and a navigation card to the detailed insurance report.
- * PRD-051/US-01.
+ * Spec: pillars/inventory/docs/prds/value-insurance-reporting.
  */
 import { Button, PageHeader } from '@pops/ui';
 

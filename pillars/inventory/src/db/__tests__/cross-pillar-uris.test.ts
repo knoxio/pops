@@ -1,6 +1,6 @@
 /**
- * Tests for the cross-pillar URI denormalisation service helpers
- * (PRD-251 US-01 + US-02). Pure DB + service layer.
+ * Tests for the cross-pillar URI denormalisation service helpers.
+ * Pure DB + service layer.
  */
 import Database from 'better-sqlite3';
 import { drizzle } from 'drizzle-orm/better-sqlite3';

@@ -1,17 +1,17 @@
 /**
- * Cross-pillar URI denormalisation helpers (PRD-251 H7).
+ * Cross-pillar URI denormalisation helpers.
  *
- * The reconciliation cron in `apps/pops-inventory-api` walks the distinct
- * `purchase_transaction_uri` / `owner_uri` values stored on `home_inventory`
- * rows and asks the owning pillar whether each still resolves. To keep the
- * cron HTTP-shaped and the persistence layer concern-free, this module only
- * exposes the two operations the cron actually needs:
+ * The reconciliation cron walks the distinct `purchase_transaction_uri` /
+ * `owner_uri` values stored on `home_inventory` rows and asks the owning
+ * pillar whether each still resolves. To keep the cron HTTP-shaped and the
+ * persistence layer concern-free, this module only exposes the two
+ * operations the cron actually needs:
  *
  *   - `listDistinct*Uris` — read-side fan-out
  *   - `mark*Stale` / `clear*Stale` — write-side reconciliation
  *
- * The stale columns are best-effort warnings, not deletes — see PRD-251 §
- * "Business Rules → Existence is best-effort".
+ * The stale columns are best-effort warnings, not deletes — see
+ * pillars/inventory/docs/prds/data-model-api.
  */
 import { eq, isNotNull } from 'drizzle-orm';
 

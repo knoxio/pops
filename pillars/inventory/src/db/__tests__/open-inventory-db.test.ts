@@ -44,7 +44,6 @@ describe('openInventoryDb', () => {
     const path = join(tmpDir, 'inventory.db');
     const { db, raw } = openInventoryDb(path);
     try {
-      // Table exists + accepts inserts via the package service.
       expect(listLocations(db).total).toBe(0);
       createLocation(db, { name: 'Home' });
       expect(listLocations(db).total).toBe(1);

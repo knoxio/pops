@@ -2,14 +2,7 @@
  * Item connections CRUD + traversal service.
  *
  * Each function takes an `InventoryDb` handle as its first argument; the
- * calling layer (pops-api modules, pops-inventory-api routers) resolves
- * the singleton or transaction handle to pass in. Mirrors the items /
- * locations writer pattern (db-arg, typed errors).
- *
- * The live writer in `apps/pops-api/src/modules/inventory/connections/service.ts`
- * is the source of truth for the wire surface — this scaffold mirrors
- * its semantics so the PR2 reads-cutover can swap consumers over to
- * `connectionsService.*` without a behavioural change.
+ * calling layer resolves the singleton or transaction handle to pass in.
  *
  * Pair ordering invariant: `item_a_id < item_b_id` is enforced by a CHECK
  * constraint at the schema level. The service normalises caller-provided

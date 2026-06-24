@@ -1,7 +1,7 @@
 /**
- * Resolver tests — guards the precedence chain so future pillar work
- * doesn't accidentally drift inventory-api away from pops-api's
- * resolver.
+ * Resolver tests — guard the env precedence chain
+ * (INVENTORY_SQLITE_PATH > derived-from-SQLITE_PATH > default) so the
+ * pillar process always lands inventory.db where the deployer expects.
  */
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 

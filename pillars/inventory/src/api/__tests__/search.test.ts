@@ -1,10 +1,9 @@
 /**
  * Integration tests for the `search.*` REST surface — inventory's slice of
- * unified search, ported from the monolith's `inventoryItemsSearchAdapter`
- * (`apps/pops-api/src/modules/inventory/items/search-adapter.ts`).
+ * unified search.
  *
  * The suite seeds items through the pillar's own CRUD endpoint, then asserts
- * the TIERED ranking is preserved: exact assetId (1.0) > assetId prefix (0.9)
+ * the TIERED ranking: exact assetId (1.0) > assetId prefix (0.9)
  * > itemName exact (0.85) / prefix (0.7) / contains (0.5), with the
  * `/inventory/items/<id>` uri shape, the dedup between asset and name tiers,
  * and descending score sort. An empty / whitespace query short-circuits to an

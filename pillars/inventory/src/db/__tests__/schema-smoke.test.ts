@@ -1,11 +1,9 @@
 /**
- * Smoke test that the relocated inventory schemas (PRD-245 US-02 / audit H6)
- * resolve from `@pops/inventory-db` with the expected drizzle SQL `name`.
+ * Smoke test that every inventory schema export from `src/db/schema`
+ * resolves with the expected drizzle SQL table `name`.
  *
- * Catches "table moved but the export forgot to flip" mistakes during
- * follow-up shuffles. The set MUST cover every table named in
- * `us-02-relocate-inventory-schemas.md` so a regression on either side
- * trips this file.
+ * Catches "table renamed but the export forgot to flip" mistakes. The set
+ * must cover every exported table so a mismatch on either side trips here.
  */
 import { getTableName } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
@@ -21,7 +19,7 @@ import {
   locations,
 } from '../schema.js';
 
-describe('PRD-245 US-02 inventory schema relocation', () => {
+describe('inventory schema table names', () => {
   it.each([
     [fixtures, 'fixtures'],
     [homeInventory, 'home_inventory'],
