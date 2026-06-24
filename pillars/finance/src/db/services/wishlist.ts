@@ -12,12 +12,9 @@ import { wishList } from '../schema.js';
 import type { FinanceDb } from './internal.js';
 
 /**
- * Wish list priority levels. Defined locally so the finance pillar package
- * does not need a workspace dependency on `@pops/db-types`, which would
- * create a literal cycle once db-types adds `@pops/finance-db` to its
- * re-export shim. The canonical contract-level constant
- * lives in `@pops/finance-contract`; `@pops/db-types/constants` re-exports
- * the same tuple for legacy callers.
+ * Wish list priority levels. Defined locally so the finance pillar does not
+ * need a workspace dependency on `@pops/db-types`. The contract-level copy of
+ * this tuple lives in `src/contract/types/wish-list-item.ts`.
  */
 export const WISH_LIST_PRIORITIES = ['Needing', 'Soon', 'One Day', 'Dreaming'] as const;
 export type WishListPriority = (typeof WISH_LIST_PRIORITIES)[number];

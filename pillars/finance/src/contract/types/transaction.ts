@@ -1,6 +1,6 @@
 /**
- * A single finance transaction (camelCase). DB-internal row shape lives in
- * `@pops/finance-db` and is not surfaced through the contract.
+ * A single finance transaction (camelCase). The DB-internal row shape lives in
+ * the pillar's `src/db` layer and is not surfaced through the contract.
  *
  * Deliberately narrower than what the API emits: it pins only the fields
  * downstream consumers (apps, iOS Swift codegen, SDK) need. Fields outside
