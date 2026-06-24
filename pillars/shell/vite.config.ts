@@ -6,10 +6,9 @@ import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
 
 /**
- * PRD-101 US-11 follow-up (issue #2595): when `POPS_REGISTRY_SNAPSHOT`
- * is set, alias `@pops/module-registry` to the snapshot file so the
- * shell consumes a build-specific install set. Unset in production and
- * default dev builds.
+ * When `POPS_REGISTRY_SNAPSHOT` is set, alias `@pops/module-registry` to the
+ * snapshot file so the shell consumes a build-specific install set. Unset in
+ * production and default dev builds.
  */
 const registrySnapshot = process.env.POPS_REGISTRY_SNAPSHOT;
 

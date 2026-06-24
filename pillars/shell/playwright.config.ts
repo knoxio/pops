@@ -8,17 +8,12 @@ const HERE = path.dirname(fileURLToPath(import.meta.url));
 /**
  * Playwright configuration for POPS Shell E2E tests.
  *
- * NOTE (lake-migration): this suite was written against the now-deleted
- * `apps/pops-api` tRPC monolith — specs mock/route `/trpc/**` and the
- * `globalSetup` seeded an `e2e` named environment via `POST :3000/env/...`.
- * The lake is now seven independent REST pillars + a static-built shell;
- * none of that surface exists, so the suite cannot pass without a full
- * rewrite against the REST stack (out of scope). The `fe-test-e2e.yml`
- * workflow is therefore gated to `workflow_dispatch` only. The dead
- * pops-api `webServer` (cwd `../pops-api`) has been removed below so the
- * harness no longer references a deleted directory.
+ * NOTE: these specs target a removed tRPC surface (`/trpc/**`, a seeded `e2e`
+ * named environment) that no longer exists on the REST pillars, so the suite
+ * is dormant — `fe-test-e2e.yml` is gated to `workflow_dispatch` until the
+ * specs are rewritten against the REST stack.
  *
- * Install-set switching (PRD-101 US-11 follow-up, issue #2595):
+ * Install-set switching (see foundation/plugin-contract):
  *
  *   The shell consumes `MODULES` from `@pops/module-registry` at build
  *   time. To exercise the install-set boundary across two distinct shell
