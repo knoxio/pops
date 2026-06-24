@@ -6,7 +6,7 @@
  * principals. The gate throws `UnauthorizedError` inside `runHttp`, so an
  * anonymous or service-account caller bounces with a 401 envelope.
  *
- * Domain errors from `@pops/core-db` are translated to local `HttpError`
+ * Domain errors from the registry db layer (`../../db`) are translated to local `HttpError`
  * subclasses (`ValidationError`/`NotFoundError`/`ConflictError`) and mapped to
  * their status codes by `runHttp`.
  */
