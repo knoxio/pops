@@ -10,10 +10,9 @@ describe('nav registry', () => {
     expect(registeredApps.length).toBeGreaterThan(0);
   });
 
-  // Parity gate — the seven in-repo pillars must render in the same order
-  // as the pre-PRD-243 hand-curated `registeredApps` literal. Drift here
-  // means audit H5's observable behaviour has regressed.
-  it('preserves the pre-PRD-243 app-rail order', () => {
+  // Parity gate — the seven in-repo pillars must render in this exact
+  // order; drift here is an observable app-rail regression.
+  it('renders the seven in-repo pillars in their pinned order', () => {
     expect(registeredApps.map((app) => app.id)).toEqual([
       'finance',
       'media',

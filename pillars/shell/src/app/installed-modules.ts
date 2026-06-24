@@ -1,32 +1,26 @@
 /**
  * Shell-side aggregator that resolves the shell's install set against the
  * workspace bundle map (`./bundle-map.tsx`) — the single place the shell
- * enumerates in-repo pillar ids per PRD-243 US-03.
+ * enumerates in-repo pillar ids. Every installed pillar id resolves through
+ * the workspace bundle map.
  *
- * Prior to PRD-243 this file hand-imported each pillar's frontend
- * manifest by name. The registry walk replaces that: every installed
- * pillar id resolves through the workspace bundle map.
+ * Install-set source: the live registry snapshot is the source of truth for
+ * which pillars mount, not the build-time `MODULES` / `INSTALLED_MODULES`
+ * constants. The async boot path (`main.tsx` → `boot-snapshot.ts`) fetches
+ * the snapshot and walks {@link bootEntries}; if the registry is unreachable
+ * the shell falls back to {@link staticFloorEntries} (the in-repo bundle-map
+ * pillars) so it never bricks. `installedFrontendManifests()` is that static
+ * floor — the synchronous in-repo set the boot path degrades to, and the
+ * source the capture-overlay / manifest-validation tests read.
  *
- * Install-set source (P7-T03 / RD-3): the live registry snapshot is now
- * the source of truth for which pillars mount, not the build-time
- * `MODULES` / `INSTALLED_MODULES` constants. The async boot path
- * (`main.tsx` → `boot-snapshot.ts`) fetches the snapshot and walks
- * {@link bootEntries}; if the registry is unreachable the shell falls
- * back to {@link staticFloorEntries} (the in-repo bundle-map pillars) so
- * it never bricks. `installedFrontendManifests()` is that static floor —
- * the synchronous in-repo set the boot path degrades to, and the source
- * the capture-overlay / manifest-validation tests read.
+ * External pillars that the registry advertises via `assetsBaseUrl` are
+ * absent from the workspace bundle map by design (ADR-002 keeps the in-repo
+ * FE a single static SPA). For those the walk takes the runtime path
+ * (Option A): it lazily `import()`s the pillar's ESM bundle from the
+ * advertised URL and mounts it like an in-repo module. A failed remote load
+ * degrades to skipping the pillar's UI, never crashing the shell.
  *
- * External pillars (PRD-228) that the registry advertises via
- * `assetsBaseUrl` are absent from the workspace bundle map by design
- * (ADR-002 keeps the in-repo FE a single static SPA). For those the walk
- * takes the runtime path (PRD-243 US-05, Option A): it lazily `import()`s
- * the pillar's ESM bundle from the advertised URL and mounts it like an
- * in-repo module. A failed remote load degrades to skipping the pillar's
- * UI, never crashing the shell.
- *
- * See `docs/themes/13-pillar-finale/prds/243-registry-driven-shell-ui/us-03-shell-registry-walk.md`
- * and `us-05-external-pillar-ui-loading.md`.
+ * See `docs/themes/federation/prds/registry-driven-shell-ui`.
  */
 import { isInstalledModule } from '@pops/module-registry';
 
@@ -86,16 +80,16 @@ export class ExternalUiLoadError extends Error {
 
 /**
  * Minimal "registry entry" shape the shell walks. Mirrors the
- * `PillarSnapshot` projection `discoverSettings()` reads (PRD-240) but
- * carries only the fields PRD-243 needs to decide which UI surface to
- * mount: the pillar id, and — for external pillars (PRD-228) absent from
- * the workspace bundle map — the `assetsBaseUrl` plus the wire-shaped
- * `nav` / `pages` descriptors the runtime loader (US-05) consumes.
+ * `PillarSnapshot` projection `discoverSettings()` reads but carries only
+ * the fields needed to decide which UI surface to mount: the pillar id,
+ * and — for external pillars absent from the workspace bundle map — the
+ * `assetsBaseUrl` plus the wire-shaped `nav` / `pages` descriptors the
+ * runtime loader consumes.
  *
  * In-repo pillars carry only `pillarId`: their UI surface comes from the
  * static bundle map, never the wire. Sourced from the live registry
- * snapshot via {@link bootEntries} (P7-T03), or from the in-repo bundle
- * map via {@link staticFloorEntries} when the registry is unreachable.
+ * snapshot via {@link bootEntries}, or from the in-repo bundle map via
+ * {@link staticFloorEntries} when the registry is unreachable.
  */
 export interface RegistryEntry {
   readonly pillarId: string;
@@ -106,20 +100,19 @@ export interface RegistryEntry {
 
 /**
  * The static install-set floor: the in-repo pillars the shell renders when
- * the live registry is unreachable (the never-brick fallback, P7-T03), and
- * the synchronous source `installedFrontendManifests()` walks.
+ * the live registry is unreachable (the never-brick fallback), and the
+ * synchronous source `installedFrontendManifests()` walks.
  *
  * The floor is the workspace bundle map narrowed by the runtime install
  * shim `isInstalledModule` (the `@pops/module-registry` projection of the
  * build-time `POPS_APPS` contract). The LIVE install set comes from the
  * registry snapshot (`bootEntries`) and is the source of truth; this floor
- * only governs the offline path. Honouring the install shim here keeps that
- * path identical to the pre-P7-T03 behaviour — so an operator's `POPS_APPS`
- * selection still narrows the shell when the registry is down (and the
- * finance-only install-set e2e stays meaningful) — without the shell
- * consulting the build-time `MODULES` superset for the live install set. In-
- * repo pillars carry only `pillarId`; their UI surface comes from the static
- * bundle map.
+ * only governs the offline path. Honouring the install shim here means an
+ * operator's `POPS_APPS` selection still narrows the shell when the registry
+ * is down (and the finance-only install-set e2e stays meaningful) — without
+ * the shell consulting the build-time `MODULES` superset for the live
+ * install set. In-repo pillars carry only `pillarId`; their UI surface comes
+ * from the static bundle map.
  */
 export function staticFloorEntries(): readonly RegistryEntry[] {
   return Object.keys(WORKSPACE_BUNDLE_MAP)
@@ -129,8 +122,8 @@ export function staticFloorEntries(): readonly RegistryEntry[] {
 
 /**
  * Map a live registry snapshot onto the registry-entry list the walk
- * consumes (P7-T03 / RD-3). Only `registered` pillars contribute. For
- * each, the wire `manifest` carries the external-UI surface
+ * consumes. Only `registered` pillars contribute. For each, the wire
+ * `manifest` carries the external-UI surface
  * (`assetsBaseUrl` / `nav` / `pages`); in-repo pillars omit `assetsBaseUrl`
  * and resolve through the static bundle map instead. The snapshot is the
  * sole truth for which pillars mount — backend-only pillars (no bundle-map
@@ -192,14 +185,12 @@ function resolveExternalManifest(
  *
  *   - Bundle map hit → emit the in-repo workspace manifest (ADR-002:
  *     statically bundled, unchanged).
- *   - Bundle map miss + `assetsBaseUrl` set → external pillar (PRD-228).
- *     Synthesize a manifest whose routes lazy-`import()` the remote bundle
- *     (PRD-243 US-05, Option A). A bad descriptor is logged and skipped;
- *     a remote bundle that fails to load later is contained by the
- *     per-route error boundary, not here.
+ *   - Bundle map miss + `assetsBaseUrl` set → external pillar. Synthesize a
+ *     manifest whose routes lazy-`import()` the remote bundle (Option A). A
+ *     bad descriptor is logged and skipped; a remote bundle that fails to
+ *     load later is contained by the per-route error boundary, not here.
  *   - Bundle map miss + no `assetsBaseUrl` → backend-only pillar, drop
- *     silently. Mirrors the pre-PRD-243 behaviour where backend-only
- *     ids simply weren't in `KNOWN_FRONTEND_MANIFESTS`.
+ *     silently.
  *
  * `importer` is injectable for tests; production omits it so the external
  * loader uses the real dynamic `import()`.
@@ -224,11 +215,9 @@ export function walkRegistry(
       if (manifest !== null) out.push(manifest);
       continue;
     }
-    // Backend-only pillars (e.g. `core`) sit in `MODULES` but contribute
+    // Backend-only pillars (e.g. `registry`) sit in `MODULES` but contribute
     // no UI. They never appear in the bundle map and they never advertise
-    // an `assetsBaseUrl`, so the walk drops them silently — mirroring the
-    // pre-PRD-243 behaviour where they simply weren't in
-    // `KNOWN_FRONTEND_MANIFESTS`.
+    // an `assetsBaseUrl`, so the walk drops them silently.
   }
   return out;
 }
@@ -247,9 +236,9 @@ let testOverride: readonly FrontendManifest[] | null = null;
  * The static install-set floor as frontend manifests: every in-repo
  * pillar in the workspace bundle map, walked through {@link walkRegistry}.
  *
- * This is the synchronous in-repo set the live install-set (P7-T03)
- * degrades to when the registry is unreachable, and the source the
- * capture-overlay walk and manifest-validation tests read. The live,
+ * This is the synchronous in-repo set the live install-set degrades to when
+ * the registry is unreachable, and the source the capture-overlay walk and
+ * manifest-validation tests read. The live,
  * snapshot-driven install set is built by the async boot path
  * (`boot-snapshot.ts`), not here.
  */

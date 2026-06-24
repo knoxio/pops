@@ -1,17 +1,17 @@
 /**
- * PRD-243 US-03 + US-05 — registry-walk unit tests.
+ * Registry-walk unit tests.
  *
  * Exercises the bundle-map-driven discovery path with synthetic data
  * instead of the live `WORKSPACE_BUNDLE_MAP` / `MODULES` constants. The
- * existing override-based `installed-modules.test.ts` covers the
- * production wiring; this file pins the walk's contract:
+ * override-based `installed-modules.test.ts` covers the production wiring;
+ * this file pins the walk's contract:
  *
  *   - Two synthetic pillars produce two nav configs.
  *   - Frontend manifests joined through the walk preserve `frontend.routes`.
  *   - Pillars omitting both `nav` and `pages` are skipped from the rail.
  *   - An external pillar (absent from the bundle map) that advertises an
  *     `assetsBaseUrl` plus `nav` / `pages` is loaded via the runtime path
- *     (US-05, Option A) and contributes a mounted manifest.
+ *     (Option A) and contributes a mounted manifest.
  *   - A structurally broken external descriptor is logged once and skipped
  *     (no crash).
  *   - Sort order respects `navOrder` ascending with a lexicographic
@@ -124,7 +124,7 @@ describe('walkRegistry', () => {
     expect(apps.map((a) => a.id)).toEqual(['finance']);
   });
 
-  it('mounts an external pillar (no bundle map entry) via the runtime loader (US-05 Option A)', () => {
+  it('mounts an external pillar (no bundle map entry) via the runtime loader (Option A)', () => {
     const externalNav: NavConfigDescriptor = {
       id: 'external-pillar',
       label: 'External Pillar',

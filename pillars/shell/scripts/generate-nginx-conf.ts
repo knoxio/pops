@@ -2,22 +2,22 @@
 /**
  * Generate `pillars/shell/nginx.conf` from a single source of truth.
  *
- * Theme 13 PRD-217 + PRD-232. Two render modes share the same template:
+ * See docs/themes/federation/prds/nginx-config-generator. Two render
+ * modes share the same template:
  *
  *   - **Static** (default) — reads `PILLARS` from `@pops/pillar-sdk` and
  *     `PILLAR_UPSTREAMS` below. Used at image-build time so the committed
  *     `nginx.conf` is reproducible without a live registry-api. The drift
  *     test guards this output.
  *
- *   - **Dynamic** (`--dynamic`) — PRD-232, Wave 6 BE-lego. Reads the
- *     live `pillar_registry` via the SDK's `HttpDiscoveryTransport`,
- *     which currently fetches `GET /core.registry.list` (the route core
- *     mounts today; the canonical `GET /registry/pillars` is introduced
- *     in a later phase and is not live yet), and emits one
- *     `/<pillar>-api/` REST block per registered pillar.
- *     Used at boot-time inside the cluster: an init container (or a future
- *     subscription-bus watcher, PRD-163) runs the script with
- *     `--dynamic` so newly-registered external pillars (PRD-228) pick
+ *   - **Dynamic** (`--dynamic`) — reads the live registry via the SDK's
+ *     `HttpDiscoveryTransport`, which fetches the canonical
+ *     `GET /registry/pillars` (falling back to the legacy
+ *     `GET /core.registry.list` on a 404 during a rolling deploy), and
+ *     emits one `/<pillar>-api/` REST block per registered pillar. Used
+ *     at boot-time inside the cluster: an init container (or the
+ *     subscription-bus watcher, watch-registry-and-reload.ts) runs the
+ *     script with `--dynamic` so newly-registered external pillars pick
  *     up routing without a fresh shell image.
  *
  *     Known core pillars (those in `PILLAR_UPSTREAMS`) keep their
@@ -39,8 +39,8 @@
  *   tsx generate-nginx-conf.ts --dynamic --out … --registry-url=http://registry-api:3001
  *
  * The event-driven `nginx -s reload` wrapper that re-runs the dynamic
- * mode on each registry subscription event (`GET /registry/subscribe`) is
- * intentionally NOT shipped here; see PRD-163 follow-up.
+ * mode on each registry subscription event (`GET /registry/subscribe`)
+ * lives in watch-registry-and-reload.ts, not here.
  */
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -60,17 +60,17 @@ import { DEFAULT_REGISTRY_URL, resolveRegistryUrl } from './registry-url-env.ts'
 
 /**
  * In-tree pillar id, keyed off the curated `PILLARS` value (NOT the SDK's
- * `KnownPillarId` type, which RD-9 widened to `string`). This local literal
- * union is what `PILLAR_UPSTREAMS` is keyed on, so the exhaustiveness guard —
- * "every curated pillar ships a port" — survives the type-widening: a new
- * entry in `PILLARS` without a matching `PILLAR_UPSTREAMS` port still fails
- * typecheck here.
+ * `KnownPillarId`, which is a plain `string`). This local literal union is
+ * what `PILLAR_UPSTREAMS` is keyed on, so the exhaustiveness guard —
+ * "every curated pillar ships a port" — holds despite the widened SDK
+ * type: a new entry in `PILLARS` without a matching `PILLAR_UPSTREAMS`
+ * port still fails typecheck here.
  */
 type BuildPillarId = (typeof PILLARS)[number];
 
 /**
- * Internal port assignment for each pillar's API container. Matches every
- * `proxy_pass` in the pre-generator hand-written `nginx.conf`.
+ * Internal port assignment for each pillar's API container, fed into the
+ * `proxy_pass` upstream of every rendered `/<pillar>-api/` block.
  *
  * `Record<BuildPillarId, …>` forces every pillar in the curated `PILLARS`
  * value (in `@pops/pillar-sdk`) to ship a port here; missing entries fail
@@ -102,9 +102,9 @@ function knownUpstream(pillarId: string): { host: string; port: number } | undef
 }
 
 /**
- * Stable ordering for the rendered `/<id>-api/` blocks. Matches the
- * order PRD-190 shipped in the hand-written conf so the generator's
- * first run produces a byte-identical (modulo header comment) file.
+ * Stable ordering for the rendered `/<id>-api/` blocks. Load-bearing:
+ * the drift test compares the rendered output byte-for-byte against the
+ * committed `nginx.conf`, so reordering this changes the committed file.
  */
 export const PILLAR_RENDER_ORDER: readonly BuildPillarId[] = [
   'registry',
@@ -188,8 +188,7 @@ export function renderNginxConf(order: readonly BuildPillarId[] = PILLAR_RENDER_
 /**
  * Pure renderer (dynamic mode). Takes an explicit list of upstreams in
  * the order they should appear in the output. Empty input is valid and
- * produces a config with zero per-pillar `/<pillar>-api/` REST blocks (the
- * monolith catch-all was removed in the 02 decommission).
+ * produces a config with zero per-pillar `/<pillar>-api/` REST blocks.
  */
 export function renderNginxConfFromUpstreams(upstreams: readonly PillarUpstream[]): string {
   if (upstreams.length === 0) {

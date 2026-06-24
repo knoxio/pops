@@ -1,12 +1,12 @@
 /**
- * E2E — Media watchlist: add and remove an item (#2116)
+ * E2E — Media watchlist: add and remove an item
  *
- * Tier 2 flow: navigate to a seeded movie detail page, click "Add to
+ * Navigate to a seeded movie detail page, click "Add to
  * Watchlist", visit /media/watchlist, confirm the movie appears, then remove
  * it via the detail page toggle and confirm it no longer appears in the
  * watchlist list.
  *
- * Seed context (see apps/pops-api/src/db/seeder.ts):
+ * Seed context:
  *   The seeded watchlist contains Matrix, Interstellar, Fight Club (movies)
  *   and Shogun (TV). Forrest Gump is NOT seeded onto the watchlist and NOT in
  *   watch_history, so it is the natural candidate for "add a fresh item".

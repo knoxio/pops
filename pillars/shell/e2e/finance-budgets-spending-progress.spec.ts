@@ -1,9 +1,9 @@
 /**
- * E2E — Finance budgets spending progress (#2108 / #2186)
+ * E2E — Finance budgets spending progress
  *
- * Tier 2 flow: prove the freshly-built `Spent` / `% Progress` columns light
- * up after a matching transaction is created, end-to-end against the seeded
- * `e2e` SQLite environment.
+ * Prove the `Spent` / `% Progress` columns light up after a matching
+ * transaction is created, end-to-end against the seeded `e2e` SQLite
+ * environment.
  *
  * Steps:
  *   1. Navigate to /finance/budgets and confirm the page loads.
@@ -13,10 +13,8 @@
  *   3. Confirm the new budget renders with a 0% progress (no transactions
  *      yet match its category tag).
  *   4. Create a matching transaction directly via the tRPC create mutation
- *      against the same `e2e` env (the transactions list page does not yet
- *      expose a CRUD UI — see in-flight branch #2185 for the matching
- *      front-end work). The transaction is dated today so it falls inside
- *      the Monthly MTD window the API computes.
+ *      against the same `e2e` env. The transaction is dated today so it falls
+ *      inside the Monthly MTD window the API computes.
  *   5. Reload /finance/budgets and assert the new budget's row now shows a
  *      non-zero `%` and a non-zero `$` Spent amount.
  *   6. Delete the budget via the row-level Delete action and confirm the
@@ -123,7 +121,7 @@ function budgetRow(page: Page, category: string) {
   return page.getByRole('row').filter({ hasText: category });
 }
 
-test.describe('Finance — budgets spending progress (#2108 / #2186)', () => {
+test.describe('Finance — budgets spending progress', () => {
   let pageErrors: string[] = [];
   let consoleErrors: string[] = [];
   let category = '';
@@ -208,8 +206,8 @@ test.describe('Finance — budgets spending progress (#2108 / #2186)', () => {
     await expect(row.getByText('0%')).toBeVisible();
 
     // ---- Step 4: create a matching transaction via the API ---------------
-    // The transactions list page has no create UI yet (#2185), so we POST
-    // straight to the tRPC procedure under the same `e2e` env.
+    // POST straight to the tRPC procedure under the same `e2e` env rather than
+    // driving the list UI, so this assertion targets the budget math only.
     const txn = await createMatchingTransaction(request, category);
     expect(txn.id).toBeTruthy();
 

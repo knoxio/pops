@@ -5,18 +5,18 @@ import { Button } from '@pops/ui';
 
 /**
  * Fallback for routes whose owning module isn't in the deployment's
- * `POPS_APPS` / `POPS_OVERLAYS` set (PRD-100, PRD-101 US-03). Distinct
- * from 404 — the URL's first segment names a known module id, the module
- * just isn't installed in this build.
+ * `POPS_APPS` / `POPS_OVERLAYS` set. Distinct from 404 — the URL's first
+ * segment names a known module id, the module just isn't installed in this
+ * build. Rendered by the router's catch-all `UnmatchedRoute`, which only
+ * picks this over `NotFoundPage` when the leading segment is in
+ * `KNOWN_MODULES` but absent from the live install set.
  *
- * Mounted by the shell router as a catch-all under `/:moduleId/*` after
- * every installed module's routes; the catch-all only triggers when no
- * installed module owns the leading segment.
+ * See pillars/shell/docs/prds/shell.
  */
 export function NotInstalledPage() {
   const { pathname } = useLocation();
-  // First non-empty path segment is the requested module id (the catch-all
-  // route binds `:moduleId` to it). Strip leading slash + trailing path.
+  // First non-empty path segment is the requested module id; the component
+  // derives it from the pathname directly (the catch-all binds no route param).
   const moduleId = pathname.split('/').find((s) => s.length > 0) ?? '';
 
   return (

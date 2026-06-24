@@ -1,5 +1,6 @@
 /**
- * Tests for the shell-centralised overlay shortcut wiring (PRD-101 US-07).
+ * Tests for the shell-centralised overlay shortcut wiring
+ * (docs/themes/foundation/prds/overlay-surfaces).
  *
  * The hook itself is render-time only, so we test the pure shortcut
  * matcher (the part with all the branching) directly. Acceptance

@@ -8,10 +8,10 @@ import {
 } from './capture-registry';
 
 /**
- * PRD-246 US-03 unit tests for the capture-overlay registry walk.
- * Exercises the selection rule (sort by order, tiebreak by pillarId)
- * and the bundle-map resolution edge cases (no overlay registered,
- * unknown bundleSlot).
+ * Unit tests for the capture-overlay registry walk. Exercises the
+ * selection rule (sort by order, tiebreak by pillarId) and the
+ * bundle-map resolution edge cases (no overlay registered, unknown
+ * bundleSlot).
  */
 import type { ComponentType } from 'react';
 

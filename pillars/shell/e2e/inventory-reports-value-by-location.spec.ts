@@ -1,7 +1,7 @@
 /**
- * E2E — Inventory reports: value breakdown by location (#2128)
+ * E2E — Inventory reports: value breakdown by location
  *
- * Tier 3: navigate to `/inventory/reports`, confirm the Value by Location
+ * Navigate to `/inventory/reports`, confirm the Value by Location
  * widget renders, at least one seeded location shows a non-zero replacement
  * value, and the sum across all locations equals the overall replacement
  * value shown in the items list summary.
@@ -29,7 +29,7 @@
  *   without hovering. Recharts does not render the totals anywhere in the
  *   static DOM today.
  *
- * Seeded value snapshot (from apps/pops-api/src/db/seeder.ts):
+ * Seeded value snapshot:
  *   All 20 inventory items carry a location_id, so `getValueByLocation`
  *   produces no "Unassigned" bucket and its SUM equals the unfiltered items
  *   list `totalReplacementValue`. With the current seed that total is
@@ -43,10 +43,7 @@ import { expect, test, type APIRequestContext } from '@playwright/test';
 
 import { useRealApi } from './helpers/use-real-api';
 
-/**
- * tRPC batch GET URL shape for an input-less query.
- * Mirrors the format used by apps/pops-api/src/middleware/env-context.integration.test.ts.
- */
+/** tRPC batch GET URL shape for an input-less query. */
 const NO_INPUT_BATCH = encodeURIComponent(JSON.stringify({ '0': null }));
 
 interface BreakdownEntry {

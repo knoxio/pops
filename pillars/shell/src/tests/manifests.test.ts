@@ -1,11 +1,11 @@
 /**
- * PRD-098/099 frontend module manifests — structural validation.
+ * Frontend module manifests — structural validation.
  *
- * PRD-243 US-04 migrated this test off the per-pillar named-import literal
- * (audit finding M7). The manifest set is now derived from
- * `installedFrontendManifests()` — the same registry-walk getter the
- * shell uses at boot — so adding a new in-repo pillar requires no edit
- * here.
+ * The manifest set is derived from `installedFrontendManifests()` — the same
+ * registry-walk getter the shell uses at boot — so adding a new in-repo pillar
+ * requires no edit here.
+ *
+ * See `docs/themes/federation/prds/registry-driven-shell-ui`.
  */
 import { describe, expect, it } from 'vitest';
 
@@ -29,7 +29,7 @@ const overlayModules: LabelledManifest[] = allManifests.filter(([, m]) =>
   m.surfaces.includes('overlay')
 );
 
-describe('PRD-098/099 frontend module manifests', () => {
+describe('frontend module manifests', () => {
   it('the registry walk surfaces at least one installed manifest', () => {
     expect(allManifests.length).toBeGreaterThan(0);
   });

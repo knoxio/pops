@@ -6,7 +6,7 @@ import { Navigate } from 'react-router';
 import { useRegisteredApps } from './BootRegistryProvider';
 
 /**
- * `/` redirect that respects the installed-modules manifest (PRD-100).
+ * `/` redirect that respects the installed-modules manifest.
  * Picks the first installed app from the LIVE `registeredApps` (manifest
  * `nav.order` ascending, lexicographic tiebreak — see `nav/registry.ts`);
  * falls back to `/settings` if no apps are installed.

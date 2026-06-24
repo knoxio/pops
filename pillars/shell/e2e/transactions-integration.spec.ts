@@ -10,7 +10,7 @@
  *     we test the UI flow and request payload, not the DB write.
  *   - Read operations (transactions.list, suggestTags) are fully real.
  *
- * Seeded data reference (from src/db/seeder.ts):
+ * Seeded data reference:
  *   - txn-001: "Salary Payment", Bank Account, Income, tags: ["Salary"]
  *   - txn-003: "Woolworths Metro", Credit Card, Expense, tags: ["Groceries"]
  *   - txn-006: "Netflix Subscription", Credit Card, Expense, tags: ["Entertainment","Subscriptions"]

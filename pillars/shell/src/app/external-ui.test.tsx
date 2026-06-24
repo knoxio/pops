@@ -1,5 +1,5 @@
 /**
- * PRD-243 US-05 — external-pillar UI loading (Option A) unit tests.
+ * External-pillar UI loading (Option A) unit tests.
  *
  * Exercises the runtime loader end to end against a fake remote bundle so
  * no network round-trip is needed:
@@ -131,7 +131,7 @@ describe('synthesizeExternalBundleEntry — descriptor → bundle entry', () => 
   });
 });
 
-describe('external pillar UI — runtime mount (US-05 Option A)', () => {
+describe('external pillar UI — runtime mount (Option A)', () => {
   afterEach(() => {
     vi.restoreAllMocks();
   });

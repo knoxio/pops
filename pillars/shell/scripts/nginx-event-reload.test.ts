@@ -374,7 +374,7 @@ describe('createReloadHandler', () => {
     expect(onSuccess).not.toHaveBeenCalled();
   });
 
-  it('preserves pre-PRD-228 behaviour when validateConfig is omitted', async () => {
+  it('runs regen then reload with no validate gate when validateConfig is omitted', async () => {
     const calls: string[] = [];
     const regenerate = vi.fn(async () => {
       calls.push('regen');

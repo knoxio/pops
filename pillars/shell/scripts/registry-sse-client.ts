@@ -1,6 +1,7 @@
 /**
- * Minimal Node-side SSE consumer for `GET /registry/subscribe` (Theme
- * 13 PRD-163), used by the event-driven nginx reloader (PRD-228 US-03).
+ * Minimal Node-side SSE consumer for `GET /registry/subscribe`
+ * (docs/themes/federation/prds/subscription-model), used by the
+ * event-driven nginx reloader.
  *
  * Uses global `fetch` + `ReadableStream` so the script has no runtime
  * dependency beyond Node 22+ (the pinned engine). Parses just enough of

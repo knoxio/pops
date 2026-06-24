@@ -1,18 +1,18 @@
 /**
- * Smoke test — AI usage stats page (#2120)
+ * Smoke test — AI usage stats page
  *
- * Tier 2 minimum: navigating to `/ai` loads the AI Observability page, the
+ * Navigating to `/cerebrum/admin` loads the AI Observability page, the
  * usage-stats KPI panel renders, at least one numeric metric is non-empty,
  * and the page does not throw.
  *
- * Uses the real API against the seeded `e2e` SQLite environment. The seeder
+ * Uses the real API against the seeded `e2e` SQLite environment. The seed
  * inserts 3 `ai_inference_log` rows (2 live calls + 1 cache hit) so the
- * `core.aiObservability.getStats` endpoint returns non-zero totals — no
- * mocking is needed. Design note: we deliberately avoid `page.route()` mocks
- * here because real data exercises the full stack (router → service → DB
- * aggregation → KPI derivation) and catches regressions mocks would hide.
+ * `getStats` endpoint returns non-zero totals — no mocking is needed. We
+ * deliberately avoid `page.route()` mocks here because real data exercises the
+ * full stack (service → DB aggregation → KPI derivation) and catches
+ * regressions mocks would hide.
  *
- * Seeded totals (see apps/pops-api/src/db/seeder.ts "AI Usage" block):
+ * Seeded totals:
  *   totalCalls      = 3
  *   totalCostUsd    = 0.0006   → rendered as "$0.0006"
  *   cacheHitRate    = 1/3      → rendered as "33.3%"

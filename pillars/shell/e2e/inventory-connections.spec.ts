@@ -1,7 +1,7 @@
 /**
- * E2E test — Inventory connections between items (#2127)
+ * E2E test — Inventory connections between items
  *
- * Tier 3 flow: link two seeded inventory items via the Connect dialog, verify
+ * Link two seeded inventory items via the Connect dialog, verify
  * the relationship is visible on both item detail pages, then delete the
  * connection from item A and verify it disappears from both sides.
  *
@@ -29,7 +29,7 @@
  *     share a single state transition; they must run in order.
  *   - pageerror + console-error listeners are registered before navigation
  *     and asserted in afterEach so every test enforces the no-crash
- *     requirement from the issue.
+ *     requirement.
  */
 import { expect, test, type Page } from '@playwright/test';
 

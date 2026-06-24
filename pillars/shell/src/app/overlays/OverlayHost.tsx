@@ -16,9 +16,10 @@ export interface OverlayComponentProps {
 type OverlayComponent = ComponentType<OverlayComponentProps>;
 
 /**
- * Known chrome slots the shell layout exposes (PRD-101 US-07). The shell
- * mounts overlays whose `chromeSlot` matches one of these; unknown slots
- * are skipped at runtime and warned about (the registry build also warns).
+ * Known chrome slots the shell layout exposes
+ * (docs/themes/foundation/prds/overlay-surfaces). The shell mounts overlays
+ * whose `chromeSlot` matches one of these; unknown slots are skipped at
+ * runtime and warned about (the registry build also warns).
  */
 export const KNOWN_CHROME_SLOTS = ['assistant', 'notification', 'command'] as const;
 
@@ -104,7 +105,7 @@ const SLOT_MOUNTS = buildSlotMounts();
  * `slot` prop. Lazy-loaded via `React.lazy` so absent overlays never
  * appear in the shell bundle. `RootLayout` renders one `OverlayHost` per
  * known slot region so overlays land where their manifest says they
- * belong (PRD-101 US-07).
+ * belong (docs/themes/foundation/prds/overlay-surfaces).
  */
 export function OverlayHost({ slot }: OverlayHostProps) {
   const mounts = useMemo(() => SLOT_MOUNTS[slot], [slot]);

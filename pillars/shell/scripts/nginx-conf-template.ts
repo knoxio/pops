@@ -21,8 +21,8 @@ export const NGINX_CONF_HEAD = `server {
     # load time for literal \`proxy_pass <name>\`), letting nginx boot
     # even when an optional pillar container is missing. Every \`proxy_pass\`
     # in this file uses the variable form so the shell always boots — a
-    # registry-driven boot-render (PRD-255) must never hard-fail on an
-    # absent pillar — and new upstreams must adopt the same form.
+    # registry-driven boot-render must never hard-fail on an absent
+    # pillar — and new upstreams must adopt the same form.
     resolver 127.0.0.11 valid=30s ipv6=off;
 
     # Gzip compression
@@ -80,10 +80,10 @@ export const NGINX_CONF_TAIL = `    # Relocated raw routes (02): Up Bank webhook
     #
     # Variable-form \`proxy_pass\` (like every other upstream here) so the
     # shell boots even when media-api is unreachable — a registry-driven
-    # boot-render must never hard-fail the image on an absent pillar
-    # (PRD-255). The location prefix matches the upstream path, so the bare
-    # host:port variable plus the unchanged \`$request_uri\` reproduces the
-    # previous literal \`http://media-api:3003/media/images/\` target.
+    # boot-render must never hard-fail the image on an absent pillar.
+    # The location prefix matches the upstream path, so the bare host:port
+    # variable plus the unchanged \`$request_uri\` resolves to the
+    # \`http://media-api:3003/media/images/\` target.
     location /media/images/ {
         set $media_images_upstream http://media-api:3003;
         proxy_pass $media_images_upstream;
@@ -134,7 +134,7 @@ export const NGINX_CONF_TAIL = `    # Relocated raw routes (02): Up Bank webhook
         proxy_send_timeout 10s;
     }
 
-    # Registry pillar SSE stream (PRD-163). \`GET /registry/subscribe\`
+    # Registry pillar SSE stream. \`GET /registry/subscribe\`
     # is a plain-HTTP Server-Sent-Events endpoint on the registry pillar (NOT
     # a tRPC subscription). Proxy buffering is disabled and the read
     # timeout is long so the stream stays open; the handler already sets
@@ -176,7 +176,7 @@ export const NGINX_CONF_TAIL = `    # Relocated raw routes (02): Up Bank webhook
         proxy_send_timeout 10s;
     }
 
-    # API docs browser — Theme 13 PRD-219.
+    # API docs browser.
     #
     # \`pops-docs\` is a tiny static nginx image serving Stoplight Elements
     # pointed at every contract package's OpenAPI snapshot. Variable-form

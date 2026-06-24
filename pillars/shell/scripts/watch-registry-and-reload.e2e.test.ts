@@ -1,5 +1,5 @@
 /**
- * End-to-end integration test for the PRD-228 US-03 watcher.
+ * End-to-end integration test for the nginx event-reload watcher.
  *
  * Spins up the SHELL watcher (`watchRegistryAndReload`) against a fake
  * in-process SSE registry, fires `pillar.registered` + `pillar.deregistered`
@@ -12,9 +12,10 @@
  *     `nginx_generator_last_error_at` health surface flips to degraded.
  *   - On the next successful cycle, the error clears.
  *
- * Mirrors the in-process e2e in `pillars/registry` US-05 — same shape,
- * but exercised THROUGH the watcher rather than against the registry's
- * mutation handlers directly.
+ * Mirrors the in-process e2e in
+ * `pillars/registry/src/api/__tests__/external-pillar-e2e.test.ts` — same
+ * shape, but exercised THROUGH the watcher rather than against the
+ * registry's mutation handlers directly.
  */
 import { createServer, type Server } from 'node:http';
 

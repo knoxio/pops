@@ -4,11 +4,12 @@
  * The SearchResultsPanel component is tested comprehensively in the navigation
  * package (sections, ordering, context distinction, close behaviour, show-more
  * button rendering). These tests cover the helper functions and pure logic used
- * to transform tRPC API sections into panel-ready sections.
+ * to transform the federated-search orchestrator's `POST /search` response
+ * sections into panel-ready sections.
  */
 import { describe, expect, it } from 'vitest';
 
-/** Replicated from SearchInput — must stay in sync. */
+/** Replicated from `@pops/navigation` SearchInput — must stay in sync. */
 function domainToLabel(domain: string): string {
   return domain
     .split('-')
@@ -67,11 +68,9 @@ describe('showMore offset calculation', () => {
     const firstBatch = [{ uri: 'c' }, { uri: 'd' }];
     const secondBatch = [{ uri: 'e' }];
 
-    // Simulate first show-more
     extraHits[domain] = [...(extraHits[domain] ?? []), ...firstBatch];
     expect(extraHits[domain]).toHaveLength(2);
 
-    // Simulate second show-more
     extraHits[domain] = [...(extraHits[domain] ?? []), ...secondBatch];
     expect(extraHits[domain]).toHaveLength(3);
   });

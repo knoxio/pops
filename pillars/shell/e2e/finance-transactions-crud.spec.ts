@@ -1,5 +1,5 @@
 /**
- * E2E test — Finance transactions CRUD (#2106)
+ * E2E test — Finance transactions CRUD
  *
  * Exercises the full create → confirm → edit (amount + entity) → confirm →
  * delete → confirm flow at `/finance/transactions` against the seeded e2e

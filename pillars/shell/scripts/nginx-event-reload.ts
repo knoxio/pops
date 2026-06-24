@@ -1,7 +1,9 @@
 /**
- * Event-driven nginx regen + reload (Theme 13 PRD-228 US-03).
+ * Event-driven nginx regen + reload
+ * (docs/themes/federation/prds/dynamic-pillar-registration).
  *
- * Subscribes to the registry SSE event bus (PRD-163) and, on each
+ * Subscribes to the registry SSE event bus
+ * (docs/themes/federation/prds/subscription-model) and, on each
  * `pillar.registered` / `pillar.deregistered` / `pillar.health-changed`
  * frame, regenerates the dynamic dispatcher conf and signals nginx to
  * reload. A trailing 250ms debounce coalesces bursts (multi-pillar

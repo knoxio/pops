@@ -1,19 +1,11 @@
 import { INSTALLED_MODULES } from '@pops/module-registry';
 /**
- * Shell-level overlay registry (PRD-101 US-07).
+ * Shell-level overlay registry (docs/themes/foundation/prds/overlay-surfaces).
  *
  * Joins the build-time module registry (`@pops/module-registry`) with each
  * overlay package's live manifest export. The build-time registry tells us
  * which overlays are installed (`POPS_OVERLAYS` may narrow the set); the
  * live manifest carries the lazy `component` loader the shell mounts.
- *
- * To add a new overlay module:
- *   1. Implement it as a `packages/overlay-<name>/` workspace package that
- *      exports a `ModuleManifest` with `surfaces: ['overlay']` and a
- *      `frontend.overlay.component` loader.
- *   2. Add the manifest to `SHELL_OVERLAY_MANIFESTS` below.
- *   3. Ensure the module id appears in `packages/module-registry`'s
- *      `MANIFEST_SOURCES` so it survives env filtering.
  */
 import { manifest as egoManifest } from '@pops/overlay-ego';
 
@@ -47,7 +39,8 @@ function projectOverlay(manifest: ModuleManifest): InstalledOverlay | null {
 /**
  * Filter a list of known overlay manifests by an install set. Pure so tests
  * can inject either real `MODULES` ids or a synthetic set to exercise the
- * absent-module path (PRD-101 US-07 acceptance criterion).
+ * absent-module path
+ * (docs/themes/foundation/prds/overlay-surfaces acceptance criterion).
  */
 export function selectInstalledOverlays(
   manifests: readonly ModuleManifest[],
@@ -64,9 +57,9 @@ export function selectInstalledOverlays(
 
 /**
  * Overlay modules that are both registered in this shell build AND in the
- * runtime install set emitted by `@pops/module-registry` (PRD-218 US-01:
- * the `INSTALLED_MODULES` shim re-evaluates `POPS_APPS` / `POPS_OVERLAYS`
- * at module load against the build-time `KNOWN_MODULES` superset).
+ * runtime install set emitted by `@pops/module-registry`: the
+ * `INSTALLED_MODULES` shim re-evaluates `POPS_APPS` / `POPS_OVERLAYS` at
+ * module load against the build-time `KNOWN_MODULES` superset.
  */
 export const installedOverlays: readonly InstalledOverlay[] = selectInstalledOverlays(
   SHELL_OVERLAY_MANIFESTS,

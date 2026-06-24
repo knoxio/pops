@@ -11,7 +11,7 @@
  *   - imports.createEntity → returns a fake entity ID
  *   - corrections.createOrUpdate → returns success
  *
- * Entity matching relies on seeded entities (from src/db/seeder.ts):
+ * Entity matching relies on seeded entities:
  *   - "Woolworths" (aliases: "Woolies, WOW, Woolworths Metro")
  *   - "Netflix" (aliases: "Netflix.com")
  *   - "Shell" (aliases: "Shell Coles Express, Shell Service Station")

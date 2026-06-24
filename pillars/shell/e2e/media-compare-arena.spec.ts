@@ -1,12 +1,12 @@
 /**
- * E2E — Media compare arena: record one comparison pair (#2118)
+ * E2E — Media compare arena: record one comparison pair
  *
- * Tier 2 flow: navigate to /media/compare, wait for a seeded pair to render,
+ * Navigate to /media/compare, wait for a seeded pair to render,
  * pick a winner, confirm the outcome is recorded (session-count badge ticks
  * to 1), then visit /media/rankings and confirm both movies appear with a
  * score cell.
  *
- * Seed context (see apps/pops-api/src/db/seeder.ts):
+ * Seed context:
  *   Smart-pair candidates are the intersection of watched movies and the
  *   non-watchlisted pool, which in the e2e seed reduces to five watched
  *   titles: Shawshank, Godfather, Dark Knight, Pulp Fiction, LOTR. The seed

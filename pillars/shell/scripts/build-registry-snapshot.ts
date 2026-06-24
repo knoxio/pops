@@ -1,35 +1,33 @@
 #!/usr/bin/env tsx
 /**
- * Build a runtime-only registry snapshot for E2E install-set switching
- * (PRD-101 US-11 follow-up, issue #2595).
+ * Build a runtime-only registry snapshot for E2E install-set switching.
  *
  * The canonical `pnpm registry:build` emits a TypeScript source file at
- * `packages/module-registry/src/generated.ts` that requires `tsc` to
- * compile. That pipeline is well suited to the single-build, committed-
- * output workflow it was designed for, but the Playwright harness needs
- * to spin up two shell builds in the same `pnpm test:e2e` run with
- * different `POPS_APPS` values without mutating the committed registry.
+ * `libs/module-registry/src/generated.ts` that requires `tsc` to
+ * compile. That pipeline suits the single-build, committed-output
+ * workflow it was designed for, but the Playwright harness needs to spin
+ * up two shell builds in the same `pnpm test:e2e` run with different
+ * `POPS_APPS` values without mutating the committed registry.
  *
  * This script bypasses the `generated.ts → tsc` path entirely. It uses
  * the same pure pipeline pieces the registry build does
  * (`discoverManifestSources`, `ALWAYS_INSTALLED_IDS`, `resolveInstalledIds`,
  * `validateManifests`, `project`) to compute the same `MODULES`
- * projection the canonical build would produce, then emits a single
- * plain-JS module file ready to be `resolve.alias`-pointed at by Vite.
+ * projection the canonical build produces, then emits a single plain-JS
+ * module file ready to be `resolve.alias`-pointed at by Vite.
  *
- * Output shape mirrors `@pops/module-registry`'s public surface that
- * the shell actually imports (`KNOWN_MODULES`, `MODULES`, `findModule`,
- * `isModuleId`, plus `INSTALLED_MODULES` / `isInstalledModule` from the
- * PRD-218 US-01 runtime shim). Settings sub-exports are intentionally
- * not emitted — the shell does not consume them at runtime; only the
- * API does, and the API does not switch install sets per Playwright
- * project.
+ * Output shape mirrors `@pops/module-registry`'s public surface that the
+ * shell actually imports (`KNOWN_MODULES`, `MODULES`, `findModule`,
+ * `isModuleId`, plus `INSTALLED_MODULES` / `isInstalledModule`). Settings
+ * sub-exports are intentionally not emitted — the shell does not consume
+ * them at runtime; only the API does, and the API does not switch install
+ * sets per Playwright project.
  *
  * Usage:
  *   tsx scripts/build-registry-snapshot.ts <output-file>
  *
  * The script reads `POPS_APPS` and `POPS_OVERLAYS` from `process.env`,
- * matching the build-time contract documented in PRD-100.
+ * matching the build-time install-set contract.
  */
 import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';

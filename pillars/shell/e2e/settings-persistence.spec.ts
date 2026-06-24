@@ -1,5 +1,5 @@
 /**
- * Tier 3 — Settings change, save, and persistence (#2136)
+ * Settings change, save, and persistence
  *
  * Navigates to /settings, deep-links to the media.rotation section, changes
  * a non-critical capacity setting ("Target Free Space (GB)") via the auto-save

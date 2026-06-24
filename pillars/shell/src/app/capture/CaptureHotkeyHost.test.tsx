@@ -1,8 +1,3 @@
-/**
- * PRD-246 US-03: CaptureHotkeyHost no longer reads cerebrum's
- * CEREBRUM_CAPTURE_HOTKEY setting — it reads the active overlay's
- * descriptor hotkey from the manifest registry walk.
- */
 import { render } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -48,7 +43,7 @@ function syntheticOverlay(hotkey: string | undefined): ActiveCaptureOverlay {
   };
 }
 
-describe('CaptureHotkeyHost (PRD-246 US-03)', () => {
+describe('CaptureHotkeyHost', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.activeCaptureOverlay.mockReturnValue(null);

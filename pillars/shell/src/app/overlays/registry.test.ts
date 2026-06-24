@@ -1,12 +1,13 @@
 /**
- * Tests for the shell-level overlay registry (PRD-101 US-07).
+ * Tests for the shell-level overlay registry
+ * (docs/themes/foundation/prds/overlay-surfaces).
  *
  * The runtime export `installedOverlays` is the join of the live overlay
- * manifests and the runtime `INSTALLED_MODULES` install set (PRD-218
- * US-01: `POPS_APPS` / `POPS_OVERLAYS` are re-evaluated at module load).
- * The pure helper `selectInstalledOverlays` is exposed so we can exercise
- * both the "installed" and "absent" branches without mocking the
- * generated module registry.
+ * manifests and the runtime `INSTALLED_MODULES` install set (`POPS_APPS` /
+ * `POPS_OVERLAYS` are re-evaluated at module load). The pure helper
+ * `selectInstalledOverlays` is exposed so we can exercise both the
+ * "installed" and "absent" branches without mocking the generated module
+ * registry.
  */
 import { describe, expect, it } from 'vitest';
 

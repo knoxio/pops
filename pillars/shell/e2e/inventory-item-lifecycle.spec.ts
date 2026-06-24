@@ -1,8 +1,8 @@
 /**
- * E2E test — Inventory item lifecycle (#2111)
+ * E2E test — Inventory item lifecycle
  *
  * Walks the full create → view → edit → delete flow at `/inventory` against the
- * seeded e2e SQLite environment. Complements the Tier 1 smoke test
+ * seeded e2e SQLite environment. Complements the smoke test
  * (inventory-items.spec.ts), which only verifies seeded data renders.
  *
  * Design notes:
