@@ -1,11 +1,10 @@
 /**
- * Cerebrum plexus adapter registry schema (PRD-090 / PRD-180).
+ * Cerebrum plexus adapter registry schema.
  *
  * `plexus_adapters` rows describe each external integration the cerebrum
  * pillar is wired up to (Notion, Linear, e-mail, etc.) and `plexus_filters`
  * holds the per-adapter include/exclude regex rules the lifecycle manager
- * applies to incoming items. Adapter HTTP clients and the encrypted
- * config envelope stay on pops-api; this schema is the pure storage seam.
+ * applies to incoming items.
  */
 import { index, integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
 

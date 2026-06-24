@@ -1,6 +1,6 @@
 /**
  * TagPicker — multi-tag input with prefix-based autocomplete from
- * existing tags in the index (PRD-081 US-01 AC #9).
+ * existing tags in the index.
  *
  * Mirrors ScopePicker's interaction model so the form keeps a
  * consistent feel: type to filter known tags, Enter/comma/Tab to commit,

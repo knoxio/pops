@@ -1,5 +1,5 @@
 /**
- * Consolidator Worker (US-02, PRD-085).
+ * Consolidator Worker (curation-workers).
  *
  * Detects clusters of 3+ engrams with cosine similarity > 0.85 within the
  * same top-level scope. Produces merge plans that combine content, deduplicate
@@ -130,7 +130,7 @@ export class ConsolidatorWorker extends WorkerBase {
   /**
    * Execute a merge — create the consolidated engram and archive originals.
    * Returns the merged engram's ID so the caller can record it on the action
-   * payload (needed for revert per PRD-086 US-04).
+   * payload (needed for consolidate revert; see trust-graduation).
    */
   private executeMerge(cluster: Engram[], plan: ConsolidatePayload): string {
     const dominantType = findDominantType(cluster);

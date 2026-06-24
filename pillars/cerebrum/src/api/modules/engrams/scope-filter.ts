@@ -37,19 +37,15 @@ export interface FilterByScopesResult {
 export function filterByScopes(opts: FilterByScopesOptions): FilterByScopesResult {
   const { scopes, includeSecret = false, db } = opts;
 
-  // Step 1: Collect IDs of secret-scoped engrams (for hard-blocking).
   const secretIds = includeSecret ? new Set<string>() : getSecretEngramIds(db);
 
-  // Step 2: Collect IDs matching the scope prefixes.
   let matchingIds: string[];
   if (scopes.length === 0) {
-    // No scope filter — get all engram IDs from the index table.
     matchingIds = getAllEngramIds(db);
   } else {
     matchingIds = getScopeMatchingIds(db, scopes);
   }
 
-  // Step 3: Remove secret-scoped engrams unless opted in.
   const result = matchingIds.filter((id) => !secretIds.has(id));
   return { engramIds: result };
 }
@@ -114,7 +110,8 @@ const CONTEXT_MAP: Record<string, string[]> = {
 
 /**
  * Map free-text contextual hints to scope prefix arrays.
- * This is a simple keyword map — LLM-based inference is out of scope (PRD-081).
+ * This is a simple keyword map — LLM-based inference is intentionally out of
+ * scope (see docs/prds/scope-model).
  *
  * @example
  * inferScopesFromContext("at work")   // ["work"]

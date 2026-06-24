@@ -1,5 +1,5 @@
 /**
- * ts-rest contract for `workers.*` (PRD-085) — the Glia curation workers.
+ * ts-rest contract for `workers.*` — the Glia curation workers.
  *
  * Routed under `/glia/workers/*` + `/glia/scores/*` + `/glia/orphans` so paths
  * never collide with the merged glia trust router. Non-identity domain — served

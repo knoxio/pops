@@ -1,8 +1,7 @@
 /**
- * Text chunking + content hashing for embedding generation, pillar-local.
+ * Text chunking + content hashing for embedding generation. Token counts are
+ * approximated by character count rather than a real tokenizer.
  *
- * Lifted from the monolith `shared/chunker.ts` (the pillar container can't
- * import pops-api). Uses a char-count token approximation (~4 chars/token).
  * `cross-source.ts` hashes the first chunk of each row's embeddable text to
  * detect whether content changed since the last embedding run.
  */

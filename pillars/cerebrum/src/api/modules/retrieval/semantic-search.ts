@@ -11,17 +11,13 @@ import { resolveMetadata } from './semantic-search-metadata.js';
  * metadata resolution, scope/type/status filtering, and `RetrievalResult`
  * shaping.
  *
- * Ported from the monolith with three deltas:
- *
- *  - The query vector is produced by an injected {@link EmbeddingClient}
- *    rather than the shared pops-api embedding client + Redis cache. When no
- *    embedding client is configured (no `EMBEDDING_API_KEY`), `search` returns
- *    no semantic results — hybrid then degrades to BM25-only. A provider error
- *    is swallowed to the same no-results path so a flaky embedder never crashes
- *    retrieval.
+ *  - The query vector comes from the injected {@link EmbeddingClient}. With no
+ *    client configured (no `EMBEDDING_API_KEY`), `search` returns no semantic
+ *    results and hybrid degrades to BM25-only. A provider error is swallowed to
+ *    the same no-results path so a flaky embedder never crashes retrieval.
  *  - kNN reads the pillar's own raw handle (`embeddings` + `embeddings_vec`
- *    live in cerebrum.db); vector availability is the pillar's
- *    `openCerebrumDb(...).vecAvailable`, captured at construction.
+ *    live in cerebrum.db); vector availability is `vecAvailable`, captured at
+ *    construction.
  *  - Metadata resolution goes through {@link resolveMetadata} with the pillar
  *    drizzle handle + injected peer clients.
  */

@@ -1,9 +1,9 @@
 /**
- * Pure helpers for the nudge_log slice (PRD-084).
+ * Pure helpers for the nudge_log slice (proactive-nudges).
  *
  * `rowToNudge` is the mapping from a drizzle-inferred row shape to the
- * public `Nudge` domain object; `generateNudgeId` is the ID format
- * PRD-084 specifies (`nudge_{YYYYMMDD}_{HHmm}_{type}_{slug}`).
+ * public `Nudge` domain object; `generateNudgeId` is the
+ * `nudge_{YYYYMMDD}_{HHmm}_{type}_{slug}` ID format.
  */
 import type { InferSelectModel } from 'drizzle-orm';
 
@@ -43,7 +43,7 @@ export function rowToNudge(row: NudgeLogRow): Nudge {
 }
 
 /**
- * Generate a nudge ID per PRD-084: `nudge_{YYYYMMDD}_{HHmm}_{type}_{slug}`.
+ * Generate a nudge ID: `nudge_{YYYYMMDD}_{HHmm}_{type}_{slug}`.
  *
  * The slug suffix is a short base-36 random tail; collisions within the
  * same minute are vanishingly unlikely at single-user scale and the

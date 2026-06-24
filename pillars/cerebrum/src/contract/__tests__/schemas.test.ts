@@ -12,7 +12,7 @@ import type { Engram } from '../types/engram.js';
 import type { Nudge } from '../types/nudge.js';
 import type { Scope } from '../types/scope.js';
 
-describe('@pops/cerebrum-contract round-trip', () => {
+describe('@pops/cerebrum round-trip', () => {
   it('Engram ↔ EngramSchema agree structurally', () => {
     expectTypeOf<z.infer<typeof EngramSchema>>().toEqualTypeOf<Engram>();
   });

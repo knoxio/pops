@@ -1,10 +1,9 @@
 /**
  * EngramDetailPage — `/cerebrum/engrams/:id`.
  *
- * Hosts both the read-only render and the inline edit form. Mode is
- * controlled by the view-model hook (PRD-077, PRD-078). The
- * connections panel reuses `cerebrum.engrams.list({ ids })` rather
- * than introducing a dedicated procedure.
+ * Hosts both the read-only render and the inline edit form; the mode
+ * is controlled by the view-model hook. The connections panel reuses
+ * the engrams list endpoint (by ids) rather than a dedicated one.
  */
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router';

@@ -1,16 +1,15 @@
 /**
- * Detector-layer types for the cerebrum nudges write surface (PRD-084).
+ * Detector-layer types for the cerebrum nudges write surface.
  *
  * The wire/persistence types (`Nudge`, `NudgeCandidate`, `NudgePriority`,
- * `NudgeType`, `EngramSummary`) live in the db package and are re-exported here
- * for the detectors' convenience. The threshold + detected-pattern shapes are
+ * `NudgeType`, `EngramSummary`) live in `src/db` and are re-exported here for
+ * the detectors' convenience. The threshold + detected-pattern shapes are
  * detector-internal and live in this module.
  *
- * Pillar delta: the monolith resolves thresholds from a settings service. The
- * pillar has none, so {@link getDefaultNudgeThresholds} returns the hardcoded
- * PRD-084 fallbacks (with `CEREBRUM_NUDGE_*` env overrides for ops tuning) and
- * the live thresholds are held in-process by the handler factory — mutated by
- * `configure`, read by `scan`. They are NOT persisted across restarts.
+ * {@link getDefaultNudgeThresholds} returns the hardcoded fallbacks (with
+ * `CEREBRUM_NUDGE_*` env overrides for ops tuning); the live thresholds are held
+ * in-process by the handler factory — mutated by `configure`, read by `scan`,
+ * and NOT persisted across restarts.
  */
 import type { NudgeCandidate } from '../../../db/index.js';
 
@@ -27,17 +26,17 @@ export type {
 
 /** Configurable thresholds for nudge detection. */
 export interface NudgeThresholds {
-  /** Minimum embedding similarity to propose consolidation. Default 0.85. */
+  /** Minimum embedding similarity to propose consolidation. */
   consolidationSimilarity: number;
-  /** Minimum cluster size to trigger a consolidation nudge. Default 3. */
+  /** Minimum cluster size to trigger a consolidation nudge. */
   consolidationMinCluster: number;
-  /** Days since modification before an engram is flagged as stale. Default 90. */
+  /** Days since modification before an engram is flagged as stale. */
   stalenessDays: number;
-  /** Minimum occurrences of a topic before it is flagged as a pattern. Default 5. */
+  /** Minimum occurrences of a topic before it is flagged as a pattern. */
   patternMinOccurrences: number;
-  /** Maximum pending nudges — oldest are expired when exceeded. Default 20. */
+  /** Maximum pending nudges — oldest are expired when exceeded. */
   maxPendingNudges: number;
-  /** Minimum hours between nudges of the same type for the same engrams. Default 24. */
+  /** Minimum hours between nudges of the same type for the same engrams. */
   nudgeCooldownHours: number;
 }
 
@@ -57,7 +56,7 @@ function envNumber(key: string, fallback: number): number {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
-/** Resolve the default thresholds — hardcoded PRD-084 values + env overrides. */
+/** Resolve the default thresholds — hardcoded fallbacks + env overrides. */
 export function getDefaultNudgeThresholds(): NudgeThresholds {
   return {
     consolidationSimilarity: envNumber(

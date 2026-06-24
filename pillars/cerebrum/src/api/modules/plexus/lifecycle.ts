@@ -1,19 +1,13 @@
 /**
- * Plexus lifecycle manager (PRD-090, US-02).
+ * Plexus lifecycle manager (plugin-architecture PRD).
  *
- * Lifted from the pops-api monolith during the cerebrum REST migration.
  * Manages the full adapter lifecycle: register → initialize → health-check
  * loop → shutdown. Error isolation ensures one misbehaving adapter never
  * affects others.
  *
- * Two deviations from the monolith copy:
- *  - The drizzle handle is constructor-injected (`CerebrumDb`) rather than
- *    resolved per-call via `getCerebrumDrizzle()` — the pillar threads its
- *    own open handle through `CerebrumApiDeps`.
- *  - The health-loop tuning knobs (interval / timeout / max failures) read
- *    from plain constants instead of the pops-api `cerebrum.plexus.*`
- *    settings, which the pillar does not host. The values match the
- *    monolith's `getSettingValue` fallbacks.
+ * The `CerebrumDb` handle is constructor-injected (threaded through
+ * `CerebrumApiDeps`); the health-loop tuning knobs (interval / timeout / max
+ * failures) read from the constants below.
  */
 import { plexusService, type CerebrumDb, type PlexusAdapter } from '../../../db/index.js';
 import {

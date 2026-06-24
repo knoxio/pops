@@ -5,7 +5,7 @@
  * The retrieval services are STATELESS: scope/type/status filtering rides in
  * the request body (`RetrievalFilters`), never derived from a caller identity.
  * The domain is therefore served on the docker-network trust boundary with no
- * per-request auth, like the other migrated domains.
+ * per-request auth, like the other domains.
  *
  * `search` / `context` / `similar` are POST-with-body (they carry the filter
  * object and/or arrays that don't round-trip cleanly through a query string —

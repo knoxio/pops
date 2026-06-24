@@ -1,13 +1,9 @@
 /**
- * DocumentsPage — `/cerebrum/documents` (PRD-083).
+ * DocumentsPage — `/cerebrum/documents`.
  *
  * Surface for generating reports/summaries/timelines from the engram
- * corpus. Preview + Generate use the existing
- * `cerebrum.emit.{preview,generate}` procedures and surface the latest
- * result inline. Regenerate re-submits the current form state.
- *
- * History persistence is intentionally deferred — see the follow-up
- * issue referenced in the PR description.
+ * corpus. Preview and Generate surface the latest result inline;
+ * Regenerate re-submits the current form state.
  */
 import { useTranslation } from 'react-i18next';
 

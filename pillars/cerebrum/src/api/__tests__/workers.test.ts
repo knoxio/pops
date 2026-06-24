@@ -1,5 +1,5 @@
 /**
- * Integration tests for `workers.*` over REST (PRD-085).
+ * Integration tests for `workers.*` over REST.
  *
  * Boots the app against a per-test temp `cerebrum.db` + temp engram root, with
  * an injected offline {@link makeFakeContradictionDetector} (no real Anthropic

@@ -1,14 +1,11 @@
 /**
  * Document-embedding API client for the cerebrum worker (OpenAI- / Voyage-
- * compatible), lifted from the monolith `apps/pops-api/src/shared/embedding-
- * client.ts`.
+ * compatible).
  *
- * The retrieval slice already ships a *query*-embedding client
+ * This is the write-side counterpart to the retrieval *query*-embedding client
  * (`src/api/modules/retrieval/embedding-client.ts`, `embedQuery`, `input_type:
- * 'query'`). This is its write-side counterpart — it embeds *documents*
- * (`input_type: 'document'`) for the index, exposing the monolith's
- * `getEmbedding` / `getEmbeddingConfig` / `isEmbeddingConfigured` surface so the
- * embeddings handler can chunk-and-store.
+ * 'query'`): it embeds *documents* (`input_type: 'document'`) for the index so
+ * the embeddings handler can chunk-and-store.
  *
  * Configured entirely via environment variables so the model choice is not
  * baked into code:

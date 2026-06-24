@@ -1,5 +1,5 @@
 /**
- * PatternDetector (PRD-084 US-03).
+ * PatternDetector (see docs/prds/proactive-nudges).
  *
  * Detects recurring topics, emerging themes, and contradictions across
  * engrams. The tag-frequency and time-series passes are pure synchronous

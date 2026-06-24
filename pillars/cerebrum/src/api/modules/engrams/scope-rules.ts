@@ -2,12 +2,10 @@
  * Scope-rules engine for the cerebrum pillar — reads `scope-rules.toml` from
  * the engram root and auto-assigns scopes by source/type/tag matching.
  *
- * Lifted from `apps/pops-api/src/modules/cerebrum/engrams/scope-rules.ts`.
- * The pillar has no settings service, so the fallback scope is the hardcoded
- * ADR default rather than a `getSettingValue('cerebrum.engram.fallbackScope')`
- * override. Config loading (`ScopeRuleEngine`) and rule evaluation
- * (`resolveScopes`) stay separate so the engine is usable as a pure function
- * in tests.
+ * There is no settings service in the pillar, so the fallback scope is the
+ * hardcoded default rather than a runtime-configurable override. Config
+ * loading (`ScopeRuleEngine`) and rule evaluation (`resolveScopes`) stay
+ * separate so the engine is usable as a pure function in tests.
  *
  * `ScopeRuleEngine` satisfies the `ScopeInferenceEngine` seam consumed by the
  * engram create path (`handlers/create-engram.ts`).

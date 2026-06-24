@@ -1,19 +1,17 @@
 /**
- * Nudge write surface for the cerebrum pillar (PRD-084): `scan`, `act`,
- * `configure`.
+ * Nudge write surface for the cerebrum pillar: `scan`, `act`, `configure`.
  *
  * `scan` runs the consolidation / staleness / pattern detectors over the active
  * engram corpus and persists new candidates to `nudge_log` (cooldown dedup +
- * pending-cap enforcement live in the db package). `act` executes a pending
- * nudge's suggested action through the in-pillar {@link EngramService}
- * (consolidate / archive / review / link) then marks it `acted`. `configure`
- * mutates the in-process detection thresholds.
+ * pending-cap enforcement live in `src/db`). `act` executes a pending nudge's
+ * suggested action through the in-pillar {@link EngramService} (consolidate /
+ * archive / review / link) then marks it `acted`. `configure` mutates the
+ * in-process detection thresholds.
  *
- * Threshold persistence: the monolith stored thresholds in a settings service
- * absent from the pillar. Thresholds are held in-process (the
+ * Threshold persistence: thresholds are held in-process (the
  * {@link ThresholdsStore} this service mutates) so `configure` round-trips with
  * `scan` within the same process; they are NOT persisted across restarts and
- * reset to {@link getDefaultNudgeThresholds} on boot. Documented as a deviation.
+ * reset to {@link getDefaultNudgeThresholds} on boot.
  */
 import { and, eq } from 'drizzle-orm';
 

@@ -6,8 +6,7 @@
  *
  * `unwrap` turns a Hey API `{ data, error, response }` result into its
  * data payload, throwing `CerebrumApiError` (carrying the HTTP status) on
- * failure. The status lets call sites reproduce the pillar-sdk UX
- * distinctions that used to come from `usePillarQuery`:
+ * failure. The status lets call sites distinguish UX states:
  *   - 404            → "not found"    (isNotFoundError)
  *   - 503            → "unavailable"  (isUnavailableError — e.g. worker queue down)
  *   - 5xx / no status → "unavailable" (isUnavailableError)

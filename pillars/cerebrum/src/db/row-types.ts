@@ -1,14 +1,14 @@
 /**
  * Public `Row`/`Insert` aliases for the cerebrum-owned tables.
  *
- * Centralised here so consumers can `import type { EmbeddingRow } from
- * '@pops/cerebrum-db'` without reaching into a service module. The
- * underlying tables live in `./schema/*.ts` (PRD-245 US-01).
+ * Centralised here so consumers get `EmbeddingRow` and friends from the
+ * `src/db` barrel without reaching into a service module. The underlying
+ * tables live in `./schema/*.ts`.
  *
  * Service-owned types (`NudgeLogRow`, glia-types, plexus-types, engrams
  * `IndexRow`, conversation-types) live in their respective service
  * modules and are re-exported from `./index.ts`; this file hosts the
- * remaining inferred row aliases relocated from `@pops/db-types`.
+ * remaining inferred row aliases.
  */
 import type { InferInsertModel, InferSelectModel } from 'drizzle-orm';
 

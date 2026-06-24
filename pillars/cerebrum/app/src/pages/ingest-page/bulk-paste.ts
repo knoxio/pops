@@ -1,9 +1,7 @@
 /**
- * Bulk paste helpers (PRD-081 US-08).
- *
  * Splits the capture body on `---` separator lines into N engram segments,
- * skipping empty segments. The split happens client-side; each surviving
- * segment is submitted as its own quickCapture mutation.
+ * skipping empty ones. The split is client-side; each surviving segment is
+ * submitted as its own quickCapture mutation (see useSubmission).
  */
 
 const SEPARATOR_LINE = /^\s*---\s*$/;

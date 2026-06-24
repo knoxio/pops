@@ -1,15 +1,15 @@
 /**
- * ReflexService — core orchestrator for the reflex system (PRD-089).
+ * ReflexService — core orchestrator for the reflex system (spec: reflex-system).
  *
  * Loads (and optionally watches) `reflexes.toml`, maintains an in-memory
  * registry, matches events/thresholds/schedules, and logs execution history
  * to the cerebrum pillar DB.
  *
  * The pillar owns its own `cerebrum.db` connection, so the drizzle handle is
- * injected at construction rather than resolved from a process singleton. The
- * config path is supplied explicitly (env-configured in production, a temp
- * fixture in tests) and a missing file is tolerated as an empty reflex set.
- * The chokidar watcher is opt-in (`watch: true`) so tests never spin one up.
+ * injected at construction. The config path is supplied explicitly
+ * (env-configured in production, a temp fixture in tests) and a missing file
+ * is tolerated as an empty reflex set. The chokidar watcher is opt-in
+ * (`watch: true`) so tests never spin one up.
  */
 import { eq } from 'drizzle-orm';
 

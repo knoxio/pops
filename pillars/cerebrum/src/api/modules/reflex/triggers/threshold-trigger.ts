@@ -1,6 +1,6 @@
 /**
- * Threshold trigger — evaluates Thalamus metrics and fires reflexes when
- * values cross configured thresholds (PRD-089 US-03).
+ * Threshold trigger — decides whether a reflex should fire when a Thalamus
+ * metric crosses its configured threshold.
  *
  * Implements edge detection (hysteresis): a threshold fires once when crossed,
  * then is suppressed until the metric drops below the threshold and crosses

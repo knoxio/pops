@@ -1,20 +1,18 @@
 /**
- * LLM port for the cerebrum document-generation engine (PRD-083).
+ * LLM port for the cerebrum document-generation engine.
+ * Spec: pillars/cerebrum/docs/prds/document-generation.
  *
  * The generation pipeline needs one capability: send a system prompt + user
  * message and get the synthesised document text back. Modelled as the
  * {@link GenerationLlm} port so it runs against a real Anthropic client in
  * production and a canned fake in tests (tests MUST NOT reach a real API).
  *
- * Deviations from the monolith (parity with the ingest + query slices):
- * - Model overrides / settings → hardcoded `claude-sonnet-4-6` with optional
- *   `CEREBRUM_EMIT_MODEL` env override. Max-tokens is a constant.
- * - Usage/cost is reported to the ai pillar via `@pops/ai-telemetry`
- *   (`callWithLogging`, fire-and-forget); the 429 backoff
- *   ({@link withRateLimitRetry}, reused from the ingest slice) is retained.
- * - Degradation parity: a missing API key returns a placeholder string (the
- *   monolith's behaviour) rather than throwing; a transport error throws so
- *   the handler surfaces a 500.
+ * Model is `DEFAULT_EMIT_MODEL` unless `CEREBRUM_EMIT_MODEL` overrides it;
+ * max-tokens is a constant. Usage/cost is reported to the ai pillar via
+ * `@pops/ai-telemetry` (`callWithLogging`, fire-and-forget); the 429 backoff
+ * is {@link withRateLimitRetry}. A missing API key returns a placeholder
+ * string rather than throwing; a transport error throws so the handler
+ * surfaces a 500.
  */
 import Anthropic from '@anthropic-ai/sdk';
 

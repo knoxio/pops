@@ -1,5 +1,5 @@
 /**
- * Pruner Worker (US-01, PRD-085).
+ * Pruner Worker (curation-workers).
  *
  * Computes staleness scores for engrams and detects orphans. Engrams above
  * the staleness threshold are proposed for archival. Orphans (zero inbound

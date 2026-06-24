@@ -1,7 +1,5 @@
 /**
  * ConversationScopeNegotiator -- infers scope adjustments during conversation.
- *
- * PRD-087 US-04: Scope Negotiation.
  */
 
 import {
@@ -20,10 +18,6 @@ import {
 } from './scope-keywords.js';
 
 import type { Message } from './types.js';
-
-// ---------------------------------------------------------------------------
-// Public types
-// ---------------------------------------------------------------------------
 
 /** Channels through which Ego conversations can originate. */
 export type EgoChannel = 'shell' | 'moltbot' | 'mcp' | 'cli';
@@ -55,20 +49,12 @@ export interface NegotiateParams {
   knownScopes?: string[];
 }
 
-// ---------------------------------------------------------------------------
-// Channel defaults
-// ---------------------------------------------------------------------------
-
 const DEFAULT_CHANNEL_SCOPES: ChannelScopeDefaults = {
   shell: { prefixes: [] },
   moltbot: { prefixes: ['personal.'] },
   mcp: { prefixes: ['work.'] },
   cli: { prefixes: [] },
 };
-
-// ---------------------------------------------------------------------------
-// Negotiator
-// ---------------------------------------------------------------------------
 
 export class ConversationScopeNegotiator {
   private readonly channelDefaults: ChannelScopeDefaults;
@@ -116,10 +102,7 @@ export class ConversationScopeNegotiator {
     );
   }
 
-  // -----------------------------------------------------------------------
-  // Private negotiation steps (each returns null to fall through)
-  // -----------------------------------------------------------------------
-
+  /** Each negotiation step returns null to fall through to the next. */
   private trySecretUnlock(
     message: string,
     pool: string[],

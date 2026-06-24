@@ -2,11 +2,10 @@
  * Integration tests for `cerebrum.engrams.*`, `cerebrum.scopes.*`, and
  * `cerebrum.tags.*` over REST.
  *
- * Boots the app against a per-test temp cerebrum.db (carrying the engrams
- * baseline migration 0050) and a per-test temp engram root (mkdtemp) so the
- * full create → get → update → delete lifecycle exercises real file IO against
- * the SQLite index. The supertest agent reuses one socket so express-5 doesn't
- * churn ECONNRESETs.
+ * Boots the app against a per-test temp cerebrum.db and a per-test temp engram
+ * root (mkdtemp) so the full create → get → update → delete lifecycle exercises
+ * real file IO against the SQLite index. The supertest agent reuses one socket
+ * so express-5 doesn't churn ECONNRESETs.
  */
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';

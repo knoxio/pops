@@ -1,5 +1,5 @@
 /**
- * Consolidation act handler (PRD-084).
+ * Consolidation act handler.
  *
  * When a consolidation nudge is acted on, synthesizes a merged engram from the
  * source engrams in the cluster, creates it through the in-pillar

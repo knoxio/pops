@@ -1,5 +1,5 @@
 /**
- * Engram type change with file move (PRD-081 US-03 AC #6).
+ * Engram type change with file move (see docs/prds/ingestion-pipeline).
  *
  * Quick-captured engrams land in `captures/{id}.md`. When the curation worker
  * classifies them with high confidence into a real type (idea, note, ...), the

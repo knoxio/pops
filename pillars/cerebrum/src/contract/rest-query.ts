@@ -1,9 +1,9 @@
 /**
- * ts-rest contract for `cerebrum.query.*` — the NL Q&A engine (PRD-082).
+ * ts-rest contract for `cerebrum.query.*` — the NL Q&A engine.
  *
  * STATELESS: scope/domain filtering rides in the request body, never derived
  * from a caller identity. Served on the docker-network trust boundary with no
- * per-request auth, like the other migrated domains.
+ * per-request auth, like the other domains.
  *
  * `ask` / `retrieve` / `explain` are all POST (the bodies carry scope/domain
  * arrays). The SSE stream variant (`POST /query/stream`) cannot be modelled by

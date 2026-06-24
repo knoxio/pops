@@ -1,11 +1,10 @@
 /**
- * Integration tests for `cerebrum.debrief.*` over REST (PRD-248).
+ * Integration tests for `cerebrum.debrief.*` over REST.
  *
- * Boots the app against a per-test temp `cerebrum.db` (debrief tables present
- * via migration 0055) and exercises the surface end-to-end through the REST
- * client. Covers create→get round-trip, getByMedia, create idempotency,
- * record (404 without a session), dismiss (idempotent + 404),
- * deleteByWatchHistoryId cascade, and listPending pagination.
+ * Boots the app against a per-test temp `cerebrum.db` and exercises the surface
+ * end-to-end through the REST client. Covers create→get round-trip, getByMedia,
+ * create idempotency, record (404 without a session), dismiss (idempotent +
+ * 404), deleteByWatchHistoryId cascade, and listPending pagination.
  */
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';

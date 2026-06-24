@@ -1,5 +1,5 @@
 /**
- * QueryService — pipeline orchestrator for the cerebrum query engine (PRD-082).
+ * QueryService — pipeline orchestrator for the cerebrum query engine.
  *
  * Methods:
  *   ask           — full NL Q&A: scope inference → retrieval → LLM → citations
@@ -9,8 +9,6 @@
  *
  * Reuses the in-pillar retrieval slice (`HybridSearchService`,
  * `ContextAssemblyService`). The LLM ports are injected so tests stay offline.
- * Settings-service tunables are replaced with constants (the pillar has no
- * settings service).
  */
 import { ContextAssemblyService } from '../retrieval/context-assembly.js';
 import { HybridSearchService } from '../retrieval/hybrid-search.js';

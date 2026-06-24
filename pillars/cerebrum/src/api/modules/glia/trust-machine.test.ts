@@ -1,10 +1,10 @@
 /**
- * GliaTrustMachine unit tests (PRD-086 US-03).
+ * GliaTrustMachine unit tests.
  *
  * Graduation thresholds, demotion logic, counter resets, and phase-transition
- * edge cases. Runs against a real temp `cerebrum.db` (glia baseline migration
- * 0051) so the transactional decide/revert counter writes are exercised end to
- * end, with a controllable clock for the time-window logic.
+ * edge cases. Runs against a real temp `cerebrum.db` so the transactional
+ * decide/revert counter writes are exercised end to end, with a controllable
+ * clock for the time-window logic.
  */
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';

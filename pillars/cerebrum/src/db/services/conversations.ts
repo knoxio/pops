@@ -1,5 +1,5 @@
 /**
- * Conversations data-access for the cerebrum pillar (PRD-182 US-01).
+ * Conversations data-access for the cerebrum pillar (ego-core).
  *
  * Scope boundary: this file is the SQL seam for the conversations slice.
  * It covers CRUD on `conversations`, append/read on `messages`, and
@@ -9,17 +9,13 @@
  * found contract via the typed errors in `conversations-errors.ts`.
  *
  * Domain orchestration (chat streaming, model selection, scope
- * negotiation, auto-titling, persistence-store wiring) stays in
- * `apps/pops-api/src/modules/cerebrum/ego/*` until PRD-182 PR 3 flips
- * routing through `getCerebrumDrizzle()`. That keeps this package pure
- * data-access — no node:fs imports, no zod cross-validation, no LLM
- * client wiring.
+ * negotiation, auto-titling, persistence-store wiring) lives in the
+ * pillar's ego module, not here — this stays pure data-access (no
+ * node:fs, no zod cross-validation, no LLM client wiring).
  *
- * The functions take a `CerebrumDb` handle as their first argument; the
- * calling layer (pops-api today, `cerebrum-api` after the cutover)
- * resolves the singleton or transaction handle. Mirrors the
- * `nudge-log.ts` / `engrams.ts` / `glia.ts` db-arg pattern in this
- * package.
+ * Functions take a `CerebrumDb` handle as their first argument; the
+ * caller resolves the singleton or transaction handle. Mirrors the
+ * `nudge-log.ts` / `engrams.ts` / `glia.ts` db-arg pattern in this slice.
  */
 import { and, asc, count, desc, eq, like } from 'drizzle-orm';
 
@@ -73,8 +69,8 @@ export function requireConversation(db: CerebrumDb, id: string): Conversation {
 /**
  * Paginated list of conversations. Orders by `updated_at desc` so the
  * most recently touched session surfaces first. The optional `search`
- * filters by title via LIKE; matches the inline persistence search
- * behaviour today. Returns both the rows and the unpaginated `total`.
+ * filters by title via LIKE. Returns both the rows and the unpaginated
+ * `total`.
  */
 export function listConversations(
   db: CerebrumDb,
@@ -221,10 +217,10 @@ export function deleteMessage(db: CerebrumDb, id: string): number {
 }
 
 /**
- * Count messages for a conversation, optionally filtered by role. Used
- * by the auto-title heuristic in pops-api to detect the first user
- * message; kept here so the data layer owns the COUNT and the
- * orchestration code stays focused on the heuristic.
+ * Count messages for a conversation, optionally filtered by role. The
+ * auto-title heuristic uses this to detect the first user message; the
+ * data layer owns the COUNT so the orchestration code stays focused on
+ * the heuristic.
  */
 export function countMessages(
   db: CerebrumDb,
@@ -260,8 +256,7 @@ export function upsertConversationContext(db: CerebrumDb, row: UpsertContextRow)
 
 /**
  * List context entries for a conversation, ordered by `loaded_at desc`
- * so the freshest engram association surfaces first. Mirrors the
- * `getContextEntries` shape pops-api exposes today.
+ * so the freshest engram association surfaces first.
  */
 export function listConversationContext(
   db: CerebrumDb,

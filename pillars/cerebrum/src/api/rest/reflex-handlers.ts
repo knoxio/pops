@@ -1,5 +1,5 @@
 /**
- * ts-rest handlers for `cerebrum.reflex.*` (PRD-089).
+ * ts-rest handlers for `cerebrum.reflex.*` (docs/prds/reflex-system).
  *
  * Thin adapter over {@link ReflexService}: reads the in-memory registry
  * (loaded from `reflexes.toml`) and the append-only execution log in the

@@ -1,17 +1,13 @@
 /**
  * CitationParser — extracts and validates inline source citations from LLM
- * output against the retrieved source set (PRD-082 US-03).
+ * output against the retrieved source set (see docs/prds/query-engine).
  *
  * Handles:
  *  - Bracketed engram IDs: [eng_20260417_0942_agent-coordination]
  *  - Bracketed sourceType:sourceId references: [engram:eng_20260417_0942_...]
  *  - Strips hallucinated citations (IDs not in retrieved set), logging them.
- *  - Truncates excerpts to 200 chars at word boundary with ellipsis.
+ *  - Truncates excerpts at a word boundary with ellipsis.
  *  - Orders output citations by relevance (highest first).
- *
- * Deviation from the monolith: the excerpt-length setting and `logger` are
- * replaced with a constant + `console.warn` (the pillar has no settings
- * service and no shared pino logger).
  */
 import type { RetrievalResult } from '../retrieval/types.js';
 import type { CitationParseResult, SourceCitation } from './types.js';

@@ -1,8 +1,5 @@
 /**
- * Shared helpers for document generation modes (PRD-083).
- *
- * Reduces duplication across report, summary, and timeline modes. Lifted
- * verbatim from the monolith (pure logic).
+ * Shared helpers for document generation modes — report, summary, timeline.
  */
 import type { SourceCitation } from '../query/types.js';
 import type { RetrievalResult } from '../retrieval/types.js';
@@ -25,7 +22,7 @@ export function extractDateRange(results: RetrievalResult[]): DateRange | null {
   return { from: first, to: last };
 }
 
-/** Truncate to 200 chars at word boundary with ellipsis. */
+/** Truncate at the word boundary with an ellipsis. */
 export function truncateExcerpt(text: string): string {
   if (text.length <= EXCERPT_MAX_LENGTH) return text;
   const truncated = text.slice(0, EXCERPT_MAX_LENGTH);

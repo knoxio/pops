@@ -1,15 +1,15 @@
 /**
- * Wire schemas for `cerebrum.debrief.*` (PRD-248).
+ * Wire schemas for `cerebrum.debrief.*`.
  *
  * The cerebrum debrief subsystem stores a post-watch reflection session per
  * (re-)watch and records per-dimension reflection outcomes. `watchHistoryId`,
  * `mediaType`/`mediaId`, `dimensionId` and `comparisonId` are soft pointers
  * into the media pillar (ADR-026) — no cross-DB FK, no cross-pillar call.
  *
- * The shapes mirror the cerebrum-db drizzle rows one-to-one (the contract is
- * the wire shape, not a UI projection). Defined locally so the pillar contract
- * stays self-contained; lives in its own file so the contract module stays
- * under the oxlint `max-lines` cap.
+ * The shapes mirror the `src/db` drizzle rows one-to-one (the contract is the
+ * wire shape, not a UI projection). Defined locally so the pillar contract stays
+ * self-contained; lives in its own file so the contract module stays under the
+ * oxlint `max-lines` cap.
  */
 import { z } from 'zod';
 

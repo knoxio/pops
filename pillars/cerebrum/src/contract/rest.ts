@@ -7,8 +7,7 @@
  * JSON to `src/contract/api-types.generated.ts`.
  *
  * Lego principle: this is the ONLY description of the cerebrum wire format.
- * Don't hand-author OpenAPI or hand-author paths anywhere else. Domains are
- * added here as each migration slice lands.
+ * Don't hand-author OpenAPI or hand-author paths anywhere else.
  */
 import { initContract } from '@ts-rest/core';
 

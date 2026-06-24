@@ -1,5 +1,5 @@
 /**
- * StalenessDetector (PRD-084 US-02).
+ * StalenessDetector (see docs/prds/proactive-nudges).
  *
  * Flags active engrams not modified within the configured threshold (default
  * 90 days). Suppresses detection on corpora younger than 30 days and excludes

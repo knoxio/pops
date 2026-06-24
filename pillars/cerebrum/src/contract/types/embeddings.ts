@@ -2,9 +2,7 @@
  * Public types for the cerebrum `embeddings.*` cross-pillar SDK surface.
  *
  * Two read-only procedures live on this surface — `getStatus` and
- * `listSourceIdsByType` — both consumed by
- * `apps/pops-api/src/modules/core/embeddings/service.ts` once US-02 flips
- * the call site. Both are tRPC queries; neither mutates state.
+ * `listSourceIdsByType`; neither mutates state.
  *
  * The schemas under `../schemas/embeddings.ts` are the source of truth
  * for runtime validation; these interfaces mirror the inferred shapes
@@ -28,9 +26,7 @@ export interface EmbeddingsGetStatusOutput {
   total: number;
   /**
    * Placeholder, always `0` today. Reserved for forward-compatibility —
-   * a successor PRD wires real per-source pending counts when a consumer
-   * needs them. Mirrors the in-monolith note at
-   * `apps/pops-api/src/modules/core/embeddings/service.ts:128`.
+   * real per-source pending counts get wired when a consumer needs them.
    */
   pending: number;
   /**
@@ -51,7 +47,7 @@ export interface EmbeddingsListSourceIdsByTypeOutput {
   /**
    * Distinct `sourceId`s recorded against `input.sourceType`. Order is
    * unspecified — callers do not assume sorted output. Unbounded at this
-   * surface; future pagination is opt-in via a successor PRD.
+   * surface.
    */
   sourceIds: readonly string[];
 }

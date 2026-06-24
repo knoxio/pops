@@ -1,6 +1,6 @@
 /**
  * Tests for TagPicker — covers prefix-based autocomplete from existing
- * tags (PRD-081 US-01 AC #9), chip add/remove, and keyboard interaction.
+ * tags, chip add/remove, and keyboard interaction.
  */
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';

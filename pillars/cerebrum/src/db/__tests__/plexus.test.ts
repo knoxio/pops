@@ -6,9 +6,9 @@
  * replacement, and JSON config envelope round-tripping (including the
  * corrupt-blob tolerance in `parseAdapterConfig`).
  *
- * The baseline is read from
- * `packages/cerebrum-db/migrations/0053_plexus_baseline.sql` so the table
- * shape under test is identical to the one shipped in the journal.
+ * The baseline is read from the pillar's
+ * `migrations/0053_plexus_baseline.sql` so the table shape under test is
+ * identical to the one shipped in the journal.
  */
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';

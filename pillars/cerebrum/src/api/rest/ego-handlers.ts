@@ -1,5 +1,5 @@
 /**
- * ts-rest handlers for `ego.*` (PRD-087).
+ * ts-rest handlers for `ego.*` (docs/prds/ego-core).
  *
  * Conversation CRUD + context are thin adapters over {@link ConversationPersistence}.
  * `chat` runs the lifted {@link ConversationEngine}: persist the user turn,

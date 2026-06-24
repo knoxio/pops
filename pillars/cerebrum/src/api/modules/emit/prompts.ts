@@ -1,10 +1,9 @@
 /**
- * LLM prompt templates for document generation (PRD-083).
+ * LLM prompt templates for document generation.
  *
  * Each mode has a dedicated prompt builder that accepts the assembled context
  * and mode-specific parameters. Prompts instruct the model to synthesise
  * (not copy), cite sources by ID, and never introduce external information.
- * Lifted verbatim from the monolith.
  */
 import type { DateRange, TimelineGroupBy } from './types.js';
 

@@ -1,10 +1,4 @@
-/**
- * Pure helper functions for the ingestion pipeline.
- *
- * Lifted from `apps/pops-api/src/modules/cerebrum/ingest/pipeline-helpers.ts`.
- * `findDuplicate` takes the pillar `CerebrumDb` handle (rather than reaching a
- * monolith singleton) and resolves through the engrams data-access layer.
- */
+/** Pure helper functions for the ingestion pipeline. */
 import { createHash } from 'node:crypto';
 
 import { engramsService, type CerebrumDb } from '../../../db/index.js';

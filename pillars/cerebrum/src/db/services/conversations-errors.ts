@@ -2,8 +2,7 @@
  * Typed errors raised by the conversations data-access layer.
  *
  * Plain Error subclasses — the service layer doesn't know about HTTP.
- * The pops-api router/middleware maps them to status codes when surfacing
- * to clients. Mirrors `@pops/media-db`'s error pattern.
+ * The contract layer maps them to status codes when surfacing to clients.
  */
 
 export class ConversationNotFoundError extends Error {

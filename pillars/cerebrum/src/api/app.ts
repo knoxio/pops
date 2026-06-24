@@ -5,10 +5,6 @@
  * surface generated from `src/contract/rest.ts` via ts-rest. Kept as a
  * factory so the test suite can spin up an in-process `supertest` instance
  * without binding a real port.
- *
- * The pillar trusts the docker network for the non-identity domains migrated
- * so far (templates). Identity-dependent domains (ego/retrieval/query/ingest)
- * land in later slices behind the pillar auth middleware.
  */
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -26,8 +22,8 @@ import { makeCerebrumRestHandlers } from './rest/handlers.js';
 import { makeQueryStreamHandler } from './rest/query-stream-route.js';
 
 /**
- * JSON body cap. Ingest/emit payloads and (later) chat bodies can be large;
- * the limit sits well above express's 100 kb default.
+ * JSON body cap. Ingest/emit/chat payloads can be large; the limit sits well
+ * above express's 100 kb default.
  */
 const JSON_BODY_LIMIT = '20mb';
 

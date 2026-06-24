@@ -1,8 +1,6 @@
 /**
  * QueryForm — input for the natural-language question plus the
- * scope / domain / secret filters (PRD-082). Mirrors the field-level
- * primitives used by the Documents form so cerebrum surfaces feel
- * consistent.
+ * scope / domain / secret filters.
  */
 import { useTranslation } from 'react-i18next';
 

@@ -1,21 +1,19 @@
 /**
- * ts-rest contract for `cerebrum.embeddings.*` (PRD-249 US-02).
+ * ts-rest contract for `cerebrum.embeddings.*`.
  *
  * Read-only cross-pillar surface over the `embeddings` metadata table:
  *
  *   - `getStatus`            → POST /embeddings/status      → coverage stats
  *   - `listSourceIdsByType`  → POST /embeddings/source-ids  → distinct ids
  *
- * `pending` / `stale` are held at `0` — per-source tracking is out of scope
- * for the current surface (mirrors the in-monolith
- * `core/embeddings/service.ts` note). Writes to `embeddings` belong to the
- * cerebrum-internal embedding worker, not cross-pillar callers.
+ * `pending` / `stale` are held at `0` — per-source tracking is out of scope for
+ * the current surface. Writes to `embeddings` belong to the cerebrum-internal
+ * embedding worker, not cross-pillar callers.
  *
- * Both procedures are POST-with-body rather than GET: the typed inputs keep
- * parity with the in-monolith tRPC query shape and avoid query-string
- * round-tripping. Non-identity domain — docker-network trust, no per-request
- * auth (parity with templates / nudges). The wire schemas are defined locally
- * so the pillar contract stays self-contained.
+ * Both procedures are POST-with-body rather than GET: the typed inputs avoid
+ * query-string round-tripping. Non-identity domain — docker-network trust, no
+ * per-request auth (parity with templates / nudges). The wire schemas are
+ * defined locally so the pillar contract stays self-contained.
  */
 import { initContract } from '@ts-rest/core';
 import { z } from 'zod';

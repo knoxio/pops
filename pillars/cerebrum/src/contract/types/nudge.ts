@@ -6,14 +6,13 @@ export type NudgeStatus = (typeof NUDGE_STATUSES)[number];
  * A scheduled proactive nudge surfaced by the cerebrum reflex/nudge
  * subsystem. Mirrors the API response (camelCase) for the cerebrum pillar.
  *
- * Contract shape deliberately diverges from the live runtime row
- * (`apps/pops-api/src/modules/cerebrum/nudges/types.ts` + the
- * `nudge_log` table in `@pops/cerebrum-db`): the runtime today carries
+ * Contract shape deliberately diverges from the persistence row (the
+ * `nudge_log` table under `src/db`): the row carries
  * `type`/`title`/`body`/`engramIds`/`priority`/`action` and a different
  * status vocabulary (`'pending' | 'dismissed' | 'acted' | 'expired'`),
  * none of which are part of the public wire surface this contract pins.
- * The contract collapses the runtime's `title`+`body` into a single
- * `message` and uses a delivery-oriented status vocabulary
+ * The contract collapses the row's `title`+`body` into a single `message`
+ * and uses a delivery-oriented status vocabulary
  * (`'pending' | 'sent' | 'dismissed'`). The row mapper translates.
  */
 export interface Nudge {

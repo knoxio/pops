@@ -1,8 +1,8 @@
 /**
  * GliaDigestService — assembles + (optionally) delivers the autonomous-action
- * digest (PRD-086 US-04).
+ * digest.
  *
- * Three suppression rules govern delivery (preserved from the monolith):
+ * Three suppression rules govern delivery:
  *   1. zero autonomous actions in the window → suppress.
  *   2. every action type in the digest is in the silent phase → suppress.
  *   3. no delivery channels configured → suppress.
@@ -135,7 +135,7 @@ export class GliaDigestService {
     if (!phasesInReport.has('act_report')) {
       // Every type in the digest is silent (or somehow propose, which would
       // mean no autonomous actions — handled above). Silent phase intentionally
-      // suppresses delivery per PRD-086 US-04 AC #6.
+      // suppresses delivery.
       return {
         attempted: false,
         suppressedReason: 'All action types in digest are in silent phase',

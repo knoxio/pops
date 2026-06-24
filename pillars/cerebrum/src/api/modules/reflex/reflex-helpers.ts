@@ -1,8 +1,4 @@
-/**
- * Reflex service helpers (PRD-089).
- *
- * Extracted from reflex-service.ts to keep file sizes manageable.
- */
+/** Reflex service helpers. */
 import {
   ACTION_TYPES,
   type ActionType,

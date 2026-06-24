@@ -1,10 +1,10 @@
 /**
- * Client-side scope validators mirroring the server-side rules from
- * PRD-078 (Scope Model).
+ * Client-side scope validators mirroring the server-side scope rules.
  *
- * The authoritative validator is `cerebrum.scopes.validate` on the
- * server, but we duplicate the cheap rules here so the edit form can
- * give immediate feedback without a roundtrip per keystroke.
+ * The authoritative validator is the cerebrum `POST /scopes/validate`
+ * endpoint, but we duplicate the cheap structural rules here so the
+ * edit form can give immediate feedback without a roundtrip per
+ * keystroke.
  */
 
 const SCOPE_SEGMENT_PATTERN = /^[a-z0-9][a-z0-9-]{0,31}$/;
@@ -15,7 +15,7 @@ export function normaliseScope(raw: string): string {
   return raw.trim().toLowerCase();
 }
 
-/** Returns true when `scope` matches PRD-078's structural rules. */
+/** Returns true when `scope` matches the structural scope rules. */
 export function isValidScope(scope: string): boolean {
   const normalised = normaliseScope(scope);
   if (normalised.length === 0) return false;

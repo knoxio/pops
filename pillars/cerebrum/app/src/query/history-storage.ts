@@ -1,11 +1,10 @@
 /**
- * Local-only query history persistence (PRD-082).
+ * Local-only query history persistence.
  *
  * Past queries live in `localStorage` so the user can re-run them after
- * a reload. Server-side persistence is intentionally deferred — see the
- * follow-up issue referenced in the PR description. The mechanism
- * mirrors the engram draft storage pattern (silent no-op on quota
- * errors, defensive shape validation on read).
+ * a reload; there is no server-side persistence. The mechanism mirrors
+ * the engram draft storage pattern in `engrams/draft-storage.ts` (silent
+ * no-op on quota errors, defensive shape validation on read).
  */
 import { QUERY_DOMAINS, type QueryDomain, type QueryHistoryEntry } from './types';
 

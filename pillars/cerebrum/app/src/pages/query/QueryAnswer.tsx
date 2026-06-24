@@ -1,9 +1,9 @@
 import { useTranslation } from 'react-i18next';
 /**
- * QueryAnswer — renders the streamed/returned answer plus source
- * citations (PRD-082). Each `type === 'engram'` citation is a link to
- * the engram detail surface (`/cerebrum/engrams/:id`); other domains
- * render as inert rows because they have no dedicated detail page yet.
+ * QueryAnswer — renders the answer plus source citations. Each
+ * `type === 'engram'` citation links to the engram detail surface
+ * (`/cerebrum/engrams/:id`); other domains render as inert rows because
+ * they have no dedicated detail page.
  */
 import { Link } from 'react-router';
 

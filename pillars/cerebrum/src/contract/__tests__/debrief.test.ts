@@ -55,7 +55,7 @@ describe('cerebrum.debrief contract — entity round-trip', () => {
     expect(DebriefSessionSchema.parse(payload)).toEqual(payload);
   });
 
-  it('DebriefSessionSchema accepts null denormalised media columns (migration window)', () => {
+  it('DebriefSessionSchema accepts null denormalised media columns', () => {
     const payload: DebriefSession = {
       id: 7,
       watchHistoryId: 100,

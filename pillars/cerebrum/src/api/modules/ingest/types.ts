@@ -1,9 +1,4 @@
-/**
- * Shared types for the cerebrum ingestion pipeline (PRD-081).
- *
- * Lifted from `apps/pops-api/src/modules/cerebrum/ingest/types.ts`; the
- * `Engram`/`EngramSource` types now resolve to the in-pillar engrams module.
- */
+/** Shared types for the cerebrum ingestion pipeline (ingestion-pipeline). */
 import type { EngramSource } from '../engrams/schema.js';
 import type { Engram } from '../engrams/types.js';
 

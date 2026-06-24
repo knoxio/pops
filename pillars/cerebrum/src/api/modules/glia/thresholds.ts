@@ -1,17 +1,10 @@
 /**
  * Graduation-threshold resolution for the glia trust machine.
  *
- * Precedence (PRD-086 US-03 AC #7): `glia.toml` is the source of truth — it is
- * re-read on every call (mtime-cached) so operator edits take effect on the
- * next evaluation without a restart. Any key the toml file does not set falls
- * back to the hardcoded ADR-021 defaults.
- *
- * DEVIATION FROM THE MONOLITH: the monolith inserted a settings-DB tier
- * (`getSettingValue('cerebrum.glia.*', …)`) between the toml file and the
- * hardcoded defaults. The cerebrum pillar has no settings service, so that
- * middle tier is dropped: toml → hardcoded defaults. The toml file remains the
- * documented user-facing knob, so behaviour is unchanged for any deployment
- * that configured thresholds through it rather than the (internal) settings DB.
+ * Precedence: `glia.toml` is the source of truth — it is re-read on every call
+ * (mtime-cached) so operator edits take effect on the next evaluation without a
+ * restart. Any key the toml file does not set falls back to the hardcoded
+ * ADR-021 defaults.
  */
 import { loadGliaToml } from './toml-config.js';
 

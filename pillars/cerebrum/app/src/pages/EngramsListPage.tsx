@@ -1,10 +1,9 @@
 /**
- * EngramsListPage — the `/cerebrum/engrams` route (PRD-077, PRD-080).
+ * EngramsListPage — the `/cerebrum/engrams` route.
  *
- * Shows a paginated, filterable list of engrams. The search box drives
- * `cerebrum.retrieval.search` (hybrid mode) when populated; otherwise
- * the page uses `cerebrum.engrams.list` directly. Filter state lives
- * in the view-model hook.
+ * Shows a paginated, filterable list of engrams. A populated search box
+ * drives hybrid retrieval search; otherwise the page lists engrams
+ * directly. Filter state lives in the view-model hook.
  */
 import { Library } from 'lucide-react';
 import { useTranslation } from 'react-i18next';

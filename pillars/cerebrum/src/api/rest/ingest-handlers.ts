@@ -1,5 +1,5 @@
 /**
- * ts-rest handlers for `cerebrum.ingest.*` (PRD-081).
+ * ts-rest handlers for `cerebrum.ingest.*` (docs/prds/ingestion-pipeline).
  *
  * Each handler builds a request-scoped {@link IngestService} bound to the
  * pillar DB handle, engram root, template registry, injected LLM port, and the

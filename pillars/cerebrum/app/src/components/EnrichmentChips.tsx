@@ -1,7 +1,7 @@
 /**
- * EnrichmentChips — post-ingest review surface (PRD-081 US-07).
+ * EnrichmentChips — post-ingest review surface.
  *
- * Polls cerebrum.ingest.enrichmentStatus until the curation worker completes,
+ * Polls `POST /ingest/enrichment-status` until the curation worker completes,
  * then renders the inferred type / template / scopes / tags as editable chips
  * alongside any scope reconciliation suggestions ("Did you mean: …").
  */

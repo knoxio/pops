@@ -1,5 +1,5 @@
 /**
- * ts-rest handlers for `cerebrum.glia.*` (PRD-086 / PRD-181).
+ * ts-rest handlers for `cerebrum.glia.*` (docs/prds/trust-graduation).
  *
  * Builds a per-request glia services bundle bound to the pillar DB handle, then
  * delegates to it. The services throw the pillar `HttpError` subclasses;

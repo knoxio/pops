@@ -1,5 +1,5 @@
 /**
- * Glia threshold loader for `<gliaConfigPath>/glia.toml` (PRD-086 US-03 AC #7).
+ * Glia threshold loader for `<gliaConfigPath>/glia.toml`.
  *
  * Reads `[trust.graduation]` from the toml file and exposes a partial
  * {@link GraduationThresholds} object containing only the keys the user set.

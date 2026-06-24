@@ -3,7 +3,7 @@
  *
  * Kept separate from the per-domain `rest-<domain>.ts` files so the
  * response/error envelope shapes have a single definition reused across
- * domains as later slices land.
+ * domains.
  */
 import { z } from 'zod';
 
@@ -51,9 +51,9 @@ export const templateSchema = templateSummarySchema.extend({
 export type TemplateWire = z.infer<typeof templateSchema>;
 
 /**
- * Reflex wire schemas (PRD-089). Reflexes are declarative trigger/action rules
- * defined in `reflexes.toml`; the pillar exposes management reads + toggles +
- * a dry-run test + an append-only execution history.
+ * Reflex wire schemas. Reflexes are declarative trigger/action rules defined in
+ * `reflexes.toml`; the pillar exposes management reads + toggles + a dry-run test
+ * + an append-only execution history.
  */
 export const reflexTriggerTypeSchema = z.enum(['event', 'threshold', 'schedule']);
 export type ReflexTriggerTypeWire = z.infer<typeof reflexTriggerTypeSchema>;

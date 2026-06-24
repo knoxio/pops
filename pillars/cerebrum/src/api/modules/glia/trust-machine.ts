@@ -1,5 +1,5 @@
 /**
- * GliaTrustMachine — phase transitions and automatic demotion (PRD-086 US-03).
+ * GliaTrustMachine — phase transitions and automatic demotion.
  *
  * Evaluates graduation/demotion for each action type after every decide or
  * revert. Transitions are checked eagerly, not on a schedule. Demotion is

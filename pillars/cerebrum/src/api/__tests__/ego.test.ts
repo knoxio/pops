@@ -1,8 +1,7 @@
 /**
- * Integration tests for `ego.*` over REST (PRD-087).
+ * Integration tests for `ego.*` over REST.
  *
- * Boots the app against a per-test temp `cerebrum.db` (conversations migration
- * 0052 + engrams 0050 applied by `openCerebrumDb`) + a temp engram root, with
+ * Boots the app against a per-test temp `cerebrum.db` + a temp engram root, with
  * an injected offline {@link makeFakeEgoLlm} (no real Anthropic call is ever
  * made) and an empty peer-client set. Conversation CRUD + context run straight
  * against the DB; chat exercises persist-user-then-assistant; the SSE route is

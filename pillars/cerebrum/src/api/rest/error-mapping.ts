@@ -8,8 +8,8 @@
  * non-HttpError) is re-thrown so Express's error pipeline surfaces the real
  * stack rather than a swallowed 500.
  *
- * `messageKey` is carried through so the FE keeps the i18n behaviour it had
- * under the tRPC `data.messageKey` wire shape.
+ * `messageKey` is carried through to the response body so the FE can resolve
+ * an i18n string for the error.
  */
 import { HttpError } from '../shared/errors.js';
 

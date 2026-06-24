@@ -1,10 +1,8 @@
 /**
- * QueryScopeInferencer — keyword-based scope inference for the query engine
- * (PRD-082 US-02).
+ * QueryScopeInferencer — keyword-based scope inference for the query engine.
  *
  * Matches question text against work/personal keyword lists to narrow retrieval
- * scopes. Falls back to all non-secret scopes when ambiguous. Lifted verbatim
- * from the monolith (pure logic, no settings/logger dependency).
+ * scopes. Falls back to all non-secret scopes when ambiguous.
  */
 import type { ScopeInferenceResult } from './types.js';
 

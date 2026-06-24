@@ -1,10 +1,8 @@
 /**
  * Conversations public shapes returned from the data-access layer.
  *
- * Mirrors the conversation / message / context shapes the pops-api
- * `ConversationPersistence` exposes today. Kept in the data package so
- * `cerebrum-api` and any other consumer can build views without
- * re-deriving them from drizzle row shapes.
+ * Consumers build views from these instead of re-deriving them from
+ * drizzle row shapes.
  */
 
 /** Message roles allowed in the chat stream. */

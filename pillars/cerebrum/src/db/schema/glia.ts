@@ -5,7 +5,7 @@
  * reverts) and per-action-type trust state that drives the three-phase
  * graduation model (propose → act_report → silent).
  *
- * See ADR-021 and PRD-086 for the full spec.
+ * See ADR-021 for the full spec.
  */
 import { index, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 
@@ -18,7 +18,6 @@ export const gliaActions = sqliteTable(
     actionType: text('action_type').notNull(),
     /** JSON array of engram IDs affected by this action */
     affectedIds: text('affected_ids').notNull(),
-    /** Human-readable explanation of why this action was proposed */
     rationale: text('rationale').notNull(),
     /** JSON — action-type-specific data (merge plan, link pairs, etc) */
     payload: text('payload'),
@@ -28,7 +27,6 @@ export const gliaActions = sqliteTable(
     status: text('status').notNull(),
     /** approve, reject, modify — null for autonomous actions */
     userDecision: text('user_decision'),
-    /** Optional user comment on approval/rejection */
     userNote: text('user_note'),
     /** ISO 8601 — when the action was executed (null if pending) */
     executedAt: text('executed_at'),

@@ -1,8 +1,7 @@
 /**
  * CortexEntityExtractor — extract people, projects, dates, topics, and
- * organisations from engram content (PRD-081 US-05).
+ * organisations from engram content (ingestion-pipeline).
  *
- * Lifted from `apps/pops-api/src/modules/cerebrum/ingest/entity-extractor.ts`.
  * The LLM call goes through an injected {@link IngestLlm} port; the confidence
  * threshold is a hardcoded constant (no settings service). Entities above the
  * threshold become prefixed tags (e.g. `person:alice`, `project:karbon`).

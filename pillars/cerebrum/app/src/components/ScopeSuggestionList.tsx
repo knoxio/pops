@@ -1,6 +1,6 @@
 /**
  * ScopeSuggestionList — renders "Did you mean: <canonical>?" affordances
- * for each pending scope reconciliation suggestion (PRD-081 US-07).
+ * for each pending scope reconciliation suggestion.
  */
 import { Check, X } from 'lucide-react';
 

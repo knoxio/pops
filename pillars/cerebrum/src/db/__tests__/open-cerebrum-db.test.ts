@@ -3,8 +3,8 @@
  *
  * Exercises the migration apply path against a fresh tmp file, verifies
  * the resulting schema, and confirms the helper is idempotent when
- * re-run against the same DB. Covers both the nudge_log slice (Track M5)
- * and the engrams baseline (PRD-179 US-01).
+ * re-run against the same DB. Covers both the nudge_log slice and the
+ * engrams baseline.
  */
 import { existsSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -106,7 +106,7 @@ describe('openCerebrumDb', () => {
     }
   });
 
-  it('applies the embeddings baseline with the documented schema (PRD-076)', () => {
+  it('applies the embeddings baseline with the documented schema', () => {
     const path = join(tmpDir, 'cerebrum.db');
     const { db, raw } = openCerebrumDb(path, { loadVec: false });
     try {

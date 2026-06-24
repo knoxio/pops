@@ -1,10 +1,7 @@
 /**
- * Context-awareness helpers for the ego conversation engine (PRD-087 US-03):
+ * Context-awareness helpers for the ego conversation engine:
  *  - biasScopes: additive scope biasing based on the active app context
  *  - loadViewedEngram: auto-load the viewed engram as a synthetic RetrievalResult
- *
- * Pillar delta: `loadViewedEngram` takes an injected {@link EngramService}
- * rather than reaching for the monolith singleton.
  */
 import type { EngramService } from '../engrams/service.js';
 import type { RetrievalResult } from '../retrieval/types.js';

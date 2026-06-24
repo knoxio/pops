@@ -1,12 +1,10 @@
 /**
- * HTTP-shaped domain errors used by cerebrum-api router handlers.
+ * HTTP-shaped domain errors used by cerebrum's router handlers.
  *
- * Intentionally NOT imported from `apps/pops-api/src/shared/errors.ts` — the
- * per-pillar container is supposed to stand alone of pops-api in the
- * dependency graph. Each error carries an optional `messageKey` so the
- * frontend can look up the translated string while the EN-AU fallback lives
- * in `message`; the REST error-mapping layer plumbs it through the wire error
- * shape so clients continue receiving `data.messageKey`.
+ * Each error carries an optional `messageKey` so the frontend can look up the
+ * translated string while the EN-AU fallback lives in `message`; the REST
+ * error-mapping layer plumbs it through the wire error shape so clients
+ * continue receiving `data.messageKey`.
  */
 export class HttpError extends Error {
   /** i18n key the frontend uses to resolve a localised message. */

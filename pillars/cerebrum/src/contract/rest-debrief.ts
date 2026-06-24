@@ -1,5 +1,5 @@
 /**
- * ts-rest contract for `cerebrum.debrief.*` (PRD-248).
+ * ts-rest contract for `cerebrum.debrief.*`.
  *
  * Read/write/delete surface over `debrief_sessions` + `debrief_results`. The
  * media tuple (`mediaType`/`mediaId`), `watchHistoryId`, `dimensionId` and
@@ -16,14 +16,12 @@
  *   - `deleteByWatchHistoryId` → POST /debrief/delete-by-watch-history → { deletedSessions, deletedResults }
  *
  * `get` / `getByMedia` return `{ data: null }` for a benign miss rather than a
- * 404 (parity with the in-monolith null shape over the wire). `record` /
- * `dismiss` 404 on an unknown session — they are state-changing calls, so the
- * typed 404 is the right shape.
+ * 404. `record` / `dismiss` 404 on an unknown session — they are state-changing
+ * calls, so the typed 404 is the right shape.
  *
  * `dimensionsQueued` stays at `0`: the status fan-out needs the media pillar's
- * `comparison_dimensions`, which the cerebrum container has no handle to. The
- * field stays on the wire so a future US-05 call-site flip is a pure consumer
- * move. Non-identity domain — docker-network trust, no per-request auth.
+ * `comparison_dimensions`, which the cerebrum container has no handle to.
+ * Non-identity domain — docker-network trust, no per-request auth.
  */
 import { initContract } from '@ts-rest/core';
 import { z } from 'zod';

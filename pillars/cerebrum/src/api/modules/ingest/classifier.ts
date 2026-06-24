@@ -1,8 +1,7 @@
 /**
- * CortexClassifier — LLM-based content-type classification (PRD-081 US-04).
+ * CortexClassifier — LLM-based content-type classification (ingestion-pipeline).
  *
- * Lifted from `apps/pops-api/src/modules/cerebrum/ingest/classifier.ts`. The
- * LLM call is delegated to an injected {@link IngestLlm} port (so tests run
+ * The LLM call is delegated to an injected {@link IngestLlm} port (so tests run
  * offline). The confidence threshold is a hardcoded constant — the pillar has
  * no settings service to override it. Falls back to `capture` when the model
  * is unavailable or confidence is below threshold.

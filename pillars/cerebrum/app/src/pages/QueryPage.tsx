@@ -1,17 +1,11 @@
 /**
- * QueryPage — `/cerebrum/query` (PRD-082).
+ * QueryPage — `/cerebrum/query`.
  *
  * Natural-language Q&A surface outside the Ego chat. Single-shot
- * question input, an answer panel with citations linking to the
- * engram detail surface, a re-runnable history sidebar, and a
- * "Save as document" action that dispatches to the PRD-083 emit
- * pipeline.
- *
- * Streaming answer generation is out of scope for the initial
- * implementation per PRD-082 ("Out of Scope" section); when the server
- * grows a streaming endpoint, only `useQueryPageModel` needs to change
- * — the answer panel is already laid out for a progressively-rendered
- * answer.
+ * question input, an answer panel with citations linking to the engram
+ * detail surface, a re-runnable history sidebar, and a "Save as
+ * document" action that dispatches to the emit pipeline. The answer
+ * streams progressively via `useQueryPageModel`.
  */
 import { useTranslation } from 'react-i18next';
 

@@ -11,8 +11,8 @@ const DEFAULT_TYPE = INITIAL_FORM.type;
 /**
  * The Advanced disclosure is considered "touched" when any of its fields
  * has a non-default value. The capture surface routes through `quickCapture`
- * unless `advancedTouched` is true (in which case `submit` is used so explicit
- * fields bypass classification per PRD-081 business rules).
+ * unless `advancedTouched` is true, in which case `submit` is used so explicit
+ * fields bypass classification.
  */
 function isAdvancedTouched(form: IngestFormValues): boolean {
   return (

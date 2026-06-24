@@ -1,17 +1,13 @@
 /**
- * ts-rest handlers for `cerebrum.nudges.*` (PRD-084).
+ * ts-rest handlers for `cerebrum.nudges.*` (docs/prds/proactive-nudges).
  *
  * Read/dismiss ride {@link createNudgeReadService} bound to the pillar db
  * handle; the write surface (`scan` / `act` / `configure`) rides
  * {@link createNudgeWriteService}, which composes the in-pillar retrieval +
  * engrams services and the injectable contradiction analyzer. `dismiss` /
  * `act` distinguish a missing nudge (404) from a non-pending nudge (409) —
- * `runHttp` maps the pillar `NotFoundError` → 404 and `ConflictError` → 409.
- *
- * The legacy monolith collapsed missing-vs-already-dismissed into one
- * `BAD_REQUEST`; the migrated surface keeps the tighter split so consumers
- * can tell a stale UI cache apart from a no-op double-click (parity with the
- * pops-cerebrum-api shadow router).
+ * `runHttp` maps the pillar `NotFoundError` → 404 and `ConflictError` → 409 —
+ * so consumers can tell a stale UI cache apart from a no-op double-click.
  */
 import { initServer } from '@ts-rest/express';
 

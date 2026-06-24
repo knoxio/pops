@@ -1,5 +1,5 @@
 /**
- * ts-rest handlers for `cerebrum.embeddings.*` (PRD-249).
+ * ts-rest handlers for `cerebrum.embeddings.*` (docs/prds/embeddings).
  *
  * Thin adapter over {@link createEmbeddingsReadService} bound to the pillar
  * db handle. Read-only — both procedures return a 200 with no error branch.

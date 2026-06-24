@@ -1,5 +1,5 @@
 /**
- * ts-rest contract for `cerebrum.reflex.*` (PRD-089).
+ * ts-rest contract for `cerebrum.reflex.*`.
  *
  * Reflexes are declarative trigger/action rules the operator authors in
  * `reflexes.toml`; the pillar exposes management reads, enable/disable toggles

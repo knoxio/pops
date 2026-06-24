@@ -1,8 +1,8 @@
 /**
- * ProposalQueuePage — React UI for pending glia proposals (#2246).
+ * ProposalQueuePage — React UI for pending glia proposals.
  *
- * Shows pending glia actions with approve/reject/modify controls.
- * Fetches from glia.actions.list tRPC endpoint.
+ * Shows pending glia actions with approve/reject/modify controls,
+ * backed by the glia actions list endpoint.
  */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';

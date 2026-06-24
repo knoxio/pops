@@ -1,11 +1,9 @@
 /**
- * GliaDashboardPage — `/cerebrum/glia` (PRD-085, PRD-086).
+ * GliaDashboardPage — `/cerebrum/glia`.
  *
- * Sibling of the existing `/cerebrum/proposals` page. Composes three
- * panels: worker run-once triggers, trust state summary, and the full
- * audit trail of every Glia action. The proposal queue remains its
- * own page for now; this dashboard intentionally focuses on the
- * post-graduation/operational view.
+ * Composes three panels: worker run-once triggers, trust state summary,
+ * and the audit trail of every Glia action. The proposal queue is its
+ * own page; this dashboard focuses on the operational view.
  */
 import { useTranslation } from 'react-i18next';
 

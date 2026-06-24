@@ -1,8 +1,8 @@
 /**
- * Report generation mode (PRD-083 US-01).
+ * Report generation mode (see docs/prds/document-generation).
  *
- * Pipeline: retrieve relevant engrams -> group by subtopic -> synthesise
- * sections -> format with citations. Requires a query and minimum 2 sources.
+ * A report requires at least MIN_SOURCES_FOR_REPORT sources; with fewer,
+ * checkReportSources short-circuits with an insufficient-data notice.
  */
 import { collectScopeCoverage, extractDateRange, extractTitle } from '../helpers.js';
 
@@ -13,8 +13,8 @@ import type { GeneratedDocument, GenerationResult } from '../types.js';
 const MIN_SOURCES_FOR_REPORT = 2;
 
 /**
- * Check if enough sources exist for a meaningful report.
- * Returns an insufficient-data notice if fewer than 2 sources.
+ * Check that enough sources exist for a meaningful report, returning an
+ * insufficient-data notice when below MIN_SOURCES_FOR_REPORT (null otherwise).
  */
 export function checkReportSources(results: RetrievalResult[]): GenerationResult | null {
   if (results.length === 0) {

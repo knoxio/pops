@@ -17,7 +17,7 @@ import type {
   EmbeddingsListSourceIdsByTypeOutput,
 } from '../types/embeddings.js';
 
-describe('@pops/cerebrum-contract — cerebrum.embeddings.* (PRD-249 US-01)', () => {
+describe('@pops/cerebrum — cerebrum.embeddings.*', () => {
   describe('round-trip type ↔ schema', () => {
     it('EmbeddingsGetStatusInput ↔ EmbeddingsGetStatusInputSchema agree structurally', () => {
       expectTypeOf<
@@ -133,7 +133,7 @@ describe('@pops/cerebrum-contract — cerebrum.embeddings.* (PRD-249 US-01)', ()
   });
 
   describe('embeddingsProcedures descriptor', () => {
-    it('pins both procedures to the `query` tRPC method (read-only)', () => {
+    it('pins both procedures to the `query` (read-only) method', () => {
       expect(embeddingsProcedures.getStatus.method).toBe('query');
       expect(embeddingsProcedures.listSourceIdsByType.method).toBe('query');
     });

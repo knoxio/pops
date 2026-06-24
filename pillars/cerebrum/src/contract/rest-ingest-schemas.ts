@@ -1,5 +1,5 @@
 /**
- * Ingest wire schemas (PRD-081).
+ * Ingest wire schemas.
  *
  * PURE zod module — no ts-rest, no Express. Imported by BOTH the ingest
  * contract (`rest-ingest.ts`) and the lifted handlers/service so the request

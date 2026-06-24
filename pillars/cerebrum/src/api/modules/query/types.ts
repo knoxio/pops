@@ -1,8 +1,5 @@
 /**
- * Types for the cerebrum query engine (PRD-082).
- *
- * Covers: QueryRequest, QueryResponse, SourceCitation, ScopeInferenceResult,
- * and domain-to-sourceType mappings. Lifted verbatim from the monolith.
+ * Types for the cerebrum query engine.
  */
 
 export type QueryDomain = 'engrams' | 'transactions' | 'media' | 'inventory';
@@ -41,9 +38,9 @@ export interface SourceCitation {
   id: string;
   type: string;
   title: string;
-  /** Max 200 chars, truncated at word boundary with ellipsis. */
+  /** Truncated at a word boundary with ellipsis. */
   excerpt: string;
-  /** Relevance score 0–1. */
+  /** Relevance score, normalized between zero and one. */
   relevance: number;
   /** Primary scope of the source. */
   scope: string;

@@ -1,9 +1,6 @@
 /**
  * Content normaliser — first stage of the ingestion pipeline.
  *
- * Lifted from `apps/pops-api/src/modules/cerebrum/ingest/normalizer.ts`; uses
- * the pillar-local `ValidationError`.
- *
  * Normalisation rules (in order):
  * 1. Reject whitespace-only input
  * 2. Normalise line endings to LF

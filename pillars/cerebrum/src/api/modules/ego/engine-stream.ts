@@ -1,10 +1,9 @@
 /**
- * Streaming generator for the ego conversation engine (PRD-087 US-01 AC #6).
+ * Streaming generator for the ego conversation engine.
  *
- * Lifts the monolith generator onto the injected {@link EgoLlm} streaming port.
  * Emits the scope notice (if any) as a leading token, then streams LLM token
- * deltas, then a final `done` event carrying the citation-parsed content + token
- * counts.
+ * deltas via the injected {@link EgoLlm} streaming port, then a final `done`
+ * event carrying the citation-parsed content + token counts.
  */
 import { CitationParser } from './citation-parser.js';
 

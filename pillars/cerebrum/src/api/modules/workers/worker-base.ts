@@ -1,5 +1,5 @@
 /**
- * Abstract base for Glia curation workers (PRD-085).
+ * Abstract base for Glia curation workers (curation-workers).
  *
  * Provides trust-phase checking, secret-scope filtering, action ID generation,
  * and the common run-loop structure that all four workers share.
@@ -11,7 +11,7 @@ import type { Engram } from '../engrams/types.js';
 import type { HybridSearchService } from '../retrieval/hybrid-search.js';
 import type { GliaAction, GliaActionType, TrustPhase, WorkerRunResult } from './types.js';
 
-/** Minimal interface for the trust phase lookup — stub until PRD-086 lands. */
+/** Lookup seam a worker uses to resolve its current trust phase per action type. */
 export interface TrustPhaseProvider {
   getPhase(actionType: GliaActionType): TrustPhase;
 }

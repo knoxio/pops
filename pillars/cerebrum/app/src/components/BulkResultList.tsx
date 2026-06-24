@@ -1,7 +1,7 @@
 /**
  * BulkResultList — per-segment outcome list shown after a bulk paste
- * submission (PRD-081 US-08). Each row reuses the same enrichment chip
- * machinery as the single-capture result for consistency.
+ * submission. Each row reuses the same enrichment chip machinery as the
+ * single-capture result for consistency.
  */
 import { AlertCircle, CheckCircle2, ExternalLink, Loader2, RefreshCw } from 'lucide-react';
 import { useTranslation } from 'react-i18next';

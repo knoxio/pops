@@ -1,6 +1,6 @@
 /**
  * ScopeReconciliationService — propose canonical scopes for user-typed
- * suggestions (PRD-081 US-10).
+ * suggestions (see docs/prds/scope-model).
  *
  * Pure lexical/structural matching against the existing scope vocabulary.
  * No LLM calls, no I/O.

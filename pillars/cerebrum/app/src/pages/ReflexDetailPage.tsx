@@ -1,9 +1,9 @@
 /**
- * ReflexDetailPage — `/cerebrum/reflex/:name` (PRD-089).
+ * ReflexDetailPage — `/cerebrum/reflex/:name`.
  *
  * Read-only view of the reflex TOML definition with recent execution
- * history. The list page owns the toggle + manual fire actions, but
- * they are also surfaced here for convenience.
+ * history. The toggle and manual fire actions are surfaced here as well
+ * as on the list page.
  */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';

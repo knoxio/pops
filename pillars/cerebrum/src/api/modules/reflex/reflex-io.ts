@@ -1,11 +1,6 @@
 /**
- * Reflex I/O helpers (PRD-089).
- *
- * Extracted from ReflexService to keep file sizes within the max-lines lint
- * limit. Contains disk I/O (load, watch, TOML toggle) and execution logging.
- *
- * Unlike the monolith original this module takes the cerebrum drizzle handle
- * explicitly (`CerebrumDb`) rather than reaching for a process-wide singleton —
+ * Reflex I/O helpers: disk I/O (load, watch, TOML toggle) and execution
+ * logging. The cerebrum drizzle handle (`CerebrumDb`) is passed explicitly —
  * the pillar owns its own `cerebrum.db` connection.
  */
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';

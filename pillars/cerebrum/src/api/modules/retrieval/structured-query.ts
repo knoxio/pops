@@ -1,8 +1,7 @@
 /**
  * StructuredQueryService — filters `engram_index` + junction tables (the BM25
  * leg) on the pillar drizzle handle. Returns `RetrievalResult[]` with
- * `matchType: 'structured'`. Ported from the monolith; the only change is the
- * schema import path (cerebrum pillar db instead of `@pops/cerebrum-db`).
+ * `matchType: 'structured'`.
  */
 import { and, desc, eq, inArray } from 'drizzle-orm';
 

@@ -1,5 +1,5 @@
 /**
- * Telemetry-migration test for the cerebrum ingest LLM port (request/response).
+ * Telemetry test for the cerebrum ingest LLM port (request/response).
  * The Anthropic SDK is the only mock (the network boundary; tests MUST NOT
  * reach a real API). The `@pops/ai-telemetry` wrapper runs for real with an
  * injected fake `report` + `lookupPricing`, asserting `AnthropicIngestLlm`
@@ -88,7 +88,6 @@ describe('AnthropicIngestLlm.complete — telemetry', () => {
     expect(record.status).toBe('success');
     expect(record.inputTokens).toBe(50);
     expect(record.outputTokens).toBe(10);
-    // 50/1e6 * 2 + 10/1e6 * 8 = 0.00018
     expect(record.costUsd).toBeCloseTo(0.00018, 9);
   });
 
