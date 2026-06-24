@@ -38,7 +38,7 @@ const KNOWN_KEY = 'core.defaultLimit';
 const OTHER_KEY = 'core.search.showMoreLimit';
 const UNKNOWN_KEY = 'totally.made.up';
 
-describe('@pops/core-contract core.settings.* procedure schemas — round trip', () => {
+describe('@pops/registry core.settings.* procedure schemas — round trip', () => {
   it('SettingsGetInput ↔ schema', () => {
     expectTypeOf<z.infer<typeof SettingsGetInputSchema>>().toEqualTypeOf<SettingsGetInput>();
   });

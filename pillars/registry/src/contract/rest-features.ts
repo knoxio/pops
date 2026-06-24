@@ -1,9 +1,6 @@
 /**
- * `features.*` sub-router — the feature-toggle surface restored on the core
- * pillar (epic 05 / S2). Mirrors the recovered monolith `features` tRPC router
- * (`apps/pops-api/src/modules/core/features`, `6b0cc148^`), now over REST.
+ * `features.*` sub-router — the feature-toggle surface.
  *
- * Six operations, semantics preserved EXACTLY:
  *   - `getManifests` (query)    → `GET    /features/manifests`
  *   - `list`         (query)    → `GET    /features`
  *   - `isEnabled`    (query)    → `GET    /features/:key/enabled`
@@ -11,20 +8,17 @@
  *   - `setUserPreference`   (mutation) → `PUT    /features/:key/preference`
  *   - `clearUserPreference` (mutation) → `DELETE /features/:key/preference`
  *
- * Identity model — every route is `protected` (the monolith used
- * `protectedProcedure` for all six). The four identity-dependent operations
- * (`list`, `isEnabled`, `setUserPreference`, `clearUserPreference`) resolve a
- * human principal and feed `ctx.user.email` to the service; the system-level
- * operations (`getManifests`, `setEnabled`) require any protected principal.
- * `401` therefore joins the common error set on every route. The service's
- * domain errors map as in the monolith: `FeatureNotFoundError` → 404,
- * `FeatureGateError` / `FeatureScopeError` → 400.
+ * Identity model — every route is protected, so `401` is in the common error
+ * set on all six. The four identity-dependent operations (`list`, `isEnabled`,
+ * `setUserPreference`, `clearUserPreference`) resolve a human principal and feed
+ * `ctx.user.email` to the service; the system-level operations (`getManifests`,
+ * `setEnabled`) require any protected principal. Service domain errors map as:
+ * `FeatureNotFoundError` → 404, `FeatureGateError` / `FeatureScopeError` → 400.
  *
- * Output schemas are reused from S1's leaf `features/types.ts`
- * (`FeatureManifestSchema` / `FeatureStatusSchema`, each `satisfies
- * z.ZodType<…>` against `@pops/types`), so the wire shape stays locked to the
- * outputs the service actually returns — and the import is a zod-only leaf, so
- * the contract does not pull the service/db layer.
+ * Output schemas come from the zod-only leaf `features/types.ts`
+ * (`FeatureManifestSchema` / `FeatureStatusSchema`, each `satisfies z.ZodType<…>`
+ * against `@pops/types`), keeping the wire shape locked to the service outputs
+ * without the contract pulling in the service/db layer.
  */
 import { initContract } from '@ts-rest/core';
 import { z } from 'zod';

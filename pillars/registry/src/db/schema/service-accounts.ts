@@ -2,8 +2,8 @@ import { sql } from 'drizzle-orm';
 import { index, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 
 /**
- * Service accounts: machine identities that authenticate to pops-api via
- * `X-API-Key: <prefix>.<secret>` headers (PRD-088, issue #2496).
+ * Service accounts: machine identities that authenticate via
+ * `X-API-Key: <prefix>.<secret>` headers.
  *
  * Storage rules
  * - `keyPrefix` is the first 8 chars of the issued key, stored in plain
@@ -12,7 +12,7 @@ import { index, sqliteTable, text } from 'drizzle-orm/sqlite-core';
  * - `keyHash` is `scrypt(secret, salt)` encoded as `scrypt$<salt_b64>$<hash_b64>`.
  *   The plaintext key is shown to the operator exactly once at creation
  *   time and never persisted.
- * - `scopes` is a JSON-encoded array of tRPC procedure prefixes the
+ * - `scopes` is a JSON-encoded array of pillar/permission scope prefixes the
  *   account can call (e.g. `['cerebrum.ingest', 'cerebrum.query']`). An
  *   empty array means no access — never use `['*']` as a wildcard;
  *   instead enumerate explicitly so revocation/audit is exact.

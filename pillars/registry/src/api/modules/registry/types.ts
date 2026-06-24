@@ -1,14 +1,16 @@
 import { z } from 'zod';
 
 /**
- * Wire types for the registry handshake/discovery surface (PRD-161). The
- * registry pillar mounts each operation on BOTH the canonical slash form
+ * Wire types for the registry handshake/discovery surface. The registry
+ * pillar mounts each operation on BOTH the canonical slash form
  * `/registry/{register,heartbeat,deregister,pillars}` and the legacy dotted
  * `/core.registry.{register,heartbeat,deregister,list}` routes on the same
  * handlers (see `pillars/registry/src/api/app.ts`).
  *
  * The input/output zod schemas live here so the router stays focused on
  * the procedure plumbing and the tests can import the shapes directly.
+ *
+ * Spec: dynamic-pillar-registration.
  */
 import { ManifestPayloadSchema } from '@pops/pillar-sdk';
 
@@ -17,10 +19,10 @@ export const PillarStatusSchema = z.enum(['healthy', 'unavailable', 'unknown']);
 export type PillarStatusWire = z.infer<typeof PillarStatusSchema>;
 
 /**
- * Live per-pillar capability statuses (`<capabilityKey> → up/down`),
- * epic 05 / S3. Self-reported on register + heartbeat; absent when the
- * pillar reports none (graceful degradation — an unreported capability
- * resolves to `unavailable`). Serializable: a plain boolean record.
+ * Live per-pillar capability statuses (`<capabilityKey> → up/down`).
+ * Self-reported on register + heartbeat; absent when the pillar reports
+ * none (graceful degradation — an unreported capability resolves to
+ * `unavailable`). Serializable: a plain boolean record.
  */
 export const CapabilityStatusesSchema = z.record(z.string(), z.boolean());
 
@@ -92,12 +94,11 @@ export const ListOutputSchema = z.object({
 });
 
 /**
- * Heartbeat wire shapes (Theme 13 PRD-162).
+ * Heartbeat wire shapes.
  *
- * Pillars POST the heartbeat route — currently `/core.registry.heartbeat` (the
- * canonical `/registry/heartbeat` lands in a later phase) — every
- * `HEARTBEAT_INTERVAL_MS` (≈10s) with their `pillarId`. The output is a
- * discriminated union:
+ * Pillars POST the heartbeat route — mounted on both `/registry/heartbeat`
+ * and the legacy `/core.registry.heartbeat` — every `HEARTBEAT_INTERVAL_MS`
+ * with their `pillarId`. The output is a discriminated union:
  *   - `ok: true`  — the heartbeat was recorded; status now `healthy`.
  *   - `ok: false` — the pillar is not registered; SDK should re-register.
  */

@@ -1,8 +1,7 @@
 /**
- * Dual-serve integration for the registry handshake/discovery routes
- * (registry-cleanup Phase 1).
+ * Dual-serve integration for the registry handshake/discovery routes.
  *
- * Core mounts each registry operation on BOTH its canonical slash path
+ * The registry mounts each operation on BOTH its canonical slash path
  * ({@link REGISTRY_PATHS}) and the legacy dotted alias
  * ({@link LEGACY_REGISTRY_PATHS}), pointing at one shared handler instance.
  * This suite proves, via `supertest` against `createCoreApiApp` on a temp

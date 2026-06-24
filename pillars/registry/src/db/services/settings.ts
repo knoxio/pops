@@ -1,15 +1,9 @@
 /**
- * Settings CRUD against the core pillar's SQLite via drizzle.
+ * Settings CRUD against the registry pillar's SQLite via drizzle.
  *
- * Services take a `CoreDb` handle as their first argument; the calling
- * layer (pops-api modules) is responsible for resolving the singleton
- * or transaction handle to pass in. Mirrors `@pops/finance-db`'s
- * service signature pattern.
- *
- * The in-tree service in `apps/pops-api/src/modules/core/settings/`
- * still routes through the shared `getDrizzle()` handle for now —
- * PRD-183 PR 3 flips that to `getCoreDrizzle()` and routes through
- * this module.
+ * Services take a `CoreDb` handle as their first argument; the registry's
+ * API layer is responsible for resolving the singleton or transaction
+ * handle to pass in.
  */
 import { count, eq, inArray, like } from 'drizzle-orm';
 
@@ -184,9 +178,7 @@ export function getSettingValue<T extends string | number>(
 
 /**
  * Delete a setting by key. Throws `SettingNotFoundError` if no row
- * matched (`changes === 0`) — mirrors the in-tree pops-api service
- * so PRD-183 PR 3 can swap the handle without altering the error
- * contract observable from callers.
+ * matched (`changes === 0`).
  */
 export function deleteSetting(db: CoreDb, key: string): void {
   const result = db.delete(settings).where(eq(settings.key, key)).run();

@@ -1,10 +1,10 @@
 /**
- * Re-export of the service-accounts admin wire schemas, which now live in
- * the contract layer (`contract/schemas/service-account-admin.ts`) so the
- * tRPC router here and the REST contract share a single source of truth.
+ * Re-export of the service-accounts admin wire schemas, which live in the
+ * contract layer (`contract/schemas/service-account-admin.ts`) so the handlers
+ * here and the REST contract share a single source of truth.
  *
- * The local `ServiceAccount` / `ServiceAccountSchema` names are preserved as
- * aliases so the router and its tests keep importing them unchanged.
+ * `ServiceAccount` / `ServiceAccountSchema` are local aliases for the contract's
+ * `ServiceAccountAdmin` / `ServiceAccountAdminSchema`.
  */
 export {
   type CreatedServiceAccount,

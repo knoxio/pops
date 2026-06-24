@@ -1,5 +1,5 @@
 /**
- * HTTP-JSON heartbeat handler for external pillars (Theme 13 PRD-228 US-02).
+ * HTTP-JSON heartbeat handler for external pillars.
  *
  * External pillars POST the heartbeat route. Both the canonical
  * `/registry/heartbeat` and the legacy `/core.registry.heartbeat` form are
@@ -7,10 +7,9 @@
  * (ADR-027): the docker network is the boundary; anything able to reach this
  * endpoint is already inside the compose network.
  *
- * Soft failure (rather than 404) on missing row: PRD-228 acceptance
- * criterion is `{ ok: false, reason: 'not-registered' }` with a 200,
- * so the external SDK can re-register cleanly without parsing HTTP
- * status codes. This matches the in-network heartbeat route (PRD-162).
+ * Soft failure (rather than 404) on missing row: the response is
+ * `{ ok: false, reason: 'not-registered' }` with a 200, so the external
+ * SDK can re-register cleanly without parsing HTTP status codes.
  */
 import { pillarRegistryService, type CoreDb } from '../../../db/index.js';
 import { emitRegistryEvent } from '../registry/event-bus.js';
@@ -64,11 +63,6 @@ function applyHeartbeat(
   });
 }
 
-/**
- * Factory for the heartbeat handler, currently mounted at
- * `POST /core.registry.heartbeat` (the canonical `POST /registry/heartbeat`
- * lands in a later phase).
- */
 export function createExternalHeartbeatHandler(
   deps: ExternalHeartbeatDeps
 ): ExternalHeartbeatHandler {

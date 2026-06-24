@@ -1,10 +1,9 @@
 /**
  * TypeScript types for the `core.settings.*` cross-pillar SDK procedures.
  *
- * PRD-247 US-01 — foundational schema + types. Types are inferred from
- * the Zod schemas in `../schemas/settings-procedures.ts` so the wire shape
- * stays single-sourced. Round-trip tests under `__tests__/` enforce that
- * `z.infer<typeof XSchema>` agrees with these exported aliases.
+ * Inferred from the Zod schemas in `../schemas/settings-procedures.ts` so the
+ * wire shape stays single-sourced. Round-trip tests under `__tests__/` enforce
+ * that `z.infer<typeof XSchema>` agrees with these exported aliases.
  *
  * Consumers import these directly to type their handlers and callers:
  *
@@ -13,7 +12,7 @@
  *   SettingsGetInput,
  *   SettingsGetOutput,
  *   SettingsGetManyOutput,
- * } from '@pops/core-contract/types';
+ * } from '@pops/registry';
  * ```
  */
 import type { z } from 'zod';

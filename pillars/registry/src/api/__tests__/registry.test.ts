@@ -1,7 +1,7 @@
 /**
  * Integration tests for the registry discovery snapshot — `GET /core.registry.list`
- * (Theme 13 PRD-161). The collapsed pillar serves the DB-backed snapshot as a
- * raw HTTP route (no tRPC); the pillar SDK's `HttpDiscoveryTransport` reads it.
+ * (discovery-client). The registry serves the DB-backed snapshot as a raw HTTP
+ * route; the pillar SDK's `HttpDiscoveryTransport` reads it.
  *
  * Boots the full Express factory against a temp-dir core.db and drives the wire
  * end to end via `supertest`. Register/deregister HTTP edge cases live in

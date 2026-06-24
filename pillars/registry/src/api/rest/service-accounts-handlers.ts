@@ -1,15 +1,14 @@
 /**
  * Handlers for the `service-accounts.*` admin sub-router.
  *
- * `userOnly` — every route gates on `requireUser`, which rejects service-
- * account principals unconditionally (a machine principal must never mint or
- * revoke other machine principals). The gate throws `UnauthorizedError` (401)
- * inside `runHttp`, so an anonymous or service-account caller bounces with a
- * 401 envelope.
+ * Every route gates on `requireUser`, which rejects service-account principals
+ * unconditionally: a machine principal must never mint or revoke other machine
+ * principals. The gate throws `UnauthorizedError` inside `runHttp`, so an
+ * anonymous or service-account caller bounces with a 401 envelope.
  *
- * Domain errors from `@pops/core-db` are translated to local `HttpError`
+ * Domain errors from the registry db layer (`../../db`) are translated to local `HttpError`
  * subclasses (`ValidationError`/`NotFoundError`/`ConflictError`) and mapped to
- * 400/404/409 by `runHttp` — the same translation the tRPC router applied.
+ * their status codes by `runHttp`.
  */
 import {
   type CoreDb,

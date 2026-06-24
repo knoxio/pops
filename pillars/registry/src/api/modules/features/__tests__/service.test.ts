@@ -1,22 +1,16 @@
 /**
- * Parity oracle for the ported feature-toggle service (epic 05 / S1).
- *
- * Faithful adaptation of the deleted monolith `service.test.ts`
- * (`apps/pops-api/src/modules/core/features/service.test.ts`, `6b0cc148^`)
- * to the pillar's reality:
- *   - feature declarations come from the **live registry snapshot** (fake
- *     pillars registered via `pillarRegistryService.upsertPillarRegistration`
- *     with a `features` slot), NOT a static module list;
- *   - service functions take a `CoreDb` handle first;
- *   - the runtime `capabilityCheck()` fn is replaced by the declarative
- *     `capability: { pillar, key }` descriptor, resolved against the owning
- *     pillar's self-reported capability status on the registry snapshot
- *     (`pillars[].capabilities`, S3) — no injected probe map;
+ * Feature-toggle service behaviour against the live registry snapshot:
+ *   - feature declarations come from the registry snapshot (fake pillars
+ *     registered via `pillarRegistryService.upsertPillarRegistration` with a
+ *     `features` slot), not a static module list;
+ *   - a `capability: { pillar, key }` descriptor resolves against the owning
+ *     pillar's self-reported capability status on the snapshot
+ *     (`pillars[].capabilities`);
  *   - credential `envFallback` is sourced from the pillar's own manifest
  *     `settings` block carried on the same registration.
  *
- * The resolution order (capability → credentials → user override → system →
- * default), `FeatureNotFoundError` semantics, and `state` enum are preserved.
+ * Resolution order: capability → credentials → user override → system →
+ * default.
  */
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -80,7 +74,6 @@ function baseManifest(
   };
 }
 
-/** Register a fake pillar into the live registry snapshot. */
 function registerPillar(manifest: ManifestPayload, capabilities?: CapabilityStatuses): void {
   pillarRegistryService.upsertPillarRegistration(db, {
     baseUrl: `http://${manifest.pillar}-api:4010`,
@@ -91,19 +84,14 @@ function registerPillar(manifest: ManifestPayload, capabilities?: CapabilityStat
 }
 
 /**
- * Register a bare `core` pillar (no features) reporting its `redis` capability
- * status — the registry-snapshot replacement for the deleted in-process probe
- * map. The feature under test declares `capability: { pillar: 'core', key:
- * 'redis' }`; core self-reports the live status here.
+ * Register a bare `core` pillar (no features) self-reporting its `redis`
+ * capability status. A feature declaring `capability: { pillar: 'core', key:
+ * 'redis' }` resolves against this status on the snapshot.
  */
 function reportCoreRedis(value: boolean): void {
   registerPillar(baseManifest('core', []), { redis: value });
 }
 
-/**
- * Register a single `test` pillar declaring one feature. Mirrors the deleted
- * suite's `registerSimpleFeature`.
- */
 function registerSimpleFeature(
   overrides: Partial<FeatureManifestDescriptor> = {},
   settings?: SettingsManifestDescriptor[]
@@ -118,7 +106,6 @@ function registerSimpleFeature(
   registerPillar(baseManifest('test', [feature], settings));
 }
 
-/** A settings manifest declaring credential fields (with optional envFallback). */
 function settingsManifest(
   fields: { key: string; envFallback?: string }[]
 ): SettingsManifestDescriptor {

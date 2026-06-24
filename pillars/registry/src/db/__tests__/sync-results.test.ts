@@ -1,9 +1,7 @@
 /**
  * Invariant tests for the sync-results service against an in-memory
- * SQLite seeded with the `sync_job_results` schema inline. The table
- * has no core-db migration file yet (PRD-186 sibling cutover owns
- * that), so the test boots the schema directly from the canonical
- * shape.
+ * SQLite seeded with the `sync_job_results` schema inline (the canonical
+ * shape, kept in sync with migration 0060_sync_job_results.sql).
  */
 import Database from 'better-sqlite3';
 import { eq } from 'drizzle-orm';
@@ -58,7 +56,7 @@ function baseInput(overrides: Partial<PersistSyncResultInput> = {}): PersistSync
 }
 
 describe('PERSISTED_SYNC_TYPES', () => {
-  it('contains the five Plex sync job types', () => {
+  it('contains the Plex sync job types', () => {
     expect([...PERSISTED_SYNC_TYPES].toSorted()).toEqual([
       'plexSyncDiscoverWatches',
       'plexSyncMovies',

@@ -3,9 +3,6 @@
  *
  *   pops:{moduleId}/{type}/{id}
  *
- * Relocated verbatim from `apps/pops-api/src/modules/core/uri/parse.ts`
- * (pure function, no monolith coupling).
- *
  * Rules per ADR-012:
  * - Lowercase only.
  * - `moduleId` matches the API module name (finance, media, inventory, core).
@@ -25,7 +22,6 @@ export type ParseUriResult = { ok: true; parsed: ParsedUri } | { ok: false; reas
 
 const URI_PREFIX = 'pops:';
 
-/** Lowercase ASCII letters, digits, hyphens — used for moduleId and type. */
 const SLUG_RE = /^[a-z0-9-]+$/;
 
 /**

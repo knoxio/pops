@@ -1,24 +1,16 @@
 import { bootstrapPillar, type PillarBootstrapHandle } from '@pops/pillar-sdk/bootstrap';
 
 /**
- * Entry point for the core pillar HTTP server.
+ * Entry point for the registry pillar HTTP server.
  *
- * Phase 3 PR 1 of the core pillar migration boots the process with the
- * minimal `/health` surface so the new container can be wired into
- * docker-compose + Watchtower without depending on the (still-unfinished)
- * tRPC + URI-dispatcher migration.
+ * The process opens its OWN SQLite connection via `openCoreDb`.
  *
- * The process opens its OWN core.db connection via `openCoreDb` rather
- * than reaching back into pops-api's singleton — that's the whole point
- * of phase 3.
- *
- * Theme 13 PRD-158 adds an opt-in registry handshake via
- * `bootstrapPillar`. When `POPS_REGISTRY_ENABLED=true`, the process
- * builds a hand-rolled core manifest (PRD-155 will generate this
- * later) and registers with its OWN registry on boot — same loop the
- * other pillars use, just pointed at localhost. SIGTERM triggers
- * `pillarHandle.stop()` so the heartbeat clears and the registry sees
- * an explicit deregister before the HTTP server shuts down.
+ * An opt-in self-registration handshake runs via `bootstrapPillar`: when
+ * `POPS_REGISTRY_ENABLED=true`, the process builds a hand-rolled manifest and
+ * registers with its OWN registry on boot — the same loop the other pillars
+ * use, just pointed at localhost. SIGTERM triggers `pillarHandle.stop()` so
+ * the heartbeat clears and the registry sees an explicit deregister before the
+ * HTTP server shuts down.
  */
 import { coreKeyDefaults } from '../contract/settings/key-defaults.js';
 import { openCoreDb } from '../db/index.js';
@@ -57,9 +49,9 @@ const coreDb = openCoreDb(resolveCoreSqlitePath());
 
 reconcileRegistryOnBoot(coreDb.db);
 
-// settings-federation S1 (R10): fail boot loudly if a system-scoped feature
-// names a setting key core does not own — otherwise the toggle would write a
-// key the owning pillar never reads once settings federate.
+// Fail boot loudly if a system-scoped feature names a setting key the
+// registry does not own — otherwise the toggle would write a key the owning
+// pillar never reads.
 assertFeatureKeysAreCoreOwned(buildRegistryManifest(version).features ?? [], coreKeyDefaults);
 
 /**
@@ -83,8 +75,8 @@ const server = app.listen(port, () => {
 const stopHeartbeatTicker = startHeartbeatTicker(coreDb.db);
 const stopEvictionTicker = startEvictionTicker(coreDb.db);
 
-// The bootstrap handshake registers core with its own registry once the
-// HTTP server is accepting traffic. Done after `app.listen` because the
+// The bootstrap handshake registers the pillar with its own registry once
+// the HTTP server is accepting traffic. Done after `app.listen` because the
 // SDK transport posts the register/heartbeat handshake back to this very
 // process (the registry lives here) — registering before listen would race
 // the HTTP server up.

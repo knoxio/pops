@@ -1,13 +1,11 @@
 /**
- * Shared zod building blocks for the core REST contract.
+ * Shared zod building blocks for the registry REST contract.
  *
- * Split from `rest.ts` so the per-domain route files (`rest-entities.ts`,
- * …) stay focused on their path maps. Everything here is zod-only — no
- * imports from `src/api/` or `src/db/`, so the contract honours the package
- * boundary (consumers see only `.`).
+ * Kept separate from the per-domain route files so each stays focused on its
+ * path map. Everything here is zod-only — no imports from `src/api/` or
+ * `src/db/`, so the contract honours the package boundary (consumers see only `.`).
  *
- * These schemas describe the ACTUAL wire shapes the handlers serve (the
- * `to<Entity>` mappers preserved from the legacy tRPC routers), so the
+ * These schemas describe the ACTUAL wire shapes the handlers serve, so the
  * OpenAPI projection is an honest description of what the server does.
  */
 import { z } from 'zod';
@@ -57,11 +55,10 @@ export const ERR_RESPONSES = {
 } as const;
 
 /**
- * Error responses for identity-gated routes. Adds `401` (unauthenticated,
- * or a principal the route refuses — the `userOnly` / `protected` tRPC
- * gates) on top of the common `400/404/409` set. Kept separate from
- * {@link ERR_RESPONSES} so the OpenAPI projection of the already-migrated
- * public domains stays byte-identical.
+ * Error responses for identity-gated routes. Adds `401` (unauthenticated, or a
+ * principal the route refuses — the `userOnly` / `protected` gates) on top of
+ * the common `400/404/409` set. Kept separate from {@link ERR_RESPONSES} so
+ * routes that cannot return `401` keep an honest OpenAPI projection.
  */
 export const AUTH_ERR_RESPONSES = {
   400: ErrorBodySchema,

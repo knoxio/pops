@@ -1,11 +1,11 @@
 /**
  * Integration smoke for the SDK ↔ registry discovery contract
- * (PRD-227 precondition #1).
+ * (discovery-client).
  *
  * Pins the discovery wire end-to-end: the pillar SDK's
  * `HttpDiscoveryTransport` must fetch the registry snapshot from the raw
- * `GET /core.registry.list` route (the legacy tRPC discovery path is retired)
- * and parse the bare `{ pillars, fetchedAt }` body into `DiscoveredPillar[]`.
+ * `GET /core.registry.list` route and parse the bare
+ * `{ pillars, fetchedAt }` body into `DiscoveredPillar[]`.
  *
  *   1. Boot `createCoreApiApp` against a per-test file-backed core.db.
  *   2. Listen on an ephemeral port via `http.createServer(app).listen(0)`.
@@ -118,8 +118,8 @@ describe('SDK ↔ core.registry discovery interop', () => {
     const transport = new HttpDiscoveryTransport({ registryUrl: baseUrl, fetchImpl: tracingFetch });
     const snapshot = await transport.fetchSnapshot();
 
-    // New SDK + new (dual-serving) core: the canonical slash path resolves on
-    // the first request — no 404 fallback to the legacy dotted path.
+    // The canonical slash path resolves on the first request — no 404
+    // fallback to the legacy dotted path.
     expect(seenUrls).toEqual([`${baseUrl}/registry/pillars`]);
     expect(lastResponse?.status).toBe(200);
 

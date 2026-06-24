@@ -1,13 +1,9 @@
 /**
- * Core domain table barrel.
+ * Registry table barrel.
  *
- * Canonical definitions for core-owned tables (environments,
- * pillar registry, service accounts, settings, user settings) live in this
- * package per PRD-245 US-07 (audit H6/H7). The AI-ops observability slice
- * (`ai_inference_log`/`ai_inference_daily`/budgets/alerts/providers/
- * pricing) extracted out to the `ai` pillar (PRD-055); the
- * finance-categorizer `ai_usage` table re-homed to finance (gap #3489).
- *
+ * Canonical definitions for registry-owned tables (environments, pillar
+ * registry, service accounts, settings, sync job results, user settings)
+ * live in this package.
  */
 export { environments } from './schema/environments.js';
 export { pillarRegistry } from './schema/pillar-registry.js';

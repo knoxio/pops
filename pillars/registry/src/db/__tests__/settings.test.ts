@@ -1,12 +1,7 @@
 /**
  * Invariant tests for the settings service against an in-memory SQLite
  * seeded with the canonical `0056_settings_baseline.sql` migration. Pure
- * DB + service layer — no tRPC, no Express, no feature-toggle wiring.
- *
- * Higher-level router-level coverage continues to live in pops-api's own
- * suite (`apps/pops-api/src/modules/core/settings/settings.test.ts`) and
- * exercises the same persisted shape via the in-tree shim until PRD-183
- * PR 3 flips it onto this service.
+ * DB + service layer — no HTTP, no feature-toggle wiring.
  */
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';

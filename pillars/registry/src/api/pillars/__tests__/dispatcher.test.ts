@@ -1,10 +1,9 @@
 /**
  * Tests for the cross-pillar URI dispatcher (ADR-026 P2).
  *
- * Relocated from `apps/pops-api/src/modules/core/pillars/dispatcher.test.ts`.
  * The remote-pillar lookup is driven through `POPS_PILLARS` + the registry
- * cache reset (the pillar's `getRemotePillarEntry` reads the same cache), so
- * the env-mocking shape is preserved verbatim.
+ * cache reset: `getRemotePillarEntry` reads the same cache, so a test must
+ * set the env and reset the cache for the entry to be visible.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -216,9 +215,9 @@ describe('dispatchUri — remote leg', () => {
 
 describe('dispatchUri — self-pillar short-circuit', () => {
   it('resolves selfPillarId-owned URIs in-process even when registry has a self-entry', async () => {
-    // The registry pillar serves the `pops:core/…` URI namespace (PRD-251),
-    // which is intentionally NOT renamed with the pillar id — so the default
-    // self URI namespace stays `core`.
+    // The registry pillar serves the `pops:core/…` URI namespace, which is
+    // intentionally NOT renamed with the pillar id — so the default self URI
+    // namespace stays `core`.
     process.env[ENV_KEY] = 'core:http://registry-api:3000';
     __resetPillarRegistryCache();
     const remote = vi.fn();

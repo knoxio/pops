@@ -1,9 +1,7 @@
 /**
- * SSE handler for `GET /registry/subscribe` (Theme 13 PRD-163).
+ * SSE handler for `GET /registry/subscribe`.
  *
- * Plain Express route — NOT a tRPC subscription. tRPC subscriptions
- * require a WebSocket transport; SSE is plain HTTP. The handler sits
- * alongside the tRPC mount in `app.ts`.
+ * Plain Express route over plain HTTP.
  *
  * Lifecycle:
  *   1. On connect, write a `snapshot` event containing the current
@@ -15,13 +13,9 @@
  *      client cannot leak listeners.
  *
  * Auth: registry mutations are nginx-gated; `/registry/subscribe` is
- * read-only and public for now (PRD-163 "Out of Scope: Authentication
- * on the SSE endpoint"). Reconnect behaviour + client-side backoff
- * are PRD-164's responsibility — this PR only ships the server.
+ * read-only and public.
  *
- * Follow-ups (intentionally not in this PR):
- *   - 30s keep-alive comments (covered when PRD-164 needs them).
- *   - Per-client write-queue bounds + backpressure handling.
+ * Spec: subscription-model.
  */
 import { pillarRegistryService, type CoreDb } from '../../../db/index.js';
 import { subscribeToRegistryEvents, type RegistryEventPayload } from './event-bus.js';

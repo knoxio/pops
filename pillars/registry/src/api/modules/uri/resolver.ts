@@ -1,10 +1,9 @@
 /**
- * URI resolver dispatcher (PRD-101 US-08, ADR-012).
+ * URI resolver dispatcher (ADR-012).
  *
- * Relocated from `apps/pops-api/src/modules/core/uri/resolver.ts`. Parses a
- * `pops:{moduleId}/{type}/{id}` URI, looks up the owning module in the
- * registry view, and dispatches to its `uriHandler.resolve` if the module is
- * installed and declares a handler for the type.
+ * Parses a `pops:{moduleId}/{type}/{id}` URI, looks up the owning module in
+ * the registry view, and dispatches to its `uriHandler.resolve` if the module
+ * is installed and declares a handler for the type.
  *
  * The dispatcher never throws on missing data — every error path produces a
  * typed `UriResolverResult` so the caller can render a placeholder.

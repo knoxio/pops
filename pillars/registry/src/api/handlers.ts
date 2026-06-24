@@ -22,9 +22,9 @@ export interface CoreApiDeps {
   /** Semver of the build, surfaced on the health response. */
   version: string;
   /**
-   * HTTP origin core-api is reachable at. Surfaced as the synthetic
-   * `core` entry in `GET /pillars` so consumers don't have to special-
-   * case the host pillar.
+   * HTTP origin the registry pillar is reachable at. Surfaced as the
+   * synthetic `registry` entry in `GET /pillars` so consumers don't have
+   * to special-case the host pillar.
    */
   selfBaseUrl: string;
 }
@@ -50,7 +50,7 @@ export interface PillarsHealthResponse {
  *
  * Factored out so tests can call `dispatchUri` directly with stub registries
  * while the HTTP route uses the live in-process module registry + install
- * set. Mirrors `apps/pops-api/src/routes/pillars.ts:buildResolveOptions`.
+ * set.
  *
  * `lookupPillar` is registry-first: it routes the remote leg off the live DB
  * registry and falls back to the `POPS_PILLARS` seed (`getRemotePillarEntry`).

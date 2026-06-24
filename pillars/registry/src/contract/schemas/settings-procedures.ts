@@ -1,29 +1,21 @@
 import { z } from 'zod';
 
 /**
- * Zod schemas for the `core.settings.*` cross-pillar SDK procedures.
+ * Wire schemas for the cross-pillar settings SDK procedures.
  *
- * PRD-247 US-01 — foundational schema + types. These schemas declare the
- * wire shape that `pops-core-api`'s `coreRouter.settings.*` will mount in
- * a follow-up US, and that the typed `pillar<CoreRouter>('core').settings.*`
- * proxy resolves to.
- *
- * Six procedures: `get`, `set`, `ensure`, `delete`, `getMany`, `setMany`.
- *
- * Design points (per PRD-247 README "Wire shape"):
+ * Invariants the Zod types alone don't convey:
  *
  * - `getMany` returns `Record<string, string>` with missing keys omitted
- *   (NOT `null`-valued). Caller treats absence as "not set". Designed-in
- *   from US-01 because hot Plex paths batch-read 3–4 settings per call;
- *   N round-trips would regress p99 latency.
- * - `ensure` returns the persisted row (upsert-and-return). Caller cannot
- *   tell from the return value whether insert or no-op ran.
+ *   (NOT `null`-valued); a caller treats absence as "not set". Batch read
+ *   exists so hot paths fetch several settings in one round-trip instead of
+ *   N calls.
+ * - `ensure` returns the persisted row (upsert-and-return); the return value
+ *   does not reveal whether an insert or a no-op ran.
  * - `setMany` is transactional — all-or-nothing.
- * - Single-key procs (`get`, `set`, `ensure`, `delete`) constrain `key`
- *   to the registry's own manifest key set (derived from
- *   `coreOperationalManifest`). `getMany` and `setMany` accept `z.string()`
- *   keys (matches the existing `getBulkSettings`/`setBulkSettings`
- *   service-layer shape).
+ * - Single-key procs (`get`, `set`, `ensure`, `delete`) constrain `key` to
+ *   the registry's own manifest key set (derived from `coreOperationalManifest`).
+ *   `getMany` and `setMany` accept `z.string()` keys, matching the
+ *   `getBulkSettings`/`setBulkSettings` service-layer shape.
  */
 import { deriveKeySet, keyValuesFor } from '@pops/pillar-settings';
 

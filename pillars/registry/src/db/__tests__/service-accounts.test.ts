@@ -1,11 +1,7 @@
 /**
  * Invariant tests for the service-accounts service against an in-memory
  * SQLite seeded with the canonical `service_accounts` migration. Pure DB +
- * service layer — no tRPC, no Express, no auth middleware.
- *
- * Higher-level scope-enforcement / admin-tRPC coverage lives in pops-api's
- * own integration suite and exercises the same service via the
- * pops-api wrapper.
+ * service layer — no HTTP, no auth middleware.
  */
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';

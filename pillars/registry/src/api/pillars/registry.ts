@@ -1,5 +1,5 @@
 /**
- * Pillar registry view served by the registry pillar (formerly `core`).
+ * Pillar registry view served by the registry pillar.
  *
  * Registry-as-truth: the live DB-backed `pillar_registry` table (served by
  * `buildRegistrySnapshot`) is the primary source. `POPS_PILLARS` is demoted to
@@ -29,9 +29,9 @@ function seedEntries(): readonly PillarRegistryEntry[] {
 
 /**
  * Live registry entries projected onto the `{ id, baseUrl }` registry shape,
- * keyed by id. The synthetic `core` self-entry is dropped — the caller re-adds
- * it from the live `selfBaseUrl` so the host pillar's advertised origin is
- * never stale.
+ * keyed by id. The synthetic `registry` self-entry is dropped — the caller
+ * re-adds it from the live `selfBaseUrl` so the host pillar's advertised origin
+ * is never stale.
  *
  * Reads the raw `pillar_registry` rows via the DB service rather than the full
  * `buildRegistrySnapshot`: `{ id, baseUrl }` needs neither the per-row manifest
@@ -51,7 +51,7 @@ function liveEntries(db: CoreDb): Map<string, PillarRegistryEntry> {
 /**
  * Merge the live DB registry (primary) with the `POPS_PILLARS` seed (fallback).
  * Registry rows win per-id; the seed only backfills ids the registry has no
- * live entry for. The `core` self-entry is excluded from both — the caller
+ * live entry for. The `registry` self-entry is excluded from both — the caller
  * prepends it from `selfBaseUrl`.
  */
 function mergedRegistry(db: CoreDb): PillarRegistryEntry[] {
@@ -69,13 +69,13 @@ function mergedRegistry(db: CoreDb): PillarRegistryEntry[] {
 }
 
 export interface PillarRegistryOptions {
-  /** Open handle to the core pillar's SQLite — the live registry source. */
+  /** Open handle to the registry pillar's SQLite — the live registry source. */
   readonly db: CoreDb;
   /**
-   * HTTP origin core-api is reachable at. Required — `server.ts` derives
-   * it from `REGISTRY_SELF_BASE_URL` (or falls back to `http://localhost:PORT`)
-   * before passing it in. The registry returns this as the synthetic
-   * `core` entry's `baseUrl` after normalising it through
+   * HTTP origin the registry pillar is reachable at. Required — `server.ts`
+   * derives it from `REGISTRY_SELF_BASE_URL` (or falls back to
+   * `http://localhost:PORT`) before passing it in. The registry returns this as
+   * the synthetic `registry` entry's `baseUrl` after normalising it through
    * `parseBareOrigin` so callers can always append `/uri/resolve` etc.
    * without a double-slash or stale path prefix.
    */
@@ -92,8 +92,8 @@ export function getPillarRegistry(options: PillarRegistryOptions): readonly Pill
  * registered. Prefers the live DB registry and falls back to the
  * `POPS_PILLARS` seed when the registry has no live entry. Used by the URI
  * dispatcher's remote leg to route a cross-pillar URI to its owning process.
- * The synthetic `core` self-entry is intentionally excluded — self-owned URIs
- * always resolve in-process, so the dispatcher never proxies to itself.
+ * The synthetic `registry` self-entry is intentionally excluded — self-owned
+ * URIs always resolve in-process, so the dispatcher never proxies to itself.
  */
 export function getRemotePillarEntry(db: CoreDb, id: string): PillarRegistryEntry | undefined {
   if (id === SELF_PILLAR_ID) return undefined;
@@ -105,7 +105,7 @@ export function getRemotePillarEntry(db: CoreDb, id: string): PillarRegistryEntr
 /**
  * Env-seed-only remote lookup — the DB-less fallback the dispatcher uses when
  * no DB-backed `lookupPillar` is injected. Routes solely off the `POPS_PILLARS`
- * seed (cold-start / DB-unavailable resilience). The `core` self-entry is
+ * seed (cold-start / DB-unavailable resilience). The `registry` self-entry is
  * excluded so the dispatcher never proxies to itself.
  */
 export function seedPillarEntry(id: string): PillarRegistryEntry | undefined {

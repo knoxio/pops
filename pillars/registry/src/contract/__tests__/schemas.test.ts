@@ -14,7 +14,7 @@ import type { RegistryEntry } from '../types/registry-entry.js';
 import type { ServiceAccount } from '../types/service-account.js';
 import type { Setting } from '../types/setting.js';
 
-describe('@pops/core-contract round-trip', () => {
+describe('@pops/registry contract round-trip', () => {
   it('RegistryEntry ↔ RegistryEntrySchema agree structurally', () => {
     expectTypeOf<z.infer<typeof RegistryEntrySchema>>().toEqualTypeOf<RegistryEntry>();
   });

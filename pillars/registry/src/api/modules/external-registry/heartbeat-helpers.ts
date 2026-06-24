@@ -1,13 +1,13 @@
 /**
- * Body parser for the PRD-228 heartbeat + deregister endpoints.
+ * Body parser for the heartbeat + deregister endpoints.
  *
  * Both endpoints take the same minimal `{ pillarId }` body — the only
  * difference is what they do once the row has been resolved. The
  * shared parser lives here so neither handler grows its own copy of
  * the structured validation issues that callers consume.
  *
- * Heartbeat additionally carries an optional `capabilities` snapshot
- * (epic 05 / S3); deregister never sends it and simply ignores the field.
+ * Heartbeat additionally carries an optional `capabilities` snapshot;
+ * deregister never sends it and simply ignores the field.
  */
 import { parseCapabilitiesField } from './register-helpers.js';
 

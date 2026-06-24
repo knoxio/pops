@@ -4,7 +4,7 @@ import { assertModuleManifest } from '@pops/types';
 
 import { coreManifest } from '../manifest.js';
 
-describe('registry /manifest — ModuleManifest exports (PRD-241 US-01)', () => {
+describe('registry /manifest — ModuleManifest exports', () => {
   it('coreManifest passes assertModuleManifest with id=registry', () => {
     expect(() => assertModuleManifest(coreManifest, 'modules.registry')).not.toThrow();
     expect(coreManifest.id).toBe('registry');
@@ -12,9 +12,8 @@ describe('registry /manifest — ModuleManifest exports (PRD-241 US-01)', () => 
     expect(coreManifest.surfaces).toEqual(['app']);
   });
 
-  // The registry pillar no longer carries the `ai.config` settings section:
-  // the extracted `ai` pillar (PRD-055) owns and advertises `ai.config`, and
-  // the registry's settings surface is its own `core.operational` only.
+  // The `ai` pillar owns and advertises `ai.config`; the registry's settings
+  // surface is its own `core.operational` only.
   it('coreManifest contributes only the registry-owned settings section', () => {
     const sectionIds = (coreManifest.settings ?? []).map((s) => s.id);
     expect(sectionIds).toEqual(['core.operational']);

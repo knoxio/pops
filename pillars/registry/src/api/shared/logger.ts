@@ -1,10 +1,5 @@
 /**
- * Structured logging for the core pillar container.
- *
- * Ported minimally from `apps/pops-api/src/lib/logger.ts` — that file is
- * monolith-internal source and cannot be imported across the app
- * boundary, so the AI-Ops routers folded into this pillar get their own
- * pino instance here. Same JSON-in-prod / pretty-in-dev behaviour.
+ * Structured logging for the registry pillar: JSON in prod, pretty in dev.
  */
 import pino from 'pino';
 

@@ -1,7 +1,7 @@
 import type { ValidationIssue } from '@pops/pillar-sdk';
 
 /**
- * Pure helpers for the PRD-228 register HTTP endpoint.
+ * Pure helpers for the register HTTP endpoint.
  *
  * Split out of `register.ts` so the handler stays focused on the
  * response shape + persistence orchestration and the body-parser can
@@ -33,7 +33,7 @@ function issue(field: string, reason: string, got: unknown): ValidationIssue {
 
 /**
  * Parse the optional `capabilities` field shared by the register + heartbeat
- * bodies (epic 05 / S3). Absent ⇒ `undefined` (nothing reported). Present but
+ * bodies. Absent ⇒ `undefined` (nothing reported). Present but
  * not a flat `<string, boolean>` record ⇒ a structured issue under `field`,
  * so a malformed report is rejected loudly rather than silently dropped.
  * Returns the validated record on success.

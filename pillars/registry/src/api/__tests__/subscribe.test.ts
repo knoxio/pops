@@ -1,6 +1,6 @@
 import { mkdtempSync, rmSync } from 'node:fs';
 /**
- * SSE smoke tests for `GET /registry/subscribe` (Theme 13 PRD-163).
+ * SSE smoke tests for `GET /registry/subscribe` (subscription-model).
  *
  * Drives a real Express listener via Node's `http` client so we can
  * assert on the event-stream framing, including:

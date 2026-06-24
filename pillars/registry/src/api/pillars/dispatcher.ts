@@ -1,7 +1,6 @@
 /**
- * Cross-pillar URI dispatcher (ADR-026 pre-flight P2).
+ * Cross-pillar URI dispatcher (ADR-026).
  *
- * Relocated from `apps/pops-api/src/modules/core/pillars/dispatcher.ts`.
  * Sits on top of the in-process `resolveUri()` and adds the remote leg: if
  * the owning pillar is registered with a non-local base URL, HTTP-proxy the
  * call to `${baseUrl}/uri/resolve` and return whatever it produces. If the
@@ -39,10 +38,10 @@ export interface DispatchUriOptions extends ResolveUriOptions {
   /**
    * URI-namespace id this process owns. URIs whose `pops:<id>/…` segment
    * matches are ALWAYS routed to the in-process resolver. Defaults to `'core'`
-   * — the registry pillar (formerly named `core`) serves the `pops:core/…`
-   * URI namespace (PRD-251 wire contract), which is intentionally NOT renamed
-   * with the pillar's directory/registration id. Prevents self-recursion on a
-   * misconfigured `core:http://registry-api:3000` env entry.
+   * — the registry pillar serves the `pops:core/…` URI namespace, which is
+   * intentionally NOT renamed with the pillar's directory/registration id.
+   * Prevents self-recursion on a misconfigured `core:http://registry-api:3000`
+   * env entry.
    */
   readonly selfPillarId?: string;
   /**

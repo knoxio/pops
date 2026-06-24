@@ -1,22 +1,19 @@
 /**
- * Hand-rolled registry pillar manifest payload (the pillar formerly named
- * `core`).
+ * Hand-rolled registry pillar manifest payload.
  *
  * Lives in its own module (rather than inline in `server.ts`) so tests can
  * import the builder without triggering the boot side-effects that
  * `server.ts` runs at module top-level (`openCoreDb`, `app.listen`,
  * signal handlers).
  *
- * PRD-243 US-02: the registry is backend-only and intentionally omits the
- * optional `nav` and `pages` UI dimensions. The shell-side aggregator
- * skips backend-only pillars when walking the registry for app-rail
- * entries and routes.
+ * The registry is backend-only and intentionally omits the optional `nav` and
+ * `pages` UI dimensions. The shell-side aggregator skips backend-only pillars
+ * when walking the registry for app-rail entries and routes.
  *
  * The `routes` identifiers (`core.registry.*`, `core.serviceAccounts.*`) and
- * the `core.*` settings/feature keys are the wire/settings namespace owned by
- * the registry-path and settings plans, not this rename — they stay
- * byte-identical so the live register/heartbeat/discovery handshake is
- * unaffected by the pillar-identity rename.
+ * the `core.*` settings/feature keys are a stable wire/settings namespace
+ * independent of the `registry` pillar id — they stay byte-identical so the
+ * live register/heartbeat/discovery handshake keeps working.
  */
 import { coreOperationalManifest } from '../contract/settings/index.js';
 

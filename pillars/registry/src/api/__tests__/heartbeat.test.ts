@@ -1,5 +1,5 @@
 /**
- * Heartbeat lifecycle tests for the registry (Theme 13 PRD-162).
+ * Heartbeat lifecycle tests for the registry (heartbeat-lifecycle).
  *
  * Covers the registry side of the heartbeat contract: `recordHeartbeat`, the
  * background reconciliation ticker, the lazy-compute status path on the
@@ -113,7 +113,7 @@ function registerFinance(): string {
   return 'finance';
 }
 
-describe('registry heartbeat (PRD-162)', () => {
+describe('registry heartbeat', () => {
   it('returns recorded=false for an unknown pillar', () => {
     const res = heartbeat('finance');
     expect(res.recorded).toBe(false);
@@ -165,7 +165,7 @@ describe('registry heartbeat (PRD-162)', () => {
   });
 });
 
-describe('lazy snapshot compute (PRD-162 us-03)', () => {
+describe('lazy snapshot compute', () => {
   it('reports unavailable on the snapshot once age exceeds UNAVAILABLE_AFTER_MS, even before the ticker runs', () => {
     registerFinance();
     advance(UNAVAILABLE_AFTER_MS + 1);
@@ -193,7 +193,7 @@ describe('lazy snapshot compute (PRD-162 us-03)', () => {
   });
 });
 
-describe('background reconciliation ticker (PRD-162 us-02)', () => {
+describe('background reconciliation ticker', () => {
   it('emits a healthy → unavailable transition once the heartbeat age exceeds the threshold', () => {
     registerFinance();
     advance(UNAVAILABLE_AFTER_MS + 1);

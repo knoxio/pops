@@ -1,5 +1,5 @@
 /**
- * Wire schemas for the service-accounts admin surface (`core.serviceAccounts.*`).
+ * Wire schemas for the service-accounts admin surface.
  *
  * These are the LOOSE shapes the admin handlers actually serve, distinct from
  * the stricter cross-pillar {@link ServiceAccountSchema} in `service-account.ts`
@@ -8,9 +8,9 @@
  * `datetime('now')` (`YYYY-MM-DD HH:MM:SS`, not strict ISO), so the timestamps
  * are typed as plain `z.string()` to mirror exactly what the row carries.
  *
- * Both the tRPC router (`api/modules/service-accounts`) and the REST contract
- * (`rest-service-accounts.ts`) source their shapes from here, so the two wire
- * surfaces stay byte-identical with a single source of truth.
+ * The REST contract (`rest-service-accounts.ts`) and the admin handlers
+ * (`api/modules/service-accounts`) both source their shapes from here, so the
+ * wire surface stays byte-identical with a single source of truth.
  */
 import { z } from 'zod';
 

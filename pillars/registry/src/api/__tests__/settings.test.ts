@@ -1,6 +1,7 @@
 /**
- * Integration tests for the `settings.*` REST surface (PRD-247 cross-pillar
- * primitive), driven through the real Express app via supertest.
+ * Integration tests for the `settings.*` REST surface
+ * (settings-as-manifest-dimension), driven through the real Express app
+ * via supertest.
  *
  * Coverage:
  *   - Every procedure (`list`/`get`/`set`/`ensure`/`getMany`/`setMany`/
@@ -11,7 +12,7 @@
  *     the cross-pillar surface still returns real values.
  *   - `getMany` Record-omitted semantics (missing keys absent, not null).
  *   - `setMany` transactional mirror.
- *   - Error mapping: 400 (zod boundary); the legacy `delete` alias is now an
+ *   - Error mapping: 400 (zod boundary); the legacy `delete` alias is an
  *     idempotent reset (200, no 404).
  *   - Auth gating (`protected`): 401 for an anonymous caller and for a
  *     service account lacking the scope; 200 for a service account WITH the
@@ -44,10 +45,8 @@ afterEach(() => {
   rmSync(tmpDir, { recursive: true, force: true });
 });
 
-// Three distinct keys from the registry's own `coreOperationalManifest`. The
-// Plex keys this suite formerly exercised moved to media's federated settings
-// surface once the per-pillar `capabilities.settings` flip landed — the
-// registry's `:key` enum no longer carries them.
+// Three distinct keys from the registry's own `coreOperationalManifest`,
+// which sources the `:key` enum these procedures validate against.
 const RETRIES_KEY = 'core.aiRetry.maxRetries';
 const DELAY_KEY = 'core.aiRetry.baseDelayMs';
 const CONCURRENCY_KEY = 'core.queue.syncConcurrency';

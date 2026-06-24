@@ -2,9 +2,10 @@
  * Pillar registry CRUD.
  *
  * One row per pillar; the latest `register` wins (UPSERT semantics).
- * The router validates the manifest payload against PRD-157's schema
- * before calling into this service — the service trusts the shape it
- * is handed and just persists / queries.
+ * The router validates the manifest payload against the manifest schema
+ * (docs/themes/federation/prds/manifest-schema-validator) before calling
+ * into this service — the service trusts the shape it is handed and just
+ * persists / queries.
  *
  * `registeredAt` is set on first INSERT and preserved across UPSERTs so
  * "how long has this pillar been alive?" remains answerable. Everything
@@ -13,10 +14,10 @@
  *
  * `recordHeartbeat` updates `lastHeartbeatAt` and resets `status` →
  * `healthy`; `applyStatusUpdates` lets the registry's reconciliation
- * tick (PRD-162) batch transition pillars to `unavailable` once their
- * heartbeat has lapsed past threshold. The "should this pillar still
- * be healthy?" decision lives in the router (`computeStatus`), not in
- * this service — keeping the persistence layer agnostic.
+ * tick batch transition pillars to `unavailable` once their heartbeat
+ * has lapsed past threshold. The "should this pillar still be healthy?"
+ * decision lives in the router (`computeStatus`), not in this service —
+ * keeping the persistence layer agnostic.
  */
 import { eq, sql } from 'drizzle-orm';
 
@@ -33,7 +34,7 @@ export type { CapabilityStatuses } from './pillar-registry-capabilities.js';
 
 export type PillarStatus = 'healthy' | 'unavailable' | 'unknown';
 
-/** PRD-228: `'internal'` is the bootstrap path; `'external'` is HTTP-key registration. */
+/** `'internal'` is the bootstrap path; `'external'` is HTTP-key registration. */
 export type PillarOrigin = 'internal' | 'external';
 
 /**
@@ -65,9 +66,9 @@ export interface UpsertPillarRegistrationInput {
    */
   readonly apiKeyHash?: string | null;
   /**
-   * Capability statuses reported at register time (epic 05 / S3). Omitted
-   * (or `undefined`) when the pillar reports none — the column is then left
-   * NULL. The snapshot reader surfaces it as `pillars[].capabilities`.
+   * Capability statuses reported at register time. Omitted (or `undefined`)
+   * when the pillar reports none — the column is then left NULL. The
+   * snapshot reader surfaces it as `pillars[].capabilities`.
    */
   readonly capabilities?: CapabilityStatuses;
 }
@@ -232,7 +233,7 @@ export interface HeartbeatResult {
 }
 
 /**
- * Idempotent heartbeat ingest (Theme 13 PRD-162).
+ * Idempotent heartbeat ingest.
  *
  * Updates `lastHeartbeatAt = now` and resets `status = 'healthy'` for
  * the addressed pillar. Returns `recorded: false` if the pillar is not
@@ -245,8 +246,8 @@ export interface HeartbeatResult {
  * The background ticker handles the healthy-staleness refresh.
  *
  * `options.capabilities` overwrites the stored capability snapshot with the
- * freshest reported status (epic 05 / S3). Omitted ⇒ the stored value is left
- * untouched (a pillar with no reporter, or a pre-S3 SDK, never clobbers it).
+ * freshest reported status. Omitted ⇒ the stored value is left untouched
+ * (a pillar that reports no capabilities never clobbers it).
  */
 export function recordHeartbeat(
   db: CoreDb,

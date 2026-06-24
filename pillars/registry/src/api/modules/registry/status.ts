@@ -1,6 +1,5 @@
 /**
- * Heartbeat-driven status computation for the pillar registry
- * (Theme 13 PRD-162).
+ * Heartbeat-driven status computation for the pillar registry.
  *
  * The registry persists `lastHeartbeatAt` per pillar; the status column
  * is a denormalised cache. Live status is recomputed from
@@ -8,11 +7,14 @@
  * always see fresh state — the persisted column drives only the
  * background ticker's transition emission.
  *
- * Rules (per PRD spec):
- *   - 3 missed heartbeats at the 10s SDK cadence ⇒ `unavailable`.
- *   - Boundary (NOW − last == 30000ms) is owned by `unavailable`.
- *   - Negative ages (pillar clock ahead of core-api) are treated as
+ * Rules:
+ *   - `MISS_THRESHOLD` missed heartbeats at the SDK cadence ⇒ `unavailable`.
+ *   - The boundary (`now - last === UNAVAILABLE_AFTER_MS`) is owned by
+ *     `unavailable`.
+ *   - Negative ages (pillar clock ahead of the registry) are treated as
  *     `healthy` — defensive, but the docker network keeps clocks tight.
+ *
+ * Spec: heartbeat-lifecycle.
  */
 
 export const HEARTBEAT_INTERVAL_MS = 10_000;

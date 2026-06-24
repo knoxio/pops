@@ -1,5 +1,5 @@
 /**
- * Integration tests for `POST /core.registry.heartbeat` (Theme 13 PRD-228 US-02).
+ * Integration tests for `POST /core.registry.heartbeat` (heartbeat-lifecycle).
  *
  * Boots the full Express factory against a temp-dir core.db, then drives
  * the wire surface end to end via `supertest`. Asserts the user-story

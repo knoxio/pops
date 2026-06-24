@@ -1,12 +1,12 @@
 /**
- * Hard-eviction ticker for external pillars (Theme 13 PRD-228 US-02).
+ * Hard-eviction ticker for external pillars.
  *
- * Runs every 30s in core-api. On each pass:
+ * Runs every `EVICTION_TICK_INTERVAL_MS` in the registry pillar. On each
+ * pass:
  *
  *   1. Read every row in `pillar_registry`.
  *   2. Pick rows where `origin = 'external'`, `status = 'unavailable'`,
- *      and `statusUpdatedAt` is older than `EVICTION_THRESHOLD_MS`
- *      (5 minutes by default).
+ *      and `statusUpdatedAt` is older than `EVICTION_THRESHOLD_MS`.
  *   3. DELETE the row.
  *   4. Emit a `deregistered` event with `reason = 'never-heartbeated'`
  *      (if the row never recorded a heartbeat past registration) or
@@ -15,17 +15,19 @@
  *
  * `origin = 'internal'` rows are NEVER hard-evicted regardless of
  * status — internal pillars manage their own lifecycle via the
- * in-network deregister route, currently `/core.registry.deregister` (the
- * canonical `/registry/deregister` lands in a later phase).
+ * deregister route, mounted on both `/registry/deregister` and the
+ * legacy `/core.registry.deregister` (see `../../app.ts`).
  *
- * The router's lazy-status compute (`computeStatus` from
- * `./status.js`) flips `unavailable` after 30s of missed heartbeats;
+ * The router's lazy-status compute (`computeStatus` from `./status.js`)
+ * flips `unavailable` after `UNAVAILABLE_AFTER_MS` of missed heartbeats;
  * the eviction threshold is layered on top of that so a transient
  * outage doesn't drop the row immediately.
  *
  * Errors are logged and the next tick runs normally — no backoff. The
  * register endpoint accepts repeat registrations, so an evicted pillar
  * that comes back simply re-registers.
+ *
+ * Spec: dynamic-pillar-registration.
  */
 import { pillarRegistryService, type CoreDb, type PillarRegistration } from '../../../db/index.js';
 import { emitRegistryEvent, type DeregisterReason } from './event-bus.js';
