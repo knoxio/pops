@@ -16,8 +16,6 @@ function shouldSearchTv(query: string, mode: SearchMode): boolean {
   return query.length > 0 && (mode === 'tv' || mode === 'both');
 }
 
-// ── useDebouncedValue logic (extracted for testability) ──────────────
-
 /**
  * Simulates the debounce behavior used by SearchPage.
  * Uses callbacks to avoid microtask timing issues with fake timers.
@@ -75,7 +73,6 @@ describe('SearchPage debounce logic', () => {
     debounce('second', (v) => results.push(v));
     vi.advanceTimersByTime(300);
 
-    // Only the second value should resolve (first was cancelled)
     expect(results).toEqual(['second']);
   });
 
@@ -93,8 +90,6 @@ describe('SearchPage debounce logic', () => {
     expect(results).toEqual(['abc']);
   });
 });
-
-// ── URL param persistence logic ──────────────────────────────────────
 
 describe('SearchPage URL param logic', () => {
   it('should produce ?q= param for non-empty query', () => {
@@ -123,8 +118,6 @@ describe('SearchPage URL param logic', () => {
   });
 });
 
-// ── Clear button state logic ──────────────────────────────────────────
-
 describe('SearchPage clear button logic', () => {
   it('should show clear button when query has text', () => {
     const query = 'test';
@@ -144,14 +137,11 @@ describe('SearchPage clear button logic', () => {
 
   it('should reset query to empty on clear', () => {
     const _before = 'some search';
-    // Simulate onClear callback — previous query (_before) is discarded
     const query = '';
     expect(query).toBe('');
     expect(_before).toBeDefined();
   });
 });
-
-// ── Empty query behavior ──────────────────────────────────────────────
 
 describe('SearchPage empty query behavior', () => {
   it('should not enable search when query is empty', () => {
@@ -179,17 +169,8 @@ describe('SearchPage empty query behavior', () => {
   });
 });
 
-// ── Request cancellation logic ──────────────────────────────────────
-
 describe('SearchPage request cancellation', () => {
-  it('tRPC/React Query cancels previous request when query key changes', () => {
-    // When debouncedQuery changes, React Query automatically aborts
-    // the previous request via its built-in AbortController support.
-    // The useQuery hook's query key includes the query string —
-    // when it changes, React Query cancels the in-flight request.
-    //
-    // Verification: { query: debouncedQuery } is passed as the query input,
-    // which becomes part of the query key. React Query handles cancellation.
+  it('changing the debounced query produces a distinct React Query key', () => {
     const queryKey1 = { query: 'bat' };
     const queryKey2 = { query: 'batman' };
     expect(queryKey1).not.toEqual(queryKey2);

@@ -1,8 +1,7 @@
 /**
- * CLI entry-point helpers for `generate-nginx-conf.ts` (Theme 13 PRD-217
- * + PRD-232). Lives in a sibling file so the renderer module stays under
- * the 200-line budget and so the main-loop logic can be unit-tested
- * without forking a subprocess.
+ * CLI entry-point helpers for `generate-nginx-conf.ts`. Lives in a
+ * sibling file so the renderer module stays under the 200-line budget and
+ * so the main-loop logic can be unit-tested without forking a subprocess.
  */
 import { readFile, writeFile } from 'node:fs/promises';
 

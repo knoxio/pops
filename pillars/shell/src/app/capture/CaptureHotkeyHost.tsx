@@ -1,18 +1,14 @@
 /**
- * CaptureHotkeyHost — owns the global capture hotkey binding (PRD-081
- * US-09, rewritten under PRD-246 US-03 to close audit H8/H9).
+ * CaptureHotkeyHost — owns the global capture hotkey binding.
  *
  * Reads the active capture overlay's `hotkey` descriptor from the
- * registry walk and binds it via `useCaptureHotkey`. The previous
- * implementation read the hotkey from cerebrum's
- * `CEREBRUM_CAPTURE_HOTKEY` core setting at runtime — that path is gone.
- * Pillars that want a different hotkey publish a different
- * `captureOverlay.hotkey` value on their manifest.
+ * registry walk and binds it via `useCaptureHotkey`. Pillars that want
+ * a different hotkey publish a different `captureOverlay.hotkey` value
+ * on their manifest.
  *
- * When no manifest contributes a `captureOverlay` (e.g. cerebrum is
- * not in the install set and no successor pillar declared the
- * dimension), the host renders the modal anyway — the modal handles
- * the empty surface — but does not bind any hotkey.
+ * When no manifest contributes a `captureOverlay`, the host renders the
+ * modal anyway — the modal handles the empty surface — but does not bind
+ * any hotkey.
  */
 import { useCallback, useMemo, useState } from 'react';
 

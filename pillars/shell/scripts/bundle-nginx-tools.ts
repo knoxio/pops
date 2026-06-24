@@ -2,7 +2,8 @@
 /**
  * Bundle the nginx render + watcher CLIs into standalone ESM so the
  * production `nginx:alpine` image can run them with a bare node binary
- * and **no** `node_modules` (Theme 13 PRD-255 US-02/US-03).
+ * and **no** `node_modules`
+ * (docs/themes/federation/prds/prod-registry-driven-nginx).
  *
  * The generator (`generate-nginx-conf.ts`) and watcher
  * (`watch-registry-and-reload-cli.ts`) import `@pops/pillar-sdk`, which

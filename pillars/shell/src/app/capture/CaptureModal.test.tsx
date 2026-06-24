@@ -1,10 +1,3 @@
-/**
- * PRD-246 US-03: CaptureModal mounts the bundle resolved from the
- * registry walk and falls back to an empty surface when no overlay is
- * registered. The cerebrum coupling that previously sat at the top of
- * the file is gone — these tests prove the modal works with synthetic
- * bundles.
- */
 import { render, screen } from '@testing-library/react';
 import { I18nextProvider } from 'react-i18next';
 import { describe, expect, it } from 'vitest';
@@ -42,7 +35,7 @@ function syntheticOverlay(props: {
   };
 }
 
-describe('CaptureModal (PRD-246 US-03)', () => {
+describe('CaptureModal', () => {
   it('renders the resolved bundle inside the dialog when open', () => {
     render(
       withI18n(

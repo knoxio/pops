@@ -1,7 +1,7 @@
 /**
- * CLI argument parser for `generate-nginx-conf.ts` (Theme 13 PRD-217 +
- * PRD-232). Split out so the generator's renderer stays small and the
- * complexity budget of `parseCliArgs` does not grow with every new flag.
+ * CLI argument parser for `generate-nginx-conf.ts`. Split out so the
+ * generator's renderer stays small and the complexity budget of
+ * `parseCliArgs` does not grow with every new flag.
  *
  * The parser is intentionally hand-written (no commander/yargs) because
  * the surface is tiny and pulling in a CLI framework for four flags is

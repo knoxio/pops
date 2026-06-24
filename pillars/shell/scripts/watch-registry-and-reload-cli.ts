@@ -1,8 +1,9 @@
 #!/usr/bin/env tsx
 /**
- * CLI entrypoint for the Theme 13 PRD-228 US-03 nginx event-reload
- * watcher. Reads env, wires up the optional health endpoint, and runs
- * the watcher until SIGINT/SIGTERM. Kept thin so the watcher core
+ * CLI entrypoint for the nginx event-reload watcher
+ * (docs/themes/federation/prds/dynamic-pillar-registration). Reads env,
+ * wires up the optional health endpoint, and runs the watcher until
+ * SIGINT/SIGTERM. Kept thin so the watcher core
  * (`watchRegistryAndReload`) stays test-friendly.
  */
 import { fileURLToPath } from 'node:url';

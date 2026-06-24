@@ -1,5 +1,5 @@
 /**
- * NotInstalledPage tests (PRD-101 US-03).
+ * NotInstalledPage tests.
  *
  * The page renders for catch-all matches; the requested module id is
  * derived from the URL's first path segment. These tests confirm the

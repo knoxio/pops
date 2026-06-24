@@ -1,11 +1,9 @@
 /**
- * CaptureModal — global capture surface rendered as a Dialog (PRD-081
- * US-09, rewritten under PRD-246 US-03 to close audit findings H8/H9).
+ * CaptureModal — global capture surface rendered as a Dialog.
  *
  * Discovers the active capture overlay by walking the registry
  * (`activeCaptureOverlay()` over `installedFrontendManifests()` +
- * `WORKSPACE_BUNDLE_MAP`) rather than hard-importing cerebrum's
- * `IngestForm` + `useIngestPageModel`. The selection rule lives in
+ * `WORKSPACE_BUNDLE_MAP`). The selection rule lives in
  * `./capture-registry.ts`; this file is responsible for:
  *
  *   - Mounting the resolved bundle's `Mount` component inside the

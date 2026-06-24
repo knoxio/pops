@@ -7,9 +7,10 @@ import { pillarIdForModule, REGISTRY_PILLAR_ID } from './manifest-pillar';
 
 describe('pillarIdForModule', () => {
   it('returns the platform registry pillar for every known module today', () => {
-    // Unmigrated modules fall back to the platform `registry` pillar. The list
-    // is pulled from `installed-modules.ts`'s known frontend manifests; if a
-    // module migrates, this test failure is the prompt to update the mapping.
+    // Modules without a dedicated mapping resolve to the platform `registry`
+    // pillar. This list mirrors the known frontend manifests in
+    // `installed-modules.ts`; give a module its own pillar and this assertion
+    // is the prompt to update the mapping.
     const knownModules = [
       'ai',
       'cerebrum',

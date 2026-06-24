@@ -1,10 +1,10 @@
 /**
- * PRD-243 US-04 — registry-driven shell UI integration test.
+ * Registry-driven shell UI integration test.
  *
- * Closes audit M7. Proves the lego: a synthetic pillar that ships
- * **no** patch to `WORKSPACE_BUNDLE_MAP`, `installed-modules.ts`,
- * `nav/registry.ts`, the router, or any real `@pops/app-*` package
- * still flows through the shell's registry walk and mounts:
+ * Proves the lego: a synthetic pillar that ships **no** patch to
+ * `WORKSPACE_BUNDLE_MAP`, `installed-modules.ts`, `nav/registry.ts`,
+ * the router, or any real `@pops/app-*` package still flows through
+ * the shell's registry walk and mounts:
  *
  *   - its `nav.navConfig` into the app rail (via `buildRegisteredAppsFromBundleMap`),
  *   - its `frontend.routes` into the route tree (via `walkRegistry`),
@@ -14,6 +14,8 @@
  * The synthetic pillar's manifest, nav config, route fixture, and bundle
  * entry are all declared **inline in this test file**, so the test would
  * fail if any of those structures required a per-pillar source edit.
+ *
+ * See `docs/themes/federation/prds/registry-driven-shell-ui`.
  */
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Outlet, Route, Routes } from 'react-router';
@@ -103,7 +105,7 @@ function mountManifestRoutes(manifest: FrontendManifest, initialPath: string): v
   );
 }
 
-describe('PRD-243 US-04 — synthetic pillar mounts via registry (audit M7)', () => {
+describe('synthetic pillar mounts via registry', () => {
   it('app rail nav surfaces the synthetic pillar at the navOrder-derived position', () => {
     const apps = buildRegisteredAppsFromBundleMap(bundleMapWithSynthetic());
     const ids = apps.map((app) => app.id);
@@ -160,7 +162,7 @@ describe('PRD-243 US-04 — synthetic pillar mounts via registry (audit M7)', ()
     expect(manifests.map((m) => m.id)).not.toContain(SYNTHETIC_ID);
   });
 
-  it('an external registry entry (no bundle map entry) mounts via the runtime loader (US-05)', () => {
+  it('an external registry entry (no bundle map entry) mounts via the runtime loader', () => {
     const entries: RegistryEntry[] = [
       {
         pillarId: SYNTHETIC_ID,

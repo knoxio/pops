@@ -7,13 +7,12 @@ import { usePillarSdkOptions } from '@pops/pillar-sdk/react';
  * Drives the per-section "Test" button. The button's `procedure` string is
  * supplied by a settings manifest at runtime in the shape
  * `pillarId.routerName.procName`, so the SDK's typed proxy can't be used
- * directly — `pillar(id).callDynamic(router, proc, input, kind)` (PRD-204
- * + PR #3131) is the supported escape hatch.
+ * directly — `pillar(id).callDynamic(router, proc, input, kind)` is the
+ * supported escape hatch for a path only known at runtime.
  *
- * The pillar's tRPC HTTP transport doesn't differentiate query vs mutation
- * on the wire, so a `query` call always succeeds against either kind; the
- * `'query'` kind is the safe default and is reserved for future routing
- * instrumentation.
+ * The `kind` argument is ignored by the SDK proxy: every `callDynamic`
+ * dispatch is the same body-carrying REST POST regardless of kind, so the
+ * `'query'` default works against any procedure.
  */
 export function useTestActionHandler() {
   const sdkOptions = usePillarSdkOptions();

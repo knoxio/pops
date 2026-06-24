@@ -109,7 +109,7 @@ describe('generate-nginx-conf', () => {
   describe('rendered output structure', () => {
     const rendered = renderNginxConf();
 
-    it('renders no per-pillar /trpc-<id>/ dispatcher blocks (G6 cut — pillars no longer serve /trpc)', () => {
+    it('renders no per-pillar /trpc-<id>/ dispatcher blocks (pillars serve REST, not /trpc)', () => {
       for (const id of PILLARS) {
         expect(rendered).not.toContain(`location /trpc-${id}/ {`);
       }
@@ -178,9 +178,9 @@ describe('generate-nginx-conf', () => {
       expect(rendered).toContain('set $registry_api_upstream http://registry-api:3001;');
     });
 
-    it('no longer emits the transitional /core-api alias (core→registry rename complete)', () => {
-      // The shell's registry client now posts to `/registry-api/`; the legacy
-      // `/core-api/` alias block is fully removed.
+    it('emits no /core-api alias — the registry pillar is reached at /registry-api', () => {
+      // The shell's registry client posts to `/registry-api/`; there is no
+      // `/core-api/` alias block.
       expect(rendered).not.toContain('location /core-api/ {');
       expect(rendered).not.toContain('core-api');
     });
@@ -230,12 +230,12 @@ describe('generate-nginx-conf', () => {
       );
     });
 
-    it('no longer renders the legacy /trpc → pops-api catch-all (02 decommission)', () => {
+    it('renders no /trpc → pops-api monolith catch-all', () => {
       expect(rendered).not.toContain('location /trpc {');
       expect(rendered).not.toMatch(/proxy_pass http:\/\/pops-api:3000/);
     });
 
-    it('routes the relocated raw routes to their new pillars (02 R1/R2)', () => {
+    it('routes the relocated raw routes (Up Bank webhook, inventory byte routes) to their pillars', () => {
       expect(rendered).toMatch(
         /location \/webhooks\/up \{[\s\S]*?set \$up_webhook_upstream http:\/\/finance-api:3004;/
       );
@@ -320,7 +320,7 @@ describe('generate-nginx-conf', () => {
     });
   });
 
-  describe('resolveUpstreamForEntry (PRD-232)', () => {
+  describe('resolveUpstreamForEntry', () => {
     it('returns the canonical PILLAR_UPSTREAMS host:port for known pillars regardless of baseUrl', () => {
       const entry: Pick<DiscoveredPillar, 'pillarId' | 'baseUrl'> = {
         pillarId: 'finance',
@@ -365,7 +365,7 @@ describe('generate-nginx-conf', () => {
     });
   });
 
-  describe('orderUpstreams (PRD-232)', () => {
+  describe('orderUpstreams', () => {
     it('places known pillars first in PILLAR_RENDER_ORDER, then unknowns alphabetically', () => {
       const upstreams: PillarUpstream[] = [
         { pillarId: 'plugin-z', host: 'z', port: 1 },
@@ -378,7 +378,7 @@ describe('generate-nginx-conf', () => {
     });
   });
 
-  describe('renderNginxConfFromUpstreams (PRD-232)', () => {
+  describe('renderNginxConfFromUpstreams', () => {
     it('renders zero pillar blocks for an empty registry but keeps head + tail', () => {
       const rendered = renderNginxConfFromUpstreams([]);
       expect(rendered).not.toMatch(/location \/trpc-[a-z]/);
@@ -428,7 +428,7 @@ describe('generate-nginx-conf', () => {
     });
   });
 
-  describe('renderNginxConfDynamic (PRD-232)', () => {
+  describe('renderNginxConfDynamic', () => {
     it('emits a config that mirrors the static output when the registry advertises every known pillar', async () => {
       const transport = makeTransport(
         PILLARS.map((id) => ({
@@ -440,7 +440,7 @@ describe('generate-nginx-conf', () => {
       expect(rendered).toBe(renderNginxConf());
     });
 
-    it('emits zero pillar blocks for an empty registry (snapshot)', async () => {
+    it('emits zero pillar blocks for an empty registry', async () => {
       const rendered = await renderNginxConfDynamic('http://registry-api:3001', makeTransport([]));
       for (const id of PILLARS) {
         expect(rendered).not.toContain(`location /${id}-api/ {`);
@@ -486,7 +486,7 @@ describe('generate-nginx-conf', () => {
     });
   });
 
-  describe('parseCliArgs (PRD-232)', () => {
+  describe('parseCliArgs', () => {
     it('defaults: static mode, default output, default registry url', () => {
       const opts = parseCliArgsForGenerator([]);
       expect(opts.dynamic).toBe(false);

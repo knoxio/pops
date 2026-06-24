@@ -1,7 +1,3 @@
-/**
- * UI store - manages UI state like sidebar open/close
- * Persisted to localStorage
- */
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
@@ -10,8 +6,7 @@ interface UIState {
   railOpen: boolean;
   pageNavOpen: boolean;
   /**
-   * Open state for each installed overlay, keyed by module id (PRD-101 US-07).
-   * Replaces the previous per-overlay `chatOverlayOpen` flag so the shell can
+   * Open state for each installed overlay, keyed by module id, so the shell can
    * mount any registered overlay without growing a new field per module.
    */
   overlays: Record<string, boolean>;

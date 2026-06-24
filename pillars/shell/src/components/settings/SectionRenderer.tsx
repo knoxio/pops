@@ -11,7 +11,7 @@ interface SectionRendererProps {
   manifest: SettingsManifest;
   /** The pillar that owns this section's settings; resolves the transport. */
   ownerPillar?: string;
-  /** Live `capabilities.settings` flag — routes to the pillar when true, else core. */
+  /** Live `capabilities.settings` flag — routes to the owning pillar when true, else `registry`. */
   hasFederatedSettings?: boolean;
   optionsLoaders?: Record<string, () => Promise<{ value: string; label: string }[]>>;
   onTestAction?: (procedure: string) => Promise<void>;
@@ -35,10 +35,9 @@ function applyDynamicOptions(
 
 /**
  * Renders one settings section and routes its read/write to the OWNING pillar
- * (capability-gated) via `useSectionState` (settings-federation S3). When the
- * owning pillar has not advertised the `settings` capability the transport
- * falls back to the platform `registry` pillar (formerly `core`), so an
- * un-upgraded pillar keeps working.
+ * (capability-gated) via `useSectionState`. When the owning pillar has not
+ * advertised the `settings` capability the transport falls back to the
+ * `registry` pillar, so an un-upgraded pillar keeps working.
  */
 export function SectionRenderer({
   manifest,
@@ -69,9 +68,8 @@ export function SectionRenderer({
   );
 
   // `isLoading` is true only on the genuine first fetch; a failed load (pillar
-  // unavailable / drifted contract) reports `isError` instead, so we fall
-  // through and render the groups with their static defaults rather than hang
-  // on a skeleton.
+  // unavailable / drifted contract) falls through to render the groups with
+  // their static defaults rather than hang on a skeleton.
   if (isLoading) {
     return (
       <div className="space-y-3">

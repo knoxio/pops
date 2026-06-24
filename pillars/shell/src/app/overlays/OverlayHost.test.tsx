@@ -1,6 +1,6 @@
 import { useUIStore } from '@/store/uiStore';
 /**
- * Tests for `OverlayHost` (PRD-101 US-07).
+ * Tests for `OverlayHost` (docs/themes/foundation/prds/overlay-surfaces).
  *
  * Three scenarios:
  *   1. Default — an installed overlay declares the `assistant` slot;
@@ -14,9 +14,10 @@ import { useUIStore } from '@/store/uiStore';
  *      is mocked to return no overlays; the host renders nothing.
  *
  * Each test mocks `./registry` with a synthetic overlay rather than relying
- * on the real `@pops/overlay-ego` package. The real overlay drags Zustand,
- * tRPC, and a large chat surface into the cold-vitest module graph; loading
- * it on the first lazy-mount blows past the test timeout intermittently.
+ * on the real `@pops/overlay-ego` package. The real overlay drags React
+ * Query, a generated REST client, and a large chat surface into the
+ * cold-vitest module graph; loading it on the first lazy-mount blows past
+ * the test timeout intermittently.
  * The slot-matching + Suspense-unwrap mechanics under test are the same
  * regardless of which component sits behind the loader.
  */

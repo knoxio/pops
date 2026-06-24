@@ -1,14 +1,12 @@
 /**
- * Online-path render test (P7-T03 / RD-3, MUST-FIX 2).
+ * Online-path render test for the registry-driven boot branch.
  *
- * The registry-driven boot branch is this PR's entire purpose, yet it had no
- * rendered coverage: the gated Playwright suite (workflow_dispatch only — it
- * targets the deleted tRPC monolith) never runs in PR CI, and even when it
- * did, dev Vite had no `/registry-api` proxy and the e2e harness swaps a
- * build-time `@pops/module-registry` snapshot, so the boot fetch 404s and the
- * shell silently soft-falls to `[]` → the static floor. Every e2e therefore
- * exercises ONLY the floor; a regression that breaks only the live mount would
- * pass all CI green and surface only in production.
+ * That branch has no rendered coverage from the gated Playwright suite
+ * (workflow_dispatch only): dev Vite has no `/registry-api` proxy and the e2e
+ * harness swaps a build-time `@pops/module-registry` snapshot, so the boot
+ * fetch 404s and the shell silently soft-falls to `[]` → the static floor.
+ * Every e2e therefore exercises ONLY the floor; a regression that breaks only
+ * the live mount would pass all CI green and surface only in production.
  *
  * This drives the real online pipeline end-to-end in jsdom: a stubbed `fetch`
  * serves a NON-EMPTY snapshot (one in-repo pillar + one external pillar) →

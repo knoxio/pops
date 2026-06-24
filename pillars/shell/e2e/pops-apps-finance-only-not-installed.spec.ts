@@ -1,6 +1,5 @@
 /**
- * Install-set switching E2E — finance-only build (PRD-101 US-11
- * follow-up, issue #2595).
+ * Install-set switching E2E — finance-only build.
  *
  * A regression here means an operator-selected install set no longer
  * isolates uninstalled modules behind `NotInstalledPage`, blurring the

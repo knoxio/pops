@@ -1,14 +1,14 @@
 /**
- * External-pillar UI loading (PRD-243 US-05, Option A).
+ * External-pillar UI loading (Option A).
  *
  * In-repo pillars reach the shell through the static `WORKSPACE_BUNDLE_MAP`
  * (`./bundle-map.tsx`) — a build-time import graph that ADR-002 keeps as a
  * single static Vite SPA. This module covers the orthogonal case: a pillar
- * the build does not know about, registered at runtime (PRD-228), whose
- * manifest advertises an `assetsBaseUrl`.
+ * the build does not know about, registered at runtime, whose manifest
+ * advertises an `assetsBaseUrl`.
  *
- * The mechanism is the one US-05 recommends (Option A, not Module
- * Federation): the shell `import()`s the pillar's single ESM entry from the
+ * The mechanism is Option A (not Module Federation): the shell `import()`s
+ * the pillar's single ESM entry from the
  * URL it advertises and resolves each `PageDescriptor.bundleSlot` to a React
  * component the remote bundle exports. The nav rail comes off the wire
  * (`NavConfigDescriptor`) so it renders synchronously at boot; the remote

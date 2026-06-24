@@ -1,6 +1,6 @@
 /**
- * Pure helpers for the global capture hotkey (PRD-081 US-09). Extracted
- * so the suppression logic can be unit-tested without rendering a hook.
+ * Pure helpers for the global capture hotkey. Extracted so the
+ * suppression logic can be unit-tested without rendering a hook.
  */
 
 const IGNORE_TAGS = new Set(['INPUT', 'TEXTAREA', 'SELECT']);

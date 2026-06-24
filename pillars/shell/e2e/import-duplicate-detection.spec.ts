@@ -1,7 +1,7 @@
 /**
- * Integration test — finance import: duplicate detection workflow (#2122).
+ * Integration test — finance import: duplicate detection workflow.
  *
- * Tier 3: real API against an isolated seeded SQLite environment.
+ * Real API against an isolated seeded SQLite environment.
  *
  * Flow covered:
  *   Phase 1 — upload CSV A (3 unique rows), walk the wizard, commit.
@@ -100,7 +100,7 @@ async function commitAndReachSummary(page: Page): Promise<void> {
 
 test.describe.configure({ mode: 'serial' });
 
-test.describe('Finance import — duplicate detection workflow (#2122)', () => {
+test.describe('Finance import — duplicate detection workflow', () => {
   let pageErrors: string[] = [];
   let consoleErrors: string[] = [];
 

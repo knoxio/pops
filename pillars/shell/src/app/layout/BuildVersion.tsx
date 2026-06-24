@@ -1,11 +1,10 @@
 import { useEffect, useState } from 'react';
 
 /**
- * Truncate a version label to a short SHA. Build hashes are 40 chars and
- * blow out the topbar; sequential CI numbers used to be short enough to
- * show in full but the build now stamps the full git SHA. We keep the
- * one-letter prefix (`f` / `a`) and the first 7 hex chars — full value is
- * still available via the title attribute for copy/paste.
+ * Truncate a version label to a short SHA so a 40-char build hash does not
+ * blow out the topbar. Keeps the one-letter prefix (`f` / `a`) and the first
+ * 7 hex chars; the full value stays available via the title attribute for
+ * copy/paste.
  */
 export function shortVersion(raw: string | null | undefined): string | null {
   if (!raw) return null;
@@ -16,7 +15,6 @@ export function shortVersion(raw: string | null | undefined): string | null {
   return `${prefix}${(sha ?? '').slice(0, 7)}`;
 }
 
-/** Faded mono build version label showing frontend and API versions. */
 export function BuildVersion() {
   const [apiVersion, setApiVersion] = useState<string | null>(null);
 

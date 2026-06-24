@@ -1,19 +1,11 @@
 /**
- * App-rail registry — derived from a registry walk over the workspace
- * bundle map (PRD-243 US-03).
+ * App-rail registry — derived from a walk over the workspace bundle map.
  *
- * Replaces the pre-PRD-243 hand-curated `registeredApps` literal that
- * imported each `@pops/app-*` package's `navConfig` by name. The walk
- * iterates the workspace bundle map, picks up each entry's
- * `manifest.frontend.navConfig`, and sorts by the manifest-level
- * `navOrder` (mirrors `nav.order` on the pillar's wire-format manifest
- * payload, per PRD-243 US-02). Ties break lexicographically on the nav
- * `id` so authoring order is deterministic without tight numbering.
- *
- * Today every workspace bundle map entry that contributes a `navConfig`
- * is in-repo. External pillars (PRD-228, US-05 deferred) will join the
- * walk via the same path once their assets-base-url loading mechanism
- * lands; for now their bundle map entries do not exist.
+ * The walk iterates the workspace bundle map, picks up each entry's
+ * `manifest.frontend.navConfig`, and sorts by the entry-level `navOrder`
+ * (mirrors `nav.order` on the pillar's wire-format manifest payload). Ties
+ * break lexicographically on the nav `id` so authoring order is
+ * deterministic without tight numbering.
  */
 import { WORKSPACE_BUNDLE_MAP, type BundleEntry } from '../bundle-map';
 
@@ -40,9 +32,9 @@ function compareRankedNav(a: RankedNavConfig, b: RankedNavConfig): number {
 }
 
 /**
- * Build the app-rail registry from a bundle map snapshot. Exported so
- * the US-03 test suite can exercise the walk against a synthetic bundle
- * map without mutating the live `WORKSPACE_BUNDLE_MAP` singleton.
+ * Build the app-rail registry from a bundle map snapshot. Exported so the
+ * test suite can exercise the walk against a synthetic bundle map without
+ * mutating the live `WORKSPACE_BUNDLE_MAP` singleton.
  */
 export function buildRegisteredAppsFromBundleMap(
   bundleMap: Readonly<Record<string, BundleEntry>>
@@ -61,13 +53,13 @@ export function buildRegisteredAppsFromBundleMap(
  * The static app-rail floor: every in-repo pillar in the workspace bundle
  * map, sorted by `navOrder` ascending with a stable lexicographic tiebreak
  * on `id`. The display order (`finance, media, inventory, food, lists,
- * cerebrum, ai`) follows the reconciled sparse scheme in `bundle-map.tsx`.
+ * cerebrum, ai`) follows the sparse `navOrder` scheme in `bundle-map.tsx`.
  *
- * P7-T03 / RD-3: the LIVE app rail no longer reads this constant — it reads
- * the boot-resolved install set from `BootRegistryProvider`
+ * The live app rail does not read this constant — it reads the
+ * boot-resolved install set from `BootRegistryProvider`
  * (`useRegisteredApps()`), which is the registry snapshot (or this floor
- * when the registry is unreachable). This export remains as the floor the
- * boot path falls back to and the order parity gate pins.
+ * when the registry is unreachable). This export is the floor the boot
+ * path falls back to and the order the parity gate pins.
  */
 export const registeredApps: AppNavConfig[] =
   buildRegisteredAppsFromBundleMap(WORKSPACE_BUNDLE_MAP);

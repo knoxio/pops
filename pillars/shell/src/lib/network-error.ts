@@ -13,13 +13,13 @@ function messageLooksLikeNetworkFailure(err: object): boolean {
 
 /**
  * Heuristic: is this error a network/transport-level failure (server
- * unreachable, request aborted, fetch threw) rather than a tRPC error
- * returned by the server with a real status code?
+ * unreachable, request aborted, fetch threw) rather than an error the
+ * server returned with a real status code?
  *
- * Server-returned errors have a `data` field with `httpStatus`. Network
- * failures don't make it that far — they bubble up as a TRPCClientError
- * wrapping a fetch error, an AbortError, or a `DOMException` (which is
- * not an `Error` subclass in browsers).
+ * Server-returned errors carry a `data` field with status detail. Network
+ * failures don't make it that far — they bubble up wrapping a fetch error,
+ * an AbortError, or a `DOMException` (which is not an `Error` subclass in
+ * browsers).
  */
 export function isNetworkError(err: unknown): boolean {
   if (!err || typeof err !== 'object') return false;

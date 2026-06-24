@@ -2,40 +2,35 @@ import { useEffect } from 'react';
 
 /**
  * Workspace bundle map — single source enumerating in-repo pillar ids in the
- * shell (PRD-243 US-03).
+ * shell.
  *
  * The shell discovers each in-repo pillar's UI surface (nav + pages +
- * capture overlay) by walking this map. For external pillars (PRD-228)
- * the registry advertises an `assetsBaseUrl` and the wire-shaped `nav` /
- * `pages` descriptors; those never appear in this map (ADR-002 keeps the
- * in-repo FE a single static SPA). They reach the shell through the
- * runtime loader in `external-ui.tsx`, which lazy-`import()`s the remote
- * bundle (PRD-243 US-05, Option A).
+ * capture overlay) by walking this map. For external pillars the registry
+ * advertises an `assetsBaseUrl` and the wire-shaped `nav` / `pages`
+ * descriptors; those never appear in this map (ADR-002 keeps the in-repo FE
+ * a single static SPA). They reach the shell through the runtime loader in
+ * `external-ui.tsx`, which lazy-`import()`s the remote bundle (Option A).
  *
  * Each entry carries:
  *
  *   - `manifest`              — the frontend `ModuleManifest` re-exported
  *                               by the pillar's `@pops/app-*` workspace
  *                               package. Provides `frontend.routes`
- *                               (lazy `RouteObject[]`), the legacy
- *                               `navConfig`, and (PRD-246 US-03) the
+ *                               (lazy `RouteObject[]`), `navConfig`, and the
  *                               `frontend.captureOverlay` descriptor.
  *                               Bound by static import because the
  *                               current shell consumer surface is
  *                               synchronous.
  *   - `navOrder`              — mirrors `nav.order` from the pillar's
  *                               wire-format manifest payload
- *                               (`apps/pops-<id>-api/src/manifest.ts`).
- *                               Values follow the reconciled sparse
- *                               scheme (finance=10, media=20,
- *                               inventory=30, food=40, lists=50,
- *                               cerebrum=60, ai=70) so the app rail
- *                               renders the same seven entries in the
- *                               same order as the pre-PR `registeredApps`
- *                               literal.
+ *                               (`pillars/<id>/src/api/manifest.ts`).
+ *                               Values follow the sparse scheme (finance=10,
+ *                               media=20, inventory=30, food=40, lists=50,
+ *                               cerebrum=60, ai=70) so the app rail renders
+ *                               the seven entries in that order.
  *   - `captureOverlayBundles` — kebab-case bundle slot → component +
  *                               (optional) hook reference. The shell's
- *                               `CaptureModal` (PRD-246 US-03) resolves
+ *                               `CaptureModal` resolves
  *                               `manifest.frontend.captureOverlay.bundleSlot`
  *                               through this record to obtain the React
  *                               component to mount. Cerebrum binds
@@ -48,7 +43,7 @@ import { useEffect } from 'react';
  *
  * Adding a new in-repo pillar = adding one entry here. External pillars
  * never appear in this map; they reach the shell via the registry walk and
- * the asset-URL loading path in `external-ui.tsx` (PRD-243 US-05).
+ * the asset-URL loading path in `external-ui.tsx`.
  */
 import { manifest as aiManifest } from '@pops/app-ai';
 import { IngestForm, manifest as cerebrumManifest, useIngestPageModel } from '@pops/app-cerebrum';

@@ -1,14 +1,14 @@
 /**
- * Tier 3 — Finance budgets period filter (#2123)
+ * Finance budgets period filter
  *
  * Exercises the period filter on `/finance/budgets` with exact row counts and
  * per-row badge verification against the real API seeded with 8 budgets
- * (7 Monthly + 1 Yearly). Complements the Tier 1 smoke test
+ * (7 Monthly + 1 Yearly). Complements the smoke test
  * (`finance-budgets.spec.ts`) — instead of only asserting that a single row is
  * visible/hidden per filter state, this suite asserts the full list is
  * correctly narrowed and restored.
  *
- * Seed snapshot (see `apps/pops-api/src/db/seeder.ts`):
+ * Seed snapshot:
  *   Monthly (7): Groceries, Transport, Entertainment, Shopping,
  *                Home & Garden, Utilities, Subscriptions
  *   Yearly  (1): Holiday Fund

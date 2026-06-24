@@ -14,7 +14,8 @@ type Loaders = Record<string, () => Promise<Options>>;
  * at runtime in the shape `pillarId.routerName.procName`, so a generated
  * per-pillar client can't express the call — the path isn't known at build
  * time. This stays on the generic REST SDK escape hatch
- * `pillar(id).callDynamic(router, proc, input)` (PRD-204 + PR #3131).
+ * `pillar(id).callDynamic(router, proc, input)` (see
+ * docs/themes/federation/prds/client-surface).
  *
  * The procedure is expected to return `{ data: Record<string, unknown>[] }`.
  */

@@ -1,6 +1,8 @@
 /**
- * Long-running watcher that ties PRD-163's registry SSE stream to
- * PRD-232's dynamic nginx generator (Theme 13 PRD-228 US-03).
+ * Long-running watcher that ties the registry SSE stream
+ * (docs/themes/federation/prds/subscription-model) to the dynamic nginx
+ * generator (docs/themes/federation/prds/nginx-config-generator). Part of
+ * docs/themes/federation/prds/dynamic-pillar-registration.
  *
  * Opens `GET <registry-url>/registry/subscribe`, ignores the initial
  * `pillar.snapshot` frame, and on every subsequent registered /

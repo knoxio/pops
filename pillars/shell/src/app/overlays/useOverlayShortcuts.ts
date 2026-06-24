@@ -95,9 +95,10 @@ function compileBindings(): readonly ShortcutBinding[] {
 
 /**
  * Bind per-overlay keyboard shortcuts declared in module manifests.
- * Centralised in the shell (PRD-101 US-07) so individual overlay packages
- * don't each install their own listener — easier to audit conflicts and
- * easier to disable in non-shell hosts (tests, storybook).
+ * Centralised in the shell (docs/themes/foundation/prds/overlay-surfaces) so
+ * individual overlay packages don't each install their own listener — easier
+ * to audit conflicts and easier to disable in non-shell hosts (tests,
+ * storybook).
  */
 export function useOverlayShortcuts(): void {
   const toggleOverlay = useUIStore((state) => state.toggleOverlay);

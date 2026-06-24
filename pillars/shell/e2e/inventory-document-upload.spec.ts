@@ -1,5 +1,5 @@
 /**
- * Tier 3 — Inventory: document upload, download link, and delete on item (#2126)
+ * Inventory: document upload, download link, and delete on item
  *
  * Flow:
  *   1. Pre-clean: remove any uploaded documents previously attached to the
@@ -55,7 +55,7 @@ async function purgeDocuments(req: APIRequestContext): Promise<void> {
   }
 }
 
-test.describe('Inventory — document upload, download, delete (#2126)', () => {
+test.describe('Inventory — document upload, download, delete', () => {
   test.beforeEach(async ({ page, request }) => {
     await purgeDocuments(request);
     await useRealApi(page);

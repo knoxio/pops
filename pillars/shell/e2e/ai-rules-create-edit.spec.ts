@@ -1,16 +1,15 @@
 /**
  * E2E tests — AI rules: create + preview, edit + verify updated preview.
  *
- * Closes:
- *   - #2119  Tier 2 — create a new rule and confirm preview matches against
- *            seeded transactions.
- *   - #2135  Tier 3 — edit an existing rule's pattern and confirm the
- *            updated preview reflects the new match set, then save and
- *            assert persistence across reload.
+ * Two flows:
+ *   - Create a new rule and confirm preview matches against seeded
+ *     transactions.
+ *   - Edit an existing rule's pattern, confirm the updated preview reflects
+ *     the new match set, then save and assert persistence across reload.
  *
- * Both flows run against the real `/ai/rules` page, hitting the seeded `e2e`
- * SQLite environment via the standard `useRealApi` helper. The seeded data
- * (see `apps/pops-api/src/db/seeder.ts`) provides:
+ * Both flows run against the real `/cerebrum/admin/rules` page, hitting the
+ * seeded `e2e` SQLite environment via the standard `useRealApi` helper. The
+ * seeded data provides:
  *   - 16 transactions including `Woolworths Metro`, `Woolworths`,
  *     `Netflix Subscription`, `Shell Service Station`, `Coles Local`
  *   - 2 corrections: `WOOLWORTHS%` (contains, Groceries) and
@@ -124,9 +123,7 @@ test.describe('AI rules — manual create/edit + preview', () => {
     expect(realConsoleErrors).toHaveLength(0);
   });
 
-  test('#2119 — creates a rule and confirms preview matches seeded transactions', async ({
-    page,
-  }) => {
+  test('creates a rule and confirms preview matches seeded transactions', async ({ page }) => {
     // Use a regex matchType so the unique (pattern,matchType) tuple won't
     // collide with the seeded `WOOLWORTHS%`/contains correction even after
     // pattern normalisation — letting the test run idempotently against the
@@ -164,7 +161,7 @@ test.describe('AI rules — manual create/edit + preview', () => {
     });
   });
 
-  test('#2135 — edits an existing rule and verifies the updated preview, then persists', async ({
+  test('edits an existing rule and verifies the updated preview, then persists', async ({
     page,
   }) => {
     // Create a rule we can then edit. Two reasons:

@@ -12,10 +12,11 @@ const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 const ENTRYPOINT = resolve(SCRIPT_DIR, '..', 'docker-entrypoint.sh');
 
 /**
- * The boot entrypoint (PRD-255) is the only thing standing between a
- * registry outage and a dead shell. These guards pin the load-bearing
- * invariants so a future edit can't quietly break the "always boots"
- * contract or the supervision shape.
+ * The boot entrypoint
+ * (docs/themes/federation/prds/prod-registry-driven-nginx) is the only
+ * thing standing between a registry outage and a dead shell. These guards
+ * pin the load-bearing invariants so a future edit can't quietly break
+ * the "always boots" contract or the supervision shape.
  */
 describe('docker-entrypoint.sh', () => {
   it('declares a strict shell and errexit/nounset', async () => {

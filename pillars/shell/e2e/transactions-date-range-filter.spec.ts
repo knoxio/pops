@@ -1,8 +1,8 @@
 /**
- * Tier 3 — Finance transactions date range filter (#2124)
+ * Finance transactions date range filter
  *
  * Exercises the date range filter on `/finance/transactions` against the real
- * API seeded with 16 transactions (see `apps/pops-api/src/db/seeder.ts`).
+ * API seeded with 16 transactions.
  *
  * Filter mechanism:
  *   `TRANSACTION_TABLE_FILTERS` (pillars/finance/app/src/pages/transactions/columns.tsx)

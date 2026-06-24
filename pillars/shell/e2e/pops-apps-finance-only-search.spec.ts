@@ -1,6 +1,5 @@
 /**
- * Install-set switching E2E — search results narrow with the install set
- * (PRD-101 US-11 follow-up, issue #2595).
+ * Install-set switching E2E — search results narrow with the install set.
  *
  * A regression here means the `isInstalledModule` filter has broken or
  * the finance-only shell is consuming the wrong registry snapshot —

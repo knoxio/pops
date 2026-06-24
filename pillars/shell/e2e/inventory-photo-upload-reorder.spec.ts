@@ -1,13 +1,13 @@
 /**
- * Tier 3 — Inventory: photo upload, reorder, and delete on item (#2125)
+ * Inventory: photo upload, reorder, and delete on item
  *
  * Flow:
  *   1. Pre-clean: remove any photos previously attached to the test item.
  *   2. Navigate to the item edit page (the only place upload UI is exposed).
  *   3. Upload two small PNG fixtures via the hidden <input type="file">.
  *      The form's photo section uploads immediately on file select — no Save
- *      Changes click is needed, so the WebKit reset() bug (#2175) and the
- *      navigation drop bug (#2157) are both side-stepped.
+ *      Changes click is needed, side-stepping the WebKit form-reset and
+ *      post-save navigation-drop bugs that bite the Save Changes path.
  *   4. Wait for both photos to appear in the SortablePhotoGrid (`role="listitem"`).
  *   5. Navigate to the detail page and confirm both thumbnail cells render
  *      in the gallery's reorder grid.
@@ -111,7 +111,7 @@ async function getPhotoFilePath(page: Page, index: number): Promise<string> {
   return decodeURIComponent(last);
 }
 
-test.describe('Inventory — photo upload, reorder, delete (#2125)', () => {
+test.describe('Inventory — photo upload, reorder, delete', () => {
   test.beforeEach(async ({ page, request }) => {
     await purgePhotos(request);
     await useRealApi(page);

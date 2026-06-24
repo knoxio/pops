@@ -1,6 +1,6 @@
 /**
  * Resolve the registry base URL from the environment for the nginx
- * render + watcher paths (Theme 13 PRD-255).
+ * render + watcher paths.
  *
  * `POPS_REGISTRY_URL` is the repo-wide convention (orchestrator, mcp,
  * the SDK bootstrap, and the shell's self-registration all read it), so

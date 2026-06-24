@@ -1,7 +1,7 @@
 /**
- * Smoke test — Finance import wizard happy path (#2101)
+ * Smoke test — Finance import wizard happy path
  *
- * Tier 1 minimum: walks the full 8-step import wizard end-to-end with a
+ * Walks the full 8-step import wizard end-to-end with a
  * 2-transaction CSV where the backend is fully mocked via `page.route()`:
  *
  *   1. Upload CSV         → parsed client-side (no REST call)

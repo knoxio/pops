@@ -1,12 +1,12 @@
 /**
- * E2E — Media quick pick: generate picks and add one to watchlist (#2130)
+ * E2E — Media quick pick: generate picks and add one to watchlist
  *
- * Tier 3 flow: navigate to `/media/quick-pick`, confirm cards render, change
+ * Navigate to `/media/quick-pick`, confirm cards render, change
  * the count selector and verify the displayed card count tracks it, then pick
  * one card, navigate to its detail page via the "Watch This" button, add it
  * to the watchlist, and confirm it appears on `/media/watchlist`.
  *
- * Seed context (apps/pops-api/src/db/seeder.ts):
+ * Seed context:
  *   `quickPick` filters out movies with completed watch_history rows. The
  *   seeded pool starts at 5 unwatched movies (Forrest Gump, Fight Club, The
  *   Matrix, Interstellar, Spider-Verse), but other specs running earlier in
@@ -64,7 +64,7 @@ function countButton(page: Page, n: number) {
   return page.getByRole('group', { name: 'Number of picks' }).getByRole('button', { name: `${n}` });
 }
 
-test.describe('Media — quick pick generate and add to watchlist (#2130)', () => {
+test.describe('Media — quick pick generate and add to watchlist', () => {
   test.describe.configure({ mode: 'serial' });
 
   let pageErrors: string[] = [];

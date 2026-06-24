@@ -1,7 +1,7 @@
 /**
- * Smoke test — Inventory warranties list with expiry flagging (#2113)
+ * Smoke test — Inventory warranties list with expiry flagging
  *
- * Tier 2 — confirm the warranty tracking page loads seeded items, renders
+ * Confirm the warranty tracking page loads seeded items, renders
  * future-expiry items in the Active section with a "N days" remaining badge,
  * and visually flags past-expiry items in a dedicated "Expired" section
  * containing "Xd ago" muted text.
@@ -9,7 +9,7 @@
  * Crash detection is wired into beforeEach/afterEach so every test in this
  * suite verifies the page does not crash (no separate crash test needed).
  *
- * Seeded warranty items (from apps/pops-api/src/db/seeder.ts):
+ * Seeded warranty items:
  *   Active  (future expiry): MacBook Pro 16-inch → 2027-11-15,
  *                            Sony WH-1000XM5    → 2027-02-02,
  *                            USB-C Hub          → 2026-11-15,

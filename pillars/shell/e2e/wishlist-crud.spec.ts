@@ -1,5 +1,5 @@
 /**
- * E2E test — Finance wish list CRUD (#2110)
+ * E2E test — Finance wish list CRUD
  *
  * Exercises the full create → confirm → edit priority → confirm → delete → confirm
  * flow at `/finance/wishlist` against the seeded e2e SQLite environment.

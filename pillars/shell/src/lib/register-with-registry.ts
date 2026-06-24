@@ -1,6 +1,6 @@
 /**
- * Shell self-registration with `pops-registry`'s pillar registry
- * (Theme 13 PRD-228 US-01 + ADR-035 UI-pillar variant).
+ * Shell self-registration with the `registry` pillar
+ * (docs/themes/federation/prds/registry-driven-shell-ui + ADR-035 UI-pillar variant).
  *
  * The shell is the first **UI pillar** to register itself: a pillar that
  * owns no data, exposes no procedures, and ships an empty manifest
@@ -22,8 +22,7 @@
  * registry is unreachable, slow, or returns an error, the shell still
  * boots: a UI pillar that fails to announce itself is degraded, not
  * broken. Missing env vars short-circuit before the network call (the
- * same `INVENTORY_BASE_URL`-style discipline applied to the data
- * pillars in PRD-187).
+ * same base-URL discipline the data pillars apply).
  */
 import type { ManifestPayload } from '@pops/pillar-sdk';
 
@@ -45,9 +44,9 @@ export const SHELL_CONTRACT_TAG = `contract-${SHELL_PILLAR_ID}@v${SHELL_PILLAR_V
 /**
  * The empty manifest a UI pillar publishes. Every capability array is
  * empty; healthcheck still points at `/health` because the registry's
- * heartbeat checker (PRD-228 US-02) probes it. `sinks` is intentionally
- * omitted — it is optional in the manifest schema and a UI pillar
- * neither emits nor consumes federated events directly.
+ * heartbeat checker probes it. `sinks` is intentionally omitted — it is
+ * optional in the manifest schema and a UI pillar neither emits nor
+ * consumes federated events directly.
  */
 export function buildShellManifest(): ManifestPayload {
   return {

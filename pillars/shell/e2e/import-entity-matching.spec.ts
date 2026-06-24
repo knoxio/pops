@@ -1,7 +1,7 @@
 /**
- * Integration test — finance import: real entity matching against seeded DB (#2121).
+ * Integration test — finance import: real entity matching against seeded DB.
  *
- * Tier 3: real API against an isolated seeded SQLite environment.
+ * Real API against an isolated seeded SQLite environment.
  *
  * Flow covered:
  *   Upload a CSV with 3 merchant descriptions and assert that the Review step
@@ -35,8 +35,8 @@
  * Persistence:
  *   The test only walks the wizard up to Review and asserts on the in-memory
  *   processed output. It deliberately does NOT commit — the goal is to verify
- *   the matcher's classification, not to exercise commit semantics (#2122
- *   already covers that).
+ *   the matcher's classification, not to exercise commit semantics
+ *   (`import-duplicate-detection.spec.ts` already covers that).
  */
 import { expect, test, type Page, type APIRequestContext } from '@playwright/test';
 
@@ -114,7 +114,7 @@ async function walkToReview(page: Page, content: string, fileName: string): Prom
   });
 }
 
-test.describe('Finance import — real entity matching against seeded DB (#2121)', () => {
+test.describe('Finance import — real entity matching against seeded DB', () => {
   let pageErrors: string[] = [];
   let consoleErrors: string[] = [];
 

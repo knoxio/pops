@@ -6,8 +6,7 @@
  *
  * `unwrap` turns a Hey API `{ data, error, response }` result into its data
  * payload, throwing `RegistryApiError` (carrying the HTTP status) on failure.
- * The status lets call sites reproduce the pillar-sdk UX distinctions that
- * used to come from `usePillarQuery`:
+ * The status lets call sites distinguish UX outcomes:
  *   - 404            → "not found"   (isNotFoundError)
  *   - 5xx / no status → "unavailable" (isUnavailableError)
  */

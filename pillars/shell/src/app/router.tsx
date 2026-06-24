@@ -2,15 +2,13 @@
  * Shell route table — composed from the boot-resolved install set
  * (`boot-snapshot.ts` → resolved `FrontendManifest[]`).
  *
- * PRD-101 US-03 removed the per-module hand-coded `<Route>` list: route
- * entries derive from the install set, the runtime `RequireModule` guard is
- * gone, and direct navigation to an absent module's URL renders
- * `NotInstalledPage` via the catch-all.
+ * App route entries derive from the install set; direct navigation to an
+ * absent module's URL renders `NotInstalledPage` via the catch-all.
  *
- * P7-T03 / RD-3 moved the install-set source from the build-time `MODULES`
- * constant to the live registry snapshot, resolved before first render. The
- * router is therefore built by {@link buildRouter} (called from `App.tsx`
- * with the boot-resolved manifests) rather than a module-eval constant.
+ * The install-set source is the live registry snapshot, resolved before
+ * first render — not the build-time `MODULES` constant. The router is built
+ * by {@link buildRouter} (called from `App.tsx` with the boot-resolved
+ * manifests) rather than a module-eval constant.
  */
 import { Suspense } from 'react';
 import { createBrowserRouter, Link, Navigate, Outlet, useLocation } from 'react-router';
@@ -37,9 +35,8 @@ import type { RouteObject } from 'react-router';
  * every in-repo pillar manifest — the right "could-ship" set, broader than
  * the per-deploy install set (`POPS_APPS`-gated) so the "not installed"
  * message fires for an excluded-but-buildable module while truly unknown
- * paths still get a proper 404. RD-9 re-sourced this off the SDK's frozen
- * `ALL_MODULE_IDS` tuple onto this runtime set so adding a pillar needs no
- * SDK type edit.
+ * paths still get a proper 404. Sourcing it off this runtime set (not a
+ * frozen SDK tuple) means adding a pillar needs no SDK type edit.
  */
 function UnmatchedRoute() {
   const { pathname } = useLocation();
@@ -75,10 +72,10 @@ function withSuspense(routes: readonly RouteObject[]): RouteObject[] {
  * the subtree renders the `PillarUnavailableRoute` placeholder when the
  * owning pillar's health is `'unavailable'` (ADR-026 P3).
  *
- * Unmigrated modules map to the platform `registry` pillar via
- * `pillarIdForModule`; the guard is a no-op for healthy/unknown statuses. As
- * mature pillars migrate, their module's mapping flips and routes start
- * observing the pillar's reported health.
+ * `pillarIdForModule` currently maps every module to the platform `registry`
+ * pillar; the guard is a no-op for healthy/unknown statuses. To route a
+ * module's health at its own pillar, special-case its id in
+ * `pillarIdForModule`.
  */
 function appRouteEntries(manifests: readonly FrontendManifest[]): RouteObject[] {
   return filterAppManifests(manifests).map((manifest) => {
@@ -110,9 +107,9 @@ const ErrorElement = (
 
 /**
  * Build the shell's browser router from the boot-resolved install set. Called
- * once from `App.tsx` after the boot snapshot resolves (P7-T03): the app
- * routes derive from `manifests`, the rest of the table (index redirect,
- * legacy redirects, settings/features, catch-all) is fixed.
+ * once from `App.tsx` after the boot snapshot resolves: the app routes derive
+ * from `manifests`, the rest of the table (index redirect, legacy redirects,
+ * settings/features, catch-all) is fixed.
  */
 export function buildRouter(
   manifests: readonly FrontendManifest[]
@@ -125,10 +122,9 @@ export function buildRouter(
       children: [
         { index: true, element: <IndexRedirect /> },
         ...appRouteEntries(manifests),
-        // Legacy /cerebrum/admin/* redirects — keep bookmarks pointing into
-        // the old in-cerebrum admin surface working after the AI app moved
-        // back to its own top-level /ai/* nav (#2618). Reverses the redirects
-        // added in #2333.
+        // Legacy /cerebrum/admin/* redirects keep old bookmarks working now
+        // that the admin surface lives under the top-level /ai/* and
+        // /finance/* navs.
         { path: 'cerebrum/admin', element: <Navigate to="/ai" replace /> },
         { path: 'cerebrum/admin/prompts', element: <Navigate to="/finance/prompts" replace /> },
         { path: 'cerebrum/admin/rules', element: <Navigate to="/finance/rules" replace /> },

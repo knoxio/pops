@@ -1,15 +1,14 @@
 /**
- * NudgeIndicator — notification bell showing pending nudge count (#2244).
+ * NudgeIndicator — notification bell showing pending nudge count.
  *
- * Polls the cerebrum pillar's `POST /nudges/search` REST endpoint (opId
- * `nudges.list`) through the shell's `/cerebrum-api` proxy and displays a
- * badge on the bell icon when there are pending nudges. Clicking navigates
- * to the cerebrum nudges page.
+ * Polls the cerebrum pillar's `POST /nudges/search` REST endpoint through the
+ * shell's `/cerebrum-api` proxy and displays a badge on the bell icon when
+ * there are pending nudges. Clicking navigates to the cerebrum nudges page.
  *
- * The proxy (vite in dev, nginx in prod) strips the `/cerebrum-api` prefix
- * so the pillar sees `/nudges/search`. Mirrors the federated-search surface
- * (`@pops/navigation` useSearchInputData → `/orchestrator-api/search`): a
- * plain `fetch` + React Query, no tRPC and no pillar-sdk transport.
+ * The proxy (vite in dev, nginx in prod) strips the `/cerebrum-api` prefix so
+ * the pillar sees `/nudges/search`. Mirrors the federated-search surface
+ * (`@pops/navigation` useSearchInputData → `/orchestrator-api/search`): a plain
+ * `fetch` + React Query.
  */
 import { useQuery } from '@tanstack/react-query';
 import { Bell } from 'lucide-react';
@@ -20,11 +19,6 @@ import { Button } from '@pops/ui';
 const POLL_BASE_MS = 60_000;
 const MAX_FAILURES = 5;
 
-/**
- * Shell path the dev Vite proxy / production nginx rewrites onto the cerebrum
- * pillar's nudges list (`POST /nudges/search`). The proxy strips the
- * `/cerebrum-api` prefix so the pillar sees `/nudges/search`.
- */
 const NUDGES_SEARCH_URL = '/cerebrum-api/nudges/search';
 
 /** Failure carrying the HTTP status so the bell can hide on 404 / unavailable. */
@@ -36,10 +30,9 @@ class NudgeFetchError extends Error {
 }
 
 /**
- * Exponential backoff for the nudges poller.
- * Uses fetchFailureCount (resets to 0 on success) so the interval recovers
- * automatically after the endpoint starts returning 200s.
- * Intervals: 60s → 2m → 4m → 8m → 16m → stop.
+ * Exponential backoff for the nudges poller. Keys off fetchFailureCount (which
+ * resets to 0 on success) so the interval recovers automatically once the
+ * endpoint starts returning 200s again, and stops polling past MAX_FAILURES.
  */
 export function nudgeRefetchInterval(query: {
   state: { fetchFailureCount: number };
@@ -79,7 +72,7 @@ export function NudgeIndicator() {
   });
 
   // Hide the bell when cerebrum is unreachable / not-found rather than render a
-  // broken indicator (matches the previous pillar-sdk hidden-on-unavailable UX).
+  // broken indicator.
   if (isError) return null;
 
   const pendingCount = data ?? 0;

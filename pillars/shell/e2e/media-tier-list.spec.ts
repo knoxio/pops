@@ -1,7 +1,7 @@
 /**
- * E2E — Media tier list: create dimension, drag movies into tiers, save, reload (#2131 + #2190)
+ * E2E — Media tier list: create dimension, drag movies into tiers, save, reload
  *
- * Tier 3 flow: navigate to `/media/tier-list`, create a fresh comparison
+ * Navigate to `/media/tier-list`, create a fresh comparison
  * dimension via the page's empty-state CTA (or the header "+ New" button),
  * confirm the unranked pool populates from the seeded library, drag two
  * movies into tiers via dnd-kit's pointer sensor, submit the tier list,
@@ -76,7 +76,7 @@ async function findDimensionIdByName(req: APIRequestContext, name: string): Prom
 
 test.describe.configure({ mode: 'serial' });
 
-test.describe('Media — tier list create, drag, save, reload (#2131, #2190)', () => {
+test.describe('Media — tier list create, drag, save, reload', () => {
   let pageErrors: string[] = [];
   let consoleErrors: string[] = [];
   let createdDimensionId: number | null = null;
@@ -120,16 +120,15 @@ test.describe('Media — tier list create, drag, save, reload (#2131, #2190)', (
   });
 
   /**
-   * Scope note (see #2195):
+   * Scope note:
    * The full "drag movies into tiers, submit, reload, assert persistence"
    * flow can't run end-to-end against a freshly created dimension because
    * the unranked pool query (`fetchEligibleRows`) filters by
    * `media_scores.dimension_id` — and a brand-new dimension has zero score
    * rows until comparisons are recorded for it. Until that gap is closed
    * (either seed `media_scores` on dimension create, or fall back to
-   * defaults in the eligibility query), this test verifies the part of
-   * the feature that PR #2190 actually delivers: the empty-state CTA →
-   * create-dimension dialog → chip activation flow surfaced by the page.
+   * defaults in the eligibility query), this test verifies only the
+   * empty-state CTA → create-dimension dialog → chip activation flow.
    */
   test('creates a new dimension from the empty-state CTA and selects it', async ({ page }) => {
     // Timestamp the name to dodge ConflictError from prior runs against the

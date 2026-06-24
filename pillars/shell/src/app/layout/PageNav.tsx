@@ -2,13 +2,12 @@ import { useRegisteredApps } from '@/app/BootRegistryProvider';
 import { iconMap } from '@/app/nav/icon-map';
 import { findActiveApp, findActiveItem } from '@/app/nav/path-utils';
 /**
- * Page navigation panel
+ * Page navigation panel.
  *
- * Renders page links for the currently active app, determined by URL.
- * Designed to sit alongside the AppRail (tb-030) in the two-level
- * navigation layout defined by PRD-003.
- *
- * Colour is inherited from --app-accent CSS variable set on the shell root.
+ * Renders page links for the currently active app, determined by URL. Sits
+ * alongside the AppRail in the two-level navigation layout
+ * (pillars/shell/docs/prds/app-switcher). Colour is inherited from the
+ * --app-accent CSS variable set on the shell root.
  */
 import { useTranslation } from 'react-i18next';
 import { Link, useLocation } from 'react-router';

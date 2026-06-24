@@ -1,9 +1,9 @@
 /**
  * useCaptureHotkey — keyboard shortcut that opens the global capture
- * modal (PRD-081 US-09, generalised under PRD-246 US-03).
+ * modal.
  *
- * Accepts both legacy single-key shortcuts (`'c'`) and the wire-format
- * chord shape declared on `frontend.captureOverlay.hotkey` (e.g.
+ * Accepts both single-key shortcuts (`'c'`) and the wire-format chord
+ * shape declared on `frontend.captureOverlay.hotkey` (e.g.
  * `'cmd+shift+k'`). When a chord with modifiers is supplied the modifier
  * suppression in `capture-hotkey-helpers.ts` is bypassed for the chord
  * itself — focus-inside-input suppression still applies for both shapes.

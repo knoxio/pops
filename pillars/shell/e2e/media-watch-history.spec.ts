@@ -1,11 +1,11 @@
 /**
- * E2E — Media watch history: log a watch event (#2117)
+ * E2E — Media watch history: log a watch event
  *
- * Tier 2 flow: navigate to a seeded movie detail page (Interstellar), click
+ * Navigate to a seeded movie detail page (Interstellar), click
  * "Mark as Watched", visit /media/history, and confirm the movie appears as a
  * recent watch entry with a timestamp.
  *
- * Seed context (see apps/pops-api/src/db/seeder.ts):
+ * Seed context:
  *   Seeded watch_history rows include Shawshank, Godfather, Dark Knight,
  *   Pulp Fiction, LOTR — so Interstellar is NOT pre-watched and is the
  *   natural candidate for "log a new watch event".

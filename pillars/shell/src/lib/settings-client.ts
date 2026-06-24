@@ -1,14 +1,12 @@
 /**
- * Capability-gated, per-pillar settings transport for the admin Settings UI
- * (settings-federation S3; see `docs/plans/02-settings-federation.md` §7.2).
+ * Capability-gated, per-pillar settings transport for the admin Settings UI.
  *
  * The shell renders one settings section per federated pillar and routes each
  * section's read/write to the OWNING pillar's `/<id>-api/settings/*` surface —
  * EXCEPT when the pillar has not yet advertised the live `settings` capability,
  * in which case the transport falls back to `/registry-api/settings`. The
- * fallback still works because the federation backfill COPIED (not moved) each
- * pillar's keys into the registry pillar, so it holds the values until the
- * rollout completes (the compat-shim removal is the later S5 node).
+ * fallback works because the registry pillar holds a copy of each pillar's keys
+ * for un-upgraded pillars.
  *
  * This is a HAND-WRITTEN raw-`fetch` client, NOT a generated hey-api client,
  * precisely so it can be keyed dynamically by `ownerPillar` at runtime. It

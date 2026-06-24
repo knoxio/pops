@@ -1,11 +1,11 @@
 /**
- * Install-set boundary E2E (PRD-101 US-11).
+ * Install-set boundary E2E.
  *
  * Why 404 vs NotInstalledPage matter as distinct surfaces: operators must
  * be able to tell a typo from an excluded module at a glance. Full
- * install-set switching across two shell builds is deferred — the install
- * set is baked into `MODULES` at registry build time, so two-suite
- * switching needs harness changes (see the linked US doc).
+ * install-set switching across two shell builds is not covered here — the
+ * install set is `POPS_APPS`-gated at build time, so two-suite switching
+ * would need harness changes.
  *
  * The known-but-not-installed boundary is exercised here via `/ego`: the
  * `ego` module is in `KNOWN_MODULES` but exposes only an overlay surface

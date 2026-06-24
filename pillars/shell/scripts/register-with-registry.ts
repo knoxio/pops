@@ -1,7 +1,8 @@
 #!/usr/bin/env tsx
 /**
  * Ops CLI: register the running shell with `pops-registry`'s pillar
- * registry (Theme 13 PRD-228 US-01 + ADR-035).
+ * registry (docs/themes/federation/prds/dynamic-pillar-registration +
+ * ADR-035).
  *
  * The shell's production image is `nginx:alpine` — there is no Node
  * runtime at request time. This script is invoked from outside the

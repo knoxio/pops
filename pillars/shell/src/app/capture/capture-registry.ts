@@ -1,15 +1,15 @@
 import { WORKSPACE_BUNDLE_MAP, type BundleEntry, type CaptureOverlayBundle } from '../bundle-map';
 /**
- * Capture-overlay registry walk (PRD-246 US-03).
+ * Capture-overlay registry walk.
  *
  * Projects `installedFrontendManifests()` onto the
- * `frontend.captureOverlay` dimension, applies the selection rule from
- * the spec (sort ascending by `order`, ties broken alphabetically by
- * pillar id, pick head), and resolves the descriptor's `bundleSlot`
- * through the workspace bundle map to obtain the React component the
- * shell's `CaptureModal` will mount.
+ * `frontend.captureOverlay` dimension, applies the selection rule (sort
+ * ascending by `order`, ties broken alphabetically by pillar id, pick
+ * head), and resolves the descriptor's `bundleSlot` through the
+ * workspace bundle map to obtain the React component the shell's
+ * `CaptureModal` will mount.
  *
- * Failure modes mirror PRD-243 US-03's `pages` resolution edge cases:
+ * Failure modes mirror the `pages` resolution edge cases:
  *
  *   - No manifest contributes a `captureOverlay` → returns `null`; the
  *     modal renders an empty state (`captureModal.empty`).
@@ -51,13 +51,13 @@ function compareRanked(a: RankedCaptureOverlay, b: RankedCaptureOverlay): number
 }
 
 /**
- * Selection rule from the spec. Exported for unit tests.
+ * Selection rule. Exported for unit tests.
  *
  * Returns every manifest whose `frontend.captureOverlay` is defined,
  * sorted ascending by `order` with ties broken alphabetically by
- * `pillarId`. The shell consumes only the head element today — the
- * full list is exposed so the spec's "duplicate hotkey" warning has
- * the full set to diff against (handled in `useCaptureOverlay`).
+ * `pillarId`. The shell consumes only the head element — the full list
+ * is exposed so the "duplicate hotkey" warning has the full set to diff
+ * against (handled in `warnOnDuplicateHotkeys`).
  */
 export function rankCaptureOverlays(
   manifests: readonly FrontendManifest[]
@@ -95,13 +95,13 @@ export function resolveCaptureOverlay(
 
 /**
  * The head of the ranked list, resolved against the workspace bundle
- * map. Returns `null` (and logs a `debug` line) when no manifest
+ * map. Returns `null` (and logs a structured warning) when no manifest
  * contributes a `captureOverlay` — the modal renders the empty-state
  * surface in that case.
  *
- * Exported for unit tests; the live consumer is `useCaptureOverlay()`
- * which threads the same call through React and additionally emits the
- * duplicate-hotkey warning across the full ranked list.
+ * Exported for unit tests; the live consumer is `activeCaptureOverlay()`
+ * below, which additionally emits the duplicate-hotkey warning across
+ * the full ranked list.
  */
 export function selectActiveCaptureOverlay(
   manifests: readonly FrontendManifest[],
