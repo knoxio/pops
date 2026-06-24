@@ -63,7 +63,7 @@ export async function runWebUrlIngestWith(
     return {
       ok: false,
       errorCode: 'JsonLdMissing',
-      errorMessage: 'Page has no schema.org Recipe JSON-LD; LLM fallback not yet wired.',
+      errorMessage: 'Page has no schema.org Recipe JSON-LD; LLM fallback (PRD-128) not yet wired.',
       meta,
     };
   }

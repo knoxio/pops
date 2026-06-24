@@ -2,7 +2,7 @@
  * web-llm prompt template.
  *
  * Versioned: change the template = bump `PROMPT_VERSION_WEB_LLM`. The
- * version flows through `meta.json.stages.llm_extract.prompt_version`
+ * version flows through `meta.stages.llm_extract.prompt_version`
  * and `ai_inference_log.metadata`, tying an extraction back to the
  * exact template that produced it.
  */
