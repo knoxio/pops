@@ -1,18 +1,13 @@
 /**
  * sqlite-vec extension loader for the cerebrum pillar database.
  *
- * Mirrors the pops-api singleton loader (`apps/pops-api/src/db/vec-loader.ts`)
- * but keeps its own module-level `vecAvailable` flag so the cerebrum
- * handle can be loaded independently of the legacy shared handle. The
- * extension binary itself is loaded once per process by `sqlite-vec`;
- * calling `load` on multiple connections is safe.
+ * The module-level `vecAvailable` flag gates the one-time info log. The
+ * extension binary is loaded once per process by `sqlite-vec`; calling
+ * `load` on multiple connections is safe.
  *
- * Why this lives in `@pops/cerebrum-db`: the `embeddings_vec` virtual
- * table is cerebrum-owned, and once PRD-179 US-03 routes search through
- * `getCerebrumDrizzle()` the only consumer of `vec_*` SQL is in this
- * pillar. Keeping the loader colocated with `openCerebrumDb` removes the
- * cross-package import that the M5 nudge slice avoided by not needing
- * the extension.
+ * The `embeddings_vec` virtual table is cerebrum-owned and the only
+ * consumer of `vec_*` SQL, so the loader stays colocated with
+ * `openCerebrumDb`.
  */
 import * as sqliteVec from 'sqlite-vec';
 

@@ -1,9 +1,9 @@
 /**
- * Public types for the Documents surface (PRD-083).
+ * Public types for the Documents surface.
  *
- * Mirror of the server-side `GenerationRequest` / `GeneratedDocument`
- * shapes. The frontend package may not import from the API source per
- * PRD-097 boundaries.
+ * Hand-mirrored from the emit module's `GeneratedDocument` /
+ * `GenerationResult` shapes (pillars/cerebrum/src/api/modules/emit/types.ts);
+ * the app builds independently and does not reach into the API module.
  */
 
 export const GENERATION_MODES = ['report', 'summary', 'timeline'] as const;

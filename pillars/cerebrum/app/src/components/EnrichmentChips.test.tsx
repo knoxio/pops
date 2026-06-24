@@ -1,5 +1,5 @@
 /**
- * Tests for EnrichmentChips pure helpers (PRD-081 US-07).
+ * Tests for EnrichmentChips pure helpers.
  *
  * The component itself is exercised through the IngestPage integration tests;
  * these unit tests cover the polling cadence and scope-mutation helpers that
@@ -15,7 +15,7 @@ import {
   segmentSetKey,
 } from './enrichment-chips-helpers';
 
-describe('refetchInterval (PRD-081 US-07 polling cadence)', () => {
+describe('refetchInterval (polling cadence)', () => {
   it('stops polling once the engram is enriched', () => {
     expect(refetchInterval(0, true)).toBe(false);
     expect(refetchInterval(60_000, true)).toBe(false);

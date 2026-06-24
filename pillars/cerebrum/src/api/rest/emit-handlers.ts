@@ -1,5 +1,5 @@
 /**
- * ts-rest handlers for `cerebrum.emit.*` (PRD-083 document generation).
+ * ts-rest handlers for `cerebrum.emit.*` (pillars/cerebrum/docs/prds/document-generation).
  *
  * Each handler builds a request-scoped {@link GenerationService} bound to the
  * pillar db (drizzle + raw + vec availability), the injected peer/embedding

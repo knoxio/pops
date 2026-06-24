@@ -1,15 +1,13 @@
 /**
- * SSE route handler for streaming cerebrum query answers (PRD-082, issue
- * #2596).
+ * SSE route handler for streaming cerebrum query answers (pillars/cerebrum/docs/prds/query-engine).
  *
  * `POST /query/stream` — ts-rest can't model SSE, so this is mounted as a plain
- * Express handler in `app.ts` BEFORE `createExpressEndpoints(...)` (food
- * precedent: the recipe-file route is registered ahead of the generated
- * endpoints). The body matches `cerebrum.query.ask` (+ `domains`).
+ * Express handler in `app.ts` BEFORE `createExpressEndpoints(...)`. The body
+ * matches `cerebrum.query.ask` (+ `domains`).
  *
  * It runs the SAME retrieval + context-assembly pipeline as `ask` (via
  * {@link QueryService.prepareStream}) and then streams the injected
- * {@link QueryStreamLlm}'s tokens. Wire shape mirrors the monolith:
+ * {@link QueryStreamLlm}'s tokens. Wire shape:
  *   data: {"type":"token","text":"..."}
  *   data: {"type":"done","answer":"...","sources":[...],"scopes":[...],
  *          "confidence":"high|medium|low","tokensIn":N,"tokensOut":N}

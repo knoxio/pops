@@ -1,5 +1,5 @@
 /**
- * Wire schemas for `ego.*` (PRD-087) — conversations CRUD, chat, context.
+ * Wire schemas for `ego.*` — conversations CRUD, chat, context.
  *
  * Lives in its own file (not the shared `rest-schemas.ts`) so that file stays
  * under the oxlint `max-lines: 200` cap; no other domain consumes these. The

@@ -1,5 +1,5 @@
 /**
- * ts-rest contract for `cerebrum.glia.*` (PRD-086 / PRD-181).
+ * ts-rest contract for `cerebrum.glia.*`.
  *
  * Glia is the autonomous-curation trust/action router: a proposal queue, the
  * decide/execute/revert lifecycle, per-action-type trust state, and an

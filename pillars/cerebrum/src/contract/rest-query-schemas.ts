@@ -1,5 +1,5 @@
 /**
- * Wire schemas for `cerebrum.query.*` (PRD-082 NL Q&A engine).
+ * Wire schemas for `cerebrum.query.*` — the NL Q&A engine.
  *
  * The query surface returns well-bounded shapes (answer text + citation rows +
  * scope/plan scalars), so unlike emit there is no opaque-record escape hatch

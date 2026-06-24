@@ -1,5 +1,5 @@
 /**
- * Integration tests for `cerebrum.reflex.*` over REST (PRD-089).
+ * Integration tests for `cerebrum.reflex.*` over REST.
  *
  * Boots the app against a per-test temp `cerebrum.db` plus a temp
  * `reflexes.toml` fixture, exercising list/get/enable/disable/test/history.

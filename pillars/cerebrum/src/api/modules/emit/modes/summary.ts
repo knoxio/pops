@@ -1,8 +1,8 @@
 /**
- * Summary generation mode (PRD-083 US-02).
+ * Summary generation mode (see pillars/cerebrum/docs/prds/document-generation).
  *
- * Retrieves engrams within a date range, groups by type/topic, and produces a
- * digestible overview (weekly digest, monthly review).
+ * Produces a digestible overview of engrams within a date range (weekly
+ * digest, monthly review), capping sources at MAX_SUMMARY_SOURCES.
  */
 import {
   collectScopeCoverage,

@@ -1,15 +1,11 @@
 /**
- * ConversationEngine — multi-turn conversation manager for ego (PRD-087).
+ * ConversationEngine — multi-turn conversation manager for ego.
  *
  * Orchestrates the chat pipeline: scope negotiation, retrieval (HybridSearch),
- * context-window assembly, the LLM call, and citation parsing.
- *
- * Pillar deltas vs. the monolith:
- * - The LLM is the injected {@link EgoLlm} port (Anthropic in prod, fake in
- *   tests) rather than module-level `callChatLlm`.
- * - Retrieval rides the in-pillar {@link HybridSearchService} + the injected
- *   embedding/peer deps (no AsyncLocalStorage drizzle handle).
- * - The viewed-engram auto-load uses the injected {@link EngramService}.
+ * context-window assembly, the LLM call, and citation parsing. All external
+ * dependencies are injected ports: the {@link EgoLlm} (Anthropic in prod, fake
+ * in tests), the retrieval deps backing {@link HybridSearchService}, and the
+ * {@link EngramService} used for viewed-engram auto-load.
  */
 import { ContextAssemblyService } from '../retrieval/context-assembly.js';
 import { HybridSearchService } from '../retrieval/hybrid-search.js';

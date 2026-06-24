@@ -4,11 +4,11 @@
  * wire-contract surface (zod schemas, TS wire types, error codes, and the
  * `CerebrumContract` manifest type).
  *
- * Nothing here is server-side: no drizzle, no db row types, no tRPC router,
- * no `src/db`/`src/api` internals. The boundary is enforced by the package's
- * `exports` map — only `.`, `./manifest`, `./api-types`, and `./openapi`
- * resolve from outside. Polyglot + FE consumers read the wire shape from
- * `./openapi` / `./api-types`; TS consumers import the zod wire types here.
+ * Nothing here is server-side: no drizzle, no db row types, no `src/db`/`src/api`
+ * internals. The boundary is enforced by the package's `exports` map — only `.`,
+ * `./manifest`, `./api-types`, and `./openapi` resolve from outside. Polyglot + FE
+ * consumers read the wire shape from `./openapi` / `./api-types`; TS consumers
+ * import the zod wire types here.
  */
 export * from './types/index.js';
 export * from './schemas/index.js';

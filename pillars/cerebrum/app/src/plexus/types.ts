@@ -1,7 +1,7 @@
 /**
- * Public types for the Plexus admin surface (PRD-090, PRD-091).
+ * Public types for the Plexus admin surface.
  *
- * Mirror of the server-side `PlexusAdapter` / `PlexusFilter` shapes.
+ * Mirror the contract shapes generated in `../cerebrum-api/types.gen.ts`.
  */
 
 export const PLEXUS_ADAPTER_STATUSES = [

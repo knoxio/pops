@@ -1,14 +1,13 @@
 /**
- * Integration tests for cerebrum's federated `/settings/*` surface
- * (settings-federation S2).
+ * Integration tests for cerebrum's federated `/settings/*` surface.
  *
  * Boots the production `createCerebrumApiApp` factory against a per-test temp
  * `cerebrum.db` and drives the RU+reset surface over real HTTP via supertest:
- * the `0057_settings_baseline.sql` migration creates the table, `listEffective`
- * resolves manifest defaults across BOTH the `cerebrum.*` and `ego.*` key
- * spaces, update persists to cerebrum's OWN database, reset re-applies the
- * default, and a free-form `set-many` addressing an undeclared key is rejected
- * with a 400. Cerebrum declares no sensitive keys, so reads are not redacted.
+ * `listEffective` resolves manifest defaults across BOTH the `cerebrum.*` and
+ * `ego.*` key spaces, update persists to cerebrum's OWN database, reset
+ * re-applies the default, and a free-form `set-many` addressing an undeclared
+ * key is rejected with a 400. Cerebrum declares no sensitive keys, so reads are
+ * not redacted.
  */
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';

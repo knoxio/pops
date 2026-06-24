@@ -1,11 +1,10 @@
 /**
  * Integration tests for `cerebrum.plexus.*` over REST.
  *
- * Boots the app against a per-test temp cerebrum.db (carrying the plexus
- * baseline migration 0053) and exercises adapter reads, the filter
- * set/list round-trip, and the 400 / 404 error paths through supertest.
- * Adapters are seeded directly via the `plexusService` SQL seam — the
- * lifecycle/TOML registry isn't part of this slice.
+ * Boots the app against a per-test temp cerebrum.db and exercises adapter reads,
+ * the filter set/list round-trip, and the 400 / 404 error paths through
+ * supertest. Adapters are seeded directly via the `plexusService` SQL seam — the
+ * lifecycle/TOML registry is not exercised here.
  */
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';

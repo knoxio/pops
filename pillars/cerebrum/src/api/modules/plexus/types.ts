@@ -1,11 +1,10 @@
 /**
- * Plexus type definitions (PRD-090).
+ * Plexus type definitions (plugin-architecture PRD).
  *
- * Lifted from the pops-api monolith (`apps/pops-api/src/modules/cerebrum/
- * plexus/types.ts`) during the cerebrum REST migration. Row + API shapes for
- * adapters and filters live in the pillar DB barrel (`PlexusAdapter`,
- * `PlexusFilter`, …); this file owns the in-process orchestration types
- * (engine data, adapter config, filter rules) the lifecycle manager consumes.
+ * Row + API shapes for adapters and filters live in the pillar DB barrel
+ * (`PlexusAdapter`, `PlexusFilter`, … in src/db); this file owns the in-process
+ * orchestration types (engine data, adapter config, filter rules) the lifecycle
+ * manager consumes.
  */
 
 export const ADAPTER_STATUSES = [
@@ -20,8 +19,9 @@ export type AdapterStatusValue = (typeof ADAPTER_STATUSES)[number];
 
 /**
  * Content produced by an adapter's `ingest()` method. Passed directly into the
- * ingestion pipeline (PRD-081). The adapter provides what it knows; the
- * pipeline fills in classification, entity extraction, and scope inference.
+ * ingestion pipeline (ingestion-pipeline PRD). The adapter provides what it
+ * knows; the pipeline fills in classification, entity extraction, and scope
+ * inference.
  */
 export interface EngineData {
   /** Main content body (Markdown or plain text). */

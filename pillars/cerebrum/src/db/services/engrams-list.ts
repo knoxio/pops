@@ -1,9 +1,8 @@
 /**
  * List + hydrate primitives for the engrams data-access layer.
  *
- * Split out from `engrams.ts` so each file stays under the 200-line
- * project ceiling. Functional contract is identical to the listEngrams +
- * hydrateEngrams pair pops-api exposes today.
+ * Split out from `engrams.ts` to keep each file under the per-file line
+ * ceiling.
  */
 import { and, count, eq, inArray, like, sql } from 'drizzle-orm';
 

@@ -1,5 +1,5 @@
 /**
- * View model for the Query page (`/cerebrum/query`, PRD-082).
+ * View model for the Query page (`/cerebrum/query`).
  */
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';

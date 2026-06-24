@@ -1,11 +1,9 @@
 /**
- * nudge_log read/dismiss service for the cerebrum pillar (PRD-084).
+ * nudge_log read/dismiss service for the cerebrum pillar.
  *
- * Lifted from `apps/pops-cerebrum-api/src/modules/nudges/service.ts`, rebound
- * onto the pillar's own db package (`../../../db/index.js`) rather than
- * `@pops/cerebrum-db`. Covers only the read + dismiss surface — the procedures
- * that touch nothing but the `nudge_log` table. `scan` / `act` / `configure`
- * (detectors + retrieval + LLM analyzer) follow a later slice.
+ * Covers the read + dismiss surface — the procedures that touch nothing but the
+ * `nudge_log` table. `scan` / `act` / `configure` (detectors + retrieval + LLM
+ * analyzer) live in {@link ./write-service.ts}.
  */
 import { and, count, eq, sql } from 'drizzle-orm';
 

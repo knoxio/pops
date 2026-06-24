@@ -1,5 +1,5 @@
 /**
- * Unit tests for ScopeReconciliationService (PRD-081 US-10).
+ * Unit tests for ScopeReconciliationService (see pillars/cerebrum/docs/prds/scope-model).
  */
 import { describe, expect, it } from 'vitest';
 
@@ -193,9 +193,8 @@ describe('ScopeReconciliationService.reconcile', () => {
       knownScopes: many,
     });
     const elapsed = performance.now() - start;
-    // The PRD targets 50 ms; assert a generous 250 ms ceiling so CI runners
-    // under load do not flake. Drop dedicated benchmarks elsewhere if a
-    // tighter budget is required.
+    // Generous ceiling so CI runners under load do not flake; the real target
+    // (pillars/cerebrum/docs/prds/scope-model) is far tighter.
     expect(elapsed).toBeLessThan(250);
   });
 });

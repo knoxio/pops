@@ -2,8 +2,8 @@
  * View model hook for the IngestPage.
  *
  * Composed from focused sub-hooks (data, form, submission). The capture-first
- * surface (PRD-081 US-01) is the default; Advanced fields live behind a
- * disclosure and only route through `submit` when explicitly touched.
+ * surface is the default; Advanced fields live behind a disclosure and only
+ * route through `submit` when explicitly touched.
  */
 import { useFormState } from './useFormState';
 import { useSubmission } from './useSubmission';

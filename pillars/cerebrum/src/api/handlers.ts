@@ -33,7 +33,7 @@ export interface CerebrumApiDeps {
    * regenerable cache of it). Resolved from `CEREBRUM_ENGRAMS_DIR` at boot.
    */
   engramRoot: string;
-  /** TOML-driven reflex registry + execution-log accessor (PRD-089). */
+  /** TOML-driven reflex registry + execution-log accessor (reflex-system). */
   reflexService: ReflexService;
   /**
    * Absolute path to the glia graduation-threshold TOML (`glia.toml`).

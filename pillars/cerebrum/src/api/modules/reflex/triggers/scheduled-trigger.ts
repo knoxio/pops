@@ -1,11 +1,7 @@
 /**
- * Scheduled trigger — cron-based firing via BullMQ repeatable jobs
- * (PRD-089 US-04).
- *
- * Provides helpers for managing repeatable jobs: registering, removing,
- * and computing the next fire time for display. The pillar reflex surface
- * only needs the pure cron + job-name helpers; the live queue lives outside
- * the request path.
+ * Scheduled trigger — pure cron helpers for schedule reflexes: next-fire-time
+ * computation, cron validation, and BullMQ job-name/id derivation. No queue is
+ * registered here; see pillars/cerebrum/docs/prds/reflex-system.
  */
 import { CronExpressionParser } from 'cron-parser';
 

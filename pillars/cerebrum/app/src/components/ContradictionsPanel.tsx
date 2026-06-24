@@ -1,8 +1,7 @@
 /**
- * ContradictionsPanel — pattern-detection contradictions with excerpts
- * (PRD-084 US-03, #2580).
+ * ContradictionsPanel — pattern-detection contradictions with excerpts.
  *
- * Renders the list returned by `cerebrum.nudges.contradictions`. Each row
+ * Renders the list returned by `POST /nudges/contradictions`. Each row
  * shows the LLM-derived conflict summary, a short verbatim excerpt from
  * each side, and links back to the two source engrams. Minimal styling —
  * matches the neighbouring NudgesPage list.

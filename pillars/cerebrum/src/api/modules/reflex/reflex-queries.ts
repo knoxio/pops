@@ -1,8 +1,8 @@
 /**
- * Reflex execution history queries (PRD-089 US-05).
+ * Reflex execution history queries (spec: reflex-system).
  *
- * Extracted from ReflexService to keep file sizes manageable. Each query takes
- * the cerebrum drizzle handle explicitly so the pillar owns its connection.
+ * Each query takes the cerebrum drizzle handle explicitly so the pillar owns
+ * its connection.
  */
 import { and, desc, eq, sql } from 'drizzle-orm';
 

@@ -1,10 +1,9 @@
 /**
- * Nudge-log persistence (PRD-084).
+ * Nudge-log persistence (proactive-nudges).
  *
  * Audit-trail-style table the cerebrum reflex/nudge subsystem writes to
- * when a detector scan produces candidate nudges. The three functions
- * here cover the persistence-layer surface the pops-api `NudgeService`
- * needs from this package:
+ * when a detector scan produces candidate nudges. The functions here
+ * cover the persistence-layer surface the nudge subsystem needs:
  *
  *   - {@link createNudge} — insert one alert-driven nudge (no cooldown dedup).
  *   - {@link persistCandidates} — insert new nudges with cooldown dedup.
@@ -15,15 +14,12 @@
  *   - {@link enforcePendingCap} — quietly expire the oldest pending rows
  *     when the cap is exceeded.
  *
- * Functions take a `CerebrumDb` handle as their first argument; the
- * calling layer (pops-api modules, eventually `cerebrum-api`) resolves
- * the singleton or transaction handle to pass in. Follows the standard
- * per-pillar db-arg service pattern.
+ * Functions take a `CerebrumDb` handle as their first argument; the caller
+ * resolves the singleton or transaction handle. Follows the standard
+ * per-slice db-arg service pattern.
  *
  * The cross-table read helper `loadActiveEngrams` (which the detector
- * scans depend on) stays in pops-api for now — it reads
- * `engram_index` / `engram_scopes` / `engram_tags`, all cerebrum-owned
- * tables that will move in the engrams slice's own Phase 1 PR.
+ * scans depend on) lives in `engrams.ts`.
  */
 import { and, count, eq, inArray, sql } from 'drizzle-orm';
 
@@ -151,7 +147,7 @@ function isInCooldown(
 }
 
 /**
- * Paginated list of contradiction-pattern nudges (PRD-084 US-03).
+ * Paginated list of contradiction-pattern nudges.
  *
  * Filters at the SQL layer with a `json_extract` predicate on
  * `action_params` so non-contradiction pattern nudges (recurring,

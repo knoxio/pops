@@ -1,6 +1,4 @@
-/**
- * Reflex trigger and action validators (PRD-089 US-01).
- */
+/** Reflex trigger and action validators (spec: reflex-system). */
 import { CronExpressionParser } from 'cron-parser';
 
 import {

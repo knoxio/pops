@@ -1,8 +1,6 @@
 /**
- * QueryHistorySidebar — re-runnable list of past queries (PRD-082).
- *
- * History lives in `localStorage`; see `query/history-storage.ts`. The
- * sidebar shows the most recent queries first with a one-click re-run.
+ * QueryHistorySidebar — re-runnable list of past queries. History lives
+ * in `localStorage`; see `query/history-storage.ts`.
  */
 import { useTranslation } from 'react-i18next';
 

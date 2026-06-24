@@ -1,12 +1,9 @@
 /**
- * Database helpers for the Plexus lifecycle manager (PRD-090, PRD-180 US-03).
+ * Database helpers for the Plexus lifecycle manager (plugin-architecture PRD).
  *
- * Lifted from the pops-api monolith during the cerebrum REST migration. The
- * monolith resolved the drizzle handle per-call via `getCerebrumDrizzle()`
- * (AsyncLocalStorage); the pillar instead threads an explicit `CerebrumDb`
- * handle through — every helper takes it as its first argument, mirroring the
- * `plexusService.*` db-arg convention. All access delegates to the in-pillar
- * `plexusService` namespace.
+ * Every helper takes an explicit `CerebrumDb` handle as its first argument,
+ * mirroring the `plexusService.*` db-arg convention, and delegates all access
+ * to the in-pillar `plexusService` namespace (src/db).
  */
 import {
   plexusService,

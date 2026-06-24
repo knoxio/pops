@@ -1,5 +1,5 @@
 /**
- * LLM system prompt templates for the Ego conversation engine (PRD-087 US-01, US-03).
+ * LLM system prompt templates for the Ego conversation engine.
  *
  * Prompts are exported as pure functions so they can be tested and overridden
  * without coupling to the engine class.

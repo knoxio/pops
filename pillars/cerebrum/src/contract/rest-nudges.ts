@@ -1,16 +1,15 @@
 /**
- * ts-rest contract for `cerebrum.nudges.*` (PRD-084).
+ * ts-rest contract for `cerebrum.nudges.*`.
  *
- * Nudges are detector-produced suggestions persisted in `nudge_log`. This
- * slice migrates ONLY the clean read/dismiss surface — the four procedures
- * that touch nothing but the `nudge_log` table:
+ * Nudges are detector-produced suggestions persisted in `nudge_log`. Read/dismiss
+ * surface over that table:
  *
  *   - `list`           → POST /nudges/search (typed enum filters)
  *   - `get`            → GET  /nudges/:id
  *   - `dismiss`        → POST /nudges/:id/dismiss
  *   - `contradictions` → POST /nudges/contradictions
  *
- * The write surface completes the domain:
+ * Write surface:
  *
  *   - `create`    → POST /nudges            (alert-driven single insert, no dedup)
  *   - `scan`      → POST /nudges/scan       (runs detectors, persists nudges)
@@ -57,7 +56,7 @@ export const nudgeActionSchema = z.object({
   params: z.record(z.string(), z.unknown()),
 });
 
-/** A persisted nudge — the core data model of PRD-084. */
+/** A persisted nudge. */
 export const nudgeSchema = z.object({
   id: z.string(),
   type: nudgeTypeSchema,
@@ -90,7 +89,7 @@ export type NudgeContradictionWire = z.infer<typeof nudgeContradictionSchema>;
 
 const idParams = z.object({ id: z.string().min(1) });
 
-/** Detection thresholds patch — every field optional (parity with the monolith). */
+/** Detection thresholds patch — every field optional. */
 export const nudgeConfigureSchema = z.object({
   consolidationSimilarity: z.number().min(0).max(1).optional(),
   consolidationMinCluster: z.number().int().positive().optional(),

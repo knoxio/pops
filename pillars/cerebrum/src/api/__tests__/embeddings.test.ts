@@ -1,10 +1,9 @@
 /**
- * Integration tests for `cerebrum.embeddings.*` over REST (PRD-249).
+ * Integration tests for `cerebrum.embeddings.*` over REST.
  *
- * Boots the app against a per-test temp `cerebrum.db` (embeddings present via
- * migration 0054) and seeds `embeddings` rows directly through the drizzle
- * handle. Covers `getStatus` (total + optional source-type filter) and
- * `listSourceIdsByType` (distinct ids).
+ * Boots the app against a per-test temp `cerebrum.db` and seeds `embeddings`
+ * rows directly through the drizzle handle. Covers `getStatus` (total + optional
+ * source-type filter) and `listSourceIdsByType` (distinct ids).
  */
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';

@@ -1,17 +1,16 @@
 /**
- * IngestService — ingestion pipeline orchestrator (PRD-081), pillar-side.
+ * IngestService — ingestion pipeline orchestrator (ingestion-pipeline).
  *
- * Lifted from `apps/pops-api/src/modules/cerebrum/ingest/pipeline.ts`. All
- * collaborators are injected via {@link IngestServiceDeps} (DB handle, engram
- * root, template registry, scope-rule engine, LLM port, curation-queue
- * accessor) so the service stands alone of the monolith singletons and tests
- * can run offline against a temp DB + fake LLM + no Redis.
+ * All collaborators are injected via {@link IngestServiceDeps} (DB handle,
+ * engram root, template registry, scope-rule engine, LLM port, curation-queue
+ * accessor) so the service stands alone and tests can run offline against a
+ * temp DB + fake LLM + no Redis.
  *
  * Stages (full submit): normalise → classify (when type omitted) → extract
  * entities → infer scopes → dedup by body hash → write via EngramService. The
- * shared stage runner + enqueue helper live in `pipeline-stages.ts` to keep
- * this file within the per-file line budget. Quick capture bypasses
- * classification/extraction and enqueues a `classifyEngram` job (US-03).
+ * shared stage runner + enqueue helper live in `pipeline-stages.ts`. Quick
+ * capture bypasses classification/extraction and enqueues a `classifyEngram`
+ * job.
  */
 import { ScopeRuleEngine } from '../engrams/scope-rules.js';
 import { EngramService } from '../engrams/service.js';
@@ -115,16 +114,16 @@ export class IngestService {
   }
 
   /**
-   * Quick capture — minimal-friction path (US-03, US-01). Stores raw content
-   * immediately as type=capture, then enqueues an async `classifyEngram` job.
+   * Quick capture — minimal-friction path. Stores raw content immediately as
+   * type=capture, then enqueues an async `classifyEngram` job.
    *
-   * When `suggestedScopes` is supplied (US-01) the engram is written with those
-   * scopes and `_reconcile_scopes: true` so the curation worker reconciles them
-   * against the existing vocabulary (US-10) instead of inferring from scratch.
+   * When `suggestedScopes` is supplied the engram is written with those scopes
+   * and `_reconcile_scopes: true` so the curation worker reconciles them
+   * against the existing vocabulary instead of inferring from scratch.
    *
    * `requeued` is `false` when the enrichment job could not be enqueued (no
-   * Redis) — the engram is still created, so this is a soft signal rather than
-   * an error (parity with the monolith's fire-and-forget enqueue).
+   * Redis) — the engram is still created, so this is a fire-and-forget soft
+   * signal rather than an error.
    */
   async quickCapture(
     text: string,
@@ -168,12 +167,12 @@ export class IngestService {
     };
   }
 
-  /** Classify body only — `cerebrum.ingest.classify`. */
+  /** Classify body only — `POST /ingest/classify`. */
   async classify(body: string, title?: string): Promise<ClassificationResult> {
     return this.classifier.classify(normaliseBody(body), title);
   }
 
-  /** Extract entities only — `cerebrum.ingest.extractEntities`. */
+  /** Extract entities only — `POST /ingest/extract-entities`. */
   async extractEntities(
     body: string,
     existingTags: string[] = []
@@ -181,7 +180,7 @@ export class IngestService {
     return this.entityExtractor.extract(normaliseBody(body), existingTags);
   }
 
-  /** Infer scopes only — `cerebrum.ingest.inferScopes`. */
+  /** Infer scopes only — `POST /ingest/infer-scopes`. */
   async inferScopes(input: {
     body: string;
     type: string;
@@ -200,9 +199,9 @@ export class IngestService {
   }
 
   /**
-   * Re-enqueue the `classifyEngram` job for an engram (US-07). The engram must
-   * already exist (verified here, 404s otherwise). Returns `false` when the
-   * queue is unavailable (no Redis).
+   * Re-enqueue the `classifyEngram` job for an engram. The engram must already
+   * exist (verified here, 404s otherwise). Returns `false` when the queue is
+   * unavailable (no Redis).
    */
   async retryEnrichment(engramId: string): Promise<boolean> {
     this.engramService().read(engramId);

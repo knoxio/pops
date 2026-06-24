@@ -1,11 +1,11 @@
 /**
- * Low-level SSE client for the Cerebrum Query streaming endpoint
- * (PRD-082, issue #2596).
+ * Low-level SSE client for the Cerebrum Query streaming endpoint.
  *
  * Fetches `/api/cerebrum/query/stream`, decodes the SSE wire format, and
  * dispatches structured `token`, `done` and `error` events to caller-
  * supplied handlers. Mirrors the shape of `useStreamingChat` in
- * `overlay-ego` so both surfaces share the same SSE conventions.
+ * `libs/overlay-ego/src/chat-hooks` so both surfaces share the same SSE
+ * conventions.
  */
 import type { ValidatedQueryRequest } from './form-mapping';
 import type { QueryConfidence, QuerySourceCitation } from './types';

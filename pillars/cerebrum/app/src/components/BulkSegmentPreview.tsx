@@ -1,7 +1,7 @@
 /**
  * Inline preview shown above the submit button when the body contains
- * `---` separators (PRD-081 US-08). Lists detected segments so the user
- * can sanity-check before committing to a bulk capture.
+ * `---` separators. Lists detected segments so the user can sanity-check
+ * before committing to a bulk capture.
  */
 import { useTranslation } from 'react-i18next';
 

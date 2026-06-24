@@ -1,15 +1,10 @@
 /**
  * Scope keyword/phrase constants and matching helpers for scope negotiation.
  *
- * PRD-087 US-04: Scope Negotiation.
- *
- * Reuses keyword patterns from QueryScopeInferencer (cerebrum/query) but extends
- * them for conversational phrases (e.g. "at work", "my personal stuff").
+ * Mirrors the keyword patterns in {@link QueryScopeInferencer}
+ * (query/scope-inferencer.ts) but extends them for conversational phrases
+ * (e.g. "at work", "my personal stuff").
  */
-
-// ---------------------------------------------------------------------------
-// Keyword & phrase lists
-// ---------------------------------------------------------------------------
 
 /** Phrases that indicate work context. */
 export const WORK_PHRASES: readonly string[] = [
@@ -78,10 +73,6 @@ export const SECRET_MENTION_KEYWORDS: readonly string[] = [
   'private key',
   'credential',
 ];
-
-// ---------------------------------------------------------------------------
-// Matching helpers
-// ---------------------------------------------------------------------------
 
 /** Test whether any phrase appears as a substring in the text (case-insensitive). */
 export function matchesPhrases(text: string, phrases: readonly string[]): boolean {

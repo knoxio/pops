@@ -1,13 +1,10 @@
 /**
- * Domain types for the nudge_log slice (PRD-084).
+ * Domain types for the nudge_log slice (proactive-nudges).
  *
- * Live in this package because they describe the persistence layer's
- * input/output shape. The pops-api `apps/pops-api/src/modules/cerebrum/nudges/`
- * module currently has parallel definitions; the cutover PR will flip its
- * imports here.
+ * They describe the persistence layer's input/output shape.
  */
 
-/** Nudge types: the four detection modes (PRD-084). */
+/** Nudge types: the four detection modes. */
 export type NudgeType = 'consolidation' | 'staleness' | 'pattern' | 'insight';
 
 /** Lifecycle states tracked for a persisted nudge. */
@@ -26,7 +23,7 @@ export interface NudgeAction {
   params: Record<string, unknown>;
 }
 
-/** A persisted nudge — the core data model of PRD-084. */
+/** A persisted nudge — the core data model of the nudge subsystem. */
 export interface Nudge {
   id: string;
   type: NudgeType;
@@ -53,12 +50,9 @@ export interface NudgeCandidate {
 }
 
 /**
- * Subset of {@link NudgeThresholds} that the persistence layer needs.
- *
- * The wider thresholds object lives in pops-api today (it pulls defaults
- * from settings); the persistence layer only consults the cooldown
- * window, so we narrow to the relevant fields. The cutover PR will flip
- * pops-api's wider type to extend this one.
+ * The thresholds the persistence layer needs — narrowed to the cooldown
+ * window, the only field this layer consults. The wider thresholds object
+ * (with settings-sourced defaults) lives in the nudges domain module.
  */
 export interface NudgePersistenceThresholds {
   /** Hours between nudges of the same type for the same engrams. */

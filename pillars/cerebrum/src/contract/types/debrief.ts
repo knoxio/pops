@@ -1,19 +1,18 @@
 /**
- * Public entity + input types for the `cerebrum.debrief.*` SDK surface
- * (PRD-248). The cerebrum debrief subsystem is consumed cross-pillar by the
- * media-pillar after a watch lands; it stores a post-watch reflection
- * session per (re-)watch, queues a per-dimension status row, and records
- * per-dimension reflection outcomes.
+ * Public entity + input types for the `cerebrum.debrief.*` SDK surface. The
+ * cerebrum debrief subsystem is consumed cross-pillar by the media pillar
+ * after a watch lands; it stores a post-watch reflection session per
+ * (re-)watch, queues a per-dimension status row, and records per-dimension
+ * reflection outcomes.
  *
- * Shapes mirror the cerebrum-db drizzle rows (`debriefSessions`,
+ * Shapes mirror the drizzle rows under `src/db` (`debriefSessions`,
  * `debriefResults`, `debriefStatus`) one-to-one — the contract is the wire
  * shape, not a UI projection. The accompanying zod schemas under
  * `../schemas/debrief.ts` validate at runtime; the round-trip test in
  * `__tests__/schemas.test.ts` keeps both halves in lock-step.
  *
- * Per PRD-248 §Wire shape highlights, `getByMedia` consumes the
- * denormalised `media_type` + `media_id` columns added to `debrief_sessions`
- * in commit `9df171fe` — no SQL inner-join into `watch_history` leaks into
+ * `getByMedia` consumes the denormalised `media_type` + `media_id` columns
+ * on `debrief_sessions` — no SQL inner-join into `watch_history` leaks into
  * the cross-pillar read.
  */
 
@@ -26,11 +25,9 @@ export type DebriefSessionStatus = (typeof DEBRIEF_SESSION_STATUSES)[number];
 /**
  * A single post-watch debrief session — one row per (re-)watch.
  *
- * `mediaType` / `mediaId` are the denormalised media tuple from commit
- * `9df171fe`; both are nullable in the current drizzle definition for the
- * migration window and will tighten to NOT NULL once `debrief_sessions`
- * physically moves to `cerebrum.db`. The contract reflects the on-the-wire
- * shape today and surfaces both as nullable.
+ * `mediaType` / `mediaId` are the denormalised media tuple; both are
+ * nullable in the drizzle definition, so the contract surfaces both as
+ * nullable.
  *
  * `watchHistoryId` is a soft pointer into the media pillar's
  * `watch_history` table (ADR-026); no cross-DB FK exists.
@@ -98,7 +95,7 @@ export interface DismissInput {
 /**
  * Input for `cerebrum.debrief.listPending` — enumerate pending sessions,
  * optionally filtered by media tuple. Pagination defaults are picked by
- * the handler (US-03); the contract just shapes the optional knobs.
+ * the handler; the contract just shapes the optional knobs.
  */
 export interface ListPendingInput {
   mediaType?: DebriefMediaType;
@@ -126,9 +123,8 @@ export interface GetInput {
 
 /**
  * Input for `cerebrum.debrief.getByMedia` — denormalised lookup. Reads
- * `debrief_sessions.media_type` + `media_id` directly (commit `9df171fe`);
- * no inner-join into `watch_history`. Returns `null` when no session
- * exists.
+ * `debrief_sessions.media_type` + `media_id` directly; no inner-join into
+ * `watch_history`. Returns `null` when no session exists.
  */
 export interface GetByMediaInput {
   mediaType: DebriefMediaType;
@@ -136,9 +132,9 @@ export interface GetByMediaInput {
 }
 
 /**
- * Input for `cerebrum.debrief.logWatchCompletion` — Option D entry point.
- * Wraps `createDebriefSession` + `queueDebriefStatus` in one cerebrum-side
- * tx; idempotent on retry per `(watchHistoryId, mediaType, mediaId)`.
+ * Input for `cerebrum.debrief.logWatchCompletion` — wraps
+ * `createDebriefSession` + `queueDebriefStatus` in one cerebrum-side tx;
+ * idempotent on retry per `(watchHistoryId, mediaType, mediaId)`.
  */
 export interface LogWatchCompletionInput {
   watchHistoryId: number;

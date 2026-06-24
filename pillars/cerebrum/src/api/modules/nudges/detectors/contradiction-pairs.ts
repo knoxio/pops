@@ -1,6 +1,6 @@
 /**
- * Pair generation for the contradiction pass of the PatternDetector
- * (PRD-084 US-03). O(n^2) build over engrams filtered by shared top-level
+ * Pair generation for the contradiction pass of the PatternDetector.
+ * O(n^2) build over engrams filtered by shared top-level
  * scope + at least one shared tag, sorted by tag overlap descending so callers
  * can take a prefix when capping LLM spend.
  */

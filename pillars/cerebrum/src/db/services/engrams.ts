@@ -1,5 +1,5 @@
 /**
- * Engram data-access for the cerebrum pillar (PRD-179 US-01).
+ * Engram data-access for the cerebrum pillar (engram-file-format).
  *
  * Scope boundary: this file is the SQL seam for the engrams slice. It
  * covers find / upsert / delete on `engram_index` and its three
@@ -9,16 +9,13 @@
  * `engrams-list.ts` (kept separate to stay under the per-file line
  * ceiling). Anything that touches the filesystem (parsing Markdown,
  * writing files atomically, renaming on type change), the template
- * registry, or the scope-rule engine stays in
- * `apps/pops-api/src/modules/cerebrum/engrams/*` until PRD-179 US-03
- * flips routing through `getCerebrumDrizzle()`. That keeps this package
- * pure data-access — no node:fs imports, no zod cross-validation, no
- * domain orchestration.
+ * registry, or the scope-rule engine lives in the pillar's engrams
+ * module — this stays pure data-access (no node:fs, no zod
+ * cross-validation, no domain orchestration).
  *
- * The functions take a `CerebrumDb` handle as their first argument; the
- * calling layer (pops-api today, `cerebrum-api` after the cutover)
- * resolves the singleton or transaction handle. Mirrors the `nudge-log.ts`
- * db-arg pattern in this package.
+ * Functions take a `CerebrumDb` handle as their first argument; the
+ * caller resolves the singleton or transaction handle. Mirrors the
+ * `nudge-log.ts` db-arg pattern in this slice.
  */
 import { and, eq, inArray, sql } from 'drizzle-orm';
 
@@ -130,7 +127,7 @@ export function deleteEngramIndex(db: CerebrumDb, id: string): number {
 /**
  * Look up an engram by id and hydrate it. Returns null if the row is gone
  * — leaving the not-found policy (throw vs return) to the caller so this
- * package stays decoupled from pops-api's error types.
+ * layer stays decoupled from any HTTP error types.
  */
 export function getEngram(db: CerebrumDb, id: string): Engram | null {
   const row = findIndexRow(db, id);
@@ -143,8 +140,7 @@ export function getEngram(db: CerebrumDb, id: string): Engram | null {
  * Insert a single (sourceId, targetId) edge. Idempotent via
  * `onConflictDoNothing` against the `uq_engram_links_pair` unique index.
  * Reverse-edge bookkeeping (insert (targetId, sourceId) too) and any
- * frontmatter file mutation are the caller's responsibility — they live
- * in pops-api until US-03.
+ * frontmatter file mutation are the caller's responsibility.
  */
 export function insertEngramLink(db: CerebrumDb, sourceId: string, targetId: string): void {
   db.insert(engramLinks).values({ sourceId, targetId }).onConflictDoNothing().run();
@@ -160,11 +156,9 @@ export function deleteEngramLinkPair(db: CerebrumDb, a: string, b: string): void
 }
 
 /**
- * Active engrams snapshot for detector-style scans (PRD-084 nudges, glia
- * workers, etc.). Filters out archived/consolidated rows server-side and
- * hydrates scopes + tags in two range queries — same shape pops-api's
- * `loadActiveEngrams` returns today, ported here so consumers can resolve
- * it against `getCerebrumDrizzle()` without a cross-package read helper.
+ * Active engrams snapshot for detector-style scans (proactive nudges,
+ * glia workers, etc.). Filters out archived/consolidated rows server-side
+ * and hydrates scopes + tags in two range queries.
  */
 export function loadActiveEngrams(db: CerebrumDb): EngramSummary[] {
   const rows = db

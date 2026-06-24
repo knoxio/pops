@@ -1,8 +1,7 @@
 /**
- * Timeline generation mode (PRD-083 US-03).
+ * Timeline generation mode (see pillars/cerebrum/docs/prds/document-generation).
  *
- * Retrieves dated engrams, produces chronological sequences.
- * Each entry: date, title, type badge, one-line summary.
+ * Orders dated engrams chronologically into a sequence of entries.
  */
 import {
   collectScopeCoverage,

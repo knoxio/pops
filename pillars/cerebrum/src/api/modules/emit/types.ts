@@ -1,8 +1,6 @@
 /**
- * Types for the cerebrum document-generation engine (PRD-083).
- *
- * Covers: GenerationRequest, GeneratedDocument, GenerationMode, and the
- * preview/generation pipeline interfaces. Lifted verbatim from the monolith.
+ * Types for the cerebrum document-generation engine.
+ * Spec: pillars/cerebrum/docs/prds/document-generation.
  */
 import type { SourceCitation } from '../query/types.js';
 
@@ -21,10 +19,7 @@ export interface DateRange {
 /** Optional grouping strategies for timelines. */
 export type TimelineGroupBy = 'type' | 'month' | 'quarter';
 
-/**
- * Generation request — the input to the document generation pipeline.
- * Corresponds to the PRD-083 GenerationRequest data model.
- */
+/** Generation request — the input to the document generation pipeline. */
 export interface GenerationRequest {
   /** Output mode: report, summary, or timeline. */
   mode: GenerationMode;
@@ -57,10 +52,7 @@ export interface GenerationMetadata {
   truncated: boolean;
 }
 
-/**
- * Generated document — the output of the document generation pipeline.
- * Corresponds to the PRD-083 GeneratedDocument data model.
- */
+/** Generated document — the output of the document generation pipeline. */
 export interface GeneratedDocument {
   title: string;
   body: string;

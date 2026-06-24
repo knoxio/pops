@@ -1,6 +1,6 @@
 /**
  * Tests for ScopeSuggestionList — renders the "Did you mean" affordance
- * for pending scope reconciliation suggestions (PRD-081 US-07).
+ * for pending scope reconciliation suggestions.
  */
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';

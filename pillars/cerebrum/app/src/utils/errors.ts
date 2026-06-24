@@ -1,10 +1,10 @@
 /**
  * Shared error normalisation helper.
  *
- * Cerebrum pages all consume tRPC mutation/query errors that may be a
- * `TRPCClientError`, an `Error`, or arbitrary `unknown` payloads. The
- * UI only needs a short human-readable message; extract it consistently
- * so every panel renders the same fallback when the shape is unexpected.
+ * Cerebrum pages consume errors of arbitrary shape (`Error`, REST client
+ * errors, or raw `unknown` payloads). The UI only needs a short
+ * human-readable message; extract it consistently so every panel renders
+ * the same fallback when the shape is unexpected.
  *
  * The `fallback` is caller-provided (typically already translated via
  * `useTranslation`) so the helper stays UI-agnostic and pt-BR consumers

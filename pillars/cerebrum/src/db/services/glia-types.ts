@@ -1,10 +1,8 @@
 /**
  * Glia public shapes returned from the data-access layer.
  *
- * Mirrors the action / trust-state shapes the pops-api `GliaActionService`
- * exposes today. Kept in the data package so `cerebrum-api` and any other
- * consumer can build views without re-deriving them from drizzle row
- * shapes.
+ * Consumers build action / trust-state views from these instead of
+ * re-deriving them from drizzle row shapes.
  */
 
 /** The four Glia action types (ADR-021). */
@@ -71,10 +69,10 @@ export interface ListActionsResult {
 
 /**
  * Insert payload for `insertAction` — the data-access layer's contract for
- * creating a new glia_actions row. The caller (pops-api today, cerebrum-api
- * after the cutover) is responsible for ID generation, phase resolution,
- * autonomous-vs-pending status branching, and any trust-state updates. This
- * keeps the service decoupled from the trust machine.
+ * creating a new glia_actions row. The caller is responsible for ID
+ * generation, phase resolution, autonomous-vs-pending status branching, and
+ * any trust-state updates. This keeps the service decoupled from the trust
+ * machine.
  */
 export interface InsertActionRow {
   id: string;

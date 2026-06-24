@@ -1,5 +1,5 @@
 /**
- * Reflex service accessor for the cerebrum pillar (PRD-089).
+ * Reflex service accessor for the cerebrum pillar (reflex-system).
  *
  * The {@link ReflexService} is config-dependent (reads `reflexes.toml`) and
  * holds in-memory threshold state, so it is cached per DB handle rather than
@@ -9,8 +9,7 @@
  * Resolution order for the config file:
  *   1. `CEREBRUM_REFLEX_CONFIG` — an explicit path to `reflexes.toml`.
  *   2. `CEREBRUM_REFLEX_CONFIG_DIR` (or `ENGRAM_ROOT`) — a directory whose
- *      `.config/reflexes.toml` is used (parity with the monolith's engram
- *      root layout).
+ *      `.config/reflexes.toml` is used.
  *   3. A safe default under the cwd that almost certainly does not exist,
  *      yielding an empty reflex set.
  */

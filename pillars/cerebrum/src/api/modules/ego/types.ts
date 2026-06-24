@@ -1,9 +1,10 @@
 /**
- * Ego conversation engine domain types (PRD-087).
+ * Ego conversation engine domain types.
  *
- * The conversation/message/context row shapes live in the pillar db package
- * (`conversationsService`); these are the engine-level shapes (chat params,
- * results, streaming events, scope negotiation) the lifted engine traffics in.
+ * The conversation/message/context row shapes live in the pillar db
+ * (`conversationsService`, src/db/services/conversations.ts); these are the
+ * engine-level shapes (chat params, results, streaming events, scope
+ * negotiation) the engine traffics in.
  */
 import type { Message } from '../../../db/index.js';
 

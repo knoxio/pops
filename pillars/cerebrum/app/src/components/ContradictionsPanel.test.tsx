@@ -1,5 +1,5 @@
 /**
- * Smoke tests for ContradictionsPanel (PRD-084 US-03, #2580).
+ * Smoke tests for ContradictionsPanel.
  *
  * Verifies the panel renders the conflict summary, both excerpts, and the
  * source-engram links returned by `POST /nudges/contradictions`. The panel

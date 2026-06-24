@@ -1,5 +1,5 @@
 /**
- * Pure helpers for EnrichmentChips (PRD-081 US-07).
+ * Pure helpers for EnrichmentChips.
  *
  * Extracted so the React component can stay under the line limits and so the
  * algorithmic bits (polling cadence, scope mutations, suggestion key) can be

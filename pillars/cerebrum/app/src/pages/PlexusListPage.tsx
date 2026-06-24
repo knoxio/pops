@@ -1,10 +1,10 @@
 /**
- * PlexusListPage — `/cerebrum/plexus` (PRD-090, PRD-091).
+ * PlexusListPage — `/cerebrum/plexus`.
  *
  * Lists registered Plexus adapters with health, last sync, and ingest
  * counts. Each row links to the adapter detail page; health-check and
- * sync mutations are wired to the existing
- * `cerebrum.plexus.adapters.{healthCheck,sync}` endpoints.
+ * sync mutations are wired to the adapter health-check and sync
+ * endpoints.
  */
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Plug } from 'lucide-react';

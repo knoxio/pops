@@ -5,9 +5,9 @@
  * and trust-state seed/read/update including the counter-increment
  * shortcut.
  *
- * The baseline is read from
- * `packages/cerebrum-db/migrations/0051_glia_baseline.sql` so the table
- * shape under test is identical to the one shipped in the journal.
+ * The baseline is read from the pillar's
+ * `migrations/0051_glia_baseline.sql` so the table shape under test is
+ * identical to the one shipped in the journal.
  */
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';

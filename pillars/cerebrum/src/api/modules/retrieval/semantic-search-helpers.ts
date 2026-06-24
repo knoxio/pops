@@ -1,13 +1,10 @@
 /**
  * kNN query + result-shaping helpers for {@link SemanticSearchService}.
  *
- * Ported from the monolith. The one structural change vs. pops-api: `knnQuery`
- * takes the pillar's own `better-sqlite3` raw handle
- * (`deps.cerebrumDb.raw`) instead of reading the shared pops.db singleton via
- * `getDb()`. The embeddings + `embeddings_vec` virtual table live in
- * cerebrum.db (migration 0054), and in the standalone pillar
- * `embeddings.id == embeddings_vec.rowid` is consistent, so the kNN JOIN SQL is
- * preserved verbatim (no rowid≠id backfill caveat).
+ * `knnQuery` runs against the pillar's own `better-sqlite3` raw handle; the
+ * `embeddings` table + `embeddings_vec` virtual table both live in cerebrum.db.
+ * `embeddings.id == embeddings_vec.rowid` holds here, so the kNN JOIN on
+ * `e.id = ev.rowid` is exact (no rowid≠id backfill caveat).
  */
 import type BetterSqlite3 from 'better-sqlite3';
 

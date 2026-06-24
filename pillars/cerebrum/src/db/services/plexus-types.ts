@@ -1,10 +1,8 @@
 /**
  * Plexus public shapes returned from the data-access layer.
  *
- * Mirrors the adapter / filter shapes the pops-api plexus router exposes
- * today (`apps/pops-api/src/modules/cerebrum/plexus/types.ts`). Kept in
- * the data package so `cerebrum-api` and any other consumer can build
- * views without re-deriving them from drizzle row shapes.
+ * Consumers build adapter / filter views from these instead of
+ * re-deriving them from drizzle row shapes.
  */
 
 /** Lifecycle states a registered adapter cycles through. */
@@ -24,8 +22,8 @@ export type PlexusFilterType = (typeof PLEXUS_FILTER_TYPES)[number];
 
 /**
  * Raw row shape as it sits on `plexus_adapters`. `config` is the encrypted
- * envelope blob the plexus router decrypts upstream — cerebrum-db never
- * opens it.
+ * envelope blob the plexus router decrypts upstream — the data-access
+ * layer never opens it.
  */
 export interface PlexusAdapterRow {
   id: string;
@@ -89,10 +87,9 @@ export interface PlexusFilterDefinition {
 
 /**
  * Upsert payload for `upsertAdapter` — the data-access layer's contract
- * for registering / re-registering an adapter row. Mirrors the
- * lifecycle-db `upsertAdapterRow` semantics: on conflict, status resets
- * to `registered`, `lastError` is cleared, and `config` + `updatedAt`
- * are overwritten. `createdAt` is only used on insert.
+ * for registering / re-registering an adapter row. On conflict, status
+ * resets to `registered`, `lastError` is cleared, and `config` +
+ * `updatedAt` are overwritten. `createdAt` is only used on insert.
  */
 export interface UpsertAdapterArgs {
   id: string;

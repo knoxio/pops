@@ -1,7 +1,6 @@
 /**
- * ScopeInferenceService — four-tier scope assignment (PRD-081 US-06).
+ * ScopeInferenceService — four-tier scope assignment (ingestion-pipeline).
  *
- * Lifted from `apps/pops-api/src/modules/cerebrum/ingest/scope-inference.ts`.
  * The LLM tier goes through the injected {@link IngestLlm} port; the rule tier
  * uses the in-pillar scope-rules config. Model selection is hardcoded (no
  * settings service).

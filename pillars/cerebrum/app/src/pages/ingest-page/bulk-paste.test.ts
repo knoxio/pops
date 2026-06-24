@@ -1,6 +1,3 @@
-/**
- * Tests for bulk-paste split helpers (PRD-081 US-08).
- */
 import { describe, expect, it } from 'vitest';
 
 import { hasSeparator, splitOnSeparator } from './bulk-paste';

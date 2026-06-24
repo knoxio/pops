@@ -1,12 +1,11 @@
 /**
- * Manifest type generator for `@pops/cerebrum` (Theme 13 PRD-155).
+ * Manifest type generator for `@pops/cerebrum`.
  *
- * Emits `src/contract/manifest.generated.ts` from the contract's
- * hand-maintained surface (`types/engram.ts`, `types/nudge.ts`,
- * `types/scope.ts`, `errors.ts`) plus the version declared in
- * `package.json`. The output is committed, then piped through `oxfmt` so
- * the committed file matches the workspace formatting rules. CI's
- * `verify:manifest` job re-renders + oxfmts in-memory and byte-compares.
+ * Writes `src/contract/manifest.generated.ts` from the fixed template in
+ * `render-manifest.ts`, with the contract version pinned from `package.json`.
+ * The committed output is piped through `oxfmt` so it matches the workspace
+ * formatting rules; `verify:manifest` re-renders + oxfmts in-memory and
+ * byte-compares.
  *
  * Imports below intentionally pull `Engram` and `CerebrumError` so that
  * running the generator validates that the source modules still expose the

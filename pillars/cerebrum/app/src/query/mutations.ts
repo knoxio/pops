@@ -2,10 +2,9 @@
  * Mutation wrappers for the Query view model.
  *
  * `useAskMutation` consumes the SSE streaming endpoint
- * (`/api/cerebrum/query/stream`, PRD-082 issue #2596) and progressively
- * surfaces tokens / final citations through the supplied callbacks.
- * `useSaveDocumentMutation` is a thin wrapper around the existing tRPC
- * `cerebrum.emit.generate` mutation for "save as document".
+ * (`/api/cerebrum/query/stream`) and progressively surfaces tokens / final
+ * citations through the supplied callbacks. `useSaveDocumentMutation` wraps
+ * the `emitGenerate` REST call for "save as document".
  */
 import { useMutation } from '@tanstack/react-query';
 import { useCallback, useRef, useState } from 'react';
@@ -126,7 +125,7 @@ function buildStreamCallbacks(sink: StreamSink): Parameters<typeof streamQuery>[
  * Tokens progressively grow the `answer.answer` field; once the `done`
  * event arrives, the citations + scopes + confidence are appended and
  * `pending` history stats are updated. Errors invoke `setError` and surface
- * a toast — same contract the tRPC version used to honour.
+ * a toast.
  */
 export function useAskMutation(bindings: AskBindings): AskMutationHandle {
   const [isPending, setIsPending] = useState(false);

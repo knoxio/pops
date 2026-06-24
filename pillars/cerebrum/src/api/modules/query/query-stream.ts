@@ -1,14 +1,10 @@
 /**
- * Streaming generator for the cerebrum query engine (PRD-082, issue #2596).
+ * Streaming generator for the cerebrum query engine.
  *
  * Companion to `query-service.ts`: drives the injected {@link QueryStreamLlm}
  * port, yielding incremental `token` events while the model streams and a
- * final `done` event with parsed citations + confidence.
- *
- * Deviation from the monolith: the Anthropic call is no longer inlined here —
- * it lives behind the {@link QueryStreamLlm} port so tests inject a fake that
- * yields canned tokens. `trackInference` is dropped (no `ai_inference_log` in
- * the pillar).
+ * final `done` event with parsed citations + confidence. The Anthropic call
+ * lives behind the port so tests inject a fake that yields canned tokens.
  */
 import { CitationParser } from './citation-parser.js';
 

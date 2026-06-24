@@ -5,10 +5,9 @@
  * + count helpers, context upsert + list + delete, and the FK cascade
  * from conversation deletion across messages + context.
  *
- * The baseline is read from
- * `packages/cerebrum-db/migrations/0052_conversations_baseline.sql` so
- * the table shape under test is identical to the one shipped in the
- * journal.
+ * The baseline is read from the pillar's
+ * `migrations/0052_conversations_baseline.sql` so the table shape under
+ * test is identical to the one shipped in the journal.
  */
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';

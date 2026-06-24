@@ -1,5 +1,5 @@
 /**
- * Glia wire schemas (PRD-086 / PRD-181).
+ * Glia wire schemas.
  *
  * Split out of `rest-glia.ts` so the contract file stays within the per-file
  * line budget. These schemas are glia-only — `rest-schemas.ts` holds the

@@ -49,8 +49,6 @@ vi.mock('react-router', () => ({
   },
 }));
 
-// ── UI mock ──────────────────────────────────────────────────────────
-
 vi.mock('@pops/ui', async () => {
   const React = await import('react');
   return {
@@ -150,8 +148,6 @@ vi.mock('@pops/ui', async () => {
 
 import { IngestPage } from './IngestPage';
 
-// ── Mock data ────────────────────────────────────────────────────────
-
 const mockTemplates = [
   {
     name: 'decision',
@@ -183,9 +179,7 @@ beforeEach(() => {
   setupDefaultMocks();
 });
 
-// ── Tests ────────────────────────────────────────────────────────────
-
-describe('IngestPage — capture-first surface (PRD-081 US-01)', () => {
+describe('IngestPage — capture-first surface', () => {
   it('renders page header with capture-first description', () => {
     renderPage();
     expect(screen.getByRole('heading', { name: 'Capture' })).toBeInTheDocument();
@@ -327,7 +321,7 @@ describe('IngestPage — capture-first surface (PRD-081 US-01)', () => {
   });
 });
 
-describe('IngestPage — bulk paste (PRD-081 US-08)', () => {
+describe('IngestPage — bulk paste', () => {
   it('flips the submit button to a count when the body contains separators', async () => {
     const user = userEvent.setup();
     renderPage();

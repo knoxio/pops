@@ -2,8 +2,8 @@
  * Pure helpers shared by the engrams data-access layer.
  *
  * Anything that touches the filesystem, parses Markdown, or evaluates
- * scope rules stays in `apps/pops-api/src/modules/cerebrum/engrams/*`
- * — this file is the SQL-projection seam only.
+ * scope rules lives in the pillar's engrams module — this file is the
+ * SQL-projection seam only.
  */
 import type { engramIndex } from '../schema.js';
 import type { Engram, EngramSource, EngramStatus, IndexRow } from './engrams-types.js';

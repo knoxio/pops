@@ -1,5 +1,5 @@
-// Re-declared on the frontend (rather than imported from the API source
-// tree) because PRD-097 package boundaries forbid that import.
+// Re-declared here rather than imported from the pillar's contract/api
+// source because the app package has no dependency on it.
 
 export const QUERY_DOMAINS = ['engrams', 'transactions', 'media', 'inventory'] as const;
 export type QueryDomain = (typeof QUERY_DOMAINS)[number];

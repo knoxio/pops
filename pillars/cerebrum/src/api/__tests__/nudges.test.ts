@@ -1,12 +1,12 @@
 /**
- * Integration tests for `cerebrum.nudges.*` over REST (PRD-084).
+ * Integration tests for `cerebrum.nudges.*` over REST.
  *
- * Boots the app against a per-test temp `cerebrum.db` (nudge_log present via
- * migrations 0039/0044) and seeds `nudge_log` rows directly through the
- * drizzle handle. Covers the full surface: read/dismiss/contradictions plus the
- * write surface (`scan` / `act` / `configure`). Write-surface tests seed real
- * engrams through a test {@link EngramService} (backdated `now` for staleness)
- * and inject an offline contradiction analyzer — no real API is reached.
+ * Boots the app against a per-test temp `cerebrum.db` and seeds `nudge_log` rows
+ * directly through the drizzle handle. Covers the full surface:
+ * read/dismiss/contradictions plus the write surface (`scan` / `act` /
+ * `configure`). Write-surface tests seed real engrams through a test
+ * {@link EngramService} (backdated `now` for staleness) and inject an offline
+ * contradiction analyzer — no real API is reached.
  */
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';

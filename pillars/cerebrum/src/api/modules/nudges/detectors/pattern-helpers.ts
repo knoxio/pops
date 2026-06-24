@@ -1,7 +1,6 @@
 /**
- * Helper functions for the PatternDetector (PRD-084 US-03). Tag-frequency and
- * time-series passes plus the pattern → nudge projection. Extracted to keep the
- * detector under the per-function / per-file line limits.
+ * Helper functions for the PatternDetector. Tag-frequency and time-series
+ * passes plus the pattern → nudge projection.
  */
 import type { DetectedPattern, EngramSummary, NudgeCandidate } from '../types.js';
 

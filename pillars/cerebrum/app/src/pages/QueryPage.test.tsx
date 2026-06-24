@@ -1,12 +1,12 @@
 /**
- * Tests for the Cerebrum Query page (PRD-082).
+ * Tests for the Cerebrum Query page.
  *
  * Validates the integration between the page-level state machine and the
- * SSE streaming endpoint mounted at `/api/cerebrum/query/stream`
- * (issue #2596). The `fetch` global is replaced with a mock that emits a
- * canned stream of `token` and `done` events; we assert the panel updates
- * progressively as tokens arrive and that the citation set is appended
- * once the `done` event lands.
+ * SSE streaming endpoint mounted at `/api/cerebrum/query/stream`. The
+ * `fetch` global is replaced with a mock that emits a canned stream of
+ * `token` and `done` events; we assert the panel updates progressively
+ * as tokens arrive and that the citation set is appended once the `done`
+ * event lands.
  */
 import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';

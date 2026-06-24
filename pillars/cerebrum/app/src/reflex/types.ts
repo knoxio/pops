@@ -1,9 +1,9 @@
 /**
- * Public types for the Reflex browser surface (PRD-089).
+ * Public types for the Reflex browser surface.
  *
- * Mirror of the server-side `ReflexWithStatus` / `ReflexExecution`
- * shapes returned by `cerebrum.reflex.list` / `.get` / `.history`. The
- * frontend package may not import API source per PRD-097 boundaries.
+ * App-side mirror of the server-side reflex shapes from the REST contract
+ * (`pillars/cerebrum/src/contract/rest-reflex.ts`); the app does not import
+ * API source directly.
  */
 
 export const REFLEX_TRIGGER_TYPES = ['event', 'threshold', 'schedule'] as const;

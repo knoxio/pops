@@ -1,5 +1,5 @@
 /**
- * Reflex execution log schema (PRD-089).
+ * Reflex execution log schema.
  *
  * Each row represents one reflex trigger firing — what triggered it, what
  * action ran, and the outcome. Used for debugging, history browsing, and

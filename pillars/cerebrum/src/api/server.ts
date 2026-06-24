@@ -1,13 +1,12 @@
 /**
  * Entry point for the cerebrum pillar HTTP server.
  *
- * Boots the process with the `/health` + `/pillars` probes and the migrated
- * REST surface. The process opens its OWN `cerebrum.db` connection via
- * `openCerebrumDb` (loading sqlite-vec) rather than reaching back into
- * pops-api's singleton.
+ * Boots the process with the `/health` + `/pillars` probes and the REST
+ * surface. The process opens its OWN `cerebrum.db` connection via
+ * `openCerebrumDb` (loading sqlite-vec).
  *
  * When `POPS_REGISTRY_ENABLED=true`, the process registers a hand-rolled
- * manifest with the central registry on boot; SIGTERM triggers
+ * manifest with the registry pillar on boot; SIGTERM triggers
  * `pillarHandle.stop()` so the heartbeat clears and the registry sees an
  * explicit deregister.
  */
@@ -101,7 +100,7 @@ if (process.env['POPS_REGISTRY_ENABLED'] === 'true') {
     // connection (probed once at open). The value is stable for the process
     // lifetime, but reporting it per heartbeat keeps the contract uniform and
     // lets a future hot-reload surface here. `settings: true` advertises the
-    // federated settings surface (P2 settings federation).
+    // federated settings surface.
     capabilityReporter: buildCerebrumCapabilityReporter(cerebrumDb.vecAvailable),
   });
 }

@@ -1,6 +1,5 @@
 /**
- * Query-embedding client for semantic search, ported from the monolith
- * `apps/pops-api/src/shared/embedding-client.ts` (OpenAI- / Voyage-compatible).
+ * Query-embedding client for semantic search (OpenAI- / Voyage-compatible).
  *
  * Configured entirely from environment variables so the model choice is not
  * baked into code:

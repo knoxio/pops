@@ -1,7 +1,6 @@
 /**
- * Smoke test that the relocated cerebrum schemas (PRD-245 US-01 /
- * audit H6) resolve from `@pops/cerebrum-db` with the expected
- * drizzle SQL `name`.
+ * Smoke test that the cerebrum schemas resolve from the pillar's
+ * `src/db/schema.ts` barrel with the expected drizzle SQL `name`.
  *
  * Catches "table moved but the export forgot to flip" mistakes during
  * follow-up shuffles. The set MUST cover every table named in
@@ -31,7 +30,7 @@ import {
   reflexExecutions,
 } from '../schema.js';
 
-describe('PRD-245 US-01 cerebrum schema relocation', () => {
+describe('cerebrum schema relocation', () => {
   it.each([
     [debriefSessions, 'debrief_sessions'],
     [debriefResults, 'debrief_results'],

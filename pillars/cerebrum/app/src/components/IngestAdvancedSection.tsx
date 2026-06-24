@@ -1,7 +1,7 @@
 /**
  * IngestAdvancedSection — collapsible section of the capture surface that
- * exposes type/template/tags/customFields (PRD-081 US-01). Touching any field
- * here flips the form into Advanced mode, routing through cerebrum.ingest.submit.
+ * exposes type/template/tags/customFields. Touching any field here flips the
+ * form into Advanced mode, routing through `POST /ingest/submit`.
  */
 import { useTranslation } from 'react-i18next';
 

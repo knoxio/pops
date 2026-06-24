@@ -1,7 +1,6 @@
 /**
- * Plexus ingestion filters (PRD-090, US-04).
+ * Plexus ingestion filters (plugin-architecture PRD).
  *
- * Lifted from the pops-api monolith during the cerebrum REST migration.
  * Per-adapter include/exclude rules evaluated before content enters the
  * ingestion pipeline. Regex patterns are compiled once at evaluation time
  * (callers should cache compiled patterns for hot paths).
@@ -104,7 +103,7 @@ function matchesAny(item: EngineData, filters: CompiledFilter[], type: FilterTyp
 /**
  * Evaluate whether a single item passes the filter rules.
  *
- * Evaluation order (per PRD-090):
+ * Evaluation order:
  * 1. If include filters exist: item must match at least one include filter.
  * 2. If exclude filters exist: item must not match any exclude filter.
  * 3. Items that survive both checks are accepted.

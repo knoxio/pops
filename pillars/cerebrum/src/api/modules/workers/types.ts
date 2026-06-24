@@ -1,8 +1,8 @@
 /**
- * Shared types for the Glia curation workers (PRD-085).
+ * Shared types for the Glia curation workers (curation-workers).
  *
  * All four workers (pruner, consolidator, linker, auditor) produce GliaAction
- * records that flow through the trust graduation system (PRD-086).
+ * records that flow through the trust graduation system (trust-graduation).
  */
 
 /** Trust phases that govern worker execution behaviour. */
@@ -16,7 +16,7 @@ export type GliaActionStatus = 'proposed' | 'executed' | 'error';
 
 /**
  * A uniform action record produced by any curation worker.
- * Consumed by the trust graduation system (PRD-086).
+ * Consumed by the trust graduation system (trust-graduation).
  */
 export interface GliaAction {
   /** Unique action ID: `glia_{action_type}_{timestamp}_{short_hash}` */
@@ -88,7 +88,7 @@ export interface ConsolidatePayload extends PayloadBase {
   /**
    * Engram ID of the merged file produced by `executeMerge`. Set only after
    * the merge runs (non-propose phases). Required for `consolidate` revert
-   * to locate and remove the merged engram (PRD-086 US-04, #2576).
+   * to locate and remove the merged engram (see trust-graduation).
    */
   mergedEngramId?: string;
 }
@@ -160,7 +160,7 @@ export interface AuditorConfig {
   minEngramsPerTopic: number;
 }
 
-/** Default configurations — these would be read from glia.toml in production. */
+/** Compiled-in default worker configs; override per-worker via the `config` dep. */
 export const DEFAULT_PRUNER_CONFIG: PrunerConfig = {
   stalenessThreshold: 0.7,
   orphanThreshold: 0.5,

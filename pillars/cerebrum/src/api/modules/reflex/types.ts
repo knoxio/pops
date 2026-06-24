@@ -1,5 +1,5 @@
 /**
- * Reflex system types (PRD-089).
+ * Reflex system types (spec: reflex-system).
  *
  * Reflexes are declarative trigger-action rules defined in `reflexes.toml`.
  * Three trigger types (event, threshold, schedule) fire actions dispatched

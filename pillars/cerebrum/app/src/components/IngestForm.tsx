@@ -1,11 +1,11 @@
 /**
- * IngestForm — capture-first ingest surface (PRD-081 US-01 + US-08).
+ * IngestForm — capture-first ingest surface.
  *
  * Primary affordance is a single body editor with optional title and a
  * scope autocomplete. Type/template/tags/customFields are tucked behind an
- * Advanced disclosure. Submission routes to `quickCapture` (single or bulk)
- * unless any Advanced field has been touched, in which case it routes to
- * `submit`.
+ * Advanced disclosure. Submission routes to `POST /ingest/quick-capture`
+ * (single or bulk) unless any Advanced field has been touched, in which case
+ * it routes to `POST /ingest/submit`.
  */
 import { Loader2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';

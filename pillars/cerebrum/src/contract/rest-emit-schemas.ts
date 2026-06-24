@@ -1,5 +1,5 @@
 /**
- * Wire schemas for `cerebrum.emit.*` (PRD-083 document generation).
+ * Wire schemas for `cerebrum.emit.*` — document generation.
  *
  * The `GeneratedDocument` envelope is fully tractable (a closed scalar set, a
  * fixed `metadata` block, and typed source-citation rows), so it is enumerated

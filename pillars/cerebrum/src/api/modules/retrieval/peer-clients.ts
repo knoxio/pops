@@ -1,13 +1,10 @@
 /**
  * Cross-pillar enrichment clients for semantic-search metadata resolution.
  *
- * The monolith resolver (`semantic-search-metadata.ts`) joined `engram_index`
- * against `transactions` (`@pops/finance-db`), `movies` / `tv_shows`
- * (`@pops/media-db`) and `home_inventory` (`@pops/inventory-db`) in a single
- * SQL handle. Those tables no longer live in the cerebrum file, so enrichment
- * for cross-pillar source types is fetched over REST from the owning pillar
- * (bare `fetch`, docker-network trust → no auth header). The base URLs are
- * resolved from `POPS_PILLARS`.
+ * The transaction / movie / tv-show / inventory tables live in their owning
+ * pillars, so enrichment for cross-pillar source types is fetched over REST
+ * from each owner (bare `fetch`, docker-network trust → no auth header). The
+ * base URLs are resolved from `POPS_PILLARS`.
  *
  * Each peer endpoint returns `{ data: Schema }`. We hand-type a minimal shape
  * per peer (only the fields the formatters use) rather than importing the
@@ -15,10 +12,10 @@
  * peers' `dist/` artifacts for four scalar fields.
  *
  * Graceful absence: if a peer is not present in `POPS_PILLARS`, its client is
- * `undefined` and enrichment for that source type is skipped (the engram-only
- * leg still works; the cross-pillar hit is simply dropped — the monolith
- * returned `null` metadata for an unresolvable domain row too). A live fetch
- * failure surfaces as a thrown error caught by the hybrid fallback.
+ * `undefined` and enrichment for that source type is skipped — the engram-only
+ * leg still works and the cross-pillar hit is dropped (unresolvable domain rows
+ * yield `null` metadata). A live fetch failure surfaces as a thrown error
+ * caught by the hybrid fallback.
  */
 import { parsePillarsEnv } from '../../pillars/env.js';
 

@@ -1,5 +1,5 @@
 /**
- * ts-rest handlers for `cerebrum.debrief.*` (PRD-248).
+ * ts-rest handlers for `cerebrum.debrief.*` (pillars/cerebrum/docs/prds/debrief).
  *
  * Thin adapter over {@link createDebriefService} bound to the pillar db handle.
  * `get` / `getByMedia` return `{ data: null }` for a benign miss; `record` and

@@ -1,19 +1,12 @@
 import { dirname, join } from 'node:path';
 
 /**
- * Standalone resolver for the cerebrum pillar's SQLite path inside the
- * cerebrum-api container.
- *
- * Intentionally NOT imported from
- * `apps/pops-api/src/db/cerebrum-sqlite-path.ts` — cerebrum-api is supposed
- * to be runnable without pops-api in the dependency graph. The precedence
- * chain mirrors pops-api's resolver verbatim so the two processes agree on
- * the location of `cerebrum.db` given the same env.
+ * Resolver for the cerebrum pillar's SQLite path.
  *
  * Resolution order:
  *   1. `CEREBRUM_SQLITE_PATH` (absolute or relative).
- *   2. `<dirname(SQLITE_PATH)>/cerebrum.db` if the shared path is set.
- *   3. `./data/cerebrum.db` (matches the shared default's `./data/pops.db`).
+ *   2. `<dirname(SQLITE_PATH)>/cerebrum.db` if `SQLITE_PATH` is set.
+ *   3. `./data/cerebrum.db`.
  */
 export const DEFAULT_CEREBRUM_SQLITE_PATH = './data/cerebrum.db';
 

@@ -1,5 +1,5 @@
 /**
- * ConsolidationDetector (PRD-084 US-01).
+ * ConsolidationDetector (see pillars/cerebrum/docs/prds/proactive-nudges).
  *
  * Scans the engram corpus for clusters of semantically similar engrams and
  * proposes merging them. Uses embedding similarity via the in-pillar

@@ -1,5 +1,5 @@
 /**
- * LLM system prompt templates for the cerebrum query engine (PRD-082).
+ * LLM system prompt templates for the cerebrum query engine.
  *
  * Prompts are exported as template functions so they can be configured or
  * overridden in tests without hardcoding strings in the service.

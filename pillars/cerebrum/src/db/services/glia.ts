@@ -1,22 +1,19 @@
 /**
- * Glia data-access for the cerebrum pillar (PRD-181 US-01).
+ * Glia data-access for the cerebrum pillar (trust-graduation).
  *
  * Scope boundary: this file is the SQL seam for the glia slice. It covers
  * CRUD on `glia_actions` plus seed / read / update on `glia_trust_state`
- * and a handful of window/count helpers the digest + trust machine in
- * pops-api depend on. The trust-graduation orchestration (phase
- * transitions, demotion windows, threshold reads from
- * `engrams/.config/glia.toml` + settings DB), the in-process dispatch
- * (`GliaActionService.executeAction` callbacks, cross-pillar SDK writes),
- * the scheduled digest renderer and channel filesystem layout stay in
- * `apps/pops-api/src/modules/cerebrum/glia/*` until PRD-181 US-03 flips
- * routing through `getCerebrumDrizzle()`. That keeps this package pure
- * data-access — no node:fs imports, no zod, no domain orchestration.
+ * and a handful of window/count helpers the digest + trust machine
+ * depend on. The trust-graduation orchestration (phase transitions,
+ * demotion windows, threshold reads from `engrams/.config/glia.toml` +
+ * settings DB), the in-process dispatch (`GliaActionService.executeAction`
+ * callbacks, cross-pillar SDK writes), the scheduled digest renderer and
+ * channel filesystem layout live in the pillar's glia module — this stays
+ * pure data-access (no node:fs, no zod, no domain orchestration).
  *
- * The functions take a `CerebrumDb` handle as their first argument; the
- * calling layer (pops-api today, `cerebrum-api` after the cutover)
+ * Functions take a `CerebrumDb` handle as their first argument; the caller
  * resolves the singleton or transaction handle. Mirrors the
- * `nudge-log.ts` / `engrams.ts` db-arg pattern in this package.
+ * `nudge-log.ts` / `engrams.ts` db-arg pattern in this slice.
  */
 import { and, asc, count, desc, eq, gte, isNotNull, isNull, lt, lte, sql } from 'drizzle-orm';
 
@@ -238,8 +235,8 @@ export function countRevertsInWindow(
 
 /**
  * Fetch trust state for a single action type. Returns null when the row
- * has not been seeded yet — the caller (pops-api today) decides whether
- * to surface that as an error or to seed lazily.
+ * has not been seeded yet — the caller decides whether to surface that as
+ * an error or to seed lazily.
  */
 export function getTrustState(db: CerebrumDb, actionType: ActionType): GliaTrustState | null {
   const row = db
@@ -281,10 +278,9 @@ export function updateTrustState(
 
 /**
  * Increment one of the trust-state counters atomically and bump
- * `updatedAt`. Used by the decide/revert paths in pops-api where the
- * counter delta and the corresponding action update need to land in the
- * same logical write. The caller wraps both writes in a single
- * transaction.
+ * `updatedAt`. The decide/revert paths use this where the counter delta
+ * and the corresponding action update need to land in the same logical
+ * write; the caller wraps both writes in a single transaction.
  */
 export function incrementTrustStateCounter(
   db: CerebrumDb,

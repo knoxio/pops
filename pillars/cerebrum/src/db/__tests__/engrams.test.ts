@@ -5,8 +5,8 @@
  * cascade behaviour, link insert/delete, and the detector-scan helper
  * `loadActiveEngrams`.
  *
- * The engrams baseline is read from
- * `packages/cerebrum-db/migrations/0050_engrams_baseline.sql`. The
+ * The engrams baseline is read from the pillar's
+ * `migrations/0050_engrams_baseline.sql`. The
  * `embeddings_vec` virtual table is NOT seeded here — vector search is
  * out of scope for the data-access slice (it's wired up in the
  * `openCerebrumDb` happy path tested separately).

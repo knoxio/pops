@@ -1,10 +1,10 @@
 /**
- * Scope filtering for document generation (PRD-083 US-04).
+ * Scope filtering for document generation.
+ * Spec: pillars/cerebrum/docs/prds/document-generation.
  *
  * Applied at retrieval time to enforce audience scope boundaries and
  * hard-block *.secret.* content. Secret content never enters the LLM
  * context window — this is a security requirement, not a convenience filter.
- * Lifted verbatim from the monolith (pure logic).
  */
 import type { RetrievalFilters, RetrievalResult } from '../retrieval/types.js';
 

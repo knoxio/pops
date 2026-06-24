@@ -1,5 +1,5 @@
 /**
- * Tests for revert operations (PRD-086 US-04, #2576).
+ * Tests for revert operations.
  *
  * Each path runs against a real {@link EngramService} over a temp engram root
  * and a temp `cerebrum.db` (opened through `openCerebrumDb`). Idempotency is

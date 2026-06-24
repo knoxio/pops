@@ -7,7 +7,7 @@ import {
   type WorkerRunResult,
 } from './types.js';
 /**
- * Linker Worker (US-03, PRD-085).
+ * Linker Worker (curation-workers).
  *
  * Scans engrams with fewer than N outbound links, finds semantically similar
  * engrams with shared entities, and proposes bidirectional links. Respects

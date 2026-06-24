@@ -1,9 +1,8 @@
 /**
- * useIngestKeyboard — keyboard shortcut wiring for the capture body editor
- * (PRD-081 US-01 / US-08).
+ * useIngestKeyboard — keyboard shortcut wiring for the capture body editor.
  *
  *   Cmd/Ctrl+Enter         — submit using the current routing
- *   Cmd/Ctrl+Shift+Enter   — force bulk split (US-08)
+ *   Cmd/Ctrl+Shift+Enter   — force bulk split
  *   Esc                    — clear the body and surface an Undo toast
  */
 import { useCallback } from 'react';

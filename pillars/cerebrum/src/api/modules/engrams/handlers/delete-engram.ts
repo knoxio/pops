@@ -4,8 +4,8 @@
  * and rewrite the frontmatter of inbound-linking engrams so their `links:`
  * arrays no longer reference the deleted id.
  *
- * Used by consolidate revert (PRD-086 US-04) to remove the merged engram.
- * Idempotent: missing files or missing index rows are no-ops.
+ * Used by consolidate revert (see pillars/cerebrum/docs/prds/trust-graduation) to remove the
+ * merged engram. Idempotent: missing files or missing index rows are no-ops.
  */
 import { existsSync, readFileSync, unlinkSync } from 'node:fs';
 

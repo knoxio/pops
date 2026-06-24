@@ -1,5 +1,5 @@
 /**
- * Wire schemas for `workers.*` (PRD-085) — the Glia curation workers.
+ * Wire schemas for `workers.*` — the Glia curation workers.
  *
  * Served under `/glia/workers/*` + `/glia/scores/*` + `/glia/orphans` to avoid
  * colliding with the merged glia trust router (which owns `/glia/actions`,
@@ -8,8 +8,8 @@
  *
  * The worker `run*` procedures return ephemeral `GliaAction` records (the
  * proposal set) plus processed/skipped counts — they don't persist to
- * `glia_actions` in propose/dryRun mode (parity with the monolith router). The
- * `payload` is an open bag (merge plan / link pair / quality breakdown / …).
+ * `glia_actions` in propose/dryRun mode. The `payload` is an open bag (merge
+ * plan / link pair / quality breakdown / …).
  */
 import { z } from 'zod';
 

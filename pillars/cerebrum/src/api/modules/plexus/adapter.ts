@@ -1,7 +1,6 @@
 /**
- * Plexus adapter interface and base class (PRD-090, US-01).
+ * Plexus adapter interface and base class (plugin-architecture PRD).
  *
- * Lifted from the pops-api monolith during the cerebrum REST migration.
  * Every adapter implements `PlexusAdapterInterface`. `BaseAdapter` provides
  * sensible defaults so simple adapters only need to override `ingest()`.
  */

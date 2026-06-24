@@ -4,7 +4,7 @@ import { assertModuleManifest } from '@pops/types';
 
 import { cerebrumManifest, egoManifest } from '../manifest.js';
 
-describe('cerebrum-contract /manifest — ModuleManifest exports (PRD-241 US-01)', () => {
+describe('@pops/cerebrum /manifest — ModuleManifest exports', () => {
   it('cerebrumManifest passes assertModuleManifest with id=cerebrum', () => {
     expect(() => assertModuleManifest(cerebrumManifest, 'modules.cerebrum')).not.toThrow();
     expect(cerebrumManifest.id).toBe('cerebrum');

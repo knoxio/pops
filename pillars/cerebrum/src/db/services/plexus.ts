@@ -1,23 +1,19 @@
 /**
- * Plexus data-access for the cerebrum pillar (PRD-180 US-01).
+ * Plexus data-access for the cerebrum pillar (plugin-architecture).
  *
  * Scope boundary: this file is the SQL seam for the plexus slice. It covers
  * adapter CRUD on `plexus_adapters` (list / get / upsert / status mutators
  * / counter bumps / hard-delete) and the bounded filter operations on
  * `plexus_filters` (list / replace / cascade-delete with the parent
  * adapter). The TOML config loader, the per-adapter HTTP clients (Notion /
- * Linear / etc.), the `PlexusLifecycle` orchestration in pops-api that
- * runs ingest / emit / health-check pipelines, plus the envelope
- * encryption of the `config` blob all stay in
- * `apps/pops-api/src/modules/cerebrum/plexus/*` until PRD-180 US-03 flips
- * routing through `getCerebrumDrizzle()`. That keeps this package pure
- * data-access — no node:fs imports, no TOML, no domain orchestration.
+ * Linear / etc.), the `PlexusLifecycle` orchestration that runs ingest /
+ * emit / health-check pipelines, plus the envelope encryption of the
+ * `config` blob all live in the pillar's plexus module — this stays pure
+ * data-access (no node:fs, no TOML, no domain orchestration).
  *
- * The functions take a `CerebrumDb` handle as their first argument; the
- * calling layer (pops-api today, `cerebrum-api` after the cutover)
+ * Functions take a `CerebrumDb` handle as their first argument; the caller
  * resolves the singleton or transaction handle. Mirrors the
- * `nudge-log.ts` / `engrams.ts` / `glia.ts` db-arg pattern in this
- * package.
+ * `nudge-log.ts` / `engrams.ts` / `glia.ts` db-arg pattern in this slice.
  */
 import { and, asc, eq, sql } from 'drizzle-orm';
 
@@ -67,9 +63,8 @@ export function getAdapterByName(db: CerebrumDb, name: string): PlexusAdapter | 
 /**
  * Idempotently register an adapter. On conflict the row resets to
  * `status='registered'`, clears `last_error`, and overwrites `config` +
- * `updated_at`. `created_at` is only set on insert. Mirrors the
- * `lifecycle-db.upsertAdapterRow` SQL used in pops-api today; the
- * encrypted config envelope is passed straight through as JSON.
+ * `updated_at`. `created_at` is only set on insert. The encrypted config
+ * envelope is passed straight through as JSON.
  *
  * Raises `PlexusAdapterNameConflictError` if a different id already
  * owns the same `name` (the unique index would otherwise surface as a

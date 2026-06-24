@@ -1,5 +1,5 @@
 /**
- * ts-rest contract for `cerebrum.ingest.*` (PRD-081).
+ * ts-rest contract for `cerebrum.ingest.*`.
  *
  * The ingestion pipeline: normalise → classify → extract entities → infer
  * scopes → write. Non-identity domain — served on the docker-network trust

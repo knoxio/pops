@@ -1,5 +1,5 @@
 /**
- * Auditor Worker (US-04, PRD-085).
+ * Auditor Worker (curation-workers).
  *
  * Scores engram quality, detects contradictions within scopes, and identifies
  * coverage gaps. The auditor is read-only — it surfaces issues but never

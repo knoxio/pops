@@ -1,5 +1,5 @@
 /**
- * Drift check for `src/contract/manifest.generated.ts` (Theme 13 PRD-155).
+ * Drift check for `src/contract/manifest.generated.ts`.
  *
  * Re-renders the manifest in-memory, normalises via oxfmt (mirroring what
  * `generate:manifest` does after writing), byte-compares against the

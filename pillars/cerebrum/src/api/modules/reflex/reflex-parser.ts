@@ -1,5 +1,5 @@
 /**
- * Reflex TOML parser and validator (PRD-089 US-01).
+ * Reflex TOML parser and validator (spec: reflex-system).
  *
  * Parses `reflexes.toml` into validated `ReflexDefinition[]`. Invalid
  * individual reflexes are skipped (with warnings); a TOML syntax error

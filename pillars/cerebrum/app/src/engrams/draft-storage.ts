@@ -1,12 +1,10 @@
 /**
- * Edit-mode draft persistence for engrams (PRD-077 / PRD-078).
+ * Edit-mode draft persistence for engrams.
  *
  * Drafts live in `localStorage` so an in-flight edit survives a page
- * reload or accidental navigation. They are deliberately client-only —
- * server-side draft persistence is tracked as a follow-up against
- * PRD-085 (curation) once we have a concept of "review-pending"
- * engrams. For now, autosave to localStorage covers the practical case
- * (don't lose work on accidental reload).
+ * reload or accidental navigation. They are deliberately client-only:
+ * autosave to localStorage covers the practical case (don't lose work
+ * on accidental reload) without involving the server.
  */
 import type { EngramDraft } from './types';
 

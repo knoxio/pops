@@ -1,17 +1,11 @@
 /**
- * GenerationService — pipeline orchestrator for document generation (PRD-083).
- *
- * Methods:
- *   generate         — full generation pipeline for any mode
- *   generateReport   — shorthand for report mode
- *   generateSummary  — shorthand for summary mode
- *   generateTimeline — shorthand for timeline mode
- *   preview          — dry run returning sources + outline
+ * GenerationService — pipeline orchestrator for document generation.
+ * Spec: pillars/cerebrum/docs/prds/document-generation.
  *
  * Reuses the in-pillar retrieval slice (`HybridSearchService`,
  * `ContextAssemblyService`) and the query slice's `CitationParser`. The LLM
- * port is injected so tests stay offline. Settings-service tunables are
- * replaced with constants (the pillar has no settings service).
+ * port is injected so tests stay offline. Tunables are constants here — the
+ * pillar has no settings service.
  */
 import { CitationParser } from '../query/citation-parser.js';
 import { ContextAssemblyService } from '../retrieval/context-assembly.js';

@@ -2,10 +2,11 @@
  * View model for the Engrams list/search page.
  *
  * Routes the request to either:
- *   - `cerebrum.engrams.list` for plain filter-only browsing, or
- *   - `cerebrum.retrieval.search` (mode=hybrid) when a search query is
- *     entered, so the user gets semantic + structured matches per
- *     PRD-080.
+ *   - `engramsList` (`POST /engrams/search`) for plain filter-only
+ *     browsing, or
+ *   - `retrievalSearch` (`POST /retrieval/search`, mode=hybrid) when a
+ *     search query is entered, so the user gets semantic + structured
+ *     matches.
  *
  * Pagination + filter state live here. The page component is a dumb
  * consumer of the returned shape.
@@ -128,8 +129,8 @@ interface BrowseHook {
 }
 
 /**
- * Drives the non-search browsing path — a single
- * `cerebrum.engrams.list` query with status/scope/tag filters.
+ * Drives the non-search browsing path — a single `engramsList` query
+ * with status/scope/tag filters.
  */
 function useBrowseList(filters: EngramListFilters, offset: number, enabled: boolean): BrowseHook {
   const { t } = useTranslation('cerebrum');
@@ -151,9 +152,9 @@ function useBrowseList(filters: EngramListFilters, offset: number, enabled: bool
 }
 
 /**
- * Drives the search path — hybrid retrieval against PRD-080, plus a
- * second `engrams.list({ ids })` query to hydrate the matched ids
- * into full Engram rows.
+ * Drives the search path — hybrid retrieval via `retrievalSearch`,
+ * plus a second `engramsList({ ids })` query to hydrate the matched
+ * ids into full Engram rows.
  */
 function useSearchList(filters: EngramListFilters, offset: number, enabled: boolean): BrowseHook {
   const { t } = useTranslation('cerebrum');

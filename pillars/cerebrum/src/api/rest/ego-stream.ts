@@ -1,5 +1,5 @@
 /**
- * SSE route for streaming ego chat responses (PRD-087 US-01 AC #6).
+ * SSE route for streaming ego chat responses (pillars/cerebrum/docs/prds/ego-core).
  *
  * `POST /ego/chat/stream` — accepts the same body as `ego.chat` but returns a
  * `text/event-stream`:

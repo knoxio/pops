@@ -10,7 +10,6 @@ export { manifest } from './manifest';
 export { IngestForm } from './components/IngestForm';
 export { useIngestPageModel } from './pages/ingest-page/useIngestPageModel';
 
-// Backwards-compat re-exports — the chat panel + page model live in
-// @pops/overlay-ego now (PRD-099). External consumers that imported
-// these from @pops/app-cerebrum continue to work.
+// The chat panel + page model live in @pops/overlay-ego; re-exported here
+// so consumers can reach them through this barrel.
 export { ChatPanel, useChatPageModel } from '@pops/overlay-ego';

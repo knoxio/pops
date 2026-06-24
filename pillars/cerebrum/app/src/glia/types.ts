@@ -1,5 +1,5 @@
 /**
- * Public types for the Glia / Curation dashboard (PRD-085, PRD-086).
+ * Public types for the Glia / Curation dashboard (see pillars/cerebrum/docs/prds/curation-workers, pillars/cerebrum/docs/prds/trust-graduation).
  */
 
 export const GLIA_ACTION_TYPES = ['prune', 'consolidate', 'link', 'audit'] as const;

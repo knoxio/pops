@@ -1,5 +1,6 @@
 /**
- * Read-only query helpers for the `cerebrum.embeddings.*` surface (PRD-249).
+ * Read-only query helpers for the `cerebrum.embeddings.*` surface
+ * (see pillars/cerebrum/docs/prds/embeddings).
  *
  * Thin wrappers over the `embeddings` metadata table bound to a drizzle
  * handle. `getStatus` reports the embedded-row count (optionally scoped to a

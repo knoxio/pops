@@ -1,15 +1,14 @@
 /**
- * Citation tracking for engrams (PRD-084).
+ * Citation tracking for engrams (see pillars/cerebrum/docs/prds/proactive-nudges).
  *
  * Tracks how many times engrams are cited in query responses. Cited engrams
  * are considered less stale — citation count adjusts the per-engram staleness
- * threshold. This module is intentionally DB-free so it can be imported by
- * staleness detection without dragging in drizzle/db types.
+ * threshold. Intentionally DB-free so it can be imported by staleness
+ * detection without dragging in drizzle/db types.
  *
- * Pillar delta: the monolith persists citations through a flush step
- * (`citation-flush.ts`). The pillar's query pipeline does not yet record
- * citations into this counter, so in practice this returns the unadjusted base
- * threshold today; the seam is kept so the wiring lands cleanly later.
+ * Counts live in-process only; the query pipeline does not call
+ * {@link recordCitation}, so {@link adjustedStalenessDays} returns the
+ * unadjusted base threshold until that wiring exists.
  */
 
 const citationCounts = new Map<string, number>();

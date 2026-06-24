@@ -1,11 +1,11 @@
 /**
- * Integration tests for `cerebrum.glia.*` over REST (PRD-086 / PRD-181).
+ * Integration tests for `cerebrum.glia.*` over REST.
  *
- * Boots the app against a per-test temp `cerebrum.db` (glia baseline migration
- * 0051 applied by `openCerebrumDb`). Glia rows are seeded directly through the
- * `gliaService` data-access namespace, then the wire surface is exercised via
- * the supertest client. The digest cases use `deliver: false` plus seeded
- * trust phases to prove the three suppression rules without touching Telegram.
+ * Boots the app against a per-test temp `cerebrum.db`. Glia rows are seeded
+ * directly through the `gliaService` data-access namespace, then the wire
+ * surface is exercised via the supertest client. The digest cases use
+ * `deliver: false` plus seeded trust phases to prove the three suppression rules
+ * without touching Telegram.
  */
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';

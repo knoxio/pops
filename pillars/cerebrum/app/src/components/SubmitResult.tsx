@@ -1,8 +1,8 @@
 /**
  * SubmitResult — success view rendered after an engram is captured.
  * Shows id/path/type at the top, then the post-ingest review chips
- * (PRD-081 US-07) which poll for enrichment status and surface scope
- * reconciliation suggestions inline.
+ * which poll for enrichment status and surface scope reconciliation
+ * suggestions inline.
  */
 import { CheckCircle2, ExternalLink } from 'lucide-react';
 import { Link } from 'react-router';

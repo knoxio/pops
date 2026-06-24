@@ -1,5 +1,5 @@
 /**
- * Telemetry-migration test for the cerebrum ego LLM stream port (streaming).
+ * Telemetry test for the cerebrum ego LLM streaming path.
  * The Anthropic SDK is the only mock (the network boundary; tests MUST NOT
  * reach a real API). `AnthropicEgoLlm.stream` runs for real through
  * `callWithLoggingStream` with an injected fake `report` + `lookupPricing`,
@@ -108,7 +108,6 @@ describe('AnthropicEgoLlm.stream — telemetry', () => {
     expect(record.status).toBe('success');
     expect(record.inputTokens).toBe(12);
     expect(record.outputTokens).toBe(7);
-    // 12/1e6 * 3 + 7/1e6 * 15 = 0.000141
     expect(record.costUsd).toBeCloseTo(0.000141, 9);
   });
 

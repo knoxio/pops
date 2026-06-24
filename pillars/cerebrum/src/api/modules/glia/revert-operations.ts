@@ -1,5 +1,5 @@
 /**
- * Revert operations for glia actions (PRD-086 US-04, #2576).
+ * Revert operations for glia actions.
  *
  * Implements file-level revert for prune/consolidate/link action types over
  * the in-pillar {@link EngramService}:
@@ -13,10 +13,8 @@
  * Every operation is idempotent — re-reverting an already-reverted action
  * succeeds as a no-op.
  *
- * The minimal payload shapes are declared locally rather than importing the
- * worker payload types from pops-api: revert only reads `mergedEngramId` (for
- * consolidate) and `sourceId`/`targetId` (for link), and the worker module is
- * not part of this pillar slice.
+ * The minimal payload shapes are declared locally: revert only reads
+ * `mergedEngramId` (for consolidate) and `sourceId`/`targetId` (for link).
  */
 import type { EngramService } from '../engrams/service.js';
 import type { GliaAction } from './types.js';
@@ -127,8 +125,8 @@ function revertConsolidate(action: GliaAction, engramService: EngramService): Re
 
 /**
  * Revert a link action: remove the bidirectional link recorded in the payload.
- * Falls back to the first two `affectedIds` when the payload lacks the pair
- * (older proposals before the link payload was wired up). Idempotent.
+ * Falls back to the first two `affectedIds` when the payload lacks the pair.
+ * Idempotent.
  */
 function revertLink(action: GliaAction, engramService: EngramService): RevertResult {
   const errors: string[] = [];

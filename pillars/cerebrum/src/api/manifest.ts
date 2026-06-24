@@ -1,11 +1,9 @@
 /**
  * Cerebrum pillar manifest payload builder.
  *
- * Hand-rolled until PRD-155 generates this from the contract. Declares the
- * cerebrum + ego settings UI contributions under `settings.manifests`. The
- * `nav`/`pages` UI dimensions are deferred to the FE-rewire slice (Phase D),
- * when `packages/app-cerebrum` + `packages/overlay-ego` repoint at the
- * pillar; until then the registry walk just sees the settings + healthcheck.
+ * Hand-rolled (see `manifest-type-generation` for the contract-driven
+ * generator). Declares the cerebrum + ego settings UI contributions under
+ * `settings.manifests`.
  */
 import { cerebrumManifest, egoManifest } from '../contract/settings/index.js';
 
