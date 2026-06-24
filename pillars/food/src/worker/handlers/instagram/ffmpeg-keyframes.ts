@@ -1,12 +1,12 @@
 /**
- * PRD-130 — ffmpeg keyframe extraction.
+ * ffmpeg keyframe extraction.
  *
- * Scene-detection pass (`select='gt(scene,0.3)'`) writes ≤10 720p JPEGs
- * to `${workDir}/keyframes/%03d.jpg`. If scene detection returns no
- * frames (very short reel, no scene changes), a single fallback frame is
- * extracted at the 2-second mark. Failures (non-zero exit, timeout,
- * keyframes dir missing afterwards) raise — the orchestrator's try/catch
- * routes them to `keyframesOk=false`.
+ * The scene-detection pass writes downscaled JPEGs to
+ * `${workDir}/keyframes/%03d.jpg`. When it returns no frames (very short
+ * reel, no scene changes), a single fallback frame is extracted near the
+ * start. Failures (non-zero exit, timeout, keyframes dir missing
+ * afterwards) raise — the orchestrator's try/catch routes them to
+ * `keyframesOk=false`.
  */
 import { spawn } from 'node:child_process';
 import { mkdir, readdir } from 'node:fs/promises';

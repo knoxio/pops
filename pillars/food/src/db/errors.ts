@@ -2,8 +2,8 @@
  * Typed errors raised by the food domain's persistence + service layer.
  *
  * These are plain Error subclasses — the service layer doesn't know about
- * HTTP. The pops-api router maps them to the appropriate status codes when
- * surfacing to clients.
+ * HTTP. The pillar's api layer maps them to the appropriate status codes
+ * when surfacing to clients.
  */
 
 export type SlugKind = 'ingredient' | 'recipe' | 'prep_state';
@@ -46,8 +46,6 @@ export class IngredientCycleError extends Error {
   }
 }
 
-// ── Recipe-version errors ───────────────────────────────────────────────
-
 export class CannotPromoteUncompiledVersion extends Error {
   readonly versionId: number;
   readonly compileStatus: 'uncompiled' | 'failed';
@@ -73,8 +71,6 @@ export class CannotEditPublishedVersion extends Error {
     this.versionId = versionId;
   }
 }
-
-// ── Batch / cook-run errors ─────────────────────────────────────────────
 
 export class CannotCookUncompiledRecipe extends Error {
   readonly recipeVersionId: number;
@@ -102,8 +98,6 @@ export class IngredientHierarchyDepthExceeded extends Error {
   }
 }
 
-// ── Substitution errors ─────────────────────────────────────────────────
-
 /**
  * Thrown when a substitution edge would point an ingredient (or variant) at
  * itself. Enforced at the service layer — there is no schema-level CHECK for
@@ -122,8 +116,6 @@ export class CannotSubstituteSelf extends Error {
   }
 }
 
-// ── PRD-111 errors ──────────────────────────────────────────────────────
-
 export {
   PlanEntryHasCookEvent,
   PlanEntryNotFound,
@@ -132,8 +124,6 @@ export {
   PlanSlotNotFound,
   PlanSlotSlugAlreadyExists,
 } from './errors-plan.js';
-
-// ── PRD-110 / PRD-151 / PRD-123 — moved to errors-ingest.ts ─────────────
 
 export {
   BadTagFormat,
@@ -144,8 +134,6 @@ export {
   SeededRowProtected,
   TagTooLong,
 } from './errors-ingest.js';
-
-// ── prep_states ─────────────────────────────────────────────────────────
 
 export class PrepStateNotFoundError extends Error {
   override readonly name = 'PrepStateNotFoundError' as const;

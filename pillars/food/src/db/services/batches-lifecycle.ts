@@ -1,8 +1,8 @@
 /**
- * PRD-145 — batch lifecycle services. Companion `batches.ts` owns
- * PRD-108's `consumeForRun` (FIFO drain); this file owns every other
- * batch mutation plus `createBatchFromRun`, which wraps PRD-108's
- * `markRunComplete` so PRD-144 has one batch-creation entry point.
+ * Batch lifecycle services. Companion `batches.ts` owns `consumeForRun`
+ * (FIFO drain); this file owns every other batch mutation plus
+ * `createBatchFromRun`, which wraps `markRunComplete` so cook-event
+ * recording has one batch-creation entry point.
  */
 import { and, eq, gt, isNotNull } from 'drizzle-orm';
 
@@ -209,7 +209,7 @@ function loadBatch(db: FoodDb, batchId: number): BatchRow | null {
   return rows[0] ?? null;
 }
 
-/** Test-only invariant scan (PRD-145 AC: post-suite check). */
+/** Test-only invariant scan: post-suite check that no deleted batch retains qty. */
 export function countDeletedInvariantViolations(db: FoodDb): number {
   const rows = db
     .select({ id: batches.id })

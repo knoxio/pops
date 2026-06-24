@@ -1,5 +1,6 @@
 /**
- * PRD-127 — JSON-LD extraction.
+ * JSON-LD extraction.
+ * See pillars/food/docs/prds/web-jsonld.
  *
  * Walks every `<script type="application/ld+json">` block in the HTML,
  * parses each independently (a single malformed block must not poison
@@ -12,8 +13,8 @@
  *   - A nested `mainEntity` / `mainEntityOfPage` slot.
  *
  * The walker descends through all four, lazily, and stops on the first
- * Recipe hit. Returning `null` is the signal PRD-128's LLM fallback uses
- * to take over.
+ * Recipe hit. Returning `null` is the signal the LLM fallback
+ * (pillars/food/docs/prds/web-llm-fallback) uses to take over.
  */
 
 const SCRIPT_RE = /<script\b[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script\s*>/gi;

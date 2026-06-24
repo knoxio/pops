@@ -1,14 +1,14 @@
 /**
- * PRD-151 — ingredient-tag service layer.
+ * Ingredient-tag service layer.
  *
  * Tags are free-form strings under a namespaced convention
  * (`store-section:produce`, `diet:vegan`, …). Storage is the
  * `ingredient_tags(ingredient_id, tag)` many-to-many table; this module is
  * the only writer + the canonical reader for autocomplete + vocabulary
- * views. PRD-152's plan-derived shopping generator reads
+ * views. The plan-derived shopping generator reads
  * `listDistinctTags({ namespacePrefix: 'store-section' })` constantly so the
- * partial expression index on the namespace prefix (see migration
- * `0070_prd_151_ingredient_tags.sql`) is load-bearing.
+ * partial expression index on the namespace prefix
+ * (`idx_ingredient_tags_namespace`) is load-bearing.
  *
  * Normalisation rules (applied on every write):
  *   1. Trim leading/trailing whitespace
@@ -63,9 +63,9 @@ export interface ListDistinctTagsOptions {
 
 /**
  * Normalise a raw tag input into the canonical stored form, or throw the
- * typed validation error. Exported so the tRPC mapper can call it once and
- * surface a clean error to the client without round-tripping through the
- * service. Mutation paths re-normalise defensively.
+ * typed validation error. Exported so the request mapper can call it once
+ * and surface a clean error to the client without round-tripping through
+ * the service. Mutation paths re-normalise defensively.
  */
 export function normaliseTag(raw: string): string {
   const trimmed = raw.trim().toLowerCase();
@@ -105,7 +105,7 @@ function assertIngredientExists(db: FoodDb, ingredientId: number): void {
  * Insert a single tag against the ingredient. Idempotent on the
  * `(ingredient_id, tag)` PK — re-inserting the same pair is a silent no-op.
  * Returns a structured result so callers can map `BadTagFormat` /
- * `TagTooLong` / `IngredientNotFound` to the right tRPC code without
+ * `TagTooLong` / `IngredientNotFound` to the right response code without
  * catching errors.
  */
 export function addTagToIngredient(db: FoodDb, ingredientId: number, tag: string): TagOpResult {
@@ -218,7 +218,8 @@ export function listIngredientsByTag(
  *
  * With `namespacePrefix='store-section'` the underlying expression index
  * (`idx_ingredient_tags_namespace`) makes the lookup an index range scan
- * rather than a full table scan. PRD-152 calls this every generation.
+ * rather than a full table scan. The shopping generator calls this every
+ * generation.
  *
  * Results are sorted by usage descending so the most-used tags surface
  * first; ties break alphabetically.

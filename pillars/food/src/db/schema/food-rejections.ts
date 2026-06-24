@@ -1,14 +1,14 @@
 /**
- * PRD-136 — inbox-rejection metadata per recipe version.
+ * Inbox-rejection metadata per recipe version.
  *
  * Presence-of-row distinguishes an inbox reject (with a structured `reason`
- * and optional free-text `note`) from PRD-119's manual draft discard — both
- * land on `recipe_versions.status='archived'`, but only the former writes
- * here. `ON DELETE CASCADE` mirrors `recipe_version_proposed_slugs` so a
- * deleted recipe cascades through every version's review metadata.
+ * and optional free-text `note`) from a manual draft discard — both land on
+ * `recipe_versions.status='archived'`, but only the former writes here.
+ * `ON DELETE CASCADE` mirrors `recipe_version_proposed_slugs` so a deleted
+ * recipe cascades through every version's review metadata.
  *
- * `reason` is constrained to a 5-value enum via a `ck_*` CHECK constraint
- * added in the migration (drizzle-kit doesn't emit `enum` CHECKs).
+ * `reason` is constrained to the enum via a `ck_*` CHECK constraint added in
+ * the migration (drizzle-kit doesn't emit `enum` CHECKs).
  */
 import { sql } from 'drizzle-orm';
 import { integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';

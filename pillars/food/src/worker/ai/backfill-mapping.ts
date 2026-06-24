@@ -14,10 +14,9 @@
 import { InferenceRecordSchema, type InferenceRecord } from '@pops/ai-telemetry';
 
 /**
- * Shape of a historical food `ai_inference_log` row. The table itself was
- * dropped (#3490) once telemetry moved to the ai pillar; this standalone type
- * mirrors the legacy column set so the deploy-time backfill — which reads the
- * still-present table via raw SQL before the drop migration runs — stays typed.
+ * Shape of a historical food `ai_inference_log` row. This standalone type
+ * mirrors the dropped table's column set so the one-shot backfill — which reads
+ * the rows via a raw SQL handle that bypasses the drop migration — stays typed.
  */
 export interface AiInferenceLogRow {
   id: number;

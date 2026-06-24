@@ -7,13 +7,11 @@ import type {
 export const FOOD_PILLAR_ID = 'food' as const;
 
 /**
- * Wire-format nav contribution for the food pillar (PRD-243 US-02).
+ * Wire-format nav contribution for the food pillar.
  *
- * Mirrors `@pops/app-food`'s `navConfig` (`pillars/food/app/src/routes.tsx`)
- * field-for-field; Lucide names are rewritten as kebab-case identifiers
- * per the wire schema from PR #3230. `order: 40` matches today's
- * position in `apps/pops-shell/src/app/nav/registry.ts`
- * (`registeredApps[3]`).
+ * Mirrors the `navConfig` in `pillars/food/app/src/routes.tsx`
+ * field-for-field; Lucide icon names are kebab-case identifiers per the
+ * wire schema. The shell orders apps by `order`.
  */
 const FOOD_NAV: NavConfigDescriptor = {
   id: 'food',
@@ -42,15 +40,14 @@ const FOOD_NAV: NavConfigDescriptor = {
 };
 
 /**
- * Wire-format pages contribution for the food pillar (PRD-243 US-02).
+ * Wire-format pages contribution for the food pillar.
  *
- * One descriptor per route declared in `@pops/app-food`'s `routes`
- * array. The nested `/food/data/*` subtree is flattened: each child
- * becomes its own descriptor carrying the full `data/<tab>` path. The
- * `FoodDataLayout` wrapper is carried as `food-data-layout` against the
- * bare `data` path so the shell-side bundle map (PRD-243 US-03) can
- * reconstruct the parent/child mounting today's nested
- * `RouteObject.children` shape gives us.
+ * One descriptor per route declared in `pillars/food/app/src/routes.tsx`.
+ * The nested `/food/data/*` subtree is flattened: each child becomes its
+ * own descriptor carrying the full `data/<tab>` path. The `FoodDataLayout`
+ * wrapper is carried as `food-data-layout` against the bare `data` path so
+ * the shell-side bundle map can reconstruct the parent/child mounting that
+ * the nested `RouteObject.children` shape gives us.
  */
 const FOOD_PAGES: readonly PageDescriptor[] = [
   { path: '', index: true, bundleSlot: 'food-landing' },
@@ -79,20 +76,7 @@ const FOOD_PAGES: readonly PageDescriptor[] = [
 ];
 
 /**
- * Food pillar manifest payload.
- *
- * Extracted out of `server.ts` in PRD-243 US-02 so the `nav` + `pages`
- * UI dimensions PR #3230 introduces have a dedicated home alongside
- * `buildCerebrumManifest` / `buildMediaManifest`.
- *
- * Drive-by fix: server.ts pinned the contract package as
- * `@pops/food-contracts` (plural), which `ManifestPayloadSchema`'s
- * `CONTRACT_PACKAGE` regex rejects (`^@pops\/[a-z-]+-contract$`). The
- * value was never validated before because `buildFoodManifest` had no
- * test coverage. The singular `@pops/food-contract` package exists at
- * `packages/food-contract/` (see PRD-241 US-01 in #3229) and is the
- * canonical contract package today — pinning the manifest there fixes
- * the wire format AND aligns with the contract export landed in #3229.
+ * Builds the food pillar manifest payload sent to the registry on boot.
  */
 export function buildFoodManifest(version: string): ManifestPayload {
   return {

@@ -1,7 +1,6 @@
 /**
- * PRD-127 — body reader for the HTML fetcher. Streams the response body
- * with a hard cap so a hostile server can't make us OOM. Split out of
- * `fetch-html.ts` to keep each file under the per-file line cap.
+ * Body reader for the HTML fetcher. Streams the response body with a hard
+ * cap so a hostile server can't make us OOM.
  */
 
 export type ReadBodyResult =

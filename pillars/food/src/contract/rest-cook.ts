@@ -1,5 +1,5 @@
 /**
- * `cook.*` sub-router — PRD-144's cook flow.
+ * `cook.*` sub-router — the cook flow.
  *
  * `prepareCook` is the modal-open pre-flight; `markCooked` is the
  * single-transaction cook event. Both are POST-with-body: the inputs carry

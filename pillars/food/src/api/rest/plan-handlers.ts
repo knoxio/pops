@@ -1,8 +1,8 @@
 /**
- * Handlers for the `plan.*` sub-router (PRD-143). Mutations return the
- * discriminated `{ ok, ... }` result on 200; `weekView` maps a bad ISO date
- * to 400. Guard/validation logic lives in the lifted `modules/plan/`
- * helpers; the slot mutations live in `modules/plan/slot-mutations.ts`.
+ * Handlers for the `plan.*` sub-router. Mutations return the discriminated
+ * `{ ok, ... }` result on 200; `weekView` maps a bad ISO date to 400.
+ * Guard/validation logic lives in `modules/plan/` helpers; the slot mutations
+ * live in `modules/plan/slot-mutations.ts`.
  */
 import { and, eq } from 'drizzle-orm';
 

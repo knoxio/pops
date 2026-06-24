@@ -1,8 +1,8 @@
 /**
- * Input Zod schemas for `food.fridge.*` procedures (PRD-147).
+ * Input Zod schemas for the fridge endpoints
+ * (`pillars/food/docs/prds/fridge-view`).
  *
- * `view` filters the batches list by location / search / expiry / source;
- * `recipesUsingBatch` powers the "Cook now" picker on a batch row.
+ * `RecipesUsingBatchInputSchema` powers the "Cook now" picker on a batch row.
  */
 
 import { z } from 'zod';

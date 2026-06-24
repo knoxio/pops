@@ -1,10 +1,10 @@
 /**
- * PRD-128 — web-llm prompt template.
+ * web-llm prompt template.
  *
  * Versioned: change the template = bump `PROMPT_VERSION_WEB_LLM`. The
  * version flows through `meta.json.stages.llm_extract.prompt_version`
- * and PRD-133's `ai_inference_log.metadata`, so old extractions can be
- * surfaced in the review queue with a "from prompt vX.Y" badge.
+ * and `ai_inference_log.metadata`, tying an extraction back to the
+ * exact template that produced it.
  */
 export const PROMPT_VERSION_WEB_LLM = 'web-llm-v1.0';
 export const WEB_LLM_DEFAULT_MODEL = 'claude-haiku-4-5-20251001';

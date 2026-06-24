@@ -33,10 +33,10 @@ export const batches = sqliteTable(
     expiresAt: text('expires_at'),
     notes: text('notes'),
     /**
-     * PRD-145 — soft-delete timestamp. Set ONLY by `deleteBatch`; every
-     * row with `deleted_at IS NOT NULL` also has `qty_remaining = 0`
-     * (service-enforced invariant). PRD-108's FIFO `consumeForRun`
-     * naturally skips deleted rows via the `qty_remaining > 0` filter.
+     * Soft-delete timestamp. Set ONLY by `deleteBatch`; every row with
+     * `deleted_at IS NOT NULL` also has `qty_remaining = 0`
+     * (service-enforced invariant). The FIFO `consumeForRun` naturally
+     * skips deleted rows via the `qty_remaining > 0` filter.
      */
     deletedAt: text('deleted_at'),
     createdAt: text('created_at')

@@ -1,9 +1,7 @@
 /**
- * PRD-149 — substitution-edge validation for the cook override path.
- *
- * Split out of `mark-cooked-overrides.ts` so each file stays under the
- * 200-line per-file lint cap. Given a `substitutionEdgeId` on a
- * `batch-override` / `partial` override, validates that:
+ * Substitution-edge validation for the cook override path. Given a
+ * `substitutionEdgeId` on a `batch-override` / `partial` override,
+ * validates that:
  *
  *   1. The edge exists in `substitutions`.
  *   2. The chosen batch's variant matches the edge's `to` side

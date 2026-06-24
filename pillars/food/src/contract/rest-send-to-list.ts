@@ -1,8 +1,8 @@
 /**
- * `sendToList.*` sub-router — PRD-142. Aggregates a recipe version's lines
- * into shopping-list items and writes them to the lists pillar over REST
- * (no cross-pillar DB write). `prepare` returns the preview the modal
- * renders; `send` performs the upserts and returns add/merge counts.
+ * `sendToList.*` sub-router — aggregates a recipe version's lines into
+ * shopping-list items and writes them to the lists pillar over REST (no
+ * cross-pillar DB write). `prepare` returns the preview the modal renders;
+ * `send` performs the upserts and returns add/merge counts.
  */
 import { initContract } from '@ts-rest/core';
 import { z } from 'zod';

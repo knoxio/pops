@@ -1,8 +1,8 @@
 /**
- * Integration tests for the `shopping.*` REST surface (PRD-152). Builds a
- * plan fixture via the recipes/plan REST, previews the buy-list, and
- * generates it to a stub lists client. Aggregation/pantry maths live in the
- * db tests; here we assert the wire envelopes + the cross-pillar write.
+ * Integration tests for the `shopping.*` REST surface. Builds a plan fixture
+ * via the recipes/plan REST, previews the buy-list, and generates it to a
+ * stub lists client. Aggregation/pantry maths live in the db tests; here we
+ * assert the wire envelopes + the cross-pillar write.
  */
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';

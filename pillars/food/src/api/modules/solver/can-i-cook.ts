@@ -8,7 +8,8 @@ import { loadRequiredLines } from './lines.js';
 import { buildNameLookup } from './name-lookup.js';
 
 /**
- * `food.solver.canICook` orchestrator — PRD-150.
+ * `food.solver.canICook` orchestrator —
+ * pillars/food/docs/prds/cook-solver.
  *
  * Pipeline:
  *   1. Pre-filter recipes (compiled + non-archived + current_version +

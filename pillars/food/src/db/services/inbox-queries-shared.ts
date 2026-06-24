@@ -1,10 +1,9 @@
 /**
- * PRD-138 — shared types + helpers for the rejected/failed inbox queries.
+ * Shared types + helpers for the rejected/failed inbox queries.
  *
- * Split from the per-tab query modules so the cursor encoding (a
- * `(timestamp, id)` tuple base64url-encoded with a sentinel separator) is a
- * single source of truth — both tabs paginate `(timestamp DESC, id DESC)`
- * with the same monotonicity guarantees.
+ * The cursor encoding (a `(timestamp, id)` tuple base64url-encoded with a
+ * sentinel separator) is a single source of truth — both tabs paginate
+ * `(timestamp DESC, id DESC)` with the same monotonicity guarantees.
  */
 import type { IngestSourceKind } from '../schema.js';
 

@@ -1,6 +1,3 @@
-/**
- * PRD-130 — caption-heuristic boundary tests.
- */
 import { describe, expect, it } from 'vitest';
 
 import { isStructuredCaption } from '../handlers/instagram/caption-heuristic.js';

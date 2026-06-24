@@ -1,31 +1,32 @@
 /**
- * PRD-125 — BullMQ contract for the `food.ingest` queue.
+ * BullMQ contract for the `food.ingest` queue
+ * (pillars/food/docs/prds/ingest-api).
  *
  * Defines:
  *   - The job-data discriminated union the producer (`food.ingest.start`)
- *     enqueues and the consumer (pops-worker-food, PRD-126) reads.
+ *     enqueues and the worker (pillars/food/docs/prds/worker-container) reads.
  *   - The job-result discriminated union the worker returns via
  *     `food.ingest.workerComplete`.
  *   - `IngestMeta` — the per-source observability rollup persisted to
- *     `ingest_sources.extracted_json`. PRD-127–132 each populate the
- *     stages they ran; this file owns the shared envelope only.
+ *     `ingest_sources.extracted_json`. The per-modality handlers each
+ *     populate the stages they ran; this file owns the shared envelope only.
  *   - `PartialReason` — the closed enum of "produced a draft but with
  *     caveats" outcomes.
  *
  * The contract is pure types + a queue-name constant; no runtime deps.
- * Producer + consumer live in different packages (and in PRD-126 a
- * different container), so this file is the only seam where they can
- * agree on the shape.
+ * The producer (food-api) and the worker run in separate containers but
+ * share one `@pops/food` package, importing these types via the `./queue`
+ * subpath export — this file is the only seam where they agree on shape.
  */
 
-/** Closed enum: PRDs 127–132 emit one of these on a successful-with-caveats run. */
+/** Closed enum: a handler emits one of these on a successful-with-caveats run. */
 export type PartialReason =
-  | 'auth-dead' // PRD-129: IG cookies expired.
-  | 'rate-limited' // PRD-129: yt-dlp rate-limited; delayed retry.
-  | 'stt-failed' // PRD-130: faster-whisper failed; caption + vision used instead.
-  | 'vision-failed' // PRD-130: vision call failed; text-LLM fallback used.
-  | 'caption-only-fallback' // PRD-130: STT + vision both failed.
-  | 'empty-extraction'; // PRD-128 / 130 / 131 / 132: LLM produced 0 ingredients or 0 steps.
+  | 'auth-dead' // IG cookies expired.
+  | 'rate-limited' // yt-dlp rate-limited; delayed retry.
+  | 'stt-failed' // faster-whisper failed; caption + vision used instead.
+  | 'vision-failed' // vision call failed; text-LLM fallback used.
+  | 'caption-only-fallback' // STT + vision both failed.
+  | 'empty-extraction'; // LLM produced 0 ingredients or 0 steps.
 
 /** Closed enum: which extractor produced the job. Matches `ingest_sources.kind`. */
 export type IngestKind = 'url-web' | 'url-instagram' | 'text' | 'screenshot';
@@ -44,17 +45,17 @@ export type IngestJobData =
 
 /**
  * Per-source observability rollup persisted on completion. Each handler
- * PRD owns the stages it writes; this file documents the envelope.
+ * owns the stages it writes; this file documents the envelope.
  * Stages whose handler skipped them set `skipped: true` and a `reason`.
  */
 export interface IngestMeta {
-  /** Semicolon-delimited tool versions; see PRD-125 example. */
+  /** Semicolon-delimited tool versions; e.g. `pipeline-v1;whisper-distil;claude-haiku-4-5`. */
   extractor_version: string;
   /**
    * Per-stage records keyed by stage name. Stage names are owned per
-   * handler PRD (127–132). The value is typed `unknown` so the producer
-   * doesn't have to validate handler-specific stage payloads — consumers
-   * narrow via `IngestStageRecord` where they care about the shared
+   * handler. The value is typed `unknown` so the producer doesn't have
+   * to validate handler-specific stage payloads — consumers narrow via
+   * `IngestStageRecord` where they care about the shared
    * `ok` / `skipped` / `reason` header.
    */
   stages: Record<string, unknown>;
@@ -65,10 +66,11 @@ export interface IngestMeta {
 }
 
 /**
- * Open shape — handler PRDs (127–132) extend with stage-specific fields
- * (e.g. `duration_ms`, `model`, `input_tokens`). The shared header is
- * `ok | skipped` so consumers can group across kinds without knowing
- * per-handler schemas.
+ * Open shape — per-modality handlers (pillars/food/docs/prds, e.g.
+ * web-jsonld, instagram-stt-vision, screenshot-ingest, text-ingest)
+ * extend with stage-specific fields (e.g. `duration_ms`, `model`,
+ * `input_tokens`). The shared header is `ok | skipped` so consumers can
+ * group across kinds without knowing per-handler schemas.
  */
 export interface IngestStageRecord {
   ok?: boolean;
@@ -80,8 +82,8 @@ export interface IngestStageRecord {
 /**
  * Job result the worker posts to `food.ingest.workerComplete`. Both
  * variants carry `meta` so observability survives even on failure.
- * `retryAfterSec` lets PRD-129 surface Instagram's `Retry-After`
- * header back into BullMQ's backoff.
+ * `retryAfterSec` lets the Instagram acquisition handler surface
+ * Instagram's `Retry-After` header back into BullMQ's backoff.
  */
 export type IngestJobResult =
   | { ok: true; dsl: string; meta: IngestMeta; partialReason?: PartialReason }

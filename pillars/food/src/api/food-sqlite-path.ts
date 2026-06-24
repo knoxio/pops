@@ -1,22 +1,13 @@
 import { dirname, join } from 'node:path';
 
 /**
- * Standalone resolver for the food pillar's SQLite path inside the
- * food-api container.
- *
- * Intentionally NOT imported from `apps/pops-api/src/db/food-sqlite-path.ts`
- * — food-api is supposed to be runnable without pops-api in the
- * dependency graph. The precedence chain matches pops-api's resolver
- * so the two processes agree on the location of `food.db` given the
- * same env: a deployer who only sets `SQLITE_PATH` (legacy contract)
- * still ends up with `food.db` next to `pops.db`.
+ * Resolves the food pillar's SQLite path.
  *
  * Resolution order:
  *   1. `FOOD_SQLITE_PATH` (absolute or relative).
- *   2. `<dirname(SQLITE_PATH)>/food.db` if the shared path is set.
- *   3. `./data/food.db` (matches the shared default's `./data/pops.db`).
- *
- * Mirrors core-api / inventory-api / media-api / finance-api / cerebrum-api resolvers.
+ *   2. `<dirname(SQLITE_PATH)>/food.db` if the shared path is set, so a
+ *      deployer who only sets `SQLITE_PATH` still gets a sibling `food.db`.
+ *   3. `./data/food.db`.
  */
 export const DEFAULT_FOOD_SQLITE_PATH = './data/food.db';
 

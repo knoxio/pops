@@ -1,8 +1,3 @@
-/**
- * PRD-130 — local build-dsl unit tests. Asserts the DSL output is
- * parseable by the PRD-114 parser and that the descriptor + tail rules
- * match the PRD.
- */
 import { describe, expect, it } from 'vitest';
 
 import { parseRecipeDsl } from '../../dsl/index.js';
@@ -77,7 +72,6 @@ describe('buildDsl (Instagram)', () => {
       steps: [{ body: 'Add tomato.', duration_min: null, temperature_c: null }],
     };
     const { dsl } = buildDsl(recipe);
-    // Non-curated prep slug omitted from descriptor.
     expect(dsl).toContain('@ingredient(1, tomato, 1:count)');
   });
 

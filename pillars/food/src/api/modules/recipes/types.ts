@@ -1,9 +1,9 @@
 /**
- * Wire output shapes for `food.recipes.*` — PRD-119.
+ * Wire output shapes for the recipe endpoints.
  *
  * Lightweight shapes for list / drafts / proposed slugs live here;
  * the heavy `RecipeVersionWithCompiledData` returned by `getForRendering`
- * is owned by `@pops/app-food-db` (PRD-121) and consumed verbatim.
+ * is owned by `src/domain/recipe-renderer-types.ts` and consumed verbatim.
  */
 import { z } from 'zod';
 

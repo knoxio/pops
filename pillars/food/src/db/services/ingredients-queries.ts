@@ -102,9 +102,9 @@ export interface RecipeRefsSummary {
  * `recipe_versions` row so freshly-imported drafts still display a name.
  *
  * Uncompiled recipes do not appear — `recipe_lines` is only populated by
- * PRD-116's compile pass. That's the same behaviour the auto-create deep-link
- * relies on, and means the count tracks the curated DSL graph rather than
- * the raw draft body.
+ * the compile pass (pillars/food/docs/prds/lines-materialisation). That's the
+ * same behaviour the auto-create deep-link relies on, and means the count
+ * tracks the curated DSL graph rather than the raw draft body.
  */
 export function getRecipeRefsForIngredient(db: FoodDb, ingredientId: number): RecipeRefsSummary {
   const distinctRecipeIds = db

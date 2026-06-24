@@ -1,6 +1,5 @@
 /**
- * Internal helpers for `markCooked` — split out of `mark-cooked.ts` so the
- * main file stays under the 200-line/60-per-function lint caps.
+ * Internal helpers for `markCooked`.
  *
  * Exports:
  *   - `validatePreflight` — every `MarkCookedError` branch reachable
@@ -49,12 +48,11 @@ function validateRanges(args: MarkCookedArgs): MarkCookedError | null {
   if (args.rating !== undefined && (args.rating < MIN_RATING || args.rating > MAX_RATING)) {
     return 'BadRating';
   }
-  // Reject `expiresAt` parseable as before-now (Copilot R1). `producedAt`
-  // is set to the current instant inside the cook transaction; we
-  // approximate it here with `Date.now()` for the boundary check so the
-  // failure surfaces before the tx opens. PRD-145's batch services apply
-  // the same rule on the manual-create path; matching here keeps the
-  // canonical `MarkCookedError.BadExpiry` reachable from end-to-end.
+  // `producedAt` is set to the current instant inside the cook
+  // transaction; we approximate it here with `Date.now()` so an
+  // already-expired `expiresAt` fails before the tx opens. The
+  // batch-lifecycle services apply the same rule on the manual-create
+  // path, keeping `MarkCookedError.BadExpiry` reachable end-to-end.
   if (args.yield?.expiresAt !== undefined) {
     const expires = Date.parse(args.yield.expiresAt);
     if (Number.isNaN(expires) || expires < Date.now()) return 'BadExpiry';
@@ -86,11 +84,10 @@ function loadVersionRow(db: FoodDb, versionId: number): VersionRow | null {
 }
 
 function validateYieldShape(version: VersionRow, args: MarkCookedArgs): MarkCookedError | null {
-  // Align the yields-batch predicate with the fields that
-  // `createBatchFromRun` actually needs (Copilot R1). A recipe whose
-  // `yield_ingredient_id` is set but `yield_variant_id` is null can't
-  // produce a batch, so we treat it as yieldless rather than silently
-  // dropping the user-supplied yield.
+  // The yields-batch predicate mirrors the fields `createBatchFromRun`
+  // actually needs: a recipe whose `yield_ingredient_id` is set but
+  // `yield_variant_id` is null can't produce a batch, so we treat it as
+  // yieldless rather than silently dropping the user-supplied yield.
   const yieldsBatch = version.yieldIngredientId !== null && version.yieldVariantId !== null;
   if (yieldsBatch && args.yield === undefined) return 'YieldRequired';
   if (!yieldsBatch && args.yield !== undefined) return 'YieldForbidden';

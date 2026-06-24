@@ -1,6 +1,3 @@
-/**
- * PRD-127 — recipeInstructions extractor unit tests.
- */
 import { describe, expect, it } from 'vitest';
 
 import { extractInstructionTexts } from '../handlers/web/extract-instructions.js';

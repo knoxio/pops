@@ -1,6 +1,6 @@
 /**
- * `shopping.*` sub-router — PRD-152 shopping-list generation from a meal
- * plan. `preview` computes the buy-list (pantry-subtracted, sectioned);
+ * `shopping.*` sub-router — shopping-list generation from a meal plan.
+ * `preview` computes the buy-list (pantry-subtracted, sectioned);
  * `generate` writes it to the lists pillar over REST (reuses the
  * send-to-list ListsClient). Both are POST-with-body (date-range compute).
  */

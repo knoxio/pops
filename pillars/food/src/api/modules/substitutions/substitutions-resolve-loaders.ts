@@ -1,9 +1,4 @@
-/**
- * SQL loaders for `substitutions-resolve` — PRD-150.
- *
- * Split out of the public service file so the per-file lint cap stays
- * under 200 lines while keeping the loader signatures discoverable.
- */
+/** SQL loaders for `substitutions-resolve`. */
 import { and, eq, inArray, isNull, or, sql, type SQL } from 'drizzle-orm';
 
 import { batches, substitutions, type FoodDb } from '../../../db/index.js';

@@ -1,7 +1,8 @@
 import type { IngestJobResult, IngestMeta } from '../../../contract/queue/index.js';
 /**
- * PRD-130 — convert PRD-129's `AcquisitionResult` failure variants into
- * the `IngestJobResult` shape the worker shell hands back to pops-api.
+ * Convert acquisition `AcquisitionResult` failure variants into the
+ * `IngestJobResult` shape the worker shell hands back to the ingest
+ * worker-complete flow.
  *
  * `auth-dead` is the special case: surfaced as `ok: true` with a
  * placeholder DSL and `partialReason='auth-dead'` so the review queue

@@ -8,25 +8,25 @@ import {
   type VariantNameRow,
 } from './substitutions-resolve-line-loaders.js';
 /**
- * PRD-149 — per-line substitution resolution for the cook-modal picker.
+ * Per-line substitution resolution for the cook-modal picker.
  *
- * Wraps PRD-150's shared `substitutions-resolve` service (the owner of
- * the override + context-tag filtering pure functions) and hydrates
- * each surviving candidate with the batch inventory + display names the
+ * Wraps the sibling `substitutions-resolve` service (the owner of the
+ * override + context-tag filtering pure functions) and hydrates each
+ * surviving candidate with the batch inventory + display names the
  * `BatchOverridePicker` Substitutions section needs.
  *
  * Flow:
  *   1. Load the recipe_line row for `(recipeVersionId, lineIndex)`.
- *   2. Load the recipe's tags (PRD-109's `:C` parameter).
+ *   2. Load the recipe's tags (the context-tag filter input).
  *   3. Bulk-load the substitutions index scoped to global + this recipe.
- *   4. Apply `resolveCandidatesForLine` (PRD-150's `(from, to)`-pair
- *      override + OR-overlap context filter).
+ *   4. Apply `resolveCandidatesForLine` (the `(from, to)`-pair override
+ *      + OR-overlap context filter).
  *   5. For each candidate: collect target variants (ingredient-level
  *      edges fan out), load batches per variant, hydrate names.
  *
- * Ranking + the 5-item display cap live in the picker UI; this service
- * returns the full candidate set in PRD-150's resolution order so the
- * frontend tests can pin the sort independent of the DB layer.
+ * Ranking + the display cap live in the picker UI; this service returns
+ * the full candidate set in the resolver's order so the sort can be
+ * pinned independent of the DB layer.
  */
 import {
   loadSubstitutionsIndex,

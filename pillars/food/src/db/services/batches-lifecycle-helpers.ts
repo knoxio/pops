@@ -1,9 +1,3 @@
-/**
- * PRD-145 internal helpers split out of `batches-lifecycle.ts` to keep
- * the main service file under the 200-line per-file lint cap. Not part
- * of the public surface — re-export via the package barrel is
- * intentionally absent.
- */
 import { eq } from 'drizzle-orm';
 
 import { ingredientVariants } from '../schema.js';
@@ -49,10 +43,6 @@ export function deriveAutoDefaultExpiry(
  * trades in instants, not local-zone calendar dates; the UI is
  * responsible for any presentation-time zone conversion. Pinned by
  * the midnight-UTC boundary test in `batches-lifecycle.test.ts`.
- *
- * (PRD-145 originally mentioned `date-fns` + local-zone math; the
- * implementation follows PRD-108's existing UTC contract so all
- * shelf-life-derived expiries stay consistent across services.)
  */
 function addDays(iso: string, days: number): string {
   const base = new Date(iso);

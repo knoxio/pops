@@ -1,11 +1,10 @@
 /**
- * PRD-130 — degradation truth table.
- *
- * Maps per-stage outcomes onto `partialReason` per the table in the
- * PRD's §Degradation section. The vision-vs-text-fallback distinction
- * matters for the inbox UX: a `vision-failed` partial signals "rerun
- * once the vision API recovers" whereas `caption-only-fallback` signals
- * "no recoverable signal beyond the caption".
+ * Degradation truth table: maps per-stage outcomes onto `partialReason`
+ * (full table in pillars/food/docs/prds/instagram-stt-vision). The
+ * vision-vs-text-fallback distinction matters for the inbox UX: a
+ * `vision-failed` partial signals "rerun once the vision API recovers"
+ * whereas `caption-only-fallback` signals "no recoverable signal beyond
+ * the caption".
  */
 import type { PartialReason } from '../../../contract/queue/index.js';
 

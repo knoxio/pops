@@ -1,9 +1,9 @@
 /**
- * Public `Row`/`Insert` aliases for the food-owned tables.
+ * `Row`/`Insert` aliases for the food-owned tables.
  *
- * Centralised here so consumers can `import type { IngredientRow } from
- * '@pops/food-db'` without reaching into a service module. The
- * underlying tables live in `./schema/*.ts` (PRD-245 US-05).
+ * Centralised here so in-pillar consumers can `import type { IngredientRow }`
+ * from the db barrel (`./index.js`) without reaching into a service module.
+ * The underlying tables live in `./schema/*.ts`.
  */
 import type { InferInsertModel, InferSelectModel } from 'drizzle-orm';
 

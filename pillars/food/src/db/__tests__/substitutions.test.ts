@@ -1,7 +1,7 @@
 /**
- * PRD-109 invariant tests — exercise the migration + service layer for the
- * substitutions schema against an in-memory SQLite seeded with PRD-106 +
- * PRD-107 + PRD-109 migrations. No Redis, no API process.
+ * Substitution-model invariant tests — exercise the migration + service layer
+ * for the substitutions schema against an in-memory SQLite seeded with the
+ * food migrations.
  */
 
 import { and, eq } from 'drizzle-orm';
@@ -53,7 +53,7 @@ function seedFixtures(db: FoodDb): Seed {
   };
 }
 
-describe('PRD-109 — substitution model invariants', () => {
+describe('substitution model invariants', () => {
   let db: FoodDb;
   let raw: Database.Database;
 
@@ -69,7 +69,7 @@ describe('PRD-109 — substitution model invariants', () => {
       expect(row?.name).toBe('substitutions');
     });
 
-    it('creates the partial UNIQUE indexes from the PRD', () => {
+    it('creates the per-scope partial UNIQUE indexes', () => {
       const indexes = raw
         .prepare(
           `SELECT name FROM sqlite_master WHERE type='index' AND tbl_name='substitutions' ORDER BY name`

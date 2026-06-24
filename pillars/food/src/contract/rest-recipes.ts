@@ -1,10 +1,10 @@
 /**
- * `recipes.*` sub-router — PRD-119 recipe CRUD + draft lifecycle. The DSL
- * compile result and the `getForRendering` aggregate are deep, renderer-
- * owned shapes; they are fully modelled in `rest-recipe-render-schemas.ts`
- * so `api-types` describes the wire shape end-to-end.
- *
- * send-to-list + hero-image are separate slices (4c / 4b).
+ * `recipes.*` sub-router — recipe CRUD + draft lifecycle. The DSL compile
+ * result and the `getForRendering` aggregate are deep, renderer-owned
+ * shapes; they are fully modelled in `rest-recipe-render-schemas.ts` so the
+ * generated api-types describe the wire shape end-to-end. Send-to-list and
+ * hero-image live in their own sub-routers (`rest-send-to-list.ts`,
+ * `rest-hero-image.ts`).
  */
 import { initContract } from '@ts-rest/core';
 import { z } from 'zod';

@@ -1,11 +1,13 @@
 /**
- * Recipe-line aggregation for PRD-142's send-to-list flow.
+ * Recipe-line aggregation for the send-to-list flow.
  *
  * Reads compiled `recipe_lines` for a version, splits into canonical
  * (`qty_g | qty_ml | qty_count` non-null) vs unconverted (all three null),
  * groups canonical rows by `(ingredient_id, variant_id, canonical_unit)`,
  * sums the matching qty field × `scaleFactor`, and collects distinct prep
- * slugs per group. PRD-142 §`prepareSendToList` server-side flow steps 4–6.
+ * slugs per group.
+ *
+ * Spec: pillars/food/docs/prds/send-to-list
  */
 import { asc, eq } from 'drizzle-orm';
 

@@ -1,6 +1,3 @@
-/**
- * PRD-127 — duration parsing unit tests.
- */
 import { describe, expect, it } from 'vitest';
 
 import { parseDurationMinutes } from '../handlers/web/parse-duration.js';

@@ -1,7 +1,7 @@
 /**
- * PRD-106 invariant tests — exercises the migration + service layer against
- * an in-memory SQLite seeded with the food schema. No Redis, no API process,
- * no external services.
+ * Ingredient model invariant tests — exercises the migration + service layer
+ * against an in-memory SQLite seeded with the food schema. No Redis, no API
+ * process, no external services.
  */
 
 import { eq } from 'drizzle-orm';
@@ -28,15 +28,15 @@ import { createVariant } from '../services/variants.js';
 import type Database from 'better-sqlite3';
 
 // All food-domain migrations are applied: drizzle's TypeScript types reflect
-// the full schema (e.g. PRD-108's shelf-life columns on ingredient_variants),
-// so inserts via drizzle would fail against a partial DB even if this PRD
-// doesn't exercise the new columns.
+// the full schema (e.g. the shelf-life columns on ingredient_variants), so
+// inserts via drizzle would fail against a partial DB even when a suite does
+// not exercise the newer columns.
 
 function freshDb(): { db: FoodDb; raw: Database.Database } {
   return openFoodDb(':memory:');
 }
 
-describe('PRD-106 — ingredient model invariants', () => {
+describe('ingredient model invariants', () => {
   let db: FoodDb;
   let raw: Database.Database;
 
@@ -61,7 +61,7 @@ describe('PRD-106 — ingredient model invariants', () => {
       );
     });
 
-    it('creates the indexes from the PRD', () => {
+    it('creates the expected indexes', () => {
       const indexes = raw
         .prepare(
           `SELECT name FROM sqlite_master WHERE type='index' AND name NOT LIKE 'sqlite_%' ORDER BY name`
@@ -289,7 +289,6 @@ describe('PRD-106 — ingredient model invariants', () => {
         defaultUnit: 'count',
       });
       expect(() => deleteIngredient(db, banana.id)).toThrow();
-      // Both rows still present.
       expect(db.select().from(ingredients).where(eq(ingredients.id, banana.id)).all()).toHaveLength(
         1
       );

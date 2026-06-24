@@ -1,8 +1,6 @@
 /**
- * Plan-slot mutation logic (add / update / delete) returning the
- * discriminated `{ ok, ... }` results. Split from the handler to keep it
- * under the per-file line cap (mirrors the pops-api `slot-procedures.ts`
- * split). The handler wraps each result in a 200 envelope.
+ * Plan-slot mutation logic (add / update / delete) returning discriminated
+ * `{ ok, ... }` results; the REST handler wraps each result in a 200 envelope.
  */
 import {
   type FoodDb,

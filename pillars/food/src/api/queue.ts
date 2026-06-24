@@ -1,5 +1,5 @@
 /**
- * BullMQ producer for the `food.ingest` queue (PRD-125), pillar-side.
+ * BullMQ producer for the `food.ingest` queue, pillar-side.
  *
  * The food-api container is the producer (enqueue / status / cancel /
  * retry); the consumer runs in `pillars/food/src/worker`. Lazy singleton,

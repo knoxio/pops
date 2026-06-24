@@ -1,5 +1,5 @@
 /**
- * Section assembly — PRD-152.
+ * Section assembly.
  *
  * Resolves each ingredient's `store-section:*` tag (alphabetically first if
  * multiple), groups items into sections ordered alphabetically by

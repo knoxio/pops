@@ -1,9 +1,8 @@
 /**
  * Pillar registry view served by food-api.
  *
- * Wraps the local copy of `parsePillarsEnv` with a process-level cache
- * (same pattern pops-api / inventory-api use). Adds the synthetic `food`
- * entry so the shell sees the host pillar in the `/pillars` listing
+ * Wraps `parsePillarsEnv` with a process-level cache. Adds the synthetic
+ * `food` entry so the shell sees the host pillar in the `/pillars` listing
  * without having to special-case the call site.
  */
 import { parseBareOrigin, parsePillarsEnv } from './env.js';

@@ -1,9 +1,9 @@
 /**
- * Integration tests for the `inbox.*` REST surface — recipe-ingest triage
- * (PRD-134/135/136/138). Pure DB reads/writes; mutations + inspector return
- * the service's discriminated result on 200. Draft scoring / cursor maths
- * live in the db-layer tests; here we assert the wire envelopes + the
- * empty/not-found paths.
+ * Integration tests for the `inbox.*` REST surface — recipe-ingest triage.
+ * Pure DB reads/writes; mutations + inspector return the service's
+ * discriminated result on 200. Draft scoring / cursor maths live in the
+ * db-layer tests; here we assert the wire envelopes + the empty/not-found
+ * paths.
  */
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';

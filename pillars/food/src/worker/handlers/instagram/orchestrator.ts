@@ -1,8 +1,9 @@
 /**
- * PRD-130 — orchestrator for `url-instagram` ingest. Wires acquisition
- * (PRD-129) → caption-heuristic → STT → keyframes → vision →
- * text-fallback with the hierarchical-degradation truth table the PRD
- * prescribes. Per-stage helpers live in `stages.ts` + `extraction.ts`.
+ * Orchestrator for `url-instagram` ingest. Wires acquisition (see
+ * `../instagram-acquisition.ts`) → caption-heuristic → STT → keyframes →
+ * vision → text-fallback with the hierarchical-degradation truth table
+ * (see `degradation.ts`). Per-stage helpers live in `stages.ts` +
+ * `extraction.ts`.
  *
  * The orchestrator never throws — every native subprocess + LLM call is
  * wrapped in try/catch downstream, and the result is always a

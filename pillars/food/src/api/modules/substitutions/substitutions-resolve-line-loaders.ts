@@ -1,9 +1,4 @@
-/**
- * SQL loaders for `substitutions-resolve-line` — PRD-149.
- *
- * Split out so the public service module + the hydration helper stay
- * under the 200-line per-file lint cap.
- */
+/** SQL loaders for `substitutions-resolve-line`. */
 import { and, eq, gt, inArray, isNull } from 'drizzle-orm';
 
 import {

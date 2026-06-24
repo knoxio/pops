@@ -1,10 +1,10 @@
 /**
- * PRD-113 fixture set — ingredient aliases.
+ * Ingredient alias fixtures.
  *
  * Targets either an ingredient or a variant. Exactly one of `ingredientSlug`
  * / `variantOfIngredient` must be set; variant aliases scope under their
- * parent ingredient. The seeder persists `source = 'user'` (PRD-106's enum
- * is `user | llm | ingest`; there's no `seed` value, and `user` is the
+ * parent ingredient. The seeder persists `source = 'user'` (the alias-source
+ * enum is `user | llm | ingest`; there's no `seed` value, and `user` is the
  * closest fit for human-curated rows that pre-populate the dev DB).
  */
 

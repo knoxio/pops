@@ -1,6 +1,6 @@
 /**
  * Bulk-load ingredient + variant name dictionaries for the solver —
- * PRD-150.
+ * pillars/food/docs/prds/cook-solver.
  *
  * Substitution candidates carry only (ingredientId, variantId) ids;
  * the breakdown the UI renders needs human names. One name lookup at

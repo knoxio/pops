@@ -1,6 +1,5 @@
 /**
- * Internal data loaders for `prepareCook` — split out of `prepare.ts` so
- * the public file stays under the 200-line lint cap.
+ * Internal data loaders for `prepareCook`.
  */
 import { eq } from 'drizzle-orm';
 
@@ -144,9 +143,9 @@ function loadPrepStateLabel(db: FoodDb, prepStateId: number | null): string | nu
 }
 
 export function loadConsumeNeeds(db: FoodDb, versionId: number): LineConsumeNeed[] {
-  // PRD-146 expects the enriched `LineConsumeNeed` shape (lineIndex +
-  // ingredient/variant names + optional flag). We left-join on
-  // prep_states so lines without one fall through with a null label.
+  // Left-join on prep_states so lines without one fall through with a
+  // null label rather than being dropped from the enriched
+  // `LineConsumeNeed` shape.
   const rows = db
     .select({
       lineIndex: recipeLines.position,

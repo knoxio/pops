@@ -1,5 +1,5 @@
 /**
- * Plan-entry loader for the shopping generator — PRD-152.
+ * Plan-entry loader for the shopping generator.
  *
  * Selects `plan_entries` in the given date range whose `recipe_run_id IS
  * NULL` (already-cooked entries don't contribute — their batches are already

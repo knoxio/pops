@@ -1,5 +1,5 @@
 /**
- * "Already sent" detection for PRD-142.
+ * "Already sent" detection.
  *
  * Returns the ids of non-archived shopping lists whose item notes mention
  * the recipe title. The substring search + shopping/non-archived filter run

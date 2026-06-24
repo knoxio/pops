@@ -3,7 +3,8 @@
  *   ingredient_weights — per-ingredient "1 of this unit weighs X grams"
  *
  * Read by `normaliseLineQty` (invoked from `compileRecipeVersion` per
- * `@ingredient` block); written via tRPC procedures and the food seed task.
+ * `@ingredient` block); written via the contract handlers and the food
+ * seed task.
  */
 import { sql } from 'drizzle-orm';
 import { index, integer, real, sqliteTable, text, unique } from 'drizzle-orm/sqlite-core';

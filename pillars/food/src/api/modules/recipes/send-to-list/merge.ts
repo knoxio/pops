@@ -1,5 +1,5 @@
 /**
- * Per-item merge / insert for PRD-142's send loop, over the lists REST API.
+ * Per-item merge / insert for the send loop, over the lists REST API.
  *
  * Mergeable (ingredient/variant) items go through `upsert-by-ref` with
  * `onConflict='merge-additive'` — the lists pillar atomically sums qty +

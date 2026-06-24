@@ -1,9 +1,7 @@
 /**
- * Cross-PRD type contracts for the planning page (PRD-143).
- *
- * Owned by PRD-143. The tRPC router in pops-api and the planning
- * components in @pops/app-food both import from here so the wire shape
- * has a single source of truth.
+ * Type contracts for the planning page, shared between the
+ * contract/router and the planning components so the wire shape has a
+ * single source of truth.
  */
 
 export interface PlanSlotRow {

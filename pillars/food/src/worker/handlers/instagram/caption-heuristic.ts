@@ -1,11 +1,10 @@
 /**
- * PRD-130 — `isStructuredCaption(caption)` returns true when a reel caption
- * already contains a recipe in a parseable shape, letting the pipeline skip
- * the ~30-60s `faster-whisper` STT stage.
+ * `isStructuredCaption(caption)` returns true when a reel caption already
+ * contains a recipe in a parseable shape, letting the pipeline skip the
+ * slow `faster-whisper` STT stage.
  *
- * Tuned conservatively per the PRD — false negatives (running STT
- * unnecessarily) are cheaper than false positives (skipping STT and
- * missing recipe content).
+ * Tuned conservatively: false negatives (running STT unnecessarily) are
+ * cheaper than false positives (skipping STT and missing recipe content).
  */
 const MIN_LENGTH = 100;
 const MIN_BULLET_LINES = 5;

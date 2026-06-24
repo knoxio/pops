@@ -1,5 +1,5 @@
 /**
- * PRD-125 — `food.ingest.status` and `food.ingest.list` implementations.
+ * `status` and `list` implementations for the ingest routes.
  *
  * Combine the BullMQ job state with the DB row state. The DB is
  * authoritative once the job has aged out of Redis (`removeOnComplete` /
@@ -64,9 +64,7 @@ const SCAN_MAX_JOBS = 1_000;
  * BullMQ has no native "get job by data.sourceId" — we paginate the
  * recent window and bucket by sourceId, stopping early once every
  * requested id has been resolved. Cheaper than O(rows × Redis round
- * trips) when `list` returns many rows. When PRD-126 lands a heavier
- * worker we can persist `jobId` on `ingest_sources` and skip the scan
- * altogether.
+ * trips) when `list` returns many rows.
  */
 type BullMQJob = Awaited<
   ReturnType<NonNullable<ReturnType<typeof getFoodIngestQueue>>['getJobs']>

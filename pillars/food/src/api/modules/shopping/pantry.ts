@@ -1,5 +1,5 @@
 /**
- * Pantry subtraction — strict by `(variant_id, unit)` per PRD-152.
+ * Pantry subtraction — strict by `(variant_id, unit)`.
  *
  * Loads a SUM of `batches.qty_remaining` per `(variant_id, unit)` for every
  * variant referenced by the canonical-need set, filtered to non-deleted,

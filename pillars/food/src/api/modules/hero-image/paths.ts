@@ -1,7 +1,7 @@
 /**
- * Mirrors the layout in `@pops/app-food/src/storage/hero-paths.ts`. pops-api
- * doesn't depend on the React-bearing app-food package at runtime, so the
- * absolute-path resolution is duplicated here — keep both in sync.
+ * Mirrors the layout in `pillars/food/app/src/storage/hero-paths.ts`. The API
+ * can't import from the browser-bundled app at runtime, so the absolute-path
+ * resolution is duplicated here — keep both in sync.
  */
 import { resolve, sep } from 'node:path';
 

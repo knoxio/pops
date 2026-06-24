@@ -1,14 +1,15 @@
 /**
- * Zod schema + DSL builder for the screenshot ingest path.
+ * Zod schema + DSL builder for the screenshot ingest path
+ * (`pillars/food/docs/prds/screenshot-ingest`).
  *
- * Mirrors PRD-128's JSON schema verbatim — the same shape is reused by
- * PRDs 128/130/132. When the second consumer lands, hoist both
- * `parsedRecipeSchema` and `buildDsl` into a shared `parsed-recipe.ts`
- * module. PRD-131 owns the first copy.
+ * This shape is duplicated across the sibling ingest handlers
+ * (`build-dsl.ts`, `web-llm-dsl.ts`) — same schema, parallel copies.
+ * Hoist `parsedRecipeSchema` + `buildDsl` into a shared module if a
+ * fourth consumer appears.
  */
 import { z } from 'zod';
 
-/** Approved prep states from PRD-128's prompt — reject anything else. */
+/** Approved prep states — reject anything else. */
 const ALLOWED_PREP_STATES = [
   'whole',
   'diced',
@@ -140,7 +141,8 @@ function renderStep(step: ParsedRecipe['steps'][number]): string {
 }
 
 /**
- * Render a parsed recipe as a PRD-114 grammar-compliant DSL string.
+ * Render a parsed recipe as a grammar-compliant DSL string
+ * (`pillars/food/docs/prds/dsl-parser`).
  */
 export function buildDsl(parsed: ParsedRecipe, _opts: BuildDslOpts): string {
   const lines: string[] = [

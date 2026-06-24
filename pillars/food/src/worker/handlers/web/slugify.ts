@@ -1,5 +1,5 @@
 /**
- * PRD-127 — slugify a human string into the DSL-grammar slug shape:
+ * Slugify a human string into the DSL-grammar slug shape:
  *
  *   - Starts with `[a-z]`.
  *   - Continues with `[a-z0-9-]`.

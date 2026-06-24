@@ -1,6 +1,3 @@
-/**
- * PRD-127 — JSON-LD extractor unit tests.
- */
 import { describe, expect, it } from 'vitest';
 
 import { extractRecipeJsonLd } from '../handlers/web/extract-json-ld.js';

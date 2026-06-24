@@ -1,22 +1,13 @@
 /**
- * PRD-137 — Review Quality Heuristic.
+ * Review quality heuristic — see pillars/food/docs/prds/quality-heuristic.
  *
- * Deterministic, pure 4-band scoring function. Bands drive PRD-134's
- * inbox queue sort + filter chips and PRD-135's inspector quality panel.
- * Never persisted: re-computed on every query.
+ * Deterministic, pure 4-band scoring function. Bands drive the inbox queue
+ * sort + filter chips and the inspector quality panel. Never persisted:
+ * re-computed on every query.
  *
  * The rubric (signal codes + weights + band thresholds) is the source of
  * truth — pinned by `quality.test.ts` so adding or tweaking a signal
  * requires updating both the code and the test in the same commit.
- *
- * **Architecture note** — PRD-137 originally specified `pillars/food/app/src/inbox/quality.ts`
- * as the home, but PRD-119-API's lessons captured (line 690 of the
- * food-app roadmap) moved every backend-shaped helper into
- * `@pops/app-food-db` to break the `pops-api → @pops/app-food →
- * @pops/api-client → @pops/api` build cycle. The function is consumed
- * server-side by PRD-134's `food.inbox.list` query, so it lives here.
- * The frontend (PRD-135's inspector live-recompute path) imports from
- * the same package — no extra seam required.
  */
 import type { PartialReason } from '../contract/queue/index.js';
 
@@ -25,25 +16,21 @@ export type IngestState = 'pending' | 'processing' | 'completed' | 'failed' | 'p
 export type CompileStatus = 'uncompiled' | 'compiled' | 'failed';
 
 export interface QualityInputs {
-  /* Source state */
   ingestKind: IngestKind;
   ingestState: IngestState;
   partialReason?: PartialReason;
   /** datetime('now') - ingest_sources.ingested_at, in minutes. */
   ingestAgeMinutes: number;
 
-  /* Compile state */
   compileStatus: CompileStatus;
   /** Length of the parsed `recipe_versions.compile_error.errors[]` JSON; 0 if none. */
   compileErrorCount: number;
 
-  /* Resolver state */
   /** Row count from `recipe_version_proposed_slugs` for this versionId. */
   proposedSlugCount: number;
-  /** Count from `listCreationsForVersion(db, versionId)`. */
+  /** Count from `countCreationsForVersions(db, [versionId])`. */
   creationCount: number;
 
-  /* DSL surface stats */
   ingredientLineCount: number;
   stepCount: number;
   hasTitle: boolean;
@@ -90,7 +77,7 @@ export interface QualityResult {
   signals: QualitySignal[];
 }
 
-/** PRD-137 §"Rubric" — all weights live here as a single source of truth. */
+/** All weights live here as a single source of truth (pillars/food/docs/prds/quality-heuristic §"Rubric"). */
 export const SIGNAL_WEIGHTS: Readonly<Record<QualitySignalCode, number>> = Object.freeze({
   COMPILE_FAILED: -90,
   COMPILE_UNCOMPILED: -40,
@@ -114,7 +101,7 @@ export const SIGNAL_WEIGHTS: Readonly<Record<QualitySignalCode, number>> = Objec
   CREATIONS_HIGH: -5,
 });
 
-/** Band cut-offs per PRD-137 §"Rubric". `clean` is closed at 100. */
+/** Band cut-offs per pillars/food/docs/prds/quality-heuristic §"Rubric". `clean` is closed at 100. */
 const BAND_FLOOR = Object.freeze({ clean: 80, minor: 50, attention: 20 } as const);
 const AGE_FRESH_MAX_MINUTES = 1440; // 24h
 const AGE_STALE_MIN_MINUTES = 20_160; // 14d
@@ -127,7 +114,6 @@ const CREATIONS_HIGH_THRESHOLD = 5;
  */
 export function scoreDraft(inputs: QualityInputs): QualityResult {
   const signals = collectSignals(inputs);
-  // Start at 100; weights are additive (mix of positive + negative); clamp.
   const raw = signals.reduce((acc, s) => acc + s.weight, 100);
   const score = Math.max(0, Math.min(100, raw));
   return {
@@ -170,7 +156,7 @@ function collectDslSurfaceSignals(out: QualitySignal[], inputs: QualityInputs): 
 
 function collectSlugSignals(out: QualitySignal[], inputs: QualityInputs): void {
   const n = inputs.proposedSlugCount;
-  // n === 0 → no signal fires (PRD-137 §Business Rules).
+  // n === 0 → no signal fires (pillars/food/docs/prds/quality-heuristic §Business Rules).
   if (n > PROPOSED_SLUGS_MANY_THRESHOLD) {
     push(out, 'PROPOSED_SLUGS_MANY', `${n} unresolved slug(s)`);
   } else if (n >= 1) {

@@ -1,5 +1,6 @@
 /**
- * PRD-114 — grammar coverage tests for `parseRecipeDsl`.
+ * Grammar coverage tests for `parseRecipeDsl`
+ * (spec: pillars/food/docs/prds/dsl-parser).
  *
  * Each sample recipe in `samples.ts` proves one grammar dimension. The
  * error-coverage cases live in `parser-errors.test.ts`; round-trip and
@@ -24,7 +25,7 @@ import {
 
 import type { IngredientBlock, StepBlock } from '../ast.js';
 
-describe('PRD-114 — parser positive samples', () => {
+describe('parser positive samples', () => {
   it.each(ALL_SAMPLES)('parses %s without errors', (_label, src) => {
     const r = parseRecipeDsl(src);
     if (!r.ok) {
@@ -63,7 +64,6 @@ describe('PRD-114 — parser positive samples', () => {
   it('preserves interspersed markdown blocks ordered with structural blocks', () => {
     const r = parseRecipeDsl(INTERSPERSED_MARKDOWN);
     if (!r.ok) throw new Error('parse failed');
-    // markdown / ingredient(1) / ingredient(2) / markdown / step / step
     const kinds = r.ast.blocks.map((b) => b.kind);
     expect(kinds).toEqual(['markdown', 'ingredient', 'ingredient', 'markdown', 'step', 'step']);
     const md = r.ast.blocks.find((b) => b.kind === 'markdown');

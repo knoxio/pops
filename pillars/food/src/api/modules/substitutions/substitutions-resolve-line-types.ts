@@ -1,9 +1,7 @@
 /**
- * PRD-149 — wire types for `food.substitutions.resolveForLine`.
- *
- * Owned by Epic 06; consumed by the tRPC router + the cook-modal picker
- * via `inferRouterOutputs`. Kept in its own file so the service module
- * and its sibling loaders both import without a cyclic edge.
+ * Wire types for the `substitutions.resolveForLine` REST procedure,
+ * feeding the cook-modal picker. Kept in its own file so the service
+ * module and its sibling loaders both import without a cyclic edge.
  */
 export type SubResolveUnit = 'g' | 'ml' | 'count';
 export type SubResolveLocation = 'pantry' | 'fridge' | 'freezer' | 'other';

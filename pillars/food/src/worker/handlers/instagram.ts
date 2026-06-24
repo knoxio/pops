@@ -1,7 +1,7 @@
 /**
- * Instagram ingest dispatcher. Acquisition lives in PRD-129
- * (`instagram-acquisition.ts`); the STT + vision pipeline (PRD-130)
- * lives in `instagram/orchestrator.ts`. This file wires runtime config
+ * Instagram ingest dispatcher. Acquisition lives in
+ * `instagram-acquisition.ts`; the STT + vision pipeline lives in
+ * `instagram/orchestrator.ts`. This file wires runtime config
  * (env-driven model overrides, lazy Anthropic client) into the
  * orchestrator and adapts the result to the dispatch `IngestHandler`
  * signature.

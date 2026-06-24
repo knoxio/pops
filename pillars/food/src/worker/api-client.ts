@@ -1,9 +1,9 @@
 /**
- * Raw HTTP client for posting worker results back to the food-api pillar.
+ * Raw HTTP client for posting worker results back to the food pillar's API.
  *
  * Single-purpose fetch against the ts-rest `ingest.workerComplete` endpoint
- * (`POST /ingest/worker-complete`) — plain-JSON body, no tRPC batch
- * envelope. `apiUrl` points at the food-api container's base URL.
+ * (`POST /ingest/worker-complete`) with a plain-JSON body. `apiUrl` points at
+ * the food API container's base URL.
  *
  * The auth header (`x-pops-internal-token`) is validated by the
  * `requireInternalToken` middleware in `pillars/food/src/api/app.ts`, which
@@ -27,10 +27,10 @@ type WireMeta = {
 };
 
 /**
- * pops-api's `MetaSchema` is a zod `.passthrough()`, so the inferred
- * router input adds a `[k: string]: unknown` index signature that
- * `IngestMeta`'s interface lacks. `toWireMeta` rebuilds it as a plain
- * record so the shapes line up without weakening the contract type.
+ * The contract's `MetaSchema` is a zod `.passthrough()`, so the inferred
+ * input adds a `[k: string]: unknown` index signature that `IngestMeta`'s
+ * interface lacks. `toWireMeta` rebuilds it as a plain record so the shapes
+ * line up without weakening the contract type.
  */
 function toWireMeta(meta: IngestJobResult['meta']): WireMeta {
   return { ...meta, extractor_version: meta.extractor_version, stages: meta.stages };

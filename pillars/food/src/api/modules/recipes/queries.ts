@@ -1,11 +1,11 @@
 /**
- * Read helpers for `food.recipes.list` — PRD-119.
+ * Read helpers for the recipe list.
  *
  * Cursor-based pagination, filter chips (search / type / tag / archived
  * / draft-only), sort dropdown (createdAtDesc / titleAsc; the
- * `recentlyCooked` mode falls back to createdAtDesc until Epic 05 lands
- * `recipe_runs.completed_at` data the list can join on). Tags + drafts
- * + proposed-slug helpers live in sibling files to honour the per-file
+ * `recentlyCooked` mode falls back to createdAtDesc — there is no
+ * `recipe_runs.completed_at` data to join on yet). Tags + drafts +
+ * proposed-slug helpers live in sibling files to honour the per-file
  * line cap.
  */
 import { and, asc, desc, eq, gt, inArray, lt, or, sql, type SQL } from 'drizzle-orm';

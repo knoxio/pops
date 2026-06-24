@@ -1,9 +1,9 @@
 /**
- * PRD-113 seed step — batches + recipe_runs + batch_consumptions.
+ * Seed step — batches + recipe_runs + batch_consumptions.
  *
- * No `createBatch` service exists yet (PRD-145 will own it); the seed inserts
- * via Drizzle. The single seeded `recipe_runs` row + its `batch_consumptions`
- * exercise the read path that PRD-147's fridge view consumes.
+ * Inserts via Drizzle (no `createBatch` service). The single seeded
+ * `recipe_runs` row + its `batch_consumptions` exercise the fridge view's
+ * read path.
  *
  * Order matters:
  *   1. Seed `recipe_runs` (no batches yet → `yielded_batch_id` left null).
@@ -77,9 +77,9 @@ function batchSourceId(fixture: BatchFixture, runId: number): number | null {
     );
   }
   if (fixture.recipeRunRecipeSlug !== RECIPE_RUN_FIXTURE.recipeSlug) {
-    // Phase 1 only seeds one run; assert the fixture points at that one so
-    // adding a second run later forces the seeder to be updated rather than
-    // silently misattributing the batch.
+    // Only one run is seeded; assert the fixture points at that one so adding
+    // a second run forces the seeder to be updated rather than silently
+    // misattributing the batch.
     throw new Error(
       `Batch fixture recipeRunRecipeSlug "${fixture.recipeRunRecipeSlug}" does not match the seeded run "${RECIPE_RUN_FIXTURE.recipeSlug}"`
     );

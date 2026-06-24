@@ -1,24 +1,22 @@
 /**
- * PRD-113 fixture set — recipe headers + DSL bodies (phases 1 + 2).
+ * Recipe-header + DSL-body fixtures.
  *
- * Phase 1 stores these bodies verbatim and leaves `recipe_versions.status =
- * 'draft'` + `compile_status = 'uncompiled'`. Phase 2 (post PRD-116) drives
- * `compileRecipeVersion` against each row so `recipe_lines` / `recipe_steps`
- * get populated and the version is promoted to `current` — the cross-PRD
- * smoke test PRD-113 was originally specced as.
+ * Without a `compile` callback these bodies are stored verbatim with
+ * `recipe_versions.status = 'draft'` + `compile_status = 'uncompiled'`. With
+ * one, `compileRecipeVersion` runs against each row so `recipe_lines` /
+ * `recipe_steps` get populated and the version is promoted to `current`.
  *
- * The DSL bodies follow PRD-114's grammar exactly:
+ * The DSL bodies follow the recipe grammar exactly:
  *
  *   - `@recipe(slug, title, recipe_type?, servings?, prep_time?, cook_time?)`
  *   - `@yield(<ingredient-slug>, qty:unit)` — yield slugs that don't match
- *     the seeded ingredient list are auto-created by PRD-115 → PRD-116.
+ *     the seeded ingredient list are auto-created during compile.
  *   - `@ingredient(N, head:variant:prep, qty:unit, optional?, notes?)` — both
  *     compact and named-arg forms.
  *   - `@step("body")` with inline `@N`, `@time(...)`, `@temperature(...)`.
  *
- * Fixture order matters: components first (so PRD-115's recipe-as-ingredient
- * resolution finds a promoted `current_version_id`), then plates that
- * reference them.
+ * Fixture order matters: components first (so recipe-as-ingredient resolution
+ * finds a promoted `current_version_id`), then plates that reference them.
  */
 
 export interface RecipeFixture {

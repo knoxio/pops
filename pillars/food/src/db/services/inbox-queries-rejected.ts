@@ -1,20 +1,19 @@
 /**
- * PRD-138 — `food.inbox.listRejected` server-side query.
+ * `food.inbox.listRejected` server-side query.
  *
  * Drives the Rejected tab in `/food/inbox`. Joins four tables to produce
  * `RejectedRow[]` in one SQL pass:
  *
  *   recipe_versions      (the archived draft)
  *   recipe_version_rejections (the metadata that distinguishes inbox-reject
- *                              from PRD-119 manual discard — presence-of-row)
+ *                              from manual discard — presence-of-row)
  *   ingest_sources       (provenance — INNER JOIN because rejected drafts
  *                         are by construction ingest-originated; the inbox
  *                         can't reject manually-authored drafts)
  *   recipes              (slug for inspector navigation)
  *
- * `ingestCostUsd` is always `null`: food's local `ai_inference_log` was dropped
- * once AI telemetry moved to the ai pillar via `@pops/ai-telemetry` (#3490), so
- * per-source ingest cost is no longer tracked in the food DB.
+ * `ingestCostUsd` is always `null` — AI telemetry lives in the ai pillar, so
+ * per-source ingest cost is not tracked in the food DB.
  *
  * Pagination cursor: `(rejected_at DESC, version_id DESC)` — the rejected_at
  * default expression is `datetime('now')` which is unique per insert under

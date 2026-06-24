@@ -1,10 +1,11 @@
 /**
- * Load + group `recipe_lines` for the solver — PRD-150.
+ * Load + group `recipe_lines` for the solver —
+ * pillars/food/docs/prds/cook-solver.
  *
  * The solver evaluates one recipe at a time but issues a single bulk
  * query for every required line across the candidate set. Optional
- * lines (`optional = 1`) are filtered HERE per PRD-150's contract:
- * they never block cookability and never appear in the breakdown.
+ * lines (`optional = 1`) are filtered HERE: they never block
+ * cookability and never appear in the breakdown.
  */
 import { and, asc, eq, inArray } from 'drizzle-orm';
 

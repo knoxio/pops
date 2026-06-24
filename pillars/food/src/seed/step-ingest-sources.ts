@@ -1,5 +1,5 @@
 /**
- * PRD-113 phase 3 seed step — ingest_sources rows.
+ * Seed step — ingest_sources rows.
  *
  * Split into two halves because the row → recipe linkage is bidirectional:
  *
@@ -13,18 +13,17 @@
  *     was drafted from it. Service-layer `linkDraftRecipe` enforces the
  *     existence check.
  *
- * Path layout. PRD-110 stores `transcript_path` / `keyframes_dir` /
- * `video_path` as paths relative to `FOOD_INGEST_DIR`, prefixed with the
- * per-source subdirectory `<source_id>/...` (PRD-110 § Filesystem Layout
- * — "e.g. 42/video.mp4"). The fixtures declare bare filenames; this step
- * patches them with the id-prefixed form via an UPDATE immediately after
- * `createIngestSource` returns. Doing it as a post-insert patch (rather
- * than predicting the auto-increment id) matches how the worker (PRD-126)
- * actually behaves: insert the source row first, then write the files
- * under the freshly-assigned `<id>/` subdir.
+ * Path layout: `transcript_path` / `keyframes_dir` / `video_path` store
+ * paths relative to `FOOD_INGEST_DIR`, prefixed with the per-source
+ * subdirectory `<source_id>/...` (e.g. `42/video.mp4`). The fixtures declare
+ * bare filenames; this step patches them with the id-prefixed form via an
+ * UPDATE immediately after `createIngestSource` returns. Patching post-insert
+ * (rather than predicting the auto-increment id) matches the worker: insert
+ * the source row first, then write the files under the freshly-assigned
+ * `<id>/` subdir.
  *
- * The two-pass shape (insert → link) matches the worker for the same
- * reason: failures still leave provenance behind.
+ * The two-pass shape (insert → link) matches the worker for the same reason:
+ * failures still leave provenance behind.
  *
  * Inserts go through the `createIngestSource` service so the kind/url
  * invariant and CHECK enforcement get exercised at seed time too.
@@ -39,8 +38,8 @@ import type { FoodDb } from '../db/services/internal.js';
 import type { SeedContext } from './types.js';
 
 /**
- * Build the PRD-110-compliant relative-path columns for a given source id.
- * Null inputs stay null (e.g. url-web rows have no transcript/video).
+ * Build the relative-path columns for a given source id. Null inputs stay
+ * null (e.g. url-web rows have no transcript/video).
  */
 function prefixedPaths(
   sourceId: number,
@@ -68,7 +67,7 @@ export function seedIngestSources(db: FoodDb, ctx: SeedContext): number {
       extractorVersion: fixture.extractorVersion,
       draftRecipeId: null,
     });
-    // Patch the paths so they match PRD-110's `<source_id>/<filename>` layout.
+    // Patch the paths so they match the `<source_id>/<filename>` layout.
     db.update(ingestSources)
       .set(prefixedPaths(row.id, fixture))
       .where(eq(ingestSources.id, row.id))

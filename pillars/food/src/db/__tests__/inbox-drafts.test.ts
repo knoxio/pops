@@ -1,8 +1,7 @@
 /**
- * PRD-134 — integration tests for `listDrafts` + `countPendingDrafts`.
+ * Integration tests for `listDrafts` + `countPendingDrafts`.
  *
- * Spins up an in-memory SQLite seeded with the Epic 00/02/03 migrations the
- * sibling PRD-137 gather test already loads. Asserts:
+ * Spins up an in-memory SQLite seeded with the food migrations. Asserts:
  *   - only ingest-originated drafts with `reviewed_at IS NULL` and the parent
  *     recipe not archived appear in the list
  *   - the band derivation matches `scoreDraft` over `gatherQualityInputsForVersions`
@@ -96,7 +95,7 @@ function seedDraft(db: FoodDb, opts: SeedOpts): Seeded {
   return { recipeId: recipeRow.id, versionId: versionRow.id, sourceId: sourceRow.id };
 }
 
-describe('PRD-134 — listDrafts inclusion + exclusion rules', () => {
+describe('listDrafts inclusion + exclusion rules', () => {
   let env: { db: FoodDb; raw: Database.Database };
   beforeEach(() => {
     env = freshDb();
@@ -160,7 +159,7 @@ describe('PRD-134 — listDrafts inclusion + exclusion rules', () => {
   });
 });
 
-describe('PRD-134 — filter + sort + pagination behaviour', () => {
+describe('filter + sort + pagination behaviour', () => {
   let env: { db: FoodDb; raw: Database.Database };
 
   beforeEach(() => {
@@ -216,9 +215,8 @@ describe('PRD-134 — filter + sort + pagination behaviour', () => {
   });
 
   it('returns no rows when bands is explicitly empty (UI toggled every chip off)', () => {
-    // Regression: previously `bands.length > 0` collapsed the empty array to
-    // "no band filter applied", which is the opposite of what the UI means.
-    // Toggling every chip off must surface zero matches, not the full set.
+    // An explicit empty `bands` array means "no band qualifies", not "no band
+    // filter applied" — toggling every chip off must surface zero matches.
     const all = listDrafts(env.db, { limit: 20 });
     expect(all.items.length).toBeGreaterThan(0);
     const empty = listDrafts(env.db, { bands: [], limit: 20 });
@@ -226,8 +224,8 @@ describe('PRD-134 — filter + sort + pagination behaviour', () => {
   });
 
   it('returns no rows when partialReasons is explicitly empty', () => {
-    // Same shape as the bands regression — an explicit empty array means
-    // "no row qualifies on this axis", not "no filter".
+    // As with `bands`, an explicit empty array means "no row qualifies on this
+    // axis", not "no filter".
     const empty = listDrafts(env.db, { partialReasons: [], limit: 20 });
     expect(empty.items).toHaveLength(0);
   });
@@ -304,7 +302,7 @@ describe('PRD-134 — filter + sort + pagination behaviour', () => {
   });
 });
 
-describe('PRD-134 — countPendingDrafts + N+1 guard', () => {
+describe('countPendingDrafts + N+1 guard', () => {
   it('matches the count of inclusion-eligible rows pre-filter', () => {
     const env = freshDb();
     seedDraft(env.db, { slug: 'a' });

@@ -1,9 +1,9 @@
 /**
- * Shared version-loading helper for PRD-142's prepare + send flows.
+ * Shared version-loading helper for the prepare + send flows.
  *
  * Both procedures need the version row + parent recipe slug + a
  * compile-status check. Returning a discriminated result lets the caller
- * map to either `SendToListError` (send) or throw `TRPCError` (prepare).
+ * map to either `SendToListError` (send) or throw `HttpError` (prepare).
  */
 import { eq } from 'drizzle-orm';
 
@@ -37,7 +37,7 @@ export function loadVersionForSend(db: FoodDb, versionId: number): LoadVersionRe
   };
 }
 
-/** Clamp scale factor per PRD §Business Rules: defaults to 1, 0/negative → 1. */
+/** Clamp scale factor: defaults to 1, 0/negative/non-finite → 1. */
 export function clampScaleFactor(scale: number | undefined): number {
   if (scale === undefined || scale <= 0 || !Number.isFinite(scale)) return 1;
   return scale;

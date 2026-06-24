@@ -1,12 +1,9 @@
 /**
- * Cross-PRD type contracts for the cook flow (PRD-144).
+ * Type contracts for the cook flow, shared between the contract/router
+ * and the CookModal so wire shapes stay aligned.
  *
- * Owned by PRD-144. Re-exported through the package barrel so the tRPC
- * router in pops-api and the React CookModal in @pops/app-food can both
- * import without divergence.
- *
- * Imports `ConsumptionNeed` + `Shortfall` from PRD-108's existing
- * `services/batches.ts` to avoid duplicating types that already exist.
+ * Re-exports `ConsumptionNeed` + `Shortfall` from `db/services/batches`
+ * rather than redefining them.
  */
 
 import type { ConsumptionNeed, Shortfall } from '../../db/services/batches.js';
@@ -15,13 +12,13 @@ import type { LineConsumeNeed } from './batches.js';
 export type { ConsumptionNeed, Shortfall };
 
 /**
- * Pre-flight data for the cook modal. Returned by `food.cook.prepareCook`.
- * The modal renders this once on open; the consume-preview panel multiplies
- * `consumeNeeds[].qty` by `scaleFactor` client-side as the user adjusts it.
+ * Pre-flight data for the cook modal. The modal renders this once on
+ * open; the consume-preview panel multiplies `consumeNeeds[].qty` by
+ * `scaleFactor` client-side as the user adjusts it.
  *
- * `consumeNeeds` carries the enriched PRD-146 `LineConsumeNeed` shape
- * (lineIndex + names + optional flag) so the modal can render the
- * consume preview + shortfall list without a second round-trip.
+ * `consumeNeeds` carries the enriched `LineConsumeNeed` shape (lineIndex
+ * + names + optional flag) so the modal can render the consume preview
+ * and shortfall list without a second round-trip.
  */
 export interface CookPreparation {
   recipeTitle: string;
@@ -44,7 +41,7 @@ export interface CookYieldDefault {
 }
 
 /**
- * Yield arguments supplied to `food.cook.markCooked` when the recipe
+ * Yield arguments supplied to the mark-cooked mutation when the recipe
  * produces a batch. Omitted for yieldless recipes.
  */
 export interface CookYieldInput {
@@ -56,10 +53,10 @@ export interface CookYieldInput {
 }
 
 /**
- * Per-line consumption override supplied to `food.cook.markCooked` by
- * PRD-146's shortfall-resolution UI. Empty array on the happy path.
+ * Per-line consumption override supplied to the mark-cooked mutation by
+ * the shortfall-resolution UI. Empty array on the happy path.
  *
- * `lineIndex` matches `recipe_lines.position` (PRD-116, 1-based).
+ * `lineIndex` matches `recipe_lines.position` (1-based).
  */
 export type ConsumptionOverride =
   | {
@@ -69,7 +66,7 @@ export type ConsumptionOverride =
       consumeQty: number;
       unit: 'g' | 'ml' | 'count';
       /**
-       * PRD-149 — set when the override came from a substitution pick in
+       * Set when the override came from a substitution pick in
        * `BatchOverridePicker`'s Substitutions section. Server validates
        * the edge exists and resolves to the chosen batch's variant; on
        * success appends a substitution audit line to `recipe_runs.notes`.
@@ -89,7 +86,7 @@ export type ConsumptionOverride =
       consumeQty: number;
       externalQty: number;
       unit: 'g' | 'ml' | 'count';
-      /** PRD-149 — see `batch-override` variant. */
+      /** See the `batch-override` variant. */
       substitutionEdgeId?: number;
     };
 

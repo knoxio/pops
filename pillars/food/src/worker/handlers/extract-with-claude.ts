@@ -149,8 +149,8 @@ function parseAndValidate(rawOutput: string): ParseOutcome {
 }
 
 /**
- * Shared text-LLM extraction surface. PRD-132's `runTextIngest` calls
- * with `source='text'`; PRD-130's vision-fallback path calls with
+ * Shared text-LLM extraction surface. `runTextIngest` calls with
+ * `source='text'`; the Instagram vision-fallback path calls with
  * `source='ig-text-fallback'`. The prompt template, JSON schema, and
  * model are identical — only the `operation` written to
  * `ai_inference_log` differs.

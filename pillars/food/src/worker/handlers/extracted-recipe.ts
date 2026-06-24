@@ -1,9 +1,9 @@
 import { z } from 'zod';
 
 /**
- * Curated prep-state list per PRD-128 §Step 2 / PRD-132 §Prompt. Slugs
- * outside this list get pushed into the ingredient `notes` field by
- * `buildDsl` instead of being emitted as a descriptor segment.
+ * Curated prep-state list (see `pillars/food/docs/prds/text-ingest`).
+ * Slugs outside this list get pushed into the ingredient `notes` field
+ * by `buildDsl` instead of being emitted as a descriptor segment.
  */
 export const PREP_STATE_SLUGS = [
   'whole',

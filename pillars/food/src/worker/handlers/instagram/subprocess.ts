@@ -1,8 +1,7 @@
 /**
- * PRD-130 — shared subprocess runner used by both the faster-whisper
+ * Shared subprocess runner used by both the faster-whisper
  * (`stt-whisper.ts`) and ffmpeg (`ffmpeg-keyframes.ts`) wrappers.
- *
- * Behaviour matches PRD-129's `runYtDlp`:
+ * Behaviour matches `runYtDlp` in `../instagram-yt-dlp.ts`:
  *
  *   - stdout/stderr are piped and **drained** to in-memory buffers so a
  *     chatty child (ffmpeg writes a lot to stderr) can't deadlock on a

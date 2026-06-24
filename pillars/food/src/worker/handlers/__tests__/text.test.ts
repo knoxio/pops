@@ -179,7 +179,7 @@ describe('runTextIngest — happy path', () => {
     expect(record.outputTokens).toBe(150);
   });
 
-  it('produces DSL whose lines satisfy the PRD-114 grammar shape', async () => {
+  it('produces DSL whose lines satisfy the pillars/food/docs/prds/dsl-parser grammar shape', async () => {
     __setTextIngestClientForTests(
       buildMockClient(async () => mockMessage(JSON.stringify(happyRecipeJson())))
     );
@@ -308,8 +308,6 @@ describe('runTextIngest — error paths', () => {
   });
 
   it('records duration_ms on the LLM-failure stage when the call throws', async () => {
-    // Regression: the failure path used to hardcode durationMs: 0 which
-    // hid slow timeouts behind a zero-latency log line.
     __setTextIngestClientForTests({
       messages: {
         create: vi.fn(async () => {

@@ -1,13 +1,13 @@
 /**
  * Plain Express handlers that stream per-source ingest media (screenshot,
- * video) back to the inbox UI (PRD-135).
+ * video) back to the inbox UI.
  *
  *   GET /ingest/source/:sourceId/screenshot
  *   GET /ingest/source/:sourceId/video
  *
- * Lifted from the pops-api `routes/food/ingest-files.ts` route. Mounted
- * BEFORE the ts-rest endpoints so they resolve to a file; the ts-rest
- * `ingest.*` surface is all POST, so there's no method/path collision.
+ * Mounted BEFORE the ts-rest endpoints so they resolve to a file; the
+ * ts-rest `ingest.*` surface is all POST, so there's no method/path
+ * collision.
  *
  * Returns 404 when the source row is missing OR the eviction job already
  * archived it (`archived_at IS NOT NULL`) OR the on-disk file is gone — the

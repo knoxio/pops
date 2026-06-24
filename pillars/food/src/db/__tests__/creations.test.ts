@@ -1,7 +1,6 @@
 /**
- * PRD-116 amendment test — `listCreationsForVersion` returns the slug
- * registrations that fall inside the configurable window ending at
- * `recipe_versions.compiled_at`.
+ * `listCreationsForVersion` returns the slug registrations that fall inside
+ * the configurable window ending at `recipe_versions.compiled_at`.
  */
 
 import { beforeEach, describe, expect, it } from 'vitest';
@@ -65,7 +64,7 @@ function insertSlugRegistry(
     .run(args.slug, args.kind, args.targetId, args.createdAt);
 }
 
-describe('PRD-116 amendment — listCreationsForVersion', () => {
+describe('listCreationsForVersion', () => {
   let db: FoodDb;
   let raw: Database.Database;
 
@@ -177,7 +176,7 @@ describe('PRD-116 amendment — listCreationsForVersion', () => {
   });
 
   it('handles the production-shape compiled_at (ISO `T...Z` from new Date().toISOString())', () => {
-    // PRD-116's compile writer stamps recipe_versions.compiled_at with
+    // The compile writer stamps recipe_versions.compiled_at with
     // `new Date().toISOString()` — `2026-06-10T12:00:00.000Z`, NOT the
     // SQLite `YYYY-MM-DD HH:MM:SS` shape. Naive string comparison would
     // place slugs registered after the compile inside the window (`' '`

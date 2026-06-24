@@ -1,12 +1,10 @@
 /**
- * PRD-126 — pops-worker-food daemon entry point.
+ * pops-worker-food daemon entry point.
  *
- * Connects to the `food.ingest` BullMQ queue (contract from
- * `@pops/food-contracts`), dispatches each job to its per-kind handler
- * via `runIngestJob`, and POSTs the result back to pops-api's
- * `food.ingest.workerComplete` mutation. Auth uses the shared
- * `POPS_API_INTERNAL_TOKEN` secret in the `x-pops-internal-token`
- * header (PRD-125 contract).
+ * Connects to the `food.ingest` BullMQ queue (contract from `../contract/queue`),
+ * dispatches each job to its per-kind handler via `runIngestJob`, and POSTs the
+ * result back to the food API's `ingest.workerComplete` endpoint. Auth uses the
+ * shared `POPS_API_INTERNAL_TOKEN` secret in the `x-pops-internal-token` header.
  *
  * Lifecycle:
  *   1. `loadConfig()` reads env (fails fast on missing token).
@@ -18,10 +16,10 @@
  *
  * Cancellation is cooperative — handlers check `ctx.isCancelled()`
  * between pipeline stages. We surface it by polling `job.getState()`
- * for `'unknown'` (BullMQ has no `isToBeRemoved()` method; the PRD
- * spec text sketches one). When the API calls `food.ingest.cancel`,
- * `job.remove()` deletes the row in Redis, the next state check returns
- * `'unknown'`, and the handler short-circuits with `errorCode='Cancelled'`.
+ * for `'unknown'` (BullMQ has no `isToBeRemoved()` method). When the API
+ * calls `ingest.cancel`, `job.remove()` deletes the row in Redis, the next
+ * state check returns `'unknown'`, and the handler short-circuits with
+ * `errorCode='Cancelled'`.
  */
 import { Worker } from 'bullmq';
 import pino from 'pino';
@@ -43,12 +41,11 @@ import type { HandlerContext } from './handlers/types.js';
 const logger = pino({ name: 'pops-worker-food' });
 
 /**
- * Cancellation contract: PRD-125's `food.ingest.cancel` calls `job.remove()`,
+ * Cancellation contract: the API's `ingest.cancel` calls `job.remove()`,
  * which deletes the BullMQ row but does NOT abort an already-running
  * processor. The processor cooperatively polls `job.getState()` between
- * stages — once removed, the state is `'unknown'`. This is the same
- * pattern the PRD-126 spec sketches as "isToBeRemoved", which is not a
- * real BullMQ method.
+ * stages — once removed, the state is `'unknown'`. BullMQ has no native
+ * "is this job to be removed" check, so this state poll stands in for one.
  */
 async function isJobCancelled(job: Job<IngestJobData>): Promise<boolean> {
   try {
@@ -62,7 +59,7 @@ async function isJobCancelled(job: Job<IngestJobData>): Promise<boolean> {
  * Per-job timeout enforced in-band via `Promise.race`. BullMQ has no
  * native per-job timeout — `stalledInterval` only detects lost-lock
  * after the fact. Racing the handler against a timer gives the worker
- * a deterministic failure path (and a callback to pops-api with a
+ * a deterministic failure path (and a callback to the food API with a
  * `TimedOut` error code) instead of leaking long-running stages.
  */
 export function timeoutResult(extractorVersion: string, sec: number): IngestJobResult {

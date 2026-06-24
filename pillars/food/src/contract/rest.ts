@@ -8,9 +8,6 @@
  *
  * Lego principle: this is the ONLY description of the food wire format.
  * Don't hand-author OpenAPI or hand-author paths anywhere else.
- *
- * Domains land here slice by slice as they move off the pops-api tRPC
- * router (see pillars/food/docs/runbooks/food-rest-migration.md).
  */
 import { initContract } from '@ts-rest/core';
 

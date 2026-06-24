@@ -1,7 +1,3 @@
-/**
- * PRD-130 — acquisition-failure conversion tests. Covers each of the
- * five `AcquisitionResult & { ok: false }` kinds.
- */
 import { describe, expect, it } from 'vitest';
 
 import {

@@ -1,6 +1,6 @@
 /**
- * Integration tests for the `ingest.*` REST surface (PRD-125) + the binary
- * ingest-media serve routes (PRD-135).
+ * Integration tests for the `ingest.*` REST surface + the binary
+ * ingest-media serve routes.
  *
  * These run WITHOUT Redis. The BullMQ producer (`getFoodIngestQueue`)
  * returns `null` when no Redis env is set, so:

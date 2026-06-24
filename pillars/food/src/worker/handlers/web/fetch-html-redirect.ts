@@ -1,6 +1,5 @@
 /**
- * PRD-127 — redirect-loop helpers for the HTML fetcher. Split from
- * `fetch-html.ts` to keep each file under the line cap.
+ * Redirect-loop helpers for the HTML fetcher.
  */
 
 const USER_AGENT =

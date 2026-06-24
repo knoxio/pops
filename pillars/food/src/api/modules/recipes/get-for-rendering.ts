@@ -1,10 +1,10 @@
 /**
- * Assemble `RecipeVersionWithCompiledData` — the input to PRD-121's renderer.
+ * Assemble `RecipeVersionWithCompiledData` — the input to the renderer.
  *
  * One round-trip per joined table (recipes / versions / lines+joins /
  * steps / tags / yield) so a 200-line recipe still renders in a single
- * tRPC hit. Wire shape lives in `@pops/app-food-db` so both this
- * procedure AND the React renderer import the same TypeScript type.
+ * request. Wire shape lives in `src/domain/recipe-renderer-types.ts` so
+ * both this handler AND the React renderer import the same TypeScript type.
  */
 import { and, asc, eq } from 'drizzle-orm';
 

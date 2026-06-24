@@ -1,8 +1,6 @@
 /**
- * Lift PRD-125's partialReason out of `ingest_sources.extracted_json`.
- * The pops-api side has its own copy at
- * `apps/pops-api/src/modules/food/services/ingest-state.ts`; this helper
- * mirrors the contract so the DB layer doesn't import from the API.
+ * Lift the `partialReason` out of `ingest_sources.extracted_json`,
+ * narrowing it to the contract's `PartialReason` union.
  */
 import type { PartialReason } from '../contract/queue/index.js';
 

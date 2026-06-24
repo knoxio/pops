@@ -1,11 +1,9 @@
 /**
- * `food.fridge.recipesUsingBatch` query — PRD-147.
- *
  * Returns recipes whose **current version** has a `recipe_lines` row
  * matching the batch's `variant_id`. Ordered by `last_cooked_at DESC`
- * (NULLS LAST) then by recipe slug. Variant-only join — see PRD-147
- * §Cook now: the variant match is deliberately not prep-aware (Epic 06
- * delivers a prep-aware solver).
+ * (NULLS LAST) then by recipe slug. The variant match is deliberately
+ * not prep-aware — the prep-aware solver lives in Epic 06
+ * (`pillars/food/docs/epics/06-substitutions.md`).
  *
  * `recipeNeedsQty` is summed across matching `recipe_lines` whose
  * `canonical_unit` matches the batch's `unit`. When no matching-unit

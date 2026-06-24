@@ -1,12 +1,10 @@
 /**
- * PRD-130 — text-LLM fallback used when the vision call fails AND the
- * reel has a non-trivial caption (≥30 chars; the boundary is inclusive,
- * matching `MIN_CAPTION_LENGTH_FOR_FALLBACK`). Re-implements the same
- * prompt shape PRD-128 will export as `PROMPT_WEB_LLM`; once PRD-128 +
- * PRD-132 land we can dedupe via a shared `extractWithClaudeText` import.
+ * Text-LLM fallback used when the vision call fails AND the reel caption
+ * clears `MIN_CAPTION_LENGTH_FOR_FALLBACK` (inclusive boundary).
  *
- * Operation name in observability is `recipe-extract-ig-text-fallback`
- * to distinguish from PRD-128's `recipe-extract-web-llm`.
+ * The `recipe-extract-ig-text-fallback` operation name keeps this path's
+ * telemetry distinct from the web text path's `recipe-extract-web-llm`
+ * (`../web-llm-extract.ts`).
  */
 import { callWithLogging } from '@pops/ai-telemetry';
 

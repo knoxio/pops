@@ -1,9 +1,8 @@
 /**
- * PRD-113 seed step — ingredient_aliases.
+ * Seed step — ingredient_aliases.
  *
- * No service wrapper exists yet (PRD-122 will add one); the seed writes via
- * direct Drizzle insert. Source is recorded as 'user' since that's the
- * canonical "human-curated" value in PRD-106's enum.
+ * Writes via direct Drizzle insert. Source is recorded as 'user' since that's
+ * the canonical "human-curated" value in the alias-source enum.
  */
 import { ingredientAliases } from '../db/schema.js';
 import { ALIAS_FIXTURES } from './data-aliases.js';

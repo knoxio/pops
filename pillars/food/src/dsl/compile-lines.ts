@@ -2,12 +2,11 @@ import { normaliseLineQty } from './normalisation.js';
 
 import type { CanonicalUnit } from '../db/schema.js';
 /**
- * `recipe_lines` materialiser — PRD-116 + PRD-123.
+ * `recipe_lines` materialiser.
  *
  * Maps a `ResolvedIngredientBlock` + the author's original descriptor
- * string to an INSERT row. PRD-123 upgraded the normalisation step from
- * identity carry-over to a 3-step lookup in `unit_conversions` and
- * `ingredient_weights` — handled by `normaliseLineQty` in `normalisation.ts`.
+ * string to an INSERT row. Quantity normalisation is delegated to
+ * `normaliseLineQty` in `normalisation.ts`.
  */
 import type { FoodDb } from '../db/services/internal.js';
 import type { ResolvedIngredientBlock } from './resolver-types.js';

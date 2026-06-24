@@ -1,8 +1,8 @@
 /**
- * PRD-113 fixture set — ingredients + variants (part 3: proteins).
+ * Ingredient + variant fixtures (part 3: proteins).
  *
  * Tight fridge windows (2d) + freezer extensions (90-180d) — primary input
- * to PRD-108's `expires_at` auto-fill in seeded batches.
+ * to the `expires_at` auto-fill in seeded batches.
  */
 import type { IngredientFixture } from './types-ingredient.js';
 
@@ -34,5 +34,4 @@ export const INGREDIENT_FIXTURES_PROTEIN: readonly IngredientFixture[] = [
   },
 ];
 
-/** Single ordered list — orchestrator iterates this rather than the per-group exports. */
 export const ALL_INGREDIENT_GROUPS_PROTEIN = INGREDIENT_FIXTURES_PROTEIN;

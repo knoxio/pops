@@ -1,11 +1,10 @@
 /**
- * `food.shopping.generateFromPlan` — PRD-152, rewired onto the lists REST
- * API. Re-runs the preview server-side (single source of truth) then writes
- * a new shopping list over HTTP: create the list, then add each item in
- * section-then-name order (the lists pillar auto-assigns sequential
- * positions, so insertion order = display order). No cross-pillar
- * transaction — a failure mid-write leaves a partial list (lists owns its
- * own consistency).
+ * `food.shopping.generateFromPlan`. Re-runs the preview server-side (single
+ * source of truth) then writes a new shopping list over HTTP: create the
+ * list, then add each item in section-then-name order (the lists pillar
+ * auto-assigns sequential positions, so insertion order = display order). No
+ * cross-pillar transaction — a failure mid-write leaves a partial list (lists
+ * owns its own consistency).
  */
 import { type ListsClient } from '../recipes/send-to-list/lists-client.js';
 import { buildItemNotes } from './list-name.js';
@@ -103,7 +102,7 @@ function buildLabel(item: GeneratorItem, qty: number, unit: string): string {
 
 function formatQty(qty: number): string {
   if (Number.isInteger(qty)) return String(qty);
-  // Mirror PRD-142's `formatQty` — trailing-zero strip, no thousands.
+  // Mirrors `send-to-list/label.ts` formatQty — trailing-zero strip, no thousands.
   return Number(qty.toFixed(2))
     .toString()
     .replace(/(\.\d*?)0+$/, '$1')

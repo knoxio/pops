@@ -1,6 +1,6 @@
 /**
- * Integration tests for the send-to-list REST surface (PRD-142), rewired
- * onto the lists pillar over HTTP. A stub `ListsClient` is injected via
+ * Integration tests for the send-to-list REST surface, which writes to the
+ * lists pillar over HTTP. A stub `ListsClient` is injected via
  * `deps.listsClient`, recording the cross-pillar calls so the flow is
  * exercised end-to-end without a live lists-api. Aggregation maths live in
  * the db-layer tests; here we assert the wire envelopes + target handling.

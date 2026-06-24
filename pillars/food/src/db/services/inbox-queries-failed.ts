@@ -1,18 +1,17 @@
 /**
- * PRD-138 — `food.inbox.listFailed` + `food.inbox.failedErrorCodes`.
+ * `food.inbox.listFailed` + `food.inbox.failedErrorCodes`.
  *
  * Drives the Failed-ingests tab in `/food/inbox`. The "no successful retry"
  * rule reduces to `WHERE error_code IS NOT NULL AND error_message IS NOT NULL`
- * — the pair is the contract PRD-125's `workerComplete` writes on
- * `ok:false` and clears on the next success (see the amendment carried in
- * `0067_prd_125_ingest_error_columns.sql`). Guarding on both columns
- * defends against a half-finished backfill or a legacy row leaving one half
- * null, which would otherwise surface as an empty `errorMessage` in the UI.
+ * — the worker writes the pair on `ok:false` and clears it on the next
+ * success. Guarding on both columns defends against a half-finished backfill or a
+ * legacy row leaving one half null, which would otherwise surface as an
+ * empty `errorMessage` in the UI.
  *
- * Auth-dead Instagram reels never reach this tab: PRD-130 emits
- * `ok: true, partialReason: 'auth-dead'` so the worker writes a placeholder
- * draft and never sets `error_code`. The Drafts tab + PRD-137's
- * `PARTIAL_AUTH_DEAD` signal handle that surface.
+ * Auth-dead Instagram reels never reach this tab: the worker emits
+ * `ok: true, partialReason: 'auth-dead'`, writes a placeholder draft, and
+ * never sets `error_code`. The Drafts tab + the `PARTIAL_AUTH_DEAD` quality
+ * signal handle that surface.
  *
  * Pagination cursor: `(ingested_at DESC, id DESC)`.
  */
@@ -83,11 +82,11 @@ function selectFailedRows(db: FoodDb, filter: ListFailedFilter): JoinedFailedRow
 }
 
 function buildWhere(filter: ListFailedFilter): SQL | undefined {
-  // PRD-125's `workerComplete` writes `error_code` and `error_message` as a
-  // pair on `ok:false` and clears them as a pair on a successful retry.
-  // Pinning both predicates keeps the Failed tab from surfacing legacy or
-  // backfilled rows where only one half is populated (which would render
-  // as an empty error message in the UI).
+  // The worker writes `error_code` and `error_message` as a pair on
+  // `ok:false` and clears them as a pair on a successful retry. Pinning both
+  // predicates keeps the Failed tab from surfacing legacy or backfilled rows
+  // where only one half is populated (which would render as an empty error
+  // message in the UI).
   const clauses: SQL[] = [
     isNotNull(ingestSources.errorCode),
     isNotNull(ingestSources.errorMessage),
@@ -117,9 +116,8 @@ function buildWhere(filter: ListFailedFilter): SQL | undefined {
 
 /**
  * `SELECT DISTINCT error_code FROM ingest_sources WHERE error_code IS NOT NULL`.
- * Drives the Error-code filter chip — known v1 codes are well-defined in the
- * PRD-138 §"Failed ingests" tab but the chip auto-populates so newly emitted
- * codes from future handler PRDs surface without a UI change.
+ * Drives the Error-code filter chip — the chip auto-populates so newly
+ * emitted codes from future handlers surface without a UI change.
  */
 export function listFailedErrorCodes(db: FoodDb): string[] {
   const rows = db

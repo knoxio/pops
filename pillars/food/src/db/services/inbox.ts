@@ -1,15 +1,15 @@
 /**
- * PRD-136 — inbox-side approve/reject/unreject for ingest-originated drafts.
+ * Inbox-side approve/reject/unreject for ingest-originated drafts.
  *
  * Each mutation runs in a single Drizzle transaction (the SAVEPOINT inside
  * `promoteVersion` nests under it) so partial state can never escape: the
  * `ingest_sources.reviewed_at` write and the `recipe_versions.status` flip
  * commit or roll back together with the rejection-row insert.
  *
- * The inbox calls PRD-107's `promoteVersion` / `archiveVersion` services
- * directly — NOT PRD-119's tRPC procedures — so each mutation is one tx.
- * Errors are surfaced as `{ ok: false, reason: ApproveRejectError }` so the
- * pops-api router boundary doesn't translate typed exceptions.
+ * The inbox calls the `promoteVersion` / `archiveVersion` services directly,
+ * keeping each mutation in one tx. Errors are surfaced as
+ * `{ ok: false, reason: ApproveRejectError }` so the router boundary doesn't
+ * translate typed exceptions.
  */
 import { and, eq, isNull, sql } from 'drizzle-orm';
 
@@ -197,10 +197,9 @@ export function unrejectDraft(db: FoodDb, versionId: number): UnrejectResult {
 }
 
 /**
- * Read-side query for PRD-134's Drafts-tab filter: count of ingest sources
- * whose draft has not been reviewed yet. Exported so the inbox UI can use the
- * same predicate the spec calls out ("source.reviewed_at IS NULL AND draft
- * version status = 'draft'"). Kept on the service so the rule stays a single
+ * Read-side query for the Drafts-tab filter: count of ingest sources whose
+ * draft has not been reviewed yet (`source.reviewed_at IS NULL AND draft
+ * version status = 'draft'`). Kept on the service so the rule stays a single
  * source of truth.
  */
 export function countPendingInboxSources(db: FoodDb): number {

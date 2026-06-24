@@ -1,5 +1,5 @@
 /**
- * PRD-113 fixture set — ingredients + variants (part 1: shelf-stable + dairy + eggs).
+ * Ingredient + variant fixtures (part 1: shelf-stable + dairy + eggs).
  *
  * Spans (default_unit × variants × shelf_life). Pantry items (salt, pepper,
  * sugar, flour) leave shelf-life NULL; dairy + eggs carry fridge defaults.

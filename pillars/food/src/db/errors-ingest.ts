@@ -1,17 +1,11 @@
 /**
- * PRD-110 (ingest) + PRD-151 (tag) + PRD-123 (seeded-row) domain errors.
- *
- * Split from `errors.ts` to keep individual files under the max-lines lint
- * threshold. Re-exported from `errors.ts` so consumers don't need to
- * know about the split.
+ * Ingest-source, ingredient-tag, and seeded-row domain errors. Re-exported
+ * from `errors.ts`, which is the barrel consumers import from.
  */
 import type { IngestSourceKind } from './schema.js';
 
-// ── PRD-110 ─────────────────────────────────────────────────────────────
-
 /**
- * @deprecated Use `IngestSourceKind` from `./schema`. Kept as an alias so
- * existing imports inside the package keep compiling.
+ * @deprecated Use `IngestSourceKind` from `./schema`.
  */
 export type IngestKind = IngestSourceKind;
 
@@ -35,12 +29,10 @@ export class IngestSourceNotFound extends Error {
   }
 }
 
-// ── PRD-151 ─────────────────────────────────────────────────────────────
-
 /**
  * Thrown by the ingredient-tags service when a tag fails normalisation —
  * either the value collapsed to an empty string after trimming, or the
- * remaining characters violate the canonical regex documented in PRD-151.
+ * remaining characters violate the canonical regex.
  *
  * Allowed shape: `^[a-z0-9_-]+(:[a-z0-9_-]+)*$` (one or more segments joined
  * by `:`). Service-layer trims and lowercases before validating.
@@ -81,13 +73,11 @@ export class IngredientNotFound extends Error {
   }
 }
 
-// ── PRD-123 ─────────────────────────────────────────────────────────────
-
 /**
  * Thrown when a service-layer delete targets a row flagged `is_seeded=1`.
- * Seeded rows are owned by PRD-113's seed task; deletion is disabled in the
- * admin UI and refused server-side so re-seeding stays the single source of
- * truth.
+ * Seeded rows are owned by the seed task (pillars/food/docs/prds/seed-data);
+ * deletion is disabled in the admin UI and refused server-side so re-seeding
+ * stays the single source of truth.
  */
 export class SeededRowProtected extends Error {
   readonly table: 'unit_conversions' | 'ingredient_weights';

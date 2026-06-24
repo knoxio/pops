@@ -129,9 +129,10 @@ function composeSummary(parsed: ExtractedRecipe, opts: BuildDslOptions): string 
 }
 
 /**
- * Render the LLM-extracted recipe as a PRD-114 DSL string. Pure function
- * — no DB lookups, no slug-collision suffixing here (PRD-119's
- * `recipes.create` mutation owns that via `slug_registry`).
+ * Render the LLM-extracted recipe as a recipe-DSL string
+ * (`pillars/food/docs/prds/dsl-parser`). Pure function — no DB lookups,
+ * no slug-collision suffixing here (recipe create owns that via
+ * `slug_registry`; see `pillars/food/docs/prds/recipe-model`).
  *
  * Invariants:
  *   - First non-comment line is `@recipe(...)`.
@@ -140,7 +141,7 @@ function composeSummary(parsed: ExtractedRecipe, opts: BuildDslOptions): string 
  *   - Descriptors use `_` to skip variant when only `prep` is set.
  *   - Non-curated `prep_state_slug` values are pushed to `notes`.
  *   - Step bodies emitted verbatim (the prompt may already embed
- *     `@<slug>` inline references — PRD-114 parses those).
+ *     `@<slug>` inline references — the DSL parser handles those).
  */
 export function buildDsl(parsed: ExtractedRecipe, opts: BuildDslOptions): string {
   const recipeSlug = opts.slug ?? slugify(parsed.title) ?? 'recipe';

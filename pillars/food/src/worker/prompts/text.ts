@@ -1,11 +1,11 @@
 /**
- * PRD-132 — text-ingest prompt template.
+ * text-ingest prompt template.
  *
  * Versioned via `PROMPT_VERSION_TEXT`; bump on every prompt change so
  * `ai_inference_log.metadata.prompt_version` + `meta.json.stages.llm_extract.prompt_version`
  * tie back to the exact template that produced an extraction.
  *
- * The JSON schema mirrors PRD-128's (web-LLM fallback) so the same
+ * The JSON schema mirrors the web-llm template's so the same
  * `extractedRecipeSchema` zod validator + `buildDsl` mapper are reused
  * across kinds.
  */

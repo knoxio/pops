@@ -3,9 +3,8 @@
  * make tests painful and prevent `.env`-style overrides; a single load
  * function called from `worker.ts` keeps the surface explicit.
  *
- * Secrets follow pops-api's `env.ts` convention: read from
- * `/run/secrets/<lowercased-name>` first (Docker secrets file mount),
- * fall back to `process.env[NAME]` (dev / non-Docker).
+ * Secrets read from `/run/secrets/<lowercased-name>` first (Docker secrets
+ * file mount), fall back to `process.env[NAME]` (dev / non-Docker).
  */
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -17,7 +16,7 @@ function readSecret(name: string): string | undefined {
     const value = readFileSync(join(SECRETS_DIR, name.toLowerCase()), 'utf-8').trim();
     if (value) return value;
   } catch {
-    // Falls through to env var on ENOENT / EACCES / etc.
+    // Empty: any read failure intentionally falls through to the env var.
   }
   return process.env[name];
 }
@@ -33,9 +32,9 @@ export interface WorkerConfig {
   drainTimeoutMs: number;
   /** Pinned semicolon-delimited tool versions for `IngestMeta.extractor_version`. */
   extractorVersion: string;
-  /** Per-source workdir root for downloaded media (PRD-110 / PRD-129 / PRD-130). */
+  /** Per-source workdir root for downloaded media. */
   ingestDir: string;
-  /** Netscape cookies.txt mounted from the host (PRD-129 operator runbook). */
+  /** Netscape cookies.txt mounted from the host (see pillars/food/docs/prds/instagram-acquisition). */
   instagramCookiesPath: string;
 }
 

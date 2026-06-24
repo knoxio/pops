@@ -1,5 +1,6 @@
 /**
- * In-memory grouping for `food.fridge.view` — PRD-147.
+ * In-memory grouping for the fridge view
+ * (`pillars/food/docs/prds/fridge-view`).
  *
  * Folds the flat batch rows into `FridgeLocationSection` →
  * `FridgeIngredientGroup` → `FridgeBatchRow`. All four locations are

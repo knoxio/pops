@@ -1,21 +1,19 @@
 /**
- * PRD-125 — screenshot-payload disk writer.
+ * Screenshot-payload disk writer.
  *
- * Per PRD-125 §Flow: for `kind='screenshot'` the API decodes the base64
- * payload to `${FOOD_INGEST_DIR}/<sourceId>/screenshot.<ext>` BEFORE the
- * BullMQ job is enqueued (Redis stays small; worker reads the file).
+ * For `kind='screenshot'` the API decodes the base64 payload to
+ * `${FOOD_INGEST_DIR}/<sourceId>/screenshot.<ext>` BEFORE the BullMQ job is
+ * enqueued (Redis stays small; worker reads the file).
  *
- * Mime → extension mapping mirrors PRD-110's screenshot.<ext> amendment
- * (allows jpg/jpeg/png/webp). Caller validates the mime against the input
- * schema; this helper just maps.
+ * Mime → extension mapping allows jpg/jpeg/png/webp. Caller validates the
+ * mime against the input schema; this helper just maps.
  */
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-/** PRD-124 base64 size cap reused for screenshot input. */
 export const SCREENSHOT_MAX_BYTES = 8 * 1024 * 1024;
 
-/** Mirror of `pillars/food/app/src/storage/ingest-paths.ts` — duplicated to keep pops-api off the app-food package graph (cycle via @pops/api-client). */
+/** Mirror of the ingest path layout in `pillars/food/app/src/storage/ingest-paths.ts`; duplicated so the API does not depend on the app package. */
 const DEFAULT_FOOD_INGEST_DIR = './data/food/ingest';
 
 function ingestRootDir(): string {
@@ -56,7 +54,7 @@ export interface WriteScreenshotResult {
  * exceeds `SCREENSHOT_MAX_BYTES` or when the mime type isn't supported.
  *
  * Files are written under `<FOOD_INGEST_DIR>/<sourceId>/screenshot.<ext>`
- * so PRD-110's FIFO eviction (`runEvictionTick`) sweeps them alongside the
+ * so the FIFO eviction (`runEvictionTick`) sweeps them alongside the
  * other per-source media when the directory cap is hit.
  */
 export function writeScreenshotPayload(

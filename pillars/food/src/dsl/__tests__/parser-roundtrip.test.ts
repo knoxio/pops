@@ -1,9 +1,8 @@
 /**
- * PRD-114 — round-trip stability + perf tests.
+ * Round-trip stability + perf tests (spec: pillars/food/docs/prds/dsl-parser).
  *
  * Round-trip: parse → print → parse → assert AST equality (ignoring `loc`).
- * Perf: 200-line generated recipe parses in <50ms (soft target — a regression
- * triggers profiling, not a build failure).
+ * Perf: 200-line generated recipe parses in <50ms.
  */
 import { performance } from 'node:perf_hooks';
 
@@ -28,7 +27,7 @@ function stripLoc<T>(value: T): T {
   return value;
 }
 
-describe('PRD-114 — round-trip stability', () => {
+describe('round-trip stability', () => {
   it.each(ALL_SAMPLES)('parse → print → parse is stable for %s', (_label, src) => {
     const r1 = parseRecipeDsl(src);
     if (!r1.ok) throw new Error(`parse1 failed: ${r1.errors.map((e) => e.code).join(', ')}`);
@@ -45,13 +44,12 @@ describe('PRD-114 — round-trip stability', () => {
   });
 });
 
-describe('PRD-114 — performance', () => {
+describe('performance', () => {
   it('parses a 200-line recipe in <50ms', () => {
     const lines: string[] = [
       '@recipe(slug="big", title="Big recipe", servings=4)',
       '@yield(big-out, 1:count)',
     ];
-    // Pad to ~200 lines with alternating ingredient/step blocks.
     for (let i = 1; i <= 100; i += 1) {
       lines.push(`@ingredient(${i}, ingredient-${i}, ${i * 10}:g)`);
       lines.push(`@step("Combine @${i} with @${Math.max(1, i - 1)} for @time(${i}:s).")`);
@@ -59,7 +57,6 @@ describe('PRD-114 — performance', () => {
     const src = lines.join('\n');
     expect(src.split('\n').length).toBeGreaterThanOrEqual(200);
 
-    // Warm up + measure.
     parseRecipeDsl(src);
     const t0 = performance.now();
     const r = parseRecipeDsl(src);

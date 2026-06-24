@@ -39,7 +39,7 @@ export function parseContextTags(raw: string): readonly string[] {
 export function fetchEdgeRows(db: FoodDb, filter: GraphViewFilter): SubstitutionRow[] {
   const filters: SQL[] = [];
   const scope: SubstitutionScope = filter.scope ?? 'global';
-  // Defend the invariant at the service boundary too — the tRPC router
+  // Defend the invariant at the service boundary too — the REST router
   // refuses scope='recipe' without recipeId, but this helper is also
   // callable directly from worker / seed code where the boundary check
   // wouldn't run. Without this guard, `scope='recipe'` without recipeId

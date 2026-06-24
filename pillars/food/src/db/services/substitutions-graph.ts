@@ -1,5 +1,6 @@
 /**
- * Graph-view read helper for PRD-148 substitution graph explorer.
+ * Graph-view read helper for the substitution graph explorer
+ * (pillars/food/docs/prds/substitution-graph-explorer).
  *
  * The graph page wants the full filtered subgraph in one round-trip: every
  * edge that matches the user's filters, plus enough about each touched
@@ -11,14 +12,14 @@
  *
  * Filter set mirrors the page header controls:
  *   - `scope` (default 'global')
- *   - `recipeId` (required iff scope='recipe', enforced at the tRPC boundary)
- *   - `contextTag` — wildcard-OR semantics matching PRD-109 + the existing
+ *   - `recipeId` (required iff scope='recipe', enforced at the REST boundary)
+ *   - `contextTag` — wildcard-OR semantics matching the existing
  *     `listSubstitutions` helper (empty `context_tags` array is a wildcard)
  *   - `search` — applied in TypeScript against hydrated slugs/names to keep
  *     SQL simple (the join-by-id post-fetch is already a small set at this
- *     scale, <500 edges per PRD-148's stated upper bound)
+ *     scale, <500 edges per the stated upper bound)
  *
- * Performance note (from PRD-148 spec): the partial index
+ * Performance note: the partial index
  * `idx_subs_scope_recipe` covers only `scope='recipe'`. Global-view queries
  * therefore full-scan the `substitutions` table. Acceptable at <500 edges;
  * revisit if scale grows.

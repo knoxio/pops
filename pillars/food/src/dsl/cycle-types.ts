@@ -1,11 +1,12 @@
 import type { FoodDb } from '../db/services/internal.js';
 /**
- * Recipe-graph cycle detection types — PRD-117.
+ * Recipe-graph cycle detection types.
  *
- * The detector runs between PRD-115 (resolver) and PRD-116 (compile +
- * materialise). It walks the live recipe graph from a candidate recipe's
- * recipe-as-ingredient targets; a path back to the candidate itself is a
- * cycle.
+ * The detector runs between the resolver and compile + materialise. It
+ * walks the live recipe graph from a candidate recipe's recipe-as-ingredient
+ * targets; a path back to the candidate itself is a cycle.
+ *
+ * Spec: pillars/food/docs/prds/recipe-cycle-detection
  */
 import type { SourceSpan } from './ast.js';
 

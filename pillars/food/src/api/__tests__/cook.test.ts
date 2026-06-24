@@ -1,6 +1,5 @@
 /**
- * Integration tests for the `cook.*` REST surface (PRD-144 / PRD-146 /
- * PRD-149), ported from the pops-api tRPC cook suites.
+ * Integration tests for the `cook.*` REST surface.
  *
  * `prepareCook` happy path + 404; `markCooked` happy path, scale, yieldless,
  * every `MarkCookedError` branch, plan-entry linkage + race, plus the
@@ -517,7 +516,7 @@ describe('cook REST — plan entry integration', () => {
   });
 });
 
-describe('cook REST — consumption overrides (PRD-146)', () => {
+describe('cook REST — consumption overrides', () => {
   it("kind='batch-override' draws from the chosen batch, leaving FIFO untouched", async () => {
     const seed = seedCompiledRecipe('override-batch');
     const fifoBatchId = seedBatch(seed.variantId, 1000);
@@ -757,7 +756,7 @@ describe('cook REST — consumption overrides (PRD-146)', () => {
   });
 });
 
-describe('cook REST — substitution overrides (PRD-149)', () => {
+describe('cook REST — substitution overrides', () => {
   function makeVariant(
     slug: string,
     variantSlug: string

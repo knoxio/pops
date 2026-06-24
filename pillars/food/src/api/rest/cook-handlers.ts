@@ -1,12 +1,11 @@
 /**
- * Handlers for the `cook.*` sub-router (PRD-144).
+ * Handlers for the `cook.*` sub-router.
  *
  * `prepareCook` maps the internal `PrepareCookError` (missing recipe
- * version / plan entry) to a 404 `{ message }` envelope, mirroring the
- * tRPC `NOT_FOUND` the old router threw; every other failure propagates to
- * Express. `markCooked` returns its full `MarkCookedResult` discriminated
- * union on a 200 — domain failures are `{ ok: false, reason }`, not HTTP
- * errors — wrapped in the shared `runHttp` passthrough.
+ * version / plan entry) to a 404 `{ message }` envelope; every other failure
+ * propagates to Express. `markCooked` returns its full `MarkCookedResult`
+ * discriminated union on a 200 — domain failures are `{ ok: false, reason }`,
+ * not HTTP errors — wrapped in the shared `runHttp` passthrough.
  */
 import { markCooked } from '../modules/cook/mark-cooked.js';
 import { prepareCook, PrepareCookError } from '../modules/cook/prepare.js';

@@ -1,9 +1,9 @@
 /**
- * PRD-123 — normalisation invariants.
+ * Normalisation invariants (spec: pillars/food/docs/prds/conversion-table).
  *
  * Drives `normaliseLineQty` against an in-memory SQLite seeded with the
- * conversion-table migrations on top of PRD-106's ingredients schema.
- * Each test asserts BOTH the returned shape and the resolution path.
+ * conversion-table migrations on top of the ingredients schema. Each test
+ * asserts BOTH the returned shape and the resolution path.
  */
 
 import { beforeEach, describe, expect, it } from 'vitest';
@@ -23,7 +23,7 @@ function freshDb(): FoodDb {
   return openFoodDb(':memory:').db;
 }
 
-describe('PRD-123 — normaliseLineQty', () => {
+describe('normaliseLineQty', () => {
   let db: FoodDb;
 
   beforeEach(() => {

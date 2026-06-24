@@ -134,12 +134,6 @@ describe('runIngestJob', () => {
 
 describe('default handler stubs', () => {
   it('no kinds are still routed to the NotImplemented stub', async () => {
-    // PRDs 127 (`url-web`), 130 (`url-instagram`), 131 (`screenshot`), and
-    // 132 (`text`) have all replaced their stubs with real pipelines.
-    // The PRD-126 `NotImplemented` extractor-version should never surface
-    // from a default-handler dispatch anymore. The stub utility is
-    // preserved in `not-implemented.ts` so the next per-kind PRD can
-    // bootstrap a follow-up handler.
     const kinds: IngestJobData[] = [
       { kind: 'url-web', sourceId: 1, url: 'https://example.test/recipe' },
       { kind: 'url-instagram', sourceId: 2, url: 'https://instagram.com/r/abc' },

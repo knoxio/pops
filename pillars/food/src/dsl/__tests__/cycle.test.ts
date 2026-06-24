@@ -1,11 +1,11 @@
 /**
- * PRD-117 — recipe-graph cycle detection invariants.
+ * Recipe-graph cycle detection invariants
+ * (spec: pillars/food/docs/prds/recipe-cycle-detection).
  *
- * The detector queries `recipe_lines` (PRD-116). Until that PRD lands, the
- * test suite creates the minimal subset of `recipe_lines` columns
- * (`recipe_version_id`, `recipe_ref_id`, `is_recipe_ref`) the detector
- * reads. When PRD-116's full schema arrives, the same queries continue to
- * work against the superset.
+ * The detector walks the recipe graph by reading `recipe_lines`. The
+ * fixtures insert only the columns the detector reads
+ * (`recipe_version_id`, `is_recipe_ref`, `recipe_ref_id`, plus the
+ * NOT NULL columns), not the full materialised row.
  */
 
 import { eq } from 'drizzle-orm';
@@ -77,7 +77,7 @@ function makeCandidateAst(
   // The detector reads `kind`, `isRecipeRef`, `recipeRef`, and `loc` off
   // each block — never `ingredientId` / `yieldIngredientId`. Leave the
   // unread fields null so the fixture doesn't depend on row-allocation
-  // order (Copilot review on #2696).
+  // order.
   return {
     header: {
       slug: 'candidate',
@@ -109,7 +109,7 @@ function makeCandidateAst(
   };
 }
 
-describe('PRD-117 — recipe-graph cycle detection', () => {
+describe('recipe-graph cycle detection', () => {
   let db: FoodDb;
   let raw: Database.Database;
   let yieldIngId: number;
@@ -232,7 +232,6 @@ describe('PRD-117 — recipe-graph cycle detection', () => {
     });
     // Add a recipe_line on the draft version that WOULD cycle if it were live.
     addRecipeRef(raw, bVersion.id, candidate.recipeId);
-    // Candidate references B; B is draft → its refs don't count.
     const ast = makeCandidateAst([{ recipeRef: b.id, index: 1, line: 4 }]);
     const result = detectRecipeCycle(ast, { db, currentRecipeId: candidate.recipeId });
     expect(result.ok).toBe(true);

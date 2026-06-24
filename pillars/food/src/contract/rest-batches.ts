@@ -1,8 +1,8 @@
 /**
- * `batches.*` sub-router — PRD-145 batch lifecycle + PRD-146 consume
- * picker. Lifecycle mutations (relocate/edit/adjust/delete) return the
- * service's discriminated `{ ok, ... }` result on 200 (the FE narrows on
- * it); `create` answers 201 or 400. `searchForConsume` is FIFO-ordered
+ * `batches.*` sub-router — batch lifecycle + the consume picker. Lifecycle
+ * mutations (relocate/edit/adjust/delete) return the service's
+ * discriminated `{ ok, ... }` result on 200 (the FE narrows on it);
+ * `create` answers 201 or 400. `searchForConsume` is FIFO-ordered
  * server-side.
  */
 import { initContract } from '@ts-rest/core';

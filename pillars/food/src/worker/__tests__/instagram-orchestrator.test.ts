@@ -1,8 +1,3 @@
-/**
- * PRD-130 — orchestrator tests. Mocks acquisition / STT / ffmpeg / vision
- * / text-fallback and walks the documented degradation truth table end
- * to end.
- */
 import { describe, expect, it, vi } from 'vitest';
 
 import {
@@ -313,7 +308,7 @@ describe('runInstagramPipeline — vision payload cap', () => {
     expect(visionMock).toHaveBeenCalledOnce();
     const args = visionMock.mock.calls[0]?.[0];
     expect(args?.keyframePaths.length).toBe(10);
-    // The cap to 5 happens inside `extractWithClaudeVision` itself; see
-    // its own unit test for that boundary.
+    // The orchestrator forwards every keyframe; the MAX_KEYFRAMES_TO_VISION cap
+    // is enforced inside extractWithClaudeVision and asserted in its own test.
   });
 });

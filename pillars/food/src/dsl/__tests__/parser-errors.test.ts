@@ -1,5 +1,6 @@
 /**
- * PRD-114 — error coverage tests for `parseRecipeDsl`.
+ * Error coverage tests for `parseRecipeDsl`
+ * (spec: pillars/food/docs/prds/dsl-parser).
  *
  * Each `ParseErrorCode` has at least one case asserting code + a sensible
  * loc. Plus the recovery test (3 bad @step calls → 3 errors).
@@ -20,7 +21,7 @@ function parseErr(input: string): { code: ParseErrorCode; line: number }[] {
   return r.errors.map((e) => ({ code: e.code, line: e.loc.startLine }));
 }
 
-describe('PRD-114 — parser error codes', () => {
+describe('parser error codes', () => {
   it('MissingRecipeHeader — empty input', () => {
     const errs = parseErr('');
     expect(errs.map((e) => e.code)).toContain('MissingRecipeHeader');

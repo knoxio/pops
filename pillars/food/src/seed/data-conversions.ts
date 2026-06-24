@@ -1,10 +1,10 @@
 /**
- * PRD-113 phase-2 fixture set — PRD-123 conversion tables.
+ * Conversion-table fixtures.
  *
  * `UNIT_CONVERSION_FIXTURES` populates `unit_conversions`: a small generic
  * set covering the units the seed's sample recipes actually use plus the
- * common kitchen-volume measures so the conversion-table CRUD pages
- * (PRD-123 phase B / C) and the Phase-2 compile path have rows to exercise.
+ * common kitchen-volume measures so the conversion-table CRUD pages and the
+ * compile path have rows to exercise.
  *
  * `INGREDIENT_WEIGHT_FIXTURES` populates `ingredient_weights`: just enough
  * to demonstrate the variant-specific and null-variant fallback paths in
@@ -12,7 +12,7 @@
  * the seed step resolves them to ids via `SeedContext`.
  *
  * Every row is seeded with `isSeeded=true` so the conversions CRUD UI
- * blocks accidental deletes (see PRD-123's `SeededRowProtected` typed error).
+ * blocks accidental deletes (`SeededRowProtected` typed error).
  */
 
 export interface UnitConversionFixture {
@@ -42,14 +42,14 @@ export const UNIT_CONVERSION_FIXTURES: readonly UnitConversionFixture[] = [
 ];
 
 /**
- * Per-ingredient weight overrides. `variantSlug=null` matches PRD-123's
- * null-variant fallback row (applies to every variant of the ingredient
- * unless a more specific row exists).
+ * Per-ingredient weight overrides. `variantSlug=null` is the null-variant
+ * fallback row (applies to every variant of the ingredient unless a more
+ * specific row exists).
  *
  * The seeded weights are deliberately small: enough to exercise the
  * variant-specific path (flour:plain, sugar:caster, salt:table) AND the
  * null-variant fallback (butter), without claiming authority over the
- * USDA/Open Food Facts datasets PRD-113 explicitly leaves out of scope.
+ * USDA/Open Food Facts datasets the seed leaves out of scope.
  */
 export interface IngredientWeightFixture {
   ingredientSlug: string;

@@ -1,20 +1,19 @@
 /**
- * PRD-134 — `food.inbox.list` + `food.inbox.pendingCount` server queries.
+ * `food.inbox.list` + `food.inbox.pendingCount` server queries.
  *
  * Drives the Drafts tab in `/food/inbox` and the sidebar pending-count badge.
  * Both queries share the same predicate base — ingest-originated drafts whose
  * source has not yet been reviewed and whose parent recipe is not archived.
  *
- * The PRD chose in-memory band sorting + filtering because the heuristic
- * score is not a column — it's derived per-row from PRD-137's `scoreDraft`.
- * SQL narrows by `kind` (PRD-138's `idx_ingest_sources_kind` helps);
- * everything else (`bands`, `partialReasons`, `freshOnly`, score sort) runs
- * in memory after a single batched gather. Single-user load + PRD §Edge
- * Cases ("hundreds of drafts max") makes the O(N) pass cheap.
+ * Band sorting + filtering happen in memory because the heuristic score is
+ * not a column — it's derived per-row from `scoreDraft`. SQL narrows by
+ * `kind` (`idx_ingest_sources_kind` helps); everything else (`bands`,
+ * `partialReasons`, `freshOnly`, score sort) runs in memory after a single
+ * batched gather. Single-user load + a hundreds-of-drafts ceiling make the
+ * O(N) pass cheap.
  *
- * Score, filter, sort and paginate live in `inbox-queries-drafts-helpers`
- * and the shapes live in `inbox-queries-drafts-types` — the split keeps
- * each module under the per-file lint cap.
+ * Score, filter, sort and paginate live in `inbox-queries-drafts-helpers`;
+ * the shapes live in `inbox-queries-drafts-types`.
  */
 import { and, count, eq, inArray, isNull, type SQL } from 'drizzle-orm';
 
@@ -39,7 +38,7 @@ export {
 /**
  * Returns rows for the Drafts tab. Computes the band per row using
  * `scoreDraft` over the input batched from `gatherQualityInputsForVersions`
- * — single SQL round-trip for inputs, no N+1 (the gather helper batches).
+ * — single SQL round-trip for inputs, no N+1.
  */
 export function listDrafts(
   db: FoodDb,

@@ -1,28 +1,27 @@
 /**
- * PRD-113 seed step — recipe headers + Phase-2 compile.
+ * Seed step — recipe headers + optional compile.
  *
- * `seedRecipeHeaders` is the Phase-1 path: it calls `createRecipe` for each
- * fixture and stashes both the recipe id and the first-version id in the
- * SeedContext. The DSL body lives in `recipe_versions.body_dsl` as plain
- * text; `compile_status` defaults to `'uncompiled'` and `status` to `'draft'`.
+ * `seedRecipeHeaders` calls `createRecipe` for each fixture and stashes both
+ * the recipe id and the first-version id in the SeedContext. The DSL body
+ * lives in `recipe_versions.body_dsl` as plain text; `compile_status`
+ * defaults to `'uncompiled'` and `status` to `'draft'`.
  *
- * `seedRecipesAndCompile` is the Phase-2 path: same create flow, plus a
- * caller-injected `compile` callback that drives PRD-116's
- * `compileRecipeVersion`, plus a `promoteVersion` call so each recipe's
- * `current_version_id` is set before the next fixture compiles. Order
- * matters — components (e.g. `smash-patty`) must be promoted before plates
- * that reference them via PRD-115's recipe-as-ingredient resolver.
+ * `seedRecipesAndCompile` uses the same create flow plus a caller-injected
+ * `compile` callback (`compileRecipeVersion` from `../dsl/compile.js`) and a
+ * `promoteVersion` call so each recipe's `current_version_id` is set before
+ * the next fixture compiles. Order matters — components (e.g. `smash-patty`)
+ * must be promoted before plates that reference them via the
+ * recipe-as-ingredient resolver.
  *
- * The callback indirection keeps `@pops/app-food-db` free of any dependency
- * on the React-bound `@pops/app-food` package. Production callers (the
- * `db:seed:food` CLI in `@pops/app-food`) supply the real
- * `compileRecipeVersion`; the in-memory test in this package falls back to
- * `seedRecipeHeaders` for Phase-1/3 coverage.
+ * The callback indirection keeps this seed module free of any dependency on
+ * the DSL compile path, so the in-package vitest suite can run by falling
+ * back to `seedRecipeHeaders`. The `mise run db:seed:food` runner
+ * (`scripts/db-seed-food.ts`) supplies the real `compileRecipeVersion`.
  *
- * Phase 3 wiring: if `seedIngestSources` already populated
+ * Ingest wiring: if `seedIngestSources` already populated
  * `ctx.ingestSourceIdByRecipeSlug` for a given recipe slug, the matching
- * `ingest_sources.id` is passed through as `firstVersion.sourceId` so
- * PRD-135's `recipe_versions.source_id IS NOT NULL` scope sees the draft.
+ * `ingest_sources.id` is passed through as `firstVersion.sourceId` so the
+ * `recipe_versions.source_id IS NOT NULL` review scope sees the draft.
  */
 import { promoteVersion } from '../db/services/recipe-versions.js';
 import { createRecipe } from '../db/services/recipes.js';
@@ -31,7 +30,7 @@ import { RECIPE_FIXTURES, type RecipeFixture } from './data-recipes.js';
 import type { FoodDb } from '../db/services/internal.js';
 import type { SeedContext } from './types.js';
 
-/** Minimal compile callback contract. Structurally compatible with PRD-116's `CompileResult`. */
+/** Minimal compile callback contract. Structurally compatible with the DSL `CompileResult`. */
 export type SeedCompileResult =
   | { ok: true; lineCount: number; stepCount: number; creationCount: number }
   | { ok: false; phase: string; errors: readonly unknown[] };

@@ -1,11 +1,11 @@
 /**
- * `ingest.*` sub-router — PRD-125 recipe ingest pipeline.
+ * `ingest.*` sub-router — the recipe ingest pipeline.
  *
  * The food-api container is the BullMQ producer: `start` enqueues, `status`
  * / `list` read live job state + the persisted `ingest_sources` row, and
  * `cancel` / `retry` poke the queue. `workerComplete` is the internal
- * callback the pops-worker-food container posts on every job (success or
- * failure) — gated by `x-pops-internal-token` in `app.ts`.
+ * callback the `pops-worker-food` container posts on every job (success or
+ * failure) — gated by `x-pops-internal-token` in `src/api/app.ts`.
  *
  * `start` / `retry` answer 503 when Redis is not configured (the producer
  * can't enqueue). Reads use POST-with-body — parity with `inbox.list` —

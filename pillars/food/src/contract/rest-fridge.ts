@@ -1,8 +1,8 @@
 /**
- * `fridge.*` sub-router — PRD-147 fridge/pantry view + the "recipes using
- * this batch" lookup. `view` is `POST`-with-body (its filter set carries a
- * locations array + several booleans that ride a body more cleanly than
- * query params); it is a pure read. Both are read-only.
+ * `fridge.*` sub-router — fridge/pantry view + the "recipes using this
+ * batch" lookup. Both are read-only. `view` is `POST`-with-body: its filter
+ * set carries a locations array + several booleans that ride a body more
+ * cleanly than query params.
  */
 import { initContract } from '@ts-rest/core';
 import { z } from 'zod';

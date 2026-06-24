@@ -4,8 +4,8 @@
  * The route serves the committed `openapi/food.openapi.json` projection
  * verbatim so the pillar SDK can build its operationId route map against the
  * live pillar. This asserts the document is reachable, is OpenAPI 3.x, carries
- * a known operationId from the migrated surface, and no longer carries the
- * dropped `ai.logInference` route (#3490).
+ * a known operationId, and no longer carries the dropped `ai.logInference`
+ * route.
  */
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';

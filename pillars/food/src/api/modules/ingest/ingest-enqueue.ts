@@ -1,10 +1,8 @@
 /**
- * PRD-125 — `food.ingest.start` + `food.ingest.retry` enqueue helper.
+ * Enqueue helper for the ingest start/retry routes.
  *
- * Encapsulates the BullMQ `add` call and the per-kind job-data shaping so
- * the router stays thin. The screenshot path is written to disk by
- * `writeScreenshotPayload` before this helper runs; this helper only takes
- * the resulting `contentPath`.
+ * The screenshot path is written to disk by `writeScreenshotPayload` before
+ * this helper runs; this helper only takes the resulting `contentPath`.
  */
 import { type IngestJobData, FOOD_INGEST_QUEUE_NAME } from '../../../contract/queue/index.js';
 import { getFoodIngestQueue } from '../../queue.js';

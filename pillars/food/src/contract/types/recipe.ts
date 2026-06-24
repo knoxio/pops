@@ -1,20 +1,12 @@
 /**
- * A recipe in the food pillar. Mirrors the intended API response
- * (camelCase) — the contract shape is deliberately narrower than the
- * live `RecipeListItem` (`apps/pops-api/src/modules/food/recipes/types.ts`)
- * which carries a numeric `id`, `slug`, `recipeType`, `heroImagePath`,
- * `prepMinutes`/`cookMinutes`, `archivedAt`, and a `hasCurrentVersion`
- * flag. The contract pins:
+ * A recipe, as exposed on the food pillar API (camelCase).
  *
- * - opaque string `id` (the runtime uses a numeric PK; the contract
- *   commits to string ids so the SDK and apps don't depend on a numeric
- *   surrogate that the back-end may someday replace),
- * - the rendered `ingredients` line list (free-form strings — the live
- *   `recipe_lines` rows are richer, but downstream consumers only need
- *   the display strings),
- * - the rendered `instructions` markdown blob,
- * - `tagIds` for tag references,
- * - a nullable `source` URL/citation string.
+ * This contract surface is deliberately narrower than the persisted recipe
+ * row in `src/db`. It commits to an opaque string `id` so the SDK and apps
+ * don't depend on a numeric surrogate, exposes the rendered `ingredients`
+ * line list and `instructions` markdown blob rather than the richer
+ * underlying rows, carries `tagIds` for tag references, and a nullable
+ * `source` URL/citation string.
  */
 export interface Recipe {
   id: string;

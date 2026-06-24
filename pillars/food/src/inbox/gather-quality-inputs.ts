@@ -1,17 +1,17 @@
 /**
- * PRD-137 batched input gatherer.
+ * Batched gatherer feeding the quality heuristic — see
+ * pillars/food/docs/prds/quality-heuristic.
  *
  * Returns the `QualityInputs` for each input versionId via a fixed-size set
- * of DB round-trips (no N+1 — PRD-134's queue depends on this).
+ * of DB round-trips (no N+1 — the inbox queue depends on this).
  *
- * **State derivation is DB-only.** PRD-125's full state derivation
- * (`apps/pops-api/.../services/ingest-state.ts`) consults BullMQ for the
- * processing-vs-pending distinction; this helper can't reach Redis from
- * the DB layer, and the heuristic only cares about the
+ * **State derivation is DB-only.** This helper derives `ingestState` from
+ * the source row alone; it can't observe the live processing-vs-pending
+ * distinction, and the heuristic only cares about the
  * `completed/failed/partial` terminal trio plus a generic `processing`
  * for everything else. The simplification is safe: rows that are still
- * in-flight get `processing`, never `failed`, so PRD-137 doesn't fire
- * the COMPILE-failed branches against work that's merely incomplete.
+ * in-flight get `processing`, never `failed`, so the COMPILE-failed
+ * branches don't fire against work that's merely incomplete.
  */
 import { count, inArray, isNotNull } from 'drizzle-orm';
 
@@ -68,9 +68,9 @@ export function gatherQualityInputsForVersions(
   const lineCounts = readLineCounts(db, versions);
   const stepCounts = readStepCounts(db, versions);
   const slugCounts = readSlugCounts(db, versions);
-  // PRD-137 AC: O(1) round-trips. `countCreationsForVersions` does the
-  // window scan once across slug_registry + ingredient_variants for the
-  // entire batch (was per-version, which Copilot R1 flagged as N+1).
+  // `countCreationsForVersions` does the window scan once across
+  // slug_registry + ingredient_variants for the entire batch, keeping
+  // round-trips O(1) in the batch size.
   const creationCounts = countCreationsForVersions(
     db,
     versions.map((v) => v.id)
@@ -228,5 +228,4 @@ function parseCompileErrorCount(compileError: string | null): number {
   }
 }
 
-/** Re-export so callers can address rows whose version has no source. */
 export { isNotNull };

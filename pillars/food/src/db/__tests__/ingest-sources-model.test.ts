@@ -1,7 +1,6 @@
 /**
- * PRD-110 invariant tests — exercises the ingest_sources schema and
- * service layer against an in-memory SQLite seeded with PRDs 106 + 107 +
- * 110 migrations.
+ * Invariant tests — exercises the ingest_sources schema and service layer
+ * against an in-memory SQLite seeded with the food migrations.
  */
 
 import { eq } from 'drizzle-orm';
@@ -20,7 +19,7 @@ function freshDb(): { db: FoodDb; raw: Database.Database } {
   return openFoodDb(':memory:');
 }
 
-describe('PRD-110 — ingest_sources schema', () => {
+describe('ingest_sources schema', () => {
   let db: FoodDb;
   let raw: Database.Database;
 
@@ -201,7 +200,7 @@ describe('PRD-110 — ingest_sources schema', () => {
       markArchived(db, [source.id]);
       const reread = db.select().from(ingestSources).where(eq(ingestSources.id, source.id)).all();
       expect(reread[0]?.archivedAt).not.toBeNull();
-      // Path columns are intentionally preserved per PRD-110.
+      // Path columns are intentionally preserved on archive.
       expect(reread[0]?.caption).toBe('web-extracted body');
     });
 
@@ -210,11 +209,9 @@ describe('PRD-110 — ingest_sources schema', () => {
     });
   });
 
-  describe('PRD-107 cross-ref — recipe_versions.source_id', () => {
-    it('source_id is a plain integer (no FK enforcement yet)', () => {
-      // PRD-107 declared source_id as a plain integer so PRD-110 could land
-      // without a forward-FK migration. Retrofitting the FK is queued as a
-      // future amendment; meanwhile inserting a phantom source_id succeeds.
+  describe('recipe_versions.source_id cross-ref', () => {
+    it('source_id is a plain integer (no FK enforcement)', () => {
+      // source_id carries no FK, so a phantom value inserts without error.
       const { recipe } = createRecipe(db, {
         slug: 'phantom',
         firstVersion: { title: 'Phantom', bodyDsl: '@recipe(phantom)' },

@@ -1,11 +1,11 @@
 /**
- * PRD-128 — zod schema for the Claude-extracted recipe JSON.
+ * Zod schema for the Claude-extracted recipe JSON
+ * (`pillars/food/docs/prds/web-llm-fallback`).
  *
- * Scoped to the web-llm handler to avoid colliding with PRD-132's
- * concurrent `extracted-recipe.ts` (same shape, parallel branches —
- * post-merge dedup task is in the roadmap claim). The schema is strict
- * about required fields and lenient about strings (any plain-text unit
- * is accepted; alias reconciliation happens in the review queue).
+ * Scoped to the web-llm handler; `extracted-recipe.ts` carries a
+ * parallel copy of the same shape. The schema is strict about required
+ * fields and lenient about strings (any plain-text unit is accepted;
+ * alias reconciliation happens in the review queue).
  */
 import { z } from 'zod';
 

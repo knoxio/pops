@@ -1,21 +1,23 @@
 /**
- * PRD-131 — screenshot ingest handler.
+ * Screenshot ingest handler
+ * (`pillars/food/docs/prds/screenshot-ingest`).
  *
- * Replaces the PRD-126 NotImplemented stub. Reads the image written to
- * disk by the producer (PRD-125), runs one Claude vision call, builds a
- * DSL string from the structured response and posts the
- * `IngestJobResult` back through the BullMQ → tRPC workerComplete loop.
+ * Reads the image written to disk by the producer, runs one Claude
+ * vision call, builds a DSL string from the structured response and
+ * posts the `IngestJobResult` back through the BullMQ → REST
+ * `workerComplete` loop.
  *
  * Failure semantics:
  * - Malformed JSON / zod fail / SDK throw → `VisionExtractFailed`.
  * - File-read failure → `FileReadFailed`. The worker posts the result
- *   via `workerComplete` (PRD-125), so BullMQ marks the job complete —
- *   no automatic retry. The retry surface is PRD-138's Failed tab,
- *   which reads `ingest_sources.error_code` and exposes a Retry button.
+ *   via `workerComplete`, so BullMQ marks the job complete — no
+ *   automatic retry. The retry surface is the Failed tab
+ *   (`pillars/food/docs/prds/rejected-and-failed-tabs`), which reads
+ *   `ingest_sources.error_code` and exposes a Retry button.
  *
  * Cancellation is cooperative: checked before the file read, between
  * the vision call and the DSL build, and after the DSL build. Mid-
- * vision-call cancellation is NOT supported per PRD.
+ * vision-call cancellation is NOT supported.
  */
 import { buildDsl } from './screenshot-dsl.js';
 import { extractRecipeFromImage, type ExtractRecipeResult } from './screenshot-extract.js';
@@ -25,9 +27,8 @@ import type { IngestHandler } from './types.js';
 
 /**
  * Bumped whenever the extractor's shape changes — handler version
- * mirrors the worker package version. PRD-126's `extractor_version`
- * field reads this to let the inbox tell apart stub vs real-handler
- * outputs.
+ * mirrors the worker package version. The inbox reads the
+ * `extractor_version` field to tell apart stub vs real-handler outputs.
  */
 const SCREENSHOT_EXTRACTOR_VERSION = 'pops-worker-food/screenshot@0.1.0';
 

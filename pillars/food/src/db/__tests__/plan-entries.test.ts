@@ -1,10 +1,9 @@
 /**
- * PRD-111 invariant tests — exercises the plan_slots + plan_entries schema
- * and the service layer against an in-memory SQLite seeded with PRD-106 +
- * PRD-107 + PRD-111 migrations.
+ * Invariant tests — exercises the plan_slots + plan_entries schema and the
+ * service layer against an in-memory SQLite seeded with the food migrations.
  *
- * PRD-113 owns the seeded `plan_slots` rows; this suite seeds its own
- * minimal slot vocabulary so the FK can be exercised in isolation.
+ * This suite seeds its own minimal `plan_slots` vocabulary so the FK can be
+ * exercised in isolation from the runtime default-slot seed.
  */
 
 import { asc, eq } from 'drizzle-orm';
@@ -47,7 +46,7 @@ const DEFAULT_SLOTS = [
 
 function freshDb(): { db: FoodDb; raw: Database.Database } {
   const opened = openFoodDb(':memory:');
-  // PRD-113 will seed these; mirror it here so PRD-111 tests run standalone.
+  // Mirror the runtime default-slot seed so these tests run standalone.
   for (const slot of DEFAULT_SLOTS) {
     opened.db
       .insert(planSlots)
@@ -79,7 +78,7 @@ function makeRecipeRun(db: FoodDb, slug = 'smash-burger'): { recipeId: number; r
   return { recipeId: recipe.id, runId: run.id };
 }
 
-describe('PRD-111 — plan_slots + plan_entries', () => {
+describe('plan_slots + plan_entries', () => {
   let db: FoodDb;
   let raw: Database.Database;
 

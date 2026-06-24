@@ -1,7 +1,7 @@
 /**
- * PRD-113 fixture set — batches (+ one recipe run + its consumptions).
+ * Batch fixtures (+ one recipe run + its consumptions).
  *
- * 10 rows spanning the matrix:
+ * Rows span the matrix:
  *   - shelf-stable (NULL expires_at) — salt
  *   - fridge with explicit expiry — chicken breast (close to today)
  *   - freezer batch — beef mince
@@ -10,7 +10,7 @@
  *   - 1 from a `recipe_run` source — smash-burger yields 360 g beef:mince:cooked
  *
  * `producedAt` / `expiresAt` are anchored to a stable date so the seed is
- * deterministic. PRD-108 stores both as ISO strings.
+ * deterministic; both are stored as ISO strings.
  */
 
 export type Location = 'pantry' | 'fridge' | 'freezer' | 'other';
@@ -165,8 +165,8 @@ export const BATCH_FIXTURES: readonly BatchFixture[] = [
 ];
 
 /**
- * Single seeded `recipe_runs` row so batch #10 has a valid `source_id`. PRD-
- * 108's `consumeForRun` is exercised by drawing 200 g beef from the freezer
+ * Single seeded `recipe_runs` row so batch #10 has a valid `source_id`.
+ * `consumeForRun` is exercised by drawing 200 g beef from the freezer
  * batch (#3) when this run is recorded.
  */
 export interface RecipeRunFixture {

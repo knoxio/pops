@@ -1,28 +1,27 @@
 /**
- * PRD-113 phase 3 fixture set — ingest_sources.
+ * ingest_sources fixtures.
  *
- * Two rows, one per realistic Epic 02 ingest path that PRD-135's inbox
- * inspector will actually have to render:
+ * Two rows, one per realistic ingest path the inbox inspector has to render:
  *
  *   1. `url-instagram` — Reel scrape with caption + transcript + keyframes +
- *      video. Mirrors the auth-OK happy path PRD-130 covers; gives the
- *      inspector's provenance pane every column to display.
- *   2. `url-web` — JSON-LD scrape (PRD-127); no transcript/video, no caption,
- *      just `extracted_json`. Exercises the inspector's "minimal provenance"
+ *      video. Mirrors the auth-OK happy path; gives the inspector's
+ *      provenance pane every column to display.
+ *   2. `url-web` — JSON-LD scrape; no transcript/video, no caption, just
+ *      `extracted_json`. Exercises the inspector's "minimal provenance"
  *      branch and confirms the route handlers for `/screenshot` and `/video`
  *      gracefully degrade when those columns are null.
  *
- * Both rows are linked to a seeded draft recipe so PRD-135's
+ * Both rows are linked to a seeded draft recipe so the
  * `recipe_versions.source_id IS NOT NULL` scope picks them up. The
  * `draftRecipeId` FK is filled by a second pass (`linkIngestSourcesToDrafts`)
  * after `step-recipes` runs — at insert time the recipe rows don't exist yet.
  *
  * Path columns store the bare filename in the fixture; `step-ingest-sources`
- * patches them post-insert into PRD-110's `<source_id>/<filename>` layout
+ * patches them post-insert into the `<source_id>/<filename>` layout
  * (e.g. `42/video.mp4`) using the auto-increment id. The absolute path is
  * computed by `ingestDirFor(sourceId)` at read time. The seed does NOT
- * create the files on disk — fixtures cover row shape only; the worker
- * (PRD-126) owns file lifecycle.
+ * create the files on disk — fixtures cover row shape only; the worker owns
+ * file lifecycle.
  */
 
 import type { IngestSourceKind } from '../db/schema.js';
@@ -33,7 +32,7 @@ export interface IngestSourceFixture {
   kind: IngestSourceKind;
   url: string | null;
   caption: string | null;
-  /** Paths are stored relative to FOOD_INGEST_DIR per PRD-110. */
+  /** Paths are stored relative to FOOD_INGEST_DIR. */
   transcriptPath: string | null;
   keyframesDir: string | null;
   videoPath: string | null;

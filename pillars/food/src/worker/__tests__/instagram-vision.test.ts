@@ -1,7 +1,3 @@
-/**
- * PRD-130 — vision unit tests. Asserts the keyframe cap, the schema
- * validation, and the markdown-fence rejection.
- */
 import { describe, expect, it, vi } from 'vitest';
 
 import {
@@ -44,7 +40,7 @@ const VALID_JSON = JSON.stringify({
 });
 
 describe('extractWithClaudeVision', () => {
-  it('caps keyframes sent to vision at MAX_KEYFRAMES_TO_VISION (5)', async () => {
+  it('caps keyframes sent to vision at MAX_KEYFRAMES_TO_VISION', async () => {
     const { client, createSpy } = clientReturning(VALID_JSON);
     const tenPaths = Array.from(
       { length: 10 },

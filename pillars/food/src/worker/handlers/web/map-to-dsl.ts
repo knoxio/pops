@@ -1,5 +1,6 @@
 /**
- * PRD-127 — JSON-LD → DSL mapping.
+ * JSON-LD → DSL mapping.
+ * See pillars/food/docs/prds/web-jsonld.
  *
  * Pure deterministic transformation. Given a parsed JSON-LD Recipe node
  * and a (possibly empty) reserved-slug set, builds a DSL string that

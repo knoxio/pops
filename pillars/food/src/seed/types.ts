@@ -1,24 +1,9 @@
 /**
- * Shared types for the PRD-113 food seed.
- *
- * Phase 1 shipped the non-compile fixture set (ingredients, variants, prep
- * states, aliases, substitutions, plan slots + entries, batches, recipe
- * headers with uncompiled DSL bodies). Phase 3 adds `ingest_sources` rows
- * so PRD-135's inbox inspector has provenance fixtures.
- *
- * NOTE: Lists + list-items seeding was removed during the food pillar
- * collapse — food no longer reaches into the lists pillar's DB. Lists
- * are seeded via their own public surface (HTTP) in a follow-up PR.
+ * Shared types for the food seed.
  */
 import type { FoodDb } from '../db/services/internal.js';
 
-/**
- * Surface of every seed step (phase 1 + phase 3) so the orchestrator can
- * roll up counts. `ingestSources` is the only phase-3 addition; every
- * other field comes from a phase-1 step. Phase 2 (PRD-116 compile smoke)
- * adds no new count fields — it materialises recipe_lines / recipe_steps
- * for already-counted recipes.
- */
+/** Per-table row counts every seed step contributes, rolled up by the orchestrator. */
 export interface StepCounts {
   prepStates: number;
   ingredients: number;

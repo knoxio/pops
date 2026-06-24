@@ -7,7 +7,7 @@
  * `foodRowToInferenceRecord`, and POSTs it to the ai pillar's internal
  * `POST /ai-usage/record` (gated by `x-pops-internal-token`).
  *
- * Deploy ordering (#3490): the table is dropped by migration
+ * Deploy ordering: the table is dropped by migration
  * `0063_drop_ai_inference_log`, so this backfill MUST run BEFORE the drop
  * deploys. It opens the food SQLite with a raw `better-sqlite3` handle and a
  * raw `SELECT` — deliberately NOT `openFoodDb`, which would apply the drop
