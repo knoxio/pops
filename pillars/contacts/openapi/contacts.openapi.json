@@ -42,7 +42,7 @@
         "type": "object"
       },
       "Entity": {
-        "description": "The wire shape served by every entities route — the `toEntity` projection.\n`notionId`, `ownerUri`, and `ownerUriStaleAt` are deliberately NOT exposed\n(internal/integration columns), matching core's `EntitySchema`.",
+        "description": "The wire shape served by every entities route. `notionId`, `ownerUri`, and\n`ownerUriStaleAt` are deliberately NOT exposed (internal/integration\ncolumns).",
         "properties": {
           "abn": {
             "nullable": true,
