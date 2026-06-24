@@ -7,15 +7,12 @@ import type {
 export const LISTS_PILLAR_ID = 'lists' as const;
 
 /**
- * Wire-format nav contribution for the lists pillar (PRD-243 US-02).
+ * Wire-format nav contribution for the lists pillar.
  *
- * Mirrors `@pops/app-lists`'s `navConfig` (`pillars/lists/app/src/routes.tsx`)
- * field-for-field; Lucide names are rewritten as kebab-case identifiers
- * per the wire schema from PR #3230. `order: 50` matches today's
- * position in `apps/pops-shell/src/app/nav/registry.ts`
- * (`registeredApps[4]`). Detail pages (`/lists/:id`) intentionally stay
- * off the rail — they remain deep links, declared on the `pages`
- * dimension below.
+ * Mirrors the app's `navConfig` (`pillars/lists/app/src/routes.tsx`)
+ * field-for-field; Lucide icon names are kebab-case identifiers per the
+ * wire schema. Detail pages (`/lists/:id`) intentionally stay off the
+ * rail — they remain deep links, declared on the `pages` dimension below.
  */
 const LISTS_NAV: NavConfigDescriptor = {
   id: 'lists',
@@ -29,10 +26,10 @@ const LISTS_NAV: NavConfigDescriptor = {
 };
 
 /**
- * Wire-format pages contribution for the lists pillar (PRD-243 US-02).
+ * Wire-format pages contribution for the lists pillar.
  *
- * One descriptor per route declared in `@pops/app-lists`'s `routes`
- * array — index (`ListsIndexPage`) and the `:id` detail page.
+ * One descriptor per route declared in the app's `routes` array
+ * (`pillars/lists/app/src/routes.tsx`) — index and the `:id` detail page.
  */
 const LISTS_PAGES: readonly PageDescriptor[] = [
   { path: '', index: true, bundleSlot: 'lists-index' },
@@ -41,10 +38,6 @@ const LISTS_PAGES: readonly PageDescriptor[] = [
 
 /**
  * Lists pillar manifest payload.
- *
- * Extracted out of `server.ts` in PRD-243 US-02 so the `nav` + `pages`
- * UI dimensions PR #3230 introduces have a dedicated home alongside
- * `buildCerebrumManifest` / `buildMediaManifest`.
  */
 export function buildListsManifest(version: string): ManifestPayload {
   return {

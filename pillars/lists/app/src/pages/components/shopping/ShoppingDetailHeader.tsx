@@ -7,11 +7,11 @@ import type { ListItemRow, ListRow } from '../../detail/types.js';
 import type { ShoppingSortMode } from './types.js';
 
 /**
- * Shopping-specific header (PRD-141 §ShoppingDetailHeader). Wraps the
- * generic `ListDetailHeader` so the title + kind chip + archived badge +
- * three-dot Rename/Change kind/Archive/Delete menu render identically to
- * the generic kind paths — then layers the shopping bulk-action row above
- * (sort dropdown + Uncheck all + Clear checked + caption).
+ * Shopping-specific header. Wraps the generic `ListDetailHeader` so the
+ * title + kind chip + archived badge + three-dot Rename/Change
+ * kind/Archive/Delete menu render identically to the generic kind paths —
+ * then layers the shopping bulk-action row above (sort dropdown + Uncheck
+ * all + Clear checked + caption).
  *
  * The sort dropdown collapses to icon-only via `compact` on mobile (CSS
  * controls the visibility classes); the bulk buttons get smaller padding

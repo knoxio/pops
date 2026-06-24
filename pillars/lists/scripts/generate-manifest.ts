@@ -1,5 +1,6 @@
 /**
- * Manifest type generator for `@pops/lists` (Theme 13 PRD-155).
+ * Manifest type generator for `@pops/lists`
+ * (docs/themes/federation/prds/manifest-type-generation).
  *
  * Emits `src/contract/manifest.generated.ts` from the contract's
  * hand-maintained surface (`types/list-item.ts`, `errors.ts`) plus the
@@ -12,8 +13,8 @@
  * that running the generator validates that the source modules still
  * expose the symbols the manifest names. A missing or renamed export
  * here makes the codegen fail loudly rather than silently emitting a
- * broken manifest. The router type is server-internal and lives in
- * `src/api/router.ts` — it is deliberately NOT part of the contract.
+ * broken manifest. The server API layer (`src/api`) is internal and is
+ * deliberately NOT part of the contract surface the manifest describes.
  */
 import { execFileSync } from 'node:child_process';
 import { writeFileSync } from 'node:fs';

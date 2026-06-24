@@ -1,6 +1,6 @@
 /**
- * Storybook stories for the lists-index row card. Pure-presentation — no
- * tRPC dependency, so the stories drive the variants directly.
+ * Storybook stories for the lists-index row card. Pure-presentation, so the
+ * stories drive the variants directly.
  *
  * Wraps in a self-contained `I18nextProvider` because `ListRow` mounts
  * `ListKindChip`, which calls `useTranslation('lists')` for the kind label.

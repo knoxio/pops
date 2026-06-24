@@ -1,12 +1,7 @@
 /**
- * Lists-db Phase 1 PR 1 invariant tests — exercise the package-local
- * migration journal + the list-items read / check slice against an in-memory
- * SQLite. No Redis, no API process, no external services.
- *
- * The tests apply the package-local migration copy (not the shared journal)
- * so the suite stays self-describing — if the drift-guard CI flags the two
- * copies as divergent, this test pivots from "schema is canonical" to
- * "schema matches what the package shipped".
+ * Invariant tests for the list-items read / check slice against an in-memory
+ * SQLite. Applies the pillar migration directly so the suite stays
+ * self-describing.
  */
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -50,7 +45,7 @@ function seedList(db: ListsDb): number {
   return first.id;
 }
 
-describe('@pops/lists-db — package-local migration applies cleanly', () => {
+describe('@pops/lists — pillar migration applies cleanly', () => {
   it('creates the `lists` and `list_items` tables', () => {
     const { raw } = freshDb();
     const tables = raw
@@ -69,7 +64,7 @@ describe('@pops/lists-db — package-local migration applies cleanly', () => {
   });
 });
 
-describe('@pops/lists-db — listItemsService surface', () => {
+describe('@pops/lists — listItemsService surface', () => {
   let db: ListsDb;
   let raw: Database.Database;
   let listId: number;

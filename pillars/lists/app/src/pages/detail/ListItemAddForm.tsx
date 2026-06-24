@@ -4,8 +4,7 @@ import { useTranslation } from 'react-i18next';
 /**
  * Inline add-item form rendered at the bottom of the list. Pressing Enter in
  * the label input fires the mutation and clears for the next item. The
- * optional qty + unit inputs collapse by default (PRD-140 line 53) and
- * expand on click.
+ * optional qty + unit inputs collapse by default and expand on click.
  */
 export interface ListItemAddFormProps {
   isPending: boolean;

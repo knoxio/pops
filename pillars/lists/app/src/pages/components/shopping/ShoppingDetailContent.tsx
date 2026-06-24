@@ -16,11 +16,10 @@ import {
 import { useShoppingSort, type ShoppingSort } from './useShoppingSort.js';
 
 /**
- * `/lists/:id` rendered for `kind === 'shopping'` (PRD-141). Composes the
- * shopping header (sort dropdown + bulk actions), shopping items section
- * (denser rows + drag-disabled when sort != Manual), and shopping add
- * form on top of the same edit/delete dialogs used by the generic body
- * (PRD-140-C — those modals are kind-agnostic).
+ * `/lists/:id` rendered for `kind === 'shopping'`. Composes the shopping
+ * header (sort dropdown + bulk actions), shopping items section (denser
+ * rows + drag-disabled when sort != Manual), and shopping add form on top
+ * of the same kind-agnostic edit/delete dialogs used by the generic body.
  */
 export function ShoppingDetailContent(props: DetailContentProps): ReactElement {
   const { list, items, detailMx, itemMx } = props;

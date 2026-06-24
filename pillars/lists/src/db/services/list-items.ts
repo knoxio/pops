@@ -12,15 +12,13 @@
  *
  * `ref_id` is polymorphic — no FK enforcement at the schema level. When
  * `ref_kind != 'free'` but `ref_id IS NULL`, `normalise()` falls back to
- * `'free'` per PRD-112 Edge Cases.
+ * `'free'` (see pillars/lists/docs/prds/schema Edge Cases).
  */
 import { and, asc, eq } from 'drizzle-orm';
 
 import { ListItemNotFoundError } from '../errors.js';
 import { listItems, type ListItemRefKind, type ListItemRow } from '../schema.js';
 import { expectRow, type ListsDb, nextPosition, nowIso } from './internal.js';
-
-/* ---------- reads ---------- */
 
 /**
  * Return every list-item row for a given list, ordered by `position` then
@@ -46,8 +44,6 @@ export function getListItem(db: ListsDb, itemId: number): ListItemRow {
   }
   return row;
 }
-
-/* ---------- check-state mutations ---------- */
 
 /**
  * Flip a single list-item to `checked=1` and stamp `checked_at`. Re-checking
@@ -85,8 +81,8 @@ export function uncheckListItem(db: ListsDb, itemId: number): ListItemRow {
 }
 
 /**
- * Bulk-uncheck every currently-checked item in a list (PRD-141 amendment).
- * Single UPDATE inside a transaction. Returns the row count affected.
+ * Bulk-uncheck every currently-checked item in a list. Single UPDATE inside a
+ * transaction. Returns the row count affected.
  */
 export function uncheckAllListItems(db: ListsDb, listId: number): number {
   return db.transaction((tx) => {
@@ -99,8 +95,6 @@ export function uncheckAllListItems(db: ListsDb, listId: number): number {
     return rows.length;
   });
 }
-
-/* ---------- write surface ---------- */
 
 export interface AddItemInput {
   listId: number;
@@ -227,8 +221,8 @@ export function reorderItems(db: ListsDb, listId: number, orderedItemIds: readon
 }
 
 /**
- * Hard-delete every currently-checked item in a list (PRD-141 amendment).
- * Returns the row count removed.
+ * Hard-delete every currently-checked item in a list. Returns the row count
+ * removed.
  */
 export function removeCheckedItems(db: ListsDb, listId: number): number {
   return db.transaction((tx) => {

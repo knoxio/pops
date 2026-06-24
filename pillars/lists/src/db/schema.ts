@@ -2,7 +2,7 @@
  * Lists domain table barrel.
  *
  * Canonical definitions for lists-owned tables (`lists`, `list_items`) live
- * in this package per PRD-245 US-06 (audit H6/H7).
+ * in this pillar (see pillars/lists/docs/prds/schema).
  */
 import type { InferInsertModel, InferSelectModel } from 'drizzle-orm';
 

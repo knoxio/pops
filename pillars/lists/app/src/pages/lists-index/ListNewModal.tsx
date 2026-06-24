@@ -30,10 +30,8 @@ interface FormState {
 const EMPTY_FORM: FormState = { name: '', kind: DEFAULT_NEW_LIST_KIND };
 
 /**
- * "+ New list" modal. Overlay-on-index per PRD-140 §Routes — the URL marker
- * is `?new=1` on top of `/lists`, NOT a separate `/lists/new` route (the
- * standalone route was explicitly dropped per the 2026-06-08 audit fix
- * recorded in the food-app roadmap).
+ * "+ New list" modal. The URL marker is `?new=1` on top of `/lists`, NOT a
+ * separate `/lists/new` route (see pillars/lists/docs/prds/crud-ui §Routes).
  *
  * The modal is uncontrolled at the component boundary: the URL query param
  * is the source of truth so the modal is deep-linkable + survives reloads.
@@ -92,8 +90,8 @@ interface FormProps {
 }
 
 function shoppingPlaceholder(today: Date): string {
-  // PRD-140 §Create modal: placeholder is `Shopping list — <yyyy-MM-dd>`.
-  // Date is ISO calendar form, not locale-aware — the spec literal pins it.
+  // Date is ISO calendar form, not locale-aware — the spec literal pins it
+  // (pillars/lists/docs/prds/crud-ui §Create modal).
   const yyyy = today.getFullYear();
   const mm = String(today.getMonth() + 1).padStart(2, '0');
   const dd = String(today.getDate()).padStart(2, '0');
@@ -123,7 +121,7 @@ function NewListForm({ isSubmitting, onSubmit, onCancel }: FormProps): ReactElem
     ? shoppingPlaceholder(new Date())
     : t('new.fields.namePlaceholder');
 
-  // PRD-140 §Create modal: "auto-fills on focus if still empty" for shopping.
+  // Shopping name auto-fills on focus if still empty.
   const onNameFocus = (): void => {
     if (isShopping && form.name === '') {
       setForm((prev) => ({ ...prev, name: shoppingPlaceholder(new Date()) }));

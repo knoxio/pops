@@ -1,5 +1,5 @@
 /**
- * List services — PRD-112.
+ * List services.
  *
  * Pure functions over a drizzle handle. Each takes a `ListsDb` (top-level db
  * or a transaction handle) so callers can compose mutations atomically.
@@ -69,11 +69,11 @@ export function archiveList(db: ListsDb, listId: number): ListRow {
   return db.transaction((tx) => {
     const existing = getList(tx, listId);
     if (existing === null) throw new ListNotFoundError(listId);
-    // PRD-140 §Edge Cases: archiving an already-archived list updates
-    // `archived_at` to the new timestamp (idempotent at the row level, not
-    // at the timestamp level). The UI debounces; the service is the safe
-    // path for any caller that wants the canonical "I archived this just
-    // now" wall-clock.
+    // Archiving an already-archived list updates `archived_at` to the new
+    // timestamp (idempotent at the row level, not at the timestamp level).
+    // The UI debounces; the service is the safe path for any caller that wants
+    // the canonical "I archived this just now" wall-clock.
+    // See pillars/lists/docs/prds/crud-ui Edge Cases.
     const rows = tx
       .update(lists)
       .set({ archivedAt: nowIso() })
@@ -103,8 +103,8 @@ export function unarchiveList(db: ListsDb, listId: number): ListRow {
  * Hard-delete a list and every child item in one transaction.
  *
  * There is no FK CASCADE on `list_items.list_id`; the service is the safe
- * write path. Calling `deleteList` on an unknown id is a no-op (matches the
- * "delete is idempotent" expectation from the PRD's Edge Cases table).
+ * write path. Calling `deleteList` on an unknown id is a no-op (delete is
+ * idempotent — see pillars/lists/docs/prds/crud-ui Edge Cases).
  */
 export function deleteList(db: ListsDb, listId: number): void {
   db.transaction((tx) => {
@@ -119,9 +119,8 @@ export interface UpdateListInput {
 }
 
 /**
- * Update mutable fields on a list. Carried as a PRD-140 amendment to PRD-112
- * (per roadmap line 157) — landed here in PRD-112's implementation so the
- * lists UI can rename + change kind without a follow-up PR.
+ * Update mutable fields on a list (name, kind) so the lists UI can rename and
+ * change kind. An empty patch returns the current row unchanged.
  */
 export function updateList(db: ListsDb, listId: number, input: UpdateListInput): ListRow {
   const patch: Partial<{ name: string; kind: ListKind }> = {};

@@ -15,12 +15,7 @@ interface Props {
   disabled?: boolean;
 }
 
-/**
- * Kind picker for the New / Edit modals. Lives in `lists-index/` rather
- * than a generic shared folder because PRD-140 part B owns the modal that
- * first consumes it; PRD-140 part C will re-export from here when the edit
- * modal lands.
- */
+/** Kind picker for the New / Edit modals. */
 export function KindRadioGroup({
   value,
   onChange,

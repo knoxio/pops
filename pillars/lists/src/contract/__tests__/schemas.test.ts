@@ -14,7 +14,7 @@ import type { ListItem } from '../types/list-item.js';
 import type { Project } from '../types/project.js';
 import type { Tag } from '../types/tag.js';
 
-describe('@pops/lists-contract round-trip', () => {
+describe('@pops/lists contract round-trip', () => {
   it('ListItem ↔ ListItemSchema agree structurally', () => {
     expectTypeOf<z.infer<typeof ListItemSchema>>().toEqualTypeOf<ListItem>();
   });

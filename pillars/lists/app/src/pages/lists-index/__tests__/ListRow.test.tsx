@@ -50,7 +50,7 @@ function Wrapper({ children }: { children: ReactElement }): ReactElement {
   );
 }
 
-describe('PRD-140 part B — ListRow', () => {
+describe('ListRow', () => {
   it('links the whole card to /lists/:id', () => {
     render(
       <Wrapper>

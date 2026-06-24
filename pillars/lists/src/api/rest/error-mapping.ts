@@ -1,7 +1,5 @@
 /**
- * Map lists service errors to ts-rest response envelopes.
- *
- * Replaces the old tRPC-flavoured `routers/error-mapping.ts`. Anything
+ * Map lists service errors to ts-rest response envelopes. Anything
  * unrecognised is re-thrown so Express's error pipeline (and the test
  * suite) sees the underlying stack rather than a swallowed 500.
  */

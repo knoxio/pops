@@ -1,8 +1,7 @@
 /**
  * Pillar registry view served by lists-api.
  *
- * Wraps the local copy of `parsePillarsEnv` with a process-level cache
- * (same pattern pops-api / inventory-api / food-api use). Adds the
+ * Wraps `parsePillarsEnv` with a process-level cache. Adds the
  * synthetic `lists` entry so the shell sees the host pillar in the
  * `/pillars` listing without having to special-case the call site.
  */

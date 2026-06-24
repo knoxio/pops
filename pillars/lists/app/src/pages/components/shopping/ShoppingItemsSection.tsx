@@ -22,11 +22,11 @@ import { ShoppingItemRow } from './ShoppingItemRow.js';
 import type { ListItemRow as ItemRow } from '../../detail/types.js';
 
 /**
- * DnD wrapper around the shopping item list. Mirrors PRD-140's generic
+ * DnD wrapper around the shopping item list. Mirrors the generic
  * `ListItemsSection` but renders `ShoppingItemRow` (the denser, swipe-aware
- * row) and respects `isDragDisabled` from `useShoppingSort` so the drag
- * gesture is suppressed when sort mode != Manual (PRD-141 §Edge Cases —
- * drag in a non-Manual sort would visibly snap back).
+ * row) and respects `isDragDisabled` from `useShoppingSort`: the drag
+ * gesture is suppressed when sort mode != Manual, because a drag in a
+ * non-Manual sort would visibly snap back.
  */
 export interface ShoppingItemsSectionProps {
   items: readonly ItemRow[];

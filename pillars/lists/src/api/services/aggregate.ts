@@ -1,13 +1,10 @@
 /**
- * Router-owned aggregate query for `lists.list.list` — PRD-140.
+ * Aggregate list query feeding the index page, distinct from the
+ * `listLists` service in src/db/services/lists.ts (which returns header rows
+ * only). The index needs `itemCount` / `uncheckedCount` / `lastUpdatedAt` in a
+ * single round-trip, so a left join + GROUP BY is the right tool.
  *
- * The PRD calls out that this is intentionally bypassed by PRD-112's
- * `listLists` service (which only returns header rows). The index page needs
- * `itemCount` / `uncheckedCount` / `lastUpdatedAt` in a single round-trip so
- * a left join + GROUP BY is the right tool, even though it's a router-level
- * concern rather than a domain-service one.
- *
- * `lastUpdatedAt = MAX(MAX(list_items.created_at), lists.created_at)` —
+ * `lastUpdatedAt = COALESCE(MAX(list_items.created_at), lists.created_at)` —
  * picks up "I added an item yesterday" without introducing a separate
  * `lists.updated_at` column the schema doesn't have.
  */

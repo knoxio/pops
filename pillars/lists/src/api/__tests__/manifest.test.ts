@@ -1,11 +1,8 @@
 /**
- * Manifest payload tests for the lists pillar (PRD-243 US-02).
+ * Manifest payload tests for the lists pillar.
  *
- * `buildListsManifest` was extracted from `server.ts` so the new `nav`
- * and `pages` UI dimensions live next to the existing payload fields.
- * These tests verify the payload still passes the wire schema AND
- * carries the nav + pages descriptors expected by PRD-243's shell
- * rewrite (US-03).
+ * Verify `buildListsManifest` passes the central wire schema AND carries the
+ * `nav` + `pages` UI dimensions the shell consumes to render the lists module.
  */
 import { describe, expect, it } from 'vitest';
 
@@ -36,7 +33,7 @@ describe('buildListsManifest', () => {
     expect(() => ManifestPayloadSchema.parse(buildListsManifest('not-a-semver'))).toThrow();
   });
 
-  describe('PRD-243 US-02 nav + pages dimensions', () => {
+  describe('nav + pages dimensions', () => {
     it('declares a nav block matching the shell-side lists navConfig', () => {
       const manifest = buildListsManifest('0.1.0');
       expect(manifest.nav?.id).toBe('lists');
@@ -83,7 +80,7 @@ describe('buildListsManifest', () => {
       }
     });
 
-    it('does NOT declare assetsBaseUrl (deferred to US-05)', () => {
+    it('does NOT declare assetsBaseUrl', () => {
       const manifest = buildListsManifest('0.1.0');
       expect(manifest.assetsBaseUrl).toBeUndefined();
     });

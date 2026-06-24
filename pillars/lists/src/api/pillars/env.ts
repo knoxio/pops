@@ -1,14 +1,6 @@
 /**
  * `POPS_PILLARS` environment variable parser inside the lists-api process.
  *
- * Functionally identical to `apps/pops-food-api/src/pillars/env.ts`
- * (and the original in `apps/pops-api/src/modules/core/pillars/env.ts`)
- * — kept as a local copy so lists-api can boot without a runtime
- * dependency on pops-api. The implementations should be promoted into
- * a shared `packages/core-contract` (or `@pops/types`) package once the
- * pillar split stabilises; until then contract guard tests in pops-api
- * keep this behaviour pinned.
- *
  * Format: `id:baseUrl[,id:baseUrl,...]`
  *   - `id` lowercase kebab-case pillar slug (`food`, `finance`, …)
  *   - `baseUrl` fully-qualified http(s) origin (trailing slashes stripped)

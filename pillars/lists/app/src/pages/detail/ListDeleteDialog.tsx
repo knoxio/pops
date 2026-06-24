@@ -2,8 +2,9 @@ import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
 /**
- * Hard-delete confirm dialog. The prompt mirrors PRD-140's wording so users
- * understand the cascade ("permanently delete <name> and its N items").
+ * Hard-delete confirm dialog. The prompt spells out the cascade
+ * ("permanently delete <name> and its N items") so users understand the
+ * delete removes the items too.
  */
 export interface ListDeleteDialogProps {
   name: string;

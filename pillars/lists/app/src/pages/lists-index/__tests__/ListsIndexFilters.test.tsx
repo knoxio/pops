@@ -45,7 +45,7 @@ function Harness({
   );
 }
 
-describe('PRD-140 part B — ListsIndexFilters', () => {
+describe('ListsIndexFilters', () => {
   it('renders one chip per kind', () => {
     render(
       <Wrapper>
@@ -57,7 +57,7 @@ describe('PRD-140 part B — ListsIndexFilters', () => {
     }
   });
 
-  it('starts with every kind chip active (PRD-140 §Index "default: all selected")', () => {
+  it('starts with every kind chip active (pillars/lists/docs/prds/crud-ui: kind chips default all)', () => {
     render(
       <Wrapper>
         <Harness />
@@ -118,7 +118,6 @@ describe('PRD-140 part B — ListsIndexFilters', () => {
     );
     const clear = screen.getByRole('button', { name: /clear filters/i });
     await user.click(clear);
-    // Reset returns to default: all kinds active, archived off, updated sort.
     expect(screen.getByRole('button', { name: 'Shopping' })).toHaveAttribute(
       'aria-pressed',
       'true'

@@ -12,10 +12,9 @@ import { useSwipeDelete } from './useSwipeDelete.js';
 import type { ListItemRow as ItemRow } from '../../detail/types.js';
 
 /**
- * Shopping-tuned row (PRD-141 §ShoppingItemRow). 32×32px checkbox + 44×44
- * hit area, always-visible qty/unit prefix, notes-as-subline, touch
- * swipe-left to reveal an explicit Delete button, long-press drag handle
- * (disabled when sort mode != Manual).
+ * Shopping-tuned row. Large checkbox + hit area, always-visible qty/unit
+ * prefix, notes-as-subline, touch swipe-left to reveal an explicit Delete
+ * button, long-press drag handle (disabled when sort mode != Manual).
  */
 export interface ShoppingItemRowProps {
   row: ItemRow;

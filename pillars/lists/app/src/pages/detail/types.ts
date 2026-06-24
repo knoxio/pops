@@ -1,5 +1,5 @@
 /**
- * Shared types for the `/lists/:id` detail page (PRD-140-C).
+ * Shared types for the `/lists/:id` detail page.
  *
  * Row shapes are derived from the generated Hey API SDK so the page renders
  * the exact rows the lists pillar returns. The discriminated `ListKind`

@@ -5,7 +5,7 @@ import type { ListItemRow, ShoppingSortMode } from './types.js';
 /**
  * Owns the client-side sort state for a shopping list and projects the
  * underlying items into the order the UI should render. Sort is **never**
- * persisted — fresh page load defaults to Manual (PRD-141 §Sort behaviours).
+ * persisted — fresh page load defaults to Manual.
  *
  * `sortedItems` is memoised so the items section's identity-sensitive
  * downstream (DnD ordered ids, optimistic updates) doesn't churn unless the
@@ -15,7 +15,7 @@ export interface ShoppingSort {
   mode: ShoppingSortMode;
   setMode: (mode: ShoppingSortMode) => void;
   sortedItems: readonly ListItemRow[];
-  /** Drag-to-reorder is disabled unless `mode === 'manual'` (PRD-141 §Edge Cases). */
+  /** Drag-to-reorder is disabled unless `mode === 'manual'`. */
   isDragDisabled: boolean;
 }
 

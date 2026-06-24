@@ -1,19 +1,17 @@
 /**
- * PRD-140 — integration tests for the lists REST surface.
+ * Integration tests for the lists REST surface.
  *
- * Spins up an in-memory SQLite with PRD-112's lists migration (0062),
- * builds the Express app via the production factory, and drives every
- * endpoint through supertest. The `client` helper preserves the shape
- * of the historical tRPC caller (`client.list.create({...})`,
- * `client.items.check({id})`) so the assertions read the same; only
- * the transport changed.
+ * Spins up an in-memory SQLite with the lists migration (0062), builds the
+ * Express app via the production factory, and drives every endpoint through
+ * supertest. The `client` helper groups calls by resource
+ * (`client.list.create({...})`, `client.items.check({id})`) so the assertions
+ * read like the contract.
  *
- * Status semantics (replacement of the old TRPCError model):
+ * Status semantics:
  *   - Service NotFound (`ListNotFoundError`, `ListItemNotFoundError`)
  *     → HTTP 404 with `{ message, code: 'NOT_FOUND' }`.
  *   - SQLite FK / UNIQUE constraint → HTTP 400 with `code: 'CONFLICT_FK'` /
- *     `'CONFLICT_UNIQUE'`. Maintains the wire-level signal that the
- *     consumer sent a request the database rejected.
+ *     `'CONFLICT_UNIQUE'`, signalling the database rejected the request.
  *   - Zod validation failure (whitespace name, empty patch) → HTTP 400.
  */
 import { readFileSync } from 'node:fs';
@@ -222,7 +220,7 @@ interface ListGetWire {
   items: { id: number; label: string; position: number; checked: number }[];
 }
 
-describe('PRD-140 lists REST surface', () => {
+describe('lists REST surface', () => {
   let raw: Database;
   let db: ListsDb;
   let client: ReturnType<typeof makeClient>;
@@ -559,7 +557,7 @@ describe('PRD-140 lists REST surface', () => {
     });
   });
 
-  describe('uncheckAll (PRD-141)', () => {
+  describe('uncheckAll', () => {
     it('unchecks every checked item and returns the count', async () => {
       const { id: listId } = await client.list.create({ name: 'Shop', kind: 'shopping' });
       const { id: a } = await client.items.add({ listId, label: 'a' });
@@ -592,7 +590,7 @@ describe('PRD-140 lists REST surface', () => {
     });
   });
 
-  describe('removeChecked (PRD-141)', () => {
+  describe('removeChecked', () => {
     it('removes every checked item and returns the count', async () => {
       const { id: listId } = await client.list.create({ name: 'Shop', kind: 'shopping' });
       const { id: a } = await client.items.add({ listId, label: 'a' });

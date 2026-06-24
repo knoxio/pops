@@ -149,7 +149,7 @@ beforeEach(() => {
   );
 });
 
-describe('PRD-141 — ShoppingDetailContent', () => {
+describe('pillars/lists/docs/prds/shopping-specialisation — ShoppingDetailContent', () => {
   it('renders the sort dropdown + caption + bulk buttons for kind=shopping', async () => {
     setListGet({
       list: makeList(),

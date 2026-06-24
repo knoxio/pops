@@ -1,6 +1,7 @@
 /**
- * Resolver tests — guards the precedence chain so future pillar work
- * doesn't accidentally drift lists-api away from pops-api's resolver.
+ * Resolver tests — guards the env precedence chain
+ * (LISTS_SQLITE_PATH > derived-from-SQLITE_PATH > ./data/lists.db) so future
+ * pillar work doesn't drift the resolved DB location.
  */
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 

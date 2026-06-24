@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { manifest, navConfig, routes } from '../index';
 
-describe('PRD-139 — app-lists module manifest', () => {
+describe('app-lists module manifest', () => {
   it('declares id="lists"', () => {
     expect(manifest.id).toBe('lists');
   });
@@ -30,12 +30,12 @@ describe('PRD-139 — app-lists module manifest', () => {
     expect(routes[0]).toMatchObject({ index: true });
   });
 
-  it('exposes a /:id route for the detail page (PRD-140-C)', () => {
+  it('exposes a /:id route for the detail page', () => {
     const detail = routes.find((r) => 'path' in r && r.path === ':id');
     expect(detail).toBeDefined();
   });
 
-  it('does NOT yet declare a backend slot (PRD-140 fills it)', () => {
+  it('declares no backend slot (app surface only)', () => {
     expect(manifest.backend).toBeUndefined();
   });
 });

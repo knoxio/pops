@@ -13,11 +13,13 @@ import { useListsIndexQuery, type ListIndexItemView } from './lists-index/useLis
 import type { ReactElement } from 'react';
 
 /**
- * `/lists` — generic lists index (PRD-140 part B).
+ * `/lists` — generic lists index.
  *
- * Owns the local filter state; the query hook handles tRPC mechanics. The
+ * Owns the local filter state; the query hook handles the REST fetch. The
  * "+ New list" button toggles `?new=1` on the URL, which `ListNewModal`
  * reads as its open/closed signal (deep-linkable + reload-safe).
+ *
+ * Spec: pillars/lists/docs/prds/crud-ui.
  */
 export function ListsIndexPage(): ReactElement {
   const { t } = useTranslation('lists');

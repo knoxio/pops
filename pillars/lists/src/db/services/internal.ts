@@ -1,14 +1,13 @@
 /**
  * Shared helpers for the lists schema service layer.
  *
- * `ListsDb` is re-exported from the package barrel so callers can type
- * the handle they pass in. Any additional helpers added here stay internal
- * to `src/services/*.ts`.
+ * `ListsDb` is re-exported from the db barrel (`src/db/index.ts`) so callers
+ * can type the handle they pass in. Other helpers here stay internal to
+ * `src/db/services/*.ts`.
  *
- * The type uses `Record<string, unknown>` (not `Record<string, never>`) so
- * the same alias matches both the package's narrow handle and the pops-api
- * default `getDrizzle()` return shape — see the cerebrum-db lesson in the
- * pillar-migration roadmap.
+ * The type uses `Record<string, unknown>` (not `Record<string, never>`) so the
+ * alias matches both a narrow per-table handle and the opener's `getDrizzle()`
+ * return shape.
  */
 import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
 

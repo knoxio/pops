@@ -26,10 +26,10 @@ import type { ListItemRow as ItemRow } from './types.js';
  * drag animation lands smoothly before the server confirms; on drag end we
  * fire the reorder mutation and roll back to the server state on failure.
  *
- * The sensor mix matches PRD-140's "desktop HTML5 + mobile long-press"
- * requirement: PointerSensor with a small activation distance lets clicks
- * pass through to checkbox / menu, while TouchSensor adds the 200ms delay
- * the spec calls for so a tap-and-hold beats single-tap interactions.
+ * The sensor mix supports desktop drag + mobile long-press: PointerSensor
+ * with a small activation distance lets clicks pass through to checkbox /
+ * menu, while TouchSensor adds a press delay so a tap-and-hold beats
+ * single-tap interactions.
  */
 export interface ListItemsSectionProps {
   items: readonly ItemRow[];

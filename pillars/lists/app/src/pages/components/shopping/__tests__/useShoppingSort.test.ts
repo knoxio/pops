@@ -24,7 +24,7 @@ function row(overrides: Partial<ListItemRow>): ListItemRow {
   };
 }
 
-describe('PRD-141 — useShoppingSort', () => {
+describe('pillars/lists/docs/prds/shopping-specialisation — useShoppingSort', () => {
   const items: readonly ListItemRow[] = [
     row({ id: 1, position: 0, checked: 1, checkedAt: '2026-06-02T00:00:00Z' }),
     row({ id: 2, position: 1, checked: 0 }),

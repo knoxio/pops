@@ -3,11 +3,11 @@ import { navConfig, routes } from './routes';
 import type { ModuleManifest } from '@pops/types';
 
 /**
- * @pops/app-lists frontend manifest (PRD-139).
+ * @pops/app-lists frontend manifest.
  *
- * Generic lists domain — shopping, packing, todo. Food is the first consumer
- * via PRD-142, but the lists module is theme-agnostic. The `backend.router`
- * slot is populated by PRD-140 when the tRPC procedures for CRUD land.
+ * Generic lists domain — shopping, packing, todo. Theme-agnostic; food is the
+ * first consumer. Frontend-only: this surface registers routes and nav with
+ * the shell, while CRUD goes over the lists pillar's REST contract.
  */
 export const manifest: ModuleManifest<unknown, typeof routes, typeof navConfig> = {
   id: 'lists',
