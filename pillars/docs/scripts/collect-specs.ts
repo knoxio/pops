@@ -1,26 +1,23 @@
 /**
- * Theme 13 PRD-219 — collect every pillar's OpenAPI snapshot into the
- * pops-docs image build context.
+ * Collect every pillar's OpenAPI snapshot into the pops-docs image build
+ * context (spec: pillars/docs/docs/prds/swagger-container).
  *
  * Walks `pillars/*` from the monorepo root. For each pillar:
  *   - if `openapi/<pillar>.openapi.json` exists → emit a catalog entry,
- *     copy the spec into `apps/pops-docs/dist/openapi/<pillar>.json`
+ *     copy the spec into `dist/openapi/<pillar>.json`
  *   - otherwise → skip (the pillar ships no contract snapshot; that is
  *     not an error)
  *
- * The contract snapshots used to live under `packages/<pillar>-contract/`
- * but were folded into each pillar (`pillars/<id>/openapi/`) by the
- * federation refactor, so discovery now keys off the pillar directory and
- * the presence of its OpenAPI file rather than a `-contract` suffix. Pillar
- * package metadata (`package.json`) is optional: Rust pillars (e.g.
- * `contacts`) ship a `Cargo.toml` and no `package.json`, and still get a
- * catalog entry sourced from the OpenAPI `info` block.
+ * Discovery keys off the pillar directory and the presence of its OpenAPI
+ * file. Pillar package metadata (`package.json`) is optional: Rust pillars
+ * (e.g. `contacts`) ship a `Cargo.toml` and no `package.json`, and still
+ * get a catalog entry sourced from the OpenAPI `info` block.
  *
  * The output `catalog.json` is what `src/index.html` reads at runtime to
  * populate Stoplight Elements' multi-spec navigation. There is no runtime
  * registry dependency: the catalog snapshot reflects the contracts that
- * existed at image build time, which is exactly the deploy semantics the
- * PRD calls for (a container redeploy reflects the latest contracts).
+ * existed at image build time, so a container redeploy reflects the latest
+ * contracts.
  *
  * `generatedAt` records the current git commit sha when the build is
  * inside a git checkout, otherwise the ISO timestamp — handy when the

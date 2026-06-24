@@ -1,5 +1,5 @@
 /**
- * Catalog builder for pops-docs (Theme 13 PRD-219).
+ * Catalog builder for the docs pillar.
  *
  * Separated from `scripts/collect-specs.ts` so the transformation from
  * "list of contract package directories" → "Stoplight Elements catalog"
