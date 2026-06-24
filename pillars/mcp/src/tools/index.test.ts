@@ -7,7 +7,7 @@ describe('allTools', () => {
     expect(allTools).toHaveLength(30);
   });
 
-  it('includes all PRD-103 inventory write tools', () => {
+  it('includes all inventory write tools', () => {
     const names = new Set(allTools.map((t) => t.name));
     for (const required of [
       'inventory.locations.create',
