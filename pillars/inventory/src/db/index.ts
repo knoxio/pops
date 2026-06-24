@@ -1,16 +1,9 @@
 /**
- * Backend-safe barrel for the inventory domain's persistence layer.
+ * Backend-safe barrel for the inventory pillar's persistence layer.
  *
  * Hosts inventory pillar tables (locations, home_inventory, fixtures,
  * item_connections, item_documents, item_photos, item_uploaded_files,
- * item_fixture_connections). Extracted from
- * `apps/pops-api/src/modules/inventory/` per ADR-026.
- *
- * Per the CI-never-breaks pattern the migration is incremental — this PR
- * scaffolds the package and moves only the `locations` slice. The other
- * slices (items, connections, documents, photos, fixtures, document-files,
- * paperless) follow in subsequent PRs. `items`, `connections`, and
- * `documents` are now scaffolded; the live writers still own production.
+ * item_fixture_connections) per ADR-026.
  */
 export * from './errors.js';
 export * from './row-types.js';
@@ -26,8 +19,6 @@ export * as connectionsService from './services/connections.js';
 export * as documentsService from './services/documents.js';
 export * as crossPillarUrisService from './services/cross-pillar-uris.js';
 
-// Public types re-exported at the package root so consumers can name
-// them without reaching into the namespaces.
 export type {
   CreateLocationInput,
   DeleteLocationStats,

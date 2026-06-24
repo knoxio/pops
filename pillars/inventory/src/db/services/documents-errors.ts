@@ -1,10 +1,9 @@
 /**
  * Typed errors raised by the item documents service layer.
  *
- * Plain Error subclasses — the service layer is HTTP-agnostic. Router
- * layers (pops-api, pops-inventory-api) map these to the appropriate
- * tRPC / HTTP codes. Mirrors the items / locations / connections error
- * pattern.
+ * Plain Error subclasses — the service layer is HTTP-agnostic. The API module
+ * layer translates these into `HttpError`s, which `runHttp` maps to the wire
+ * error envelope.
  */
 
 export class DocumentNotFoundError extends Error {

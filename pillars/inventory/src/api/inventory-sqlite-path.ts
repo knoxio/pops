@@ -1,21 +1,16 @@
 import { dirname, join } from 'node:path';
 
 /**
- * Standalone resolver for the inventory pillar's SQLite path inside the
- * inventory-api container.
+ * Resolver for the inventory pillar's SQLite path.
  *
- * Intentionally NOT imported from
- * `apps/pops-api/src/db/inventory-sqlite-path.ts` — inventory-api is
- * supposed to be runnable without pops-api in the dependency graph.
- * The precedence chain mirrors pops-api's resolver verbatim so the two
- * processes agree on the location of `inventory.db` given the same
- * env: a deployer who only sets `SQLITE_PATH` (legacy contract) still
- * ends up with `inventory.db` next to `pops.db`.
+ * A deployer who only sets the shared `SQLITE_PATH` still gets
+ * `inventory.db` resolved next to that path, so the pillar boots without
+ * an inventory-specific env var.
  *
  * Resolution order:
  *   1. `INVENTORY_SQLITE_PATH` (absolute or relative).
  *   2. `<dirname(SQLITE_PATH)>/inventory.db` if the shared path is set.
- *   3. `./data/inventory.db` (matches the shared default's `./data/pops.db`).
+ *   3. `./data/inventory.db`.
  */
 export const DEFAULT_INVENTORY_SQLITE_PATH = './data/inventory.db';
 

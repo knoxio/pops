@@ -2,14 +2,7 @@
  * Inventory items CRUD service.
  *
  * Each function takes an `InventoryDb` handle as its first argument; the
- * calling layer (pops-api modules, pops-inventory-api routers) resolves
- * the singleton or transaction handle to pass in. Mirrors the locations
- * writer pattern (db-arg, scoped builders, typed errors).
- *
- * The live writer in `apps/pops-inventory-api/src/modules/items/service.ts`
- * is the source of truth for the wire surface — this scaffold mirrors its
- * signatures so the PR2 reads-cutover can swap consumers over to
- * `itemsService.*` without a behavioural change.
+ * calling layer resolves the singleton or transaction handle to pass in.
  */
 import { randomUUID } from 'node:crypto';
 

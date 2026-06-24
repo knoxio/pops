@@ -1,7 +1,5 @@
 /**
- * Lift better-sqlite3 constraint-error detection into pillar-internal
- * helpers. Copied verbatim from `apps/pops-api/src/shared/sqlite-errors.ts`
- * during the lists-handler migration so the pillar is self-contained.
+ * better-sqlite3 constraint-error detection.
  *
  * better-sqlite3 surfaces SQLITE_CONSTRAINT_* on `err.code`; matching the
  * code is resilient to wording changes in future SQLite releases (the

@@ -1,19 +1,12 @@
 /**
  * Entry point for the inventory pillar HTTP server.
  *
- * Phase 3 PR 1 of the inventory pillar migration boots the process
- * with the minimal `/health` + `/pillars` surface so the new container
- * can be wired into docker-compose + Watchtower without depending on
- * the (still-unfinished) tRPC + URI-dispatcher migration.
- *
  * The process opens its OWN `inventory.db` connection via
- * `openInventoryDb` rather than reaching back into pops-api's
- * singleton — that's the whole point of phase 3.
+ * `openInventoryDb`.
  *
- * Theme 13 PRD-158 adds an opt-in registry handshake via
- * `bootstrapPillar`. When `POPS_REGISTRY_ENABLED=true`, the process
- * builds a hand-rolled inventory manifest (PRD-155 will generate this
- * later) and registers with the central registry on boot. SIGTERM
+ * Registry handshake is opt-in via `bootstrapPillar`: when
+ * `POPS_REGISTRY_ENABLED=true`, the process builds the inventory
+ * manifest and registers with the central registry on boot. SIGTERM
  * triggers `pillarHandle.stop()` so the heartbeat clears and the
  * registry sees an explicit deregister.
  */

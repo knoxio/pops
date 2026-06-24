@@ -4,7 +4,7 @@ import { assertModuleManifest } from '@pops/types';
 
 import { inventoryManifest } from '../manifest.js';
 
-describe('inventory-contract /manifest — ModuleManifest export (PRD-241 US-01)', () => {
+describe('inventory /manifest — ModuleManifest export', () => {
   it('inventoryManifest passes assertModuleManifest with id=inventory', () => {
     expect(() => assertModuleManifest(inventoryManifest, 'modules.inventory')).not.toThrow();
     expect(inventoryManifest.id).toBe('inventory');

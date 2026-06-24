@@ -2,9 +2,7 @@
  * Locations CRUD service.
  *
  * Each function takes an `InventoryDb` handle as its first argument; the
- * calling layer (pops-api modules, eventually `inventory-api`) resolves
- * the singleton or transaction handle to pass in. Follows the standard
- * db-arg service pattern.
+ * calling layer resolves the singleton or transaction handle to pass in.
  *
  * Read helpers live in `locations-queries.ts` so the mutating CRUD layer
  * stays small and the read surface can be shared with downstream slices.

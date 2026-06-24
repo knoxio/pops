@@ -1,13 +1,10 @@
 /**
- * HTTP-shaped domain errors used by inventory-api router handlers.
+ * HTTP-shaped domain errors used by inventory-api handlers.
  *
- * Intentionally NOT imported from `apps/pops-api/src/shared/errors.ts` —
- * the per-pillar container is supposed to stand alone of pops-api in the
- * dependency graph (Phase 5 writer-move pattern). Each error carries an
- * optional `messageKey` so the frontend can look up the translated string
- * while the EN-AU fallback lives in `message`; the inventory-api tRPC
- * initialiser plumbs it through the wire error shape so clients continue
- * receiving `data.messageKey` after the Phase 5 PR 2 cutover.
+ * Each error carries an optional `messageKey` so the frontend can resolve a
+ * translated string while the EN-AU fallback lives in `message`. The REST
+ * error mapper carries `messageKey` into the response body (see
+ * `../rest/error-mapping.ts`).
  */
 export class HttpError extends Error {
   /** i18n key the frontend uses to resolve a localised message. */

@@ -1,8 +1,10 @@
 /**
  * Manifest contract test — confirms the inventory pillar manifest
  * payload validates against `ManifestPayloadSchema` and surfaces the
- * `inventoryManifest` settings contribution introduced by PRD-240 US-03
- * plus the `nav` and `pages` UI dimensions introduced by PRD-243 US-02.
+ * `inventoryManifest` settings contribution
+ * (docs/themes/federation/prds/settings-as-manifest-dimension) plus the
+ * `nav` and `pages` UI dimensions
+ * (docs/themes/federation/prds/registry-driven-shell-ui).
  */
 import { describe, expect, it } from 'vitest';
 
@@ -32,7 +34,7 @@ describe('buildInventoryManifest', () => {
     });
   });
 
-  describe('PRD-243 US-02 — nav + pages UI dimensions', () => {
+  describe('nav + pages UI dimensions', () => {
     it('declares the inventory nav descriptor with id, basePath, order, and items', () => {
       const payload = buildInventoryManifest('1.2.3');
       expect(payload.nav).toMatchObject({
@@ -81,7 +83,7 @@ describe('buildInventoryManifest', () => {
   });
 });
 
-describe('buildInventoryCapabilityReporter (P2 settings federation)', () => {
+describe('buildInventoryCapabilityReporter', () => {
   it('reports settings: true so the shell routes settings to inventory', () => {
     expect(buildInventoryCapabilityReporter()()).toEqual({ settings: true });
   });

@@ -1,9 +1,8 @@
 /**
  * `photos.*` sub-router — per-item photo attach/upload/reorder.
  *
- * Uploads carry the image as a base64 string in the JSON body (parity
- * with the pre-REST tRPC shape); the handler decodes to a Buffer and
- * runs the sharp compression pipeline.
+ * Uploads carry the image as a base64 string in the JSON body; the handler
+ * decodes to a Buffer and runs the sharp compression pipeline.
  */
 import { initContract } from '@ts-rest/core';
 import { z } from 'zod';

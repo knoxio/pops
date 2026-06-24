@@ -1,11 +1,8 @@
 /**
  * Paperless-ngx API client — re-exports and factory.
  *
- * Gating policy in the pillar container: presence of both
- * `PAPERLESS_BASE_URL` and `PAPERLESS_API_TOKEN` env vars enables the
- * integration. The pops-api feature-toggle framework (PRD-094) lives in
- * the lake; once the pillar grows its own feature gating the check moves
- * back here.
+ * Gating policy: presence of both `PAPERLESS_BASE_URL` and
+ * `PAPERLESS_API_TOKEN` env vars enables the integration.
  */
 import { PaperlessClient } from './client.js';
 

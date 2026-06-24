@@ -1,11 +1,9 @@
 /**
- * Inventory domain table barrel.
+ * Inventory pillar table barrel.
  *
  * Canonical definitions for inventory-owned tables (home_inventory,
  * locations, fixtures, item_connections, item_fixture_connections,
- * item_documents, item_photos, item_uploaded_files) live in this
- * package per PRD-245 US-02 (audit H6/H7).
- *
+ * item_documents, item_photos, item_uploaded_files, settings).
  */
 export { fixtures } from './schema/fixtures.js';
 export { homeInventory } from './schema/inventory.js';

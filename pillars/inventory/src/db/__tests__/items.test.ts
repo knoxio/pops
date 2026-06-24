@@ -1,15 +1,12 @@
 /**
  * Invariant tests for the items service against an in-memory SQLite
  * seeded with the canonical `home_inventory` table. Pure DB + service
- * layer — no tRPC, no Express, no auth middleware.
- *
- * Higher-level integration coverage lives in pops-api and
- * pops-inventory-api's own suites.
+ * layer.
  *
  * The `home_inventory` schema is inlined here because its canonical
- * migration (`0006_inventory_pillar_baseline`) bundles unrelated FK
- * tables; the locations migration is read from the package's journal so
- * the FK target exists for the location-filter tests.
+ * migration bundles unrelated FK tables; the locations migration is read
+ * from the package's migrations dir so the FK target exists for the
+ * location-filter tests.
  */
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';

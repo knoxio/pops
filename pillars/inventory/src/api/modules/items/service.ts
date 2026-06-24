@@ -2,12 +2,9 @@
  * Inventory items service — CRUD operations using Drizzle ORM against the
  * per-pillar `inventory.db` handle.
  *
- * Migrated from `apps/pops-api/src/modules/inventory/items/service.ts` as
- * part of Theme 13 PRD-173 PR 1 (writer move). The handle is passed in
- * explicitly from the tRPC context (`ctx.inventoryDb`) rather than
- * resolved via a module-global getter so this service stands alone of
- * pops-api in the dep graph — matching the locations writer-move pattern
- * (#2891).
+ * The `InventoryDb` handle is passed in explicitly to every function rather
+ * than resolved via a module-global getter, keeping this service free of
+ * ambient state and trivially testable with an in-memory db.
  */
 import crypto from 'crypto';
 

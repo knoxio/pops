@@ -1,17 +1,10 @@
 /**
  * Handler for the `search.*` sub-router — inventory's slice of unified search.
  *
- * Ported from `apps/pops-api/src/modules/inventory/items/search-adapter.ts`.
- * The monolith adapter read the shared `getInventoryDrizzle()` handle; here it
- * runs against the inventory pillar's OWN `InventoryDb`, where `homeInventory`
- * now lives. The TIERED ranking is preserved verbatim:
- *   1. exact assetId match           → 1.0  (matchField 'assetId', 'exact')
- *   2. assetId prefix (excl. exact)  → 0.9  (matchField 'assetId', 'prefix')
- *   3. itemName: exact 0.85 / prefix 0.7 / contains 0.5 (matchField 'itemName')
- * Tiers run in order against a shared `limit` budget; later tiers stop once the
- * budget is hit, name hits skip uris already seen, and the final list is sorted
- * descending by score and capped at the limit. `uri` keeps the
- * `/inventory/items/<id>` shape the monolith emitted.
+ * Ranking runs tiered (assetId exact, then assetId prefix, then itemName) in
+ * order against a shared `limit` budget: later tiers stop once the budget is
+ * hit, name hits skip uris already seen, and the final list is sorted
+ * descending by score and capped at the limit.
  */
 import { sql } from 'drizzle-orm';
 
@@ -56,9 +49,7 @@ function rowToData(row: Row): InventoryItemHitData {
 
 /**
  * Mutable scan state threaded through the ranking tiers. Bundled into one
- * object so each tier stays under the 4-param lint cap — the monolith adapter
- * read a module-level db handle and so passed fewer args; here the pillar db
- * handle is injected, which is what pushes the count over.
+ * object so each tier stays under the 4-param lint cap.
  */
 interface SearchScan {
   readonly db: InventoryDb;

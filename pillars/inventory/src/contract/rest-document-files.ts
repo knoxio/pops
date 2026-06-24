@@ -1,9 +1,8 @@
 /**
  * `documentFiles.*` sub-router — direct (non-Paperless) file uploads.
  *
- * Uploads carry the file as a base64 string in the JSON body (parity
- * with the pre-REST tRPC shape). The handler decodes to a Buffer and
- * validates MIME + size before writing to disk.
+ * Uploads carry the file as a base64 string in the JSON body. The handler
+ * decodes to a Buffer and validates MIME + size before writing to disk.
  */
 import { initContract } from '@ts-rest/core';
 import { z } from 'zod';

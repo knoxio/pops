@@ -1,10 +1,8 @@
 /**
- * Shared zod building blocks for the inventory REST contract.
- *
- * Split from `rest.ts` so the per-module route files (`rest-items.ts`,
- * `rest-locations.ts`, …) stay focused on their path maps. Everything
- * here is zod-only — no imports from `src/api/` or `src/db/`, so the
- * contract honours the package boundary (consumers see only `.`).
+ * Shared zod building blocks for the inventory REST contract, kept apart
+ * from the per-module route files (`rest-items.ts`, `rest-locations.ts`, …).
+ * Everything here is zod-only — no imports from `src/api/` or `src/db/`, so
+ * the contract honours the package boundary (consumers see only `.`).
  */
 import { z } from 'zod';
 
@@ -34,7 +32,7 @@ export const PaginationMetaSchema = z.object({
 
 /**
  * Error envelope. `messageKey` carries the i18n key the FE resolves to a
- * localised string (preserved from the tRPC `data.messageKey` wire shape).
+ * localised string.
  */
 export const ErrorBodySchema = z.object({
   message: z.string(),

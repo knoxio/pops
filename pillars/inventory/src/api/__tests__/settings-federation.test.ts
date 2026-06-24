@@ -1,6 +1,5 @@
 /**
- * Integration tests for inventory's federated `/settings/*` surface
- * (settings-federation S2).
+ * Integration tests for inventory's federated `/settings/*` surface.
  *
  * Boots the production `createInventoryApiApp` factory against a per-test temp
  * `inventory.db` and drives the RU+reset surface over real HTTP via supertest:

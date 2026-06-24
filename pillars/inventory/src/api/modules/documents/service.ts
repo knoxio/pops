@@ -1,16 +1,11 @@
 /**
- * Inventory documents read/write surface.
+ * Inventory documents read/write surface over `documentsService` (src/db).
  *
- * All paths (`linkDocument`, `unlinkDocument`, `listDocumentsForItem`)
- * forward into `documentsService` from the pillar's persistence barrel.
- * The drizzle handle is passed in from the tRPC context so the service
- * stands alone of pops-api in the dep graph.
- *
- * Typed errors raised by the package (`DocumentItemNotFoundError`,
+ * Typed errors from the db layer (`DocumentItemNotFoundError`,
  * `DocumentConflictError`, `DocumentNotFoundError`,
- * `DocumentCreateFailedError`) are translated back to the in-tree
- * `NotFoundError` / `ConflictError` so the router's `instanceof`
- * checks keep working.
+ * `DocumentCreateFailedError`) are translated to the in-tree
+ * `NotFoundError` / `ConflictError` so the REST error-mapping layer
+ * turns them into 404/409.
  */
 import {
   DocumentConflictError,
@@ -57,8 +52,7 @@ export interface LinkDocumentInput {
 }
 
 /**
- * Link a Paperless-ngx document to an inventory item.
- * Validates the item exists and the pair is not already linked.
+ * Validates the item exists and the (item, document) pair is not already linked.
  */
 export function linkDocument(db: InventoryDb, input: LinkDocumentInput): ItemDocumentRow {
   return translate(() =>
@@ -71,16 +65,10 @@ export function linkDocument(db: InventoryDb, input: LinkDocumentInput): ItemDoc
   );
 }
 
-/**
- * Unlink a document from an item by link ID.
- */
 export function unlinkDocument(db: InventoryDb, id: number): void {
   translate(() => documentsService.unlink(db, id));
 }
 
-/**
- * List all documents linked to a given item.
- */
 export function listDocumentsForItem(
   db: InventoryDb,
   itemId: string,

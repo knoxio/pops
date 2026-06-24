@@ -1,15 +1,16 @@
 /**
- * Manifest type generator for `@pops/inventory-contract` (Theme 13 PRD-155).
+ * Manifest type generator for the inventory contract.
  *
- * Emits `src/manifest.generated.ts` from the contract's hand-maintained
- * surface (`types/item.ts`, `errors.ts`, `router.ts`) plus the version
+ * Emits `src/contract/manifest.generated.ts` from the contract's
+ * hand-maintained surface (`src/contract/types/item.ts`,
+ * `src/contract/errors.ts`, `src/contract/router.ts`) plus the version
  * declared in `package.json`. The output is committed, then piped
  * through `oxfmt` so the committed file matches the workspace formatting
  * rules. CI's `verify:manifest` job re-renders + oxfmts in-memory and
  * byte-compares.
  *
- * Imports below intentionally pull `Item`, `InventoryError`, and
- * `InventoryRouter` so that running the generator validates that the
+ * The type-only imports below intentionally pull `Item`, `InventoryError`,
+ * and `InventoryRouter` so that running the generator validates that the
  * source modules still expose the symbols the manifest names. A missing
  * or renamed export here makes the codegen fail loudly rather than
  * silently emitting a broken manifest.

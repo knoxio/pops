@@ -6,7 +6,7 @@ import {
 } from '@pops/pillar-sdk/server';
 
 /**
- * Cross-pillar URI reconciliation worker (PRD-251 US-01 + US-02).
+ * Cross-pillar URI reconciliation worker.
  *
  * Nightly job that walks the distinct `purchase_transaction_uri` and
  * `owner_uri` values on `home_inventory` and asks the owning pillar — via
@@ -16,14 +16,12 @@ import {
  *   - `ok`            → clear the corresponding `*_stale_at` column on
  *                       rows whose URI matches
  *   - `not-found`     → stamp `*_stale_at = now`. The row stays — existence
- *                       is best-effort per PRD-251 §"Business Rules"
+ *                       is best-effort
  *   - `unavailable`   → log + leave the row alone; retry next tick
  *   - `bad-request`   → log "bad URI" for ops + leave the row alone
  *
- * The recursive-`setTimeout` scheduling mirrors
- * `apps/pops-ha-bridge-api/src/retention-worker.ts`: the next tick is only
- * armed after the current one settles, so a slow reconciliation cannot
- * pile up overlapping runs.
+ * The next tick is armed only after the current one settles, so a slow
+ * reconciliation cannot pile up overlapping runs.
  */
 import { crossPillarUrisService, type InventoryDb } from '../../db/index.js';
 import { reconcileUriBatch, type ReconcileLogger } from './reconcile-cross-pillar-runner.js';
@@ -154,11 +152,11 @@ export async function runReconciliation(options: {
     logger: options.logger,
     counters,
     uris: crossPillarUrisService.listDistinctOwnerUris(db),
-    // The owner URI namespace stays `pops://core/user/...` (PRD-251 H7 wire
-    // contract) even though the pillar directory/id renamed to `registry`. The
-    // registry pillar's `/users` handler still resolves `pops://core/...` URIs,
-    // and the rows persisted on disk carry the `core` namespace — so the URI
-    // shape match MUST keep `expectedPillar: 'core'`, NOT `registry`.
+    // The owner URI namespace stays `pops://core/user/...` even though the
+    // pillar directory/id renamed to `registry`. The registry pillar's `/users`
+    // handler still resolves `pops://core/...` URIs, and the rows persisted on
+    // disk carry the `core` namespace — so the URI shape match MUST keep
+    // `expectedPillar: 'core'`, NOT `registry`.
     expectedPillar: 'core',
     expectedType: 'user',
     parse: parseSoftUri,

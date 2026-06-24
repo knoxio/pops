@@ -1,19 +1,13 @@
 /**
  * Invariant tests for the locations service against an in-memory SQLite
  * seeded with the canonical `locations` migration. Pure DB + service
- * layer — no tRPC, no Express, no auth middleware.
+ * layer.
  *
- * Higher-level tRPC coverage lives in pops-api's own integration suite
- * (until the cutover PR routes it through this package).
- *
- * The locations CREATE TABLE is read from the package's own journal at
- * `pillars/inventory/migrations/0005_fancy_crystal.sql`, which is
- * now the sole source of truth for this tag (the shared-journal copy
- * was retired in roadmap row L4 — see `.claude/pillar-migration-roadmap.md`).
- * `home_inventory` is inlined with the columns this slice exercises
- * because its canonical migration (`0000_naive_chameleon`) bundles
- * unrelated FK tables — the items slice will read its own SQL file when
- * it lands.
+ * The locations CREATE TABLE is read from the package's own migration at
+ * `pillars/inventory/migrations/0005_fancy_crystal.sql`, the sole source
+ * of truth for this tag. `home_inventory` is inlined with the columns
+ * this slice exercises because its canonical migration bundles unrelated
+ * FK tables.
  */
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';

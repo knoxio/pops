@@ -3,14 +3,7 @@
  * inventory items, list documents for an item.
  *
  * Each function takes an `InventoryDb` handle as its first argument; the
- * calling layer (pops-api modules, pops-inventory-api routers) resolves
- * the singleton or transaction handle to pass in. Mirrors the items /
- * locations / connections writer pattern (db-arg, typed errors).
- *
- * The live writer in `apps/pops-api/src/modules/inventory/documents/service.ts`
- * is the source of truth for the wire surface — this scaffold mirrors
- * its semantics so the PR2 reads-cutover can swap consumers over to
- * `documentsService.*` without a behavioural change.
+ * calling layer resolves the singleton or transaction handle to pass in.
  *
  * Pair uniqueness is enforced at the schema level via the
  * `uq_item_documents_pair` unique index on (item_id, paperless_document_id);
@@ -119,11 +112,9 @@ export function unlink(db: InventoryDb, id: number): void {
  * List all documents linked to a given item. Paginated; returns the
  * matching slice plus the full count for the filter.
  *
- * Rows are ordered by `item_documents.id` ascending. The id column is the
- * autoincrement PK, so this is insertion order — the contract callers
- * implicitly relied on under the legacy inline implementation, now made
- * explicit so pagination slices are deterministic across SQLite planner
- * versions and storage layouts.
+ * Rows are ordered by `item_documents.id` ascending (autoincrement PK, so
+ * insertion order) to keep pagination slices deterministic across SQLite
+ * planner versions and storage layouts.
  */
 export function listForItem(
   db: InventoryDb,

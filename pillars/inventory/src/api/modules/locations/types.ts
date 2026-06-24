@@ -1,10 +1,3 @@
-/**
- * Zod contract schemas for the inventory.locations router. The shapes are
- * byte-identical to `apps/pops-api/src/modules/inventory/locations/types.ts`
- * — the duplication is intentional during the additive Phase 5 PR 1
- * window so the legacy pops-api router can keep serving traffic while
- * inventory-api stands up its own copy.
- */
 import { z } from 'zod';
 
 import type { LocationRow } from '../../../db/index.js';

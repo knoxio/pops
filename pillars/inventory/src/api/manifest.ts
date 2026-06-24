@@ -1,9 +1,9 @@
 /**
  * Inventory pillar manifest payload builder.
  *
- * Hand-rolled until PRD-155 generates this from the contract. Declares
- * the inventory settings UI contribution under `settings.manifests`
- * (PRD-240 US-03) and, per PRD-243 US-02, the `nav` + `pages` UI
+ * Hand-rolled until docs/themes/federation/prds/manifest-type-generation
+ * generates this from the contract. Declares the inventory settings UI
+ * contribution under `settings.manifests` and the `nav` + `pages` UI
  * dimensions so the shell can mount the inventory app-rail entry and
  * routes from the registry walk. The `nav` and `pages` values mirror
  * `pillars/inventory/app/src/routes.tsx` verbatim (icons translated to

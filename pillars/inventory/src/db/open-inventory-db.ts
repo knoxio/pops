@@ -1,16 +1,9 @@
 /**
  * Standalone opener for the inventory pillar's SQLite database.
  *
- * Phase 2 PR 1 of the inventory pillar migration scaffolds the
- * per-pillar connection so subsequent PRs can flip readers/writers
- * over without touching pops-api's existing singleton. The opener is
- * intentionally minimal — it relies on drizzle-orm's built-in
- * `migrate` helper to apply the in-package migrations journal at
+ * Intentionally minimal — it relies on drizzle-orm's built-in `migrate`
+ * helper to apply the in-package migrations journal at
  * `pillars/inventory/migrations/meta/_journal.json`.
- *
- * No production consumer wires this up yet. Subsequent PRs add the
- * `INVENTORY_SQLITE_PATH` env-var read in pops-api, the boot-time
- * call, and the data backfill from the shared pops.db.
  */
 import { mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -52,8 +45,7 @@ export interface OpenedInventoryDb {
  * Side effects:
  *   - The parent directory of `path` is created if missing (recursive).
  *   - `journal_mode=WAL`, `foreign_keys=ON`, and `busy_timeout=5000`
- *     are enabled to match the shared singleton in
- *     `apps/pops-api/src/db.ts`.
+ *     are enabled.
  *   - Every migration in
  *     `pillars/inventory/migrations/meta/_journal.json` is applied
  *     via drizzle's built-in migrator (idempotent — re-running against

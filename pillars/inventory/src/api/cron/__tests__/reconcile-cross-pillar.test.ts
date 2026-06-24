@@ -1,10 +1,10 @@
 /**
- * Unit tests for the inventory cross-pillar URI reconciliation cron
- * (PRD-251 US-01 + US-02).
+ * Unit tests for the inventory cross-pillar URI reconciliation cron.
  *
- * Coverage matches the PRD's acceptance criteria — happy-path, 404,
- * owning-pillar-unavailable, bad-URI — and the timer-based scheduling
- * path that arms the next tick after the current one settles.
+ * Soft-URI reconciliation contract: pillars/inventory/docs/prds/data-model-api.
+ * Covers happy-path, 404, owning-pillar-unavailable, and bad-URI outcomes,
+ * plus the timer-based scheduling path that arms the next tick after the
+ * current one settles.
  */
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';

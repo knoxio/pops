@@ -8,7 +8,7 @@
 
 /**
  * Encode the contents of a Blob (or File) as a base64 string suitable for
- * sending through the tRPC `fileBase64` field. Chunks the conversion to
+ * the upload contract's `fileBase64` field. Chunks the conversion to
  * avoid blowing the call-stack on large files.
  */
 export async function blobToBase64(blob: Blob): Promise<string> {

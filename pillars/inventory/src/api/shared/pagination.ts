@@ -1,9 +1,5 @@
 /**
- * Pagination response builder.
- *
- * Mirrors `apps/pops-api/src/shared/pagination.ts` (export-surface only).
- * Duplicated locally so inventory-api stands alone of pops-api in the
- * dependency graph per the Phase 5 writer-move pattern.
+ * Pagination response builder for inventory-api list endpoints.
  */
 import { z } from 'zod';
 
