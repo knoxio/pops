@@ -1,16 +1,11 @@
 //! Data access for the entities domain.
 //!
 //! Every query is parameterized — values are bound, never interpolated into
-//! SQL — so the layer is injection-safe. (The N1 node uses sqlx's runtime
-//! query API rather than the compile-time `query!` macros: the macros require
-//! a build-time database or a committed `.sqlx/` offline cache, and neither the
-//! offline cache nor `sqlx-cli` lands until the Phase 6 toolchain node. The
-//! conversion to compile-time-checked queries rides that node.)
+//! SQL — so the layer is injection-safe.
 //!
-//! Create/update semantics mirror core's `entities/service.ts` exactly:
-//! name-uniqueness raises a conflict, `last_edited_time` is bumped to the
-//! current instant on create and on any non-empty update, and ordering is
-//! case-insensitive by name.
+//! Create/update semantics: name-uniqueness raises a conflict,
+//! `last_edited_time` is bumped to the current instant on create and on any
+//! non-empty update, and ordering is case-insensitive by name.
 
 use sqlx::{Row, SqlitePool};
 

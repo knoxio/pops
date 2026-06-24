@@ -46,7 +46,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     tracing::info!(%addr, "contacts pillar listening");
 
     // Graceful shutdown drains in-flight requests on the first SIGTERM/SIGINT;
-    // the lifecycle then deregisters best-effort so core drops the route
+    // the lifecycle then deregisters best-effort so the registry drops the route
     // immediately rather than waiting for the missed-heartbeat eviction.
     axum::serve(listener, router)
         .with_graceful_shutdown(shutdown_signal())

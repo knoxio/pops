@@ -2,16 +2,15 @@
 //!
 //! ## Path resolution (slash-first, legacy fallback)
 //!
-//! One logical registry operation is reachable at two HTTP paths during the
-//! `core→registry` rename's rolling-deploy window: the canonical slash form
-//! (`/registry/register`) and the legacy dotted form (`/core.registry.register`).
-//! This transport tries the canonical path first and falls back to the legacy
-//! path on a **404 only** — a faithful port of the SDK's `resolveWithFallback`
-//! (`packages/pillar-sdk/src/registry-path-resolver.ts`):
+//! The registry serves one logical operation at two HTTP paths: the canonical
+//! slash form (`/registry/register`) and the legacy dotted alias
+//! (`/core.registry.register`). This transport tries the canonical path first
+//! and falls back to the dotted alias on a **404 only** — a faithful port of
+//! the SDK's `resolveWithFallback` (`libs/sdk/src/registry-path-resolver.ts`):
 //!
 //!   - 2xx → remember the winning path so steady state issues one request, and
 //!     return.
-//!   - 404 on the cached winner (e.g. core rolled back to legacy-only) →
+//!   - 404 on the cached winner (e.g. the slash form stops being served) →
 //!     invalidate the hint and fall through to the other candidate IN THIS
 //!     call, so a single 404 self-heals without a failed heartbeat.
 //!   - any non-404 error (5xx / network) → surface immediately; "up but broken"
@@ -25,7 +24,8 @@
 //! [`RegistryError::retriable`] is `true` for a network failure or a `>= 500`
 //! response, `false` for a 4xx (a rejected manifest, a malformed pillar id).
 //! The lifecycle uses this to fail fast on a non-retriable register rejection
-//! and to back off on a transient one — matching the SDK's `register.ts`.
+//! and to back off on a transient one — matching the SDK's
+//! `libs/sdk/src/bootstrap/register.ts`.
 
 use std::future::Future;
 use std::sync::Mutex;
@@ -40,8 +40,8 @@ pub const RESOLVER_PRIMARY_PATHS: RegistryPaths = RegistryPaths {
     deregister: "/registry/deregister",
 };
 
-/// Legacy (dotted, tRPC-vestigial) registry paths — the 404 fallback kept alive
-/// across the rename's rolling-deploy window. These are what core mounts today.
+/// Legacy (dotted, tRPC-vestigial) registry paths — the 404 fallback. The
+/// registry serves these as an alias alongside the canonical slash paths.
 pub const RESOLVER_LEGACY_PATHS: RegistryPaths = RegistryPaths {
     register: "/core.registry.register",
     heartbeat: "/core.registry.heartbeat",
@@ -102,37 +102,37 @@ impl std::error::Error for RegistryError {}
 
 /// Outcome of a heartbeat that reached the registry (HTTP 2xx).
 ///
-/// Core's heartbeat route soft-fails with `{ ok: false, reason: 'not-registered' }`
-/// at HTTP 200 when the pillar has no registration row (e.g. it was evicted, or
-/// the initial register never succeeded). Distinguishing this from an
-/// acknowledged heartbeat lets the lifecycle re-register instead of
-/// heartbeating into the void forever.
+/// The registry's heartbeat route soft-fails with
+/// `{ ok: false, reason: 'not-registered' }` at HTTP 200 when the pillar has no
+/// registration row (e.g. it was evicted, or the initial register never
+/// succeeded). Distinguishing this from an acknowledged heartbeat lets the
+/// lifecycle re-register instead of heartbeating into the void forever.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum HeartbeatOutcome {
     /// `{ ok: true, … }` — the registration is live.
     Acknowledged,
-    /// `{ ok: false, reason: 'not-registered' }` — core has no row for us.
+    /// `{ ok: false, reason: 'not-registered' }` — the registry has no row for us.
     NotRegistered,
 }
 
 /// The registry operations a pillar drives over its lifetime. A trait so the
 /// lifecycle loop can be exercised against an in-process fake (the integration
-/// tests) without a live core.
+/// tests) without a live registry.
 ///
 /// Methods return `impl Future + Send` (rather than the bare `async fn in
 /// trait` sugar) because the lifecycle spawns the loop onto the tokio
 /// multi-thread runtime, which requires the futures be `Send`.
 pub trait RegistryTransport: Send + Sync {
     /// Register this pillar. `manifest` is the validated capability document;
-    /// `base_url` is the origin core records for it.
+    /// `base_url` is the origin the registry records for it.
     fn register(
         &self,
         base_url: &str,
         manifest: &Value,
     ) -> impl Future<Output = Result<(), RegistryError>> + Send;
     /// Report liveness for `pillar_id`. A transport error is a failure to
-    /// reach/parse the registry; an `Ok(NotRegistered)` means core answered but
-    /// has no row for us (re-register).
+    /// reach/parse the registry; an `Ok(NotRegistered)` means the registry
+    /// answered but has no row for us (re-register).
     fn heartbeat(
         &self,
         pillar_id: &str,
@@ -222,8 +222,9 @@ where
                     return Err(err);
                 }
                 // 404 on the first candidate when a winner was cached on a
-                // prior call → drop the hint so the cycle self-heals after a
-                // core rollback, then fall through to the next candidate.
+                // prior call → drop the hint so the cycle self-heals after the
+                // winning path stops being served, then fall through to the
+                // next candidate.
                 if index == 0 && leg.had_hint() {
                     leg.invalidate();
                 }
@@ -455,8 +456,8 @@ mod tests {
             .unwrap();
         assert_eq!(leg.candidates()[0], "/registry/register");
 
-        // Core rolls back to legacy-only: the cached canonical now 404s, the
-        // call must fall through to legacy WITHIN the same invocation.
+        // The registry stops serving the slash form: the cached canonical now
+        // 404s, the call must fall through to legacy WITHIN the same invocation.
         let seen = RefCell::new(Vec::new());
         resolve_with_fallback(&leg, |path| {
             seen.borrow_mut().push(path);

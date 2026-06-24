@@ -4,9 +4,7 @@
 //! This complements the unit tests (which use an in-process fake): here the
 //! actual `reqwest`-backed `HttpRegistryTransport` makes real TCP requests, so
 //! the slash-first → legacy-404 fallback, the JSON body shape, and the
-//! register/heartbeat/deregister envelopes are all exercised end-to-end. It
-//! mirrors the plan's Gate G2 ("spin a mock registry and assert contacts POSTs
-//! a schema-valid manifest, heartbeats, deregisters").
+//! register/heartbeat/deregister envelopes are all exercised end-to-end.
 
 use std::net::SocketAddr;
 use std::sync::{Arc, Mutex};
