@@ -1,8 +1,6 @@
 /**
- * Integration tests for the `users.*` REST surface (PRD-251 H7 cross-pillar
- * reconciliation), driven through the real Express app via supertest.
- *
- * Mirrors the legacy `core.users.get` tRPC coverage on the REST transport:
+ * Integration tests for the `users.*` REST surface, driven through the real
+ * Express app via supertest:
  *   - happy path — a known user URI resolves and the URI is echoed back
  *   - 404 — URI parses but no `user_settings` row exists for the email
  *   - 400 — malformed URI (wrong scheme/pillar/type, missing id, plain string)

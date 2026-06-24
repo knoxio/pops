@@ -1,20 +1,14 @@
 /**
- * BullMQ sync-job result persistence against the core pillar's SQLite.
+ * BullMQ sync-job result persistence against the registry pillar's SQLite.
  *
- * Mirrors the structure used by every other core service in this package:
- * the function takes a `CoreDb` handle as its first argument and performs
- * a single UPSERT against `sync_job_results`. The caller (the pops-api
- * worker queue handler) resolves the appropriate drizzle handle.
+ * The function takes a `CoreDb` handle as its first argument and performs
+ * a single UPSERT against `sync_job_results` — a BullMQ result table owned
+ * by the registry pillar (lives next to `pillarRegistry`). The worker queue
+ * handler resolves the drizzle handle.
  *
- * Per `docs/themes/13-pillar-finale/notes/infra-hot-path-migration.md`
- * row 4 the `sync_job_results` table is a cross-pillar BullMQ result table
- * owned by the core pillar (lives next to `pillarRegistry`). This module
- * is the SDK surface for that ownership; the physical table cutover from
- * the shared `pops.db` into `core.db` lands with the PRD-186 sibling PR.
- *
- * Only the five Plex sync job types are persisted today — the
- * caller-side filter is preserved as `PERSISTED_SYNC_TYPES` so consumers
- * can short-circuit before constructing the row payload.
+ * Only the Plex sync job types are persisted — the caller-side filter is
+ * exposed as `PERSISTED_SYNC_TYPES` so consumers can short-circuit before
+ * constructing the row payload.
  */
 import { syncJobResults } from '../schema.js';
 

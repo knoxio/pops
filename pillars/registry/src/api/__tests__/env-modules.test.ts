@@ -1,6 +1,5 @@
 /**
- * Relocated from `apps/pops-api/src/modules/env-modules.test.ts`. Pins the
- * pillar-local copy of the POPS_APPS / POPS_OVERLAYS parser (PRD-100).
+ * Pins the POPS_APPS / POPS_OVERLAYS install-set parser.
  */
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
@@ -14,7 +13,7 @@ import {
 const APP_KEY = 'POPS_APPS';
 const OVERLAY_KEY = 'POPS_OVERLAYS';
 
-describe('PRD-100 env-modules (pillar copy)', () => {
+describe('env-modules', () => {
   let originalApps: string | undefined;
   let originalOverlays: string | undefined;
 

@@ -1,14 +1,12 @@
 /**
- * POPS_APPS / POPS_OVERLAYS env contract (PRD-100, Tier 1 module runtime).
+ * POPS_APPS / POPS_OVERLAYS env contract.
  *
- * Relocated from `apps/pops-api/src/modules/env-modules.ts`. The only
- * behavioural difference is the env read: the pillar reads `process.env`
- * directly (matching `core-sqlite-path.ts`) rather than pops-api's
- * Docker-secret-aware `getEnv`. The pillar container ships its module set
- * through plain env vars, so the secret-file lookup is not needed here.
+ * The pillar reads `process.env` directly (matching `core-sqlite-path.ts`):
+ * the container ships its module set through plain env vars, so no
+ * secret-file lookup is needed.
  *
  * Operators choose which optional modules are installed via comma-separated
- * env vars. `core` is always installed (it's the platform shell, not a
+ * env vars. The platform pillar is always installed (it's the shell, not a
  * domain module). When unset (or empty), every module is installed.
  *
  * Validation is strict: invalid module ids and operator footguns (e.g. only
@@ -25,7 +23,7 @@ export type AppId = (typeof KNOWN_APPS)[number];
 export type OverlayId = (typeof KNOWN_OVERLAYS)[number];
 
 export interface InstalledModules {
-  /** Apps mounted into the tRPC root + frontend router. */
+  /** Installed app modules. */
   apps: ReadonlyArray<AppId>;
   /** Overlays the shell mounts into chrome slots. */
   overlays: ReadonlyArray<OverlayId>;

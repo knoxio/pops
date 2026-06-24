@@ -1,28 +1,27 @@
 /**
- * Feature-toggle service for the core pillar (epic 05 / S1).
+ * Feature-toggle service: the single read path for runtime feature gating plus
+ * the admin Features page surface.
  *
- * The single read path for runtime feature gating plus the admin Features
- * page surface. Feature declarations are sourced from the **live registry
- * snapshot** — every registered pillar's manifest `features` slot is
- * aggregated in-process. There is no static pillar list and no build-time
- * module enumeration: a pillar that self-registers with a `features` slot
- * surfaces here automatically (the self-registration invariant, epic 05).
+ * Feature declarations are sourced from the **live registry snapshot** — every
+ * registered pillar's manifest `features` slot is aggregated in-process. There
+ * is no static pillar list and no build-time module enumeration: a pillar that
+ * self-registers with a `features` slot surfaces here automatically.
  *
  * Resolution order (`isEnabled` / `buildFeatureStatus`):
  *   capability probe → required credentials → user override → system value → default.
  *
- * Storage reuses core's existing tables (no new tables):
+ * Storage reuses the registry's existing tables:
  *   - system flags → `settings` (`setRawSetting` / `getSettingOrNull`, key
  *     `feature.settingKey ?? key`)
  *   - per-user prefs → `user_settings` (per email, key `feature.<key>`)
  *
  * Capability resolution is the declarative `capability: { pillar, key }`
- * descriptor (S0 replaced the non-serializable `capabilityCheck()` fn). Every
- * capability feature — core's own `core.redis` included — resolves uniformly
- * against the owning pillar's last-reported status on the registry snapshot
- * (`pillars[].capabilities`, self-reported on register / heartbeat, epic 05 /
- * S3). A pillar that has not reported a capability resolves to `unavailable`,
- * preserving graceful degradation. See `resolution.ts` for the gate machinery.
+ * descriptor (serializable, so it survives the wire). Every capability feature
+ * resolves uniformly against the owning pillar's last-reported status on the
+ * registry snapshot (`pillars[].capabilities`, self-reported on register /
+ * heartbeat). A pillar that has not reported a capability resolves to
+ * `unavailable`, preserving graceful degradation. See `resolution.ts` for the
+ * gate machinery.
  */
 import { setRawSetting } from '../../../db/services/settings.js';
 import { deleteUserSetting, setUserSetting } from '../../../db/services/user-settings.js';
@@ -68,8 +67,8 @@ function requireFeature(view: RegistryFeatureView, key: string): ResolvedFeature
  * capability status → required credentials → user override → system value → default.
  *
  * Throws `FeatureNotFoundError` when the key is not declared by any registered
- * pillar — a deliberate breaking change from the pre-PRD-101 silent-`false`
- * behaviour: manifest-declared features can't drift, so a missing key is a bug.
+ * pillar — manifest-declared features can't drift, so a missing key is a bug
+ * rather than a silent `false` (feature-toggles-framework).
  */
 export function isEnabled(db: CoreDb, key: string, options: IsEnabledOptions = {}): boolean {
   const view = readRegistryFeatureView(db);

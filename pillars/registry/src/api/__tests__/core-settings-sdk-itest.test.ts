@@ -1,27 +1,24 @@
 /**
- * PRD-247 US-04 — end-to-end integration test for the
- * `pillar('core').settings.*` cross-pillar SDK surface.
+ * End-to-end integration test for the `pillar('core').settings.*`
+ * cross-pillar SDK surface (settings-as-manifest-dimension).
  *
  * The test boots two real HTTP servers on ephemeral ports:
  *
- *   1. `pops-core-api` — the surface that owns `core.settings.*` per
- *      PRD-247 US-01. A service-account row is seeded in the same
- *      `core.db` so the protected procedures accept the `X-API-Key`
- *      header the server SDK attaches.
- *   2. A minimal Express server modelling the **pops-api side** —
- *      exposes a media-shaped handler at `POST /media/settings/*` that
- *      invokes `pillar('core').settings.{get, set, getMany}` against
- *      the booted core-api. The handler mirrors the shape the PRD-247
- *      US-03 burn-down lands at the Plex / arr / rotation call sites.
+ *   1. The registry pillar — the surface that owns `core.settings.*`. A
+ *      service-account row is seeded in the same `core.db` so the protected
+ *      procedures accept the `X-API-Key` header the server SDK attaches.
+ *   2. A minimal Express server modelling a consumer pillar — exposes a
+ *      media-shaped handler at `POST /media/settings/*` that invokes
+ *      `pillar('core').settings.{get, set, getMany}` against the booted
+ *      registry, mirroring the shape a production call site uses.
  *
  * Boot is gated on `POPS_INTERNAL_API_KEY` being set in the process
- * env, mirroring the production fail-closed semantics from
- * `packages/pillar-sdk/src/server/config.ts`. The test seeds the env
- * var with the plaintext service-account key issued at setup; the
- * original value is restored in teardown so other suites are not
- * affected.
+ * env, mirroring the production fail-closed semantics from the server SDK
+ * config. The test seeds the env var with the plaintext service-account
+ * key issued at setup; the original value is restored in teardown so other
+ * suites are not affected.
  *
- * Four wire-level guarantees from PRD-247 US-04:
+ * Wire-level guarantees:
  *
  *   - `set` → `get` round-trips through the cross-pillar surface.
  *   - `getMany([k1, k2, k3])` returns `{ k1: v1, k2: v2 }` when only
@@ -30,16 +27,14 @@
  *   - The per-`pillarId` discovery cache resolves the registry once per
  *     TTL window; back-to-back procedure calls do exactly one snapshot
  *     fetch. A counting `DiscoveryTransport` is the spy.
- *   - On core-api shutdown, the next procedure call surfaces as a
+ *   - On registry shutdown, the next procedure call surfaces as a
  *     `PillarCallError` with `result.kind === 'unavailable'` at the
  *     media-shaped handler.
  *
  * The single-key procedures constrain `key` to the registry's own
  * manifest key set (derived from `coreOperationalManifest`), so this test
  * uses real `core.*` keys (`core.defaultLimit`, `core.search.showMoreLimit`,
- * `core.aiRetry.maxRetries`). The Plex keys this itest formerly exercised
- * moved to media's federated settings surface once the per-pillar
- * `capabilities.settings` flip landed — the registry no longer serves them.
+ * `core.aiRetry.maxRetries`).
  *
  * The server SDK resolves `pillar('core').settings.*` over the REST
  * transport — it fetches the pillar's `/openapi`, builds the operationId
@@ -156,9 +151,9 @@ interface MediaHandlerDeps {
 }
 
 /**
- * Minimal media-shaped Express app. Each route mirrors the shape the
- * PRD-247 US-03 burn-down lands at the production media call sites —
- * `await pillar('core').settings.<m>(...)` inside an Express handler.
+ * Minimal media-shaped Express app. Each route mirrors a production media
+ * call site — `await pillar('core').settings.<m>(...)` inside an Express
+ * handler.
  */
 function createMediaHandlerApp(deps: MediaHandlerDeps): Express {
   const app = express();
@@ -291,7 +286,7 @@ afterAll(async () => {
     await closeServer(env.coreApiServer);
   } catch {
     // best-effort cleanup — the shutdown-discriminant test may have
-    // already taken the core-api server down.
+    // already taken the registry server down.
   }
   try {
     env.coreDb.raw.close();
@@ -333,7 +328,7 @@ async function callMedia(
   return { status: res.status, body: json };
 }
 
-describe("PRD-247 US-04 — pillar('core').settings.* end-to-end", () => {
+describe("pillar('core').settings.* end-to-end", () => {
   it('round-trips a single key through set + get from a media-shaped handler', async () => {
     const setRes = await callMedia('/media/settings/set', {
       key: CORE_DEFAULT_LIMIT,
@@ -392,8 +387,8 @@ describe("PRD-247 US-04 — pillar('core').settings.* end-to-end", () => {
   });
 });
 
-describe('PRD-247 US-04 — unavailable-pillar discriminant on core-api shutdown', () => {
-  it("surfaces PillarCallError with kind: 'unavailable' once core-api is taken down", async () => {
+describe('unavailable-pillar discriminant on registry shutdown', () => {
+  it("surfaces PillarCallError with kind: 'unavailable' once the registry is taken down", async () => {
     await closeServer(env.coreApiServer);
 
     const res = await callMedia('/media/settings/get', { key: CORE_DEFAULT_LIMIT });

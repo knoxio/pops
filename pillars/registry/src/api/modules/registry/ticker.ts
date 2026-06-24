@@ -1,8 +1,7 @@
 /**
- * Background status-reconciliation ticker for the pillar registry
- * (Theme 13 PRD-162).
+ * Background status-reconciliation ticker for the pillar registry.
  *
- * Runs every `HEARTBEAT_INTERVAL_MS` (10s by default) inside core-api.
+ * Runs every `HEARTBEAT_INTERVAL_MS` inside the registry pillar.
  * On each pass:
  *   1. Read every row in `pillar_registry`.
  *   2. For each row, compute live status from `lastHeartbeatAt`.
@@ -12,16 +11,17 @@
  *   4. Healthy-staleness refresh: persisted `healthy` rows whose
  *      `statusUpdatedAt` is older than `HEALTHY_STALENESS_REFRESH_MS`
  *      get their `statusUpdatedAt` bumped to `now` so the timestamp
- *      reflects "still alive as of this moment" (used by PRD-164's
- *      restart reconciliation).
+ *      reflects "still alive as of this moment" (consumed by the
+ *      boot-time restart reconciliation in `./boot.ts`).
  *
  * Errors are logged and the next tick runs normally — no backoff. The
  * lazy compute path inside the router is the authoritative status for
  * snapshot reads, so a delayed tick only delays event emission.
  *
- * Subscription events (PRD-163) are not yet wired up. Transitions are
- * delivered through the optional `onTransition` callback so the
- * subscription layer can plug in without touching this file.
+ * Transitions are delivered through the optional `onTransition` callback
+ * so the subscription layer can plug in without touching this file.
+ *
+ * Spec: heartbeat-lifecycle.
  */
 import {
   pillarRegistryService,

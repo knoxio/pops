@@ -1,7 +1,7 @@
 import { validateManifestPayload } from '@pops/pillar-sdk';
 
 /**
- * HTTP-JSON register handler for external pillars (Theme 13 PRD-228 US-01).
+ * HTTP-JSON register handler for external pillars.
  *
  * External pillars — those that ship from a different repository and run
  * outside the in-tree `bootstrapPillar` path — register themselves with the
@@ -9,17 +9,15 @@ import { validateManifestPayload } from '@pops/pillar-sdk';
  * `/registry/register` and the legacy `/core.registry.register` form are
  * mounted on the same handler (see `app.ts`); the SDK prefers the slash form
  * and falls back to the dotted form on 404. The nginx edge blocks the mutating
- * registry paths from external traffic (PRD-161); PRD-228 carves a sibling
- * allow-list covering both the `^/core\.registry\.(register|heartbeat|deregister)$`
+ * registry paths from external traffic, then carves a sibling allow-list
+ * covering both the `^/core\.registry\.(register|heartbeat|deregister)$`
  * and `^/registry/(register|heartbeat|deregister)$` forms for this plain
- * HTTP-JSON surface.
+ * HTTP-JSON surface (see docs/themes/federation/prds/nginx-config-generator).
  *
  * Trust model (ADR-027): the docker network is the boundary. Anything
  * able to POST here is already inside the compose network — the
  * external-vs-internal distinction is captured by the `origin` column,
  * not by per-request authentication.
- *
- * Heartbeat / deregister / eviction live in US-02..04.
  */
 import { pillarRegistryService, type CoreDb } from '../../../db/index.js';
 import { emitRegistryEvent } from '../registry/event-bus.js';
@@ -110,11 +108,6 @@ function persistAndRespond(
 
 export type ExternalRegisterHandler = (req: Request, res: Response) => void;
 
-/**
- * Factory for the register handler, currently mounted at
- * `POST /core.registry.register` (the canonical `POST /registry/register`
- * lands in a later phase).
- */
 export function createExternalRegisterHandler(deps: ExternalRegisterDeps): ExternalRegisterHandler {
   return function externalRegisterHandler(req, res) {
     const parsed = parseRegisterBody(req.body);

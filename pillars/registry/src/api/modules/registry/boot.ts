@@ -1,7 +1,7 @@
 /**
- * Boot-time registry reconciliation (Theme 13 PRD-164).
+ * Boot-time registry reconciliation.
  *
- * When `pops-core-api` restarts, the persisted `pillar_registry` rows
+ * When the registry pillar restarts, the persisted `pillar_registry` rows
  * survive but their `lastHeartbeatAt` is stale relative to the new boot
  * clock. The persisted `status` cache is equally stale — a row last
  * written as `healthy` may correspond to a pillar that died during the
@@ -14,19 +14,20 @@
  *     missed at least the standard threshold of heartbeats during the
  *     outage. We set `status = 'unknown'` (NOT `unavailable` — we don't
  *     *know* it's down, we just observed a missed heartbeat). The
- *     PRD-162 heartbeat ticker takes over from here: a heartbeat from
- *     the pillar will flip it back to `healthy`; continued silence
- *     will eventually compute `unavailable` via the lazy-status path.
+ *     heartbeat ticker takes over from here: a heartbeat from the pillar
+ *     will flip it back to `healthy`; continued silence will eventually
+ *     compute `unavailable` via the lazy-status path.
  *
  *   - If `now - lastHeartbeatAt <= UNAVAILABLE_AFTER_MS`, the row is
  *     within the live threshold and is left as-is. The pillar's next
- *     heartbeat (due within ~10s) refreshes the row normally.
+ *     heartbeat refreshes the row normally.
  *
  * The function is idempotent: re-running it on the same data produces
- * the same result. Tests simulate restart by calling it explicitly.
+ * the same result.
  *
- * Single-instance assumption per ADR-027. Multi-region / multi-instance
- * reconciliation is a follow-up (see PRD-164 "Out of Scope").
+ * Single-instance assumption per ADR-027.
+ *
+ * Spec: reconciliation-on-restart.
  */
 import {
   pillarRegistryService,

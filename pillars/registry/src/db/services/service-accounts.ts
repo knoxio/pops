@@ -5,9 +5,9 @@
  * It is intentionally a single indexed read on `key_prefix`, then one scrypt
  * compare. Revoked rows return null without doing the scrypt work.
  *
- * Services take a `CoreDb` handle as their first argument; the calling layer
- * (pops-api modules) is responsible for resolving the singleton or
- * transaction handle to pass in.
+ * Services take a `CoreDb` handle as their first argument; the registry's
+ * API layer is responsible for resolving the singleton or transaction handle
+ * to pass in.
  */
 import { randomUUID } from 'node:crypto';
 

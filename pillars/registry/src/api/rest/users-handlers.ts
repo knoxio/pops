@@ -1,11 +1,9 @@
 /**
  * Handlers for the `users.*` sub-router.
  *
- * Wraps the read-only `usersService.getUser` lookup. The URI-parsing guard
- * (and its `ValidationError` → 400 / `NotFoundError` → 404 mapping) mirrors
- * the legacy `core.users.get` tRPC router: malformed URIs are 400, URIs that
- * parse but don't resolve to a known user are 404. The wire shape
- * `{ data: { uri } }` is preserved.
+ * Wraps the read-only `usersService.getUser` lookup: a malformed URI is a 400
+ * (`ValidationError`), a URI that parses but resolves to no known user is a 404
+ * (`NotFoundError`). The wire shape is `{ data: { uri } }`.
  */
 import { type CoreDb, usersService } from '../../db/index.js';
 import { NotFoundError, ValidationError } from '../shared/errors.js';

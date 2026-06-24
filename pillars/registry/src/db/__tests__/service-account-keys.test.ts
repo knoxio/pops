@@ -1,9 +1,8 @@
 /**
  * Unit tests for the API-key generator + hash + verify primitives.
  *
- * Moved verbatim from `apps/pops-api/src/modules/core/service-accounts/key.test.ts`
- * during the core pillar Phase 1 scaffold. The hot verify path runs on every
- * authenticated machine call so the constant-time compare must not be regressed.
+ * The verify path runs on every authenticated machine call, so the
+ * constant-time compare must not be regressed.
  */
 import { describe, expect, it } from 'vitest';
 

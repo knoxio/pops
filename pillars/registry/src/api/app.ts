@@ -1,22 +1,19 @@
 /**
- * Express app factory for the core pillar container.
+ * Express app factory for the registry pillar container.
  *
  * The pillar is fully REST: the ts-rest `coreContract` surface (mounted via
  * `createExpressEndpoints`) plus the handful of raw HTTP/SSE routes the
  * registry needs and ts-rest cannot model — `GET /pillars`, `GET /pillars/health`,
  * `POST /uri/resolve`, the SSE `GET /registry/subscribe`, the DB-backed
- * discovery snapshot, and the raw register/heartbeat/deregister mutations. The
- * pillar serves no tRPC.
+ * discovery snapshot, and the raw register/heartbeat/deregister mutations.
  *
- * Registry handshake/discovery paths are DUAL-SERVED during the dot-routes →
- * slash rolling-deploy window: each operation is mounted on its canonical slash
- * path (`GET /registry/pillars`, `POST /registry/{register,heartbeat,
- * deregister}` — {@link REGISTRY_PATHS}) AND on the legacy dotted path
+ * Registry handshake/discovery paths are DUAL-SERVED: each operation is mounted
+ * on its canonical slash path (`GET /registry/pillars`, `POST /registry/{register,
+ * heartbeat,deregister}` — {@link REGISTRY_PATHS}) AND on the legacy dotted path
  * (`GET /core.registry.list`, `POST /core.registry.{register,heartbeat,
  * deregister}` — {@link LEGACY_REGISTRY_PATHS}), both pointing at the SAME
- * handler instance. The legacy aliases let an old-SDK pillar keep registering
- * against a new core; they are removed in a later release once the
- * legacy-path-hit metric reads zero everywhere.
+ * handler instance, so an old-SDK pillar keeps registering against the same
+ * handlers as a new one.
  *
  * Kept as a factory so the test suite can spin up an in-process `supertest`
  * instance without binding a real port.
@@ -68,13 +65,12 @@ const openapiDocument: unknown = JSON.parse(
 
 /**
  * Mount the registry handshake/discovery routes, DUAL-SERVED on the canonical
- * slash path and the legacy dotted alias during the rolling-deploy window.
+ * slash path and the legacy dotted alias.
  *
  * Each handler is created once and shared by both paths (no logic duplication);
  * `legacyHit` is a pass-through metric mounted in front of both that fires only
- * on the dotted alias. Raw HTTP (not ts-rest / not tRPC): the snapshot returns
- * the bare `{ pillars, fetchedAt }` shape the pillar SDK's
- * `HttpDiscoveryTransport` reads.
+ * on the dotted alias. Raw HTTP (not ts-rest): the snapshot returns the bare
+ * `{ pillars, fetchedAt }` shape the pillar SDK's `HttpDiscoveryTransport` reads.
  */
 function mountRegistryRoutes(app: Express, db: CoreDb): void {
   const snapshotHandler = createRegistrySnapshotHandler(db);
@@ -117,10 +113,10 @@ export function createCoreApiApp(deps: CoreApiDeps): Express {
   });
 
   // Cross-pillar URI dispatcher (ADR-026 P2). Raw HTTP: pillars POST
-  // `{ uri }` here and core resolves in-process or proxies to the owning
-  // pillar. The remote leg routes off the live DB registry, falling back to
-  // the `POPS_PILLARS` seed. Never throws — every error path is a typed
-  // `UriResolverResult`.
+  // `{ uri }` here and the registry resolves in-process or proxies to the
+  // owning pillar. The remote leg routes off the live DB registry, falling
+  // back to the `POPS_PILLARS` seed. Never throws — every error path is a
+  // typed `UriResolverResult`.
   app.post('/uri/resolve', (req: Request, res: Response, next: NextFunction) => {
     const body: unknown = req.body;
     const rawUri = typeof body === 'object' && body !== null ? Reflect.get(body, 'uri') : undefined;
@@ -141,7 +137,7 @@ export function createCoreApiApp(deps: CoreApiDeps): Express {
 
   // Aggregated cross-pillar health probe (ADR-026 P3). Fans out
   // `GET {baseUrl}/health` against every registered pillar; the self
-  // (`core`) entry short-circuits to `'healthy'`.
+  // (`registry`) entry short-circuits to `'healthy'`.
   app.get('/pillars/health', (_req: Request, res: Response, next: NextFunction) => {
     void handlers
       .pillarsHealth()

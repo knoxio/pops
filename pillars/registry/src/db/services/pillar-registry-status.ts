@@ -1,9 +1,8 @@
 /**
- * Background-ticker hooks for the pillar registry (Theme 13 PRD-162).
+ * Background-ticker hooks for the pillar registry.
  *
- * Kept in a sibling file from the core CRUD so the main
- * `pillar-registry.ts` stays under the per-file line cap as the
- * registry accrues new columns (PRD-228 origin/key-hash/eviction).
+ * Split from the core CRUD in `pillar-registry.ts` so that file stays
+ * under the per-file line cap as the registry accrues columns.
  */
 import { eq } from 'drizzle-orm';
 
@@ -26,10 +25,9 @@ export interface ApplyStatusUpdate {
 }
 
 /**
- * Persist a batch of status updates emitted by the background ticker
- * (Theme 13 PRD-162). One UPDATE per row, all inside a single SQLite
- * transaction so a tick is atomic relative to concurrent heartbeats /
- * registrations.
+ * Persist a batch of status updates emitted by the background ticker.
+ * One UPDATE per row, all inside a single SQLite transaction so a tick
+ * is atomic relative to concurrent heartbeats / registrations.
  */
 export function applyStatusUpdates(db: CoreDb, updates: readonly ApplyStatusUpdate[]): void {
   if (updates.length === 0) return;

@@ -1,5 +1,5 @@
 /**
- * Pure unit tests for `computeStatus` and clock injection (PRD-162 us-01, us-06).
+ * Pure unit tests for `computeStatus` and clock injection.
  */
 import { afterEach, describe, expect, it } from 'vitest';
 

@@ -1,14 +1,14 @@
 /**
- * Boot-time registry reconciliation tests (Theme 13 PRD-164).
+ * Boot-time registry reconciliation tests (reconciliation-on-restart).
  *
- * Simulates the core-api restart scenario:
+ * Simulates the registry restart scenario:
  *   - Persisted rows survive across boots.
  *   - `lastHeartbeatAt` reflects the pre-restart wall clock.
  *   - On boot, rows stale beyond `UNAVAILABLE_AFTER_MS` flip to
  *     `unknown`; fresher rows are left alone.
  *
- * Uses an in-memory core.db plus an explicit `now` so the test does not
- * touch the singleton clock and can run in parallel with PRD-162 tests.
+ * Uses a file-backed core.db plus an explicit `now` so the test does not
+ * touch the singleton clock and can run in parallel with the heartbeat suite.
  */
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -66,7 +66,7 @@ function seedRegistration(row: SeedRow): void {
   }
 }
 
-describe('reconcileRegistryOnBoot (PRD-164)', () => {
+describe('reconcileRegistryOnBoot', () => {
   it('marks pillars whose lastHeartbeatAt exceeds the threshold as unknown', () => {
     seedRegistration({
       pillarId: 'finance',

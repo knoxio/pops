@@ -1,11 +1,5 @@
 /**
  * Cloudflare Access JWT validation.
- *
- * Mirrors `apps/pops-api/src/middleware/cloudflare-jwt.ts` because core-api
- * is supposed to stand alone in the dependency graph — see the standalone
- * comment in `core-sqlite-path.ts`. A future refactor can lift this into
- * a shared `@pops/auth` package; for now duplication is the right call
- * to keep the writer-move PR additive and easy to revert.
  */
 import jwt from 'jsonwebtoken';
 

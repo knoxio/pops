@@ -1,9 +1,9 @@
 /**
- * ts-rest handler composer for the core pillar.
+ * ts-rest handler composer for the registry pillar.
  *
  * Stitches the per-domain handler factories into the typed
  * `RouterImplementation<CoreRestContract>` that `createExpressEndpoints`
- * consumes in `app.ts`. Grows as each tRPC slice converts to ts-rest.
+ * consumes in `app.ts`.
  */
 import { initServer } from '@ts-rest/express';
 

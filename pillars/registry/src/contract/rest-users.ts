@@ -1,13 +1,10 @@
 /**
- * `users.*` sub-router — read-only cross-pillar user existence check
- * (PRD-251 H7 reconciliation).
+ * `users.*` sub-router — read-only cross-pillar user existence check.
  *
- * Mirrors the legacy `core.users.get` tRPC procedure: a single read that
- * takes a `pops://core/user/<email>` URI and answers "does this user URI
- * still resolve?". The tRPC `query` carries no body, so it maps to a `GET`
- * with the URI passed as a `uri` query param (the URI's `://` + slashes make
- * a path param a poor fit). The response shape `{ data: { uri } }` is
- * preserved verbatim.
+ * A single read that takes a `pops://core/user/<email>` URI and answers "does
+ * this user URI still resolve?". It is a `GET` with the URI passed as a `uri`
+ * query param — the URI's `://` and slashes make a path param a poor fit. The
+ * response shape is `{ data: { uri } }`.
  *
  * Malformed URIs (wrong scheme/pillar/type, missing id) surface as 400;
  * URIs that parse but don't resolve to a known user surface as 404.
@@ -19,7 +16,7 @@ import { ERR_RESPONSES, NonEmptyString } from './rest-schemas.js';
 
 const c = initContract();
 
-/** Wire shape served by `core.users.get`. */
+/** Wire shape served by the user-URI resolve read. */
 export const UserSchema = z.object({ uri: z.string() });
 
 export const coreUsersContract = c.router({

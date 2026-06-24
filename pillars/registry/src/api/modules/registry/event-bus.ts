@@ -1,13 +1,14 @@
 /**
- * In-process registry event bus (Theme 13 PRD-163).
+ * In-process registry event bus.
  *
  * Singleton `EventEmitter` that the registry router publishes to on
  * register / deregister / heartbeat status transitions, and that the
  * `GET /registry/subscribe` SSE handler subscribes to.
  *
- * Per the PRD: no sequence numbers, no cross-process distribution, no
- * server-side filtering. Multi-process scaling is explicitly out of
- * scope; the bus is a singleton per core-api process.
+ * No sequence numbers, no cross-process distribution, no server-side
+ * filtering: the bus is a singleton per registry process.
+ *
+ * Spec: subscription-model.
  */
 import { EventEmitter } from 'node:events';
 
@@ -16,7 +17,7 @@ import type { RegistryEntry } from './types.js';
 export type RegistryEventName = 'registered' | 'deregistered' | 'health-changed';
 
 /**
- * PRD-228 deregister reasons. `requested` is a clean shutdown via the
+ * Deregister reasons. `requested` is a clean shutdown via the
  * external deregister endpoint; the two eviction reasons come from the
  * background ticker that hard-evicts stale external rows.
  */
@@ -29,10 +30,9 @@ export interface RegistryEventPayload {
   pillarId: string;
   entry: RegistryEntry | null;
   emittedAt: string;
-  /** Origin of the pillar at emission time (PRD-228). Optional so
-   *  pre-PRD-228 emitters keep type-checking; new emitters set it. */
+  /** Origin of the pillar at emission time. */
   origin?: PillarOriginWire;
-  /** Populated on `deregistered` events (PRD-228). */
+  /** Populated on `deregistered` events. */
   reason?: DeregisterReason;
   /** Populated on `deregistered` events from the eviction ticker —
    *  the wall-clock the row was hard-evicted. */

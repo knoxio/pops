@@ -1,13 +1,13 @@
 /**
- * Integration tests for `POST /core.registry.register` (Theme 13 PRD-228 US-01).
+ * Integration tests for `POST /core.registry.register`
+ * (dynamic-pillar-registration).
  *
  * Boots the full Express factory against a temp-dir core.db and drives
- * the wire surface end to end via `supertest`. Asserts the contract from
- * the user-story acceptance criteria:
+ * the wire surface end to end via `supertest`. Asserts the contract:
  *   - happy path: 200 + persisted row + emitted `registered` event.
  *   - malformed manifest: 400 with per-field issues.
- *   - reserved pillar id (PRD-250): 200 — in-tree pillar IDs are no
- *     longer rejected at the registry surface.
+ *   - in-tree pillar id: 200 — in-tree pillar IDs are accepted at the
+ *     registry surface.
  *   - bad pillar slug: 400 with the regex reason.
  *   - cross-field mismatch (`manifest.pillar !== pillarId`): 400.
  *   - missing fields: 400 with structured issues.
@@ -127,7 +127,7 @@ describe('POST /core.registry.register — happy path', () => {
     expect(res.body.pillarId).toBe('home-brew');
   });
 
-  it('accepts an in-tree pillar id (PRD-250: pillars self-register at boot)', async () => {
+  it('accepts an in-tree pillar id (pillars self-register at boot)', async () => {
     const manifest = recipesManifest({
       pillar: 'finance',
       contract: {
@@ -286,7 +286,7 @@ describe('POST /core.registry.register — duplicate registration', () => {
   });
 });
 
-describe('POST /core.registry.register — features slot round-trip (epic 05 / S0)', () => {
+describe('POST /core.registry.register — features slot round-trip', () => {
   const recipesFeatures: NonNullable<ManifestPayload['features']> = [
     {
       key: 'recipes.smartImport',

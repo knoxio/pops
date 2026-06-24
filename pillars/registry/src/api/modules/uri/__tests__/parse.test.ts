@@ -3,11 +3,6 @@
  * malformed-input case here surfaces as `{ kind: 'malformed' }` from the
  * dispatcher, so the assertions double as documentation of which inputs the
  * resolver rejects with which reason.
- *
- * Relocated from `apps/pops-api/src/modules/core/uri/parse.test.ts`. The
- * `undefined as unknown as string` non-string case is replaced with the
- * empty-string path, which exercises the same guard branch without a banned
- * type assertion.
  */
 import { describe, expect, it } from 'vitest';
 

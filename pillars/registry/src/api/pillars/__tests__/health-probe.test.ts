@@ -1,7 +1,5 @@
 /**
  * Tests for the cross-pillar health probe (ADR-026 P3).
- *
- * Relocated from `apps/pops-api/src/modules/core/pillars/health-probe.test.ts`.
  */
 import { describe, expect, it, vi } from 'vitest';
 

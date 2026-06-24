@@ -8,13 +8,12 @@ import type { FeatureCredentialStatus } from '@pops/types';
  * site is using a stale key or whether the owning pillar is not yet
  * registered.
  *
- * `FeatureNotFoundError` is intentional (PRD-101): a key not declared by any
- * registered pillar is a bug, not a silent `false`.
+ * Throwing (rather than returning a silent `false`) is intentional
+ * (feature-toggles-framework): a key not declared by any registered pillar is
+ * a bug.
  */
 export class FeatureNotFoundError extends Error {
-  /** The feature key that was looked up. */
   public readonly key: string;
-  /** Pillar ids whose manifests were searched (in registry order). */
   public readonly searched: readonly string[];
 
   constructor(key: string, searched: readonly string[] = []) {

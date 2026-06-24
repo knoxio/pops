@@ -1,10 +1,10 @@
 /**
- * PRD-242 US-04 — end-to-end test that proves the dynamic AppRouter
- * composition closes the loop for an external pillar.
+ * End-to-end test that proves dynamic pillar discovery + callDynamic
+ * closes the loop for an external pillar (dynamic-pillar-registration).
  *
  * The test does not stub the consumer SDK nor the registry. It boots:
  *
- *   1. the core pillar against a temp-dir core.db on an ephemeral port —
+ *   1. the registry pillar against a temp-dir core.db on an ephemeral port —
  *      the surface that owns `POST /core.registry.register`,
  *      `POST /core.registry.deregister`, and `GET /core.registry.list`.
  *   2. A throwaway REST pillar on a second ephemeral port that serves an
@@ -18,13 +18,13 @@
  *   → callDynamic returns unavailable.
  *
  * The consumer side uses the real `pillar()` SDK from
- * `@pops/pillar-sdk/client`. Discovery points at core-api's
+ * `@pops/pillar-sdk/client`. Discovery points at the registry's
  * `core.registry.list`; the SDK then issues a direct HTTP POST to the
  * throwaway pillar's `baseUrl`. The discovery cache is set to TTL 0 so
  * the deregister assertion sees the updated snapshot without waiting for
  * the default 60s expiry.
  *
- * Acceptance criteria (PRD-242 US-04):
+ * Acceptance criteria:
  *   - The throwaway pillar registers via `/core.registry.register`.
  *   - `core.registry.list` reports the pillar; the underlying DB row
  *     carries `origin: 'external'`.
@@ -35,8 +35,8 @@
  *   - `/core.registry.deregister` returns `{ ok: true, removed: true }`
  *     and the row is gone.
  *   - A subsequent `callDynamic` resolves to the `unavailable` failure
- *     shape (PRD-228 deregister semantics surfaced through the SDK's
- *     `guardAvailability` once discovery refreshes).
+ *     shape — deregister removes the row, so the SDK's `guardAvailability`
+ *     trips once discovery refreshes.
  *
  * The pillar id is `echotest` (no digits, no hyphens). The manifest
  * schema constrains procedure paths to `<pillar>.<router>.<procedure>`
@@ -102,15 +102,15 @@ interface ThrowawayPillar {
 }
 
 /**
- * Boot a minimal REST HTTP server that answers the two procedures PRD-242
- * US-04 calls. It serves an `/openapi` document plus two POST routes; the
+ * Boot a minimal REST HTTP server that answers the two procedures this test
+ * calls. It serves an `/openapi` document plus two POST routes; the
  * SDK's REST transport sends `JSON.stringify(input)` as the raw body and
  * reads the value back verbatim, so the server speaks that wire shape
  * directly without a framework — keeping the test focused on the registry +
  * `callDynamic` path rather than transport wiring.
  *
- * Per US-04 the pillar is in-process and bound to a free TCP port via
- * `listen(0)` so it tears down cleanly with no leaked sockets in CI.
+ * The pillar is in-process and bound to a free TCP port via `listen(0)` so
+ * it tears down cleanly with no leaked sockets in CI.
  */
 async function startThrowawayPillar(): Promise<ThrowawayPillar> {
   const calls: RecordedCall[] = [];
@@ -308,7 +308,7 @@ function makePillarHandle(coreApiBaseUrl: string): PillarHandle<unknown> {
   return pillar<unknown>(PILLAR_ID, { transport, cacheTtlMs: 0 });
 }
 
-describe('PRD-242 US-04 — external pillar register + callDynamic + deregister', () => {
+describe('external pillar register + callDynamic + deregister', () => {
   it('registers an external pillar, calls both procedure kinds via callDynamic, then deregisters', async () => {
     const registration = await request(env.coreApiBaseUrl).post('/core.registry.register').send({
       pillarId: PILLAR_ID,

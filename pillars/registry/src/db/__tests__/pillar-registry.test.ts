@@ -1,7 +1,7 @@
 /**
  * Invariant tests for the pillar-registry service against an in-memory
  * SQLite seeded with the canonical `pillar_registry` migration. Pure DB
- * + service layer — no tRPC, no Express.
+ * + service layer — no HTTP.
  */
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';

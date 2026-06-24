@@ -1,11 +1,9 @@
 /**
  * Read the Anthropic API key for provider health checks.
  *
- * Ported minimally from `apps/pops-api/src/lib/anthropic-api-key.ts`
- * (monolith-internal source, not importable across the app boundary).
  * Reads `ANTHROPIC_API_KEY` first; falls back to the deprecated
- * `CLAUDE_API_KEY` with a one-time deprecation warning so operators know
- * to rename the secret.
+ * `CLAUDE_API_KEY` with a deprecation warning so operators know to rename
+ * the secret.
  */
 import { logger } from './logger.js';
 

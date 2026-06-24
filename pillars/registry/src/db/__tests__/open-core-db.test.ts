@@ -44,14 +44,13 @@ describe('openCoreDb', () => {
     const path = join(tmpDir, 'core.db');
     const { db, raw } = openCoreDb(path);
     try {
-      // Table exists + accepts inserts via the package service.
       expect(countActiveServiceAccounts(db)).toBe(0);
     } finally {
       raw.close();
     }
   });
 
-  it('applies the PRD-186 PR4 ai_model_pricing + sync_job_results migrations and drops ai_usage', () => {
+  it('applies the ai_model_pricing + sync_job_results migrations and drops ai_usage', () => {
     const path = join(tmpDir, 'core.db');
     const { raw } = openCoreDb(path);
     try {
@@ -64,8 +63,7 @@ describe('openCoreDb', () => {
       );
       expect(tables.has('ai_model_pricing')).toBe(true);
       expect(tables.has('sync_job_results')).toBe(true);
-      // The finance-categorizer ai_usage table re-homed to finance (gap #3489);
-      // 0070_drop_ai_usage drops it after the historical 0061 CREATE.
+      // ai_usage lives in the finance pillar; 0070_drop_ai_usage drops it here.
       expect(tables.has('ai_usage')).toBe(false);
 
       const indexes = new Set(
@@ -84,7 +82,7 @@ describe('openCoreDb', () => {
     }
   });
 
-  it('applies the PRD-186 PR4 ai_alert_rules + ai_alerts migrations', () => {
+  it('applies the ai_alert_rules + ai_alerts migrations', () => {
     const path = join(tmpDir, 'core.db');
     const { raw } = openCoreDb(path);
     try {
@@ -137,7 +135,7 @@ describe('openCoreDb', () => {
     }
   });
 
-  it('applies the PRD-186 PR4 ai_providers migration', () => {
+  it('applies the ai_providers migration', () => {
     const path = join(tmpDir, 'core.db');
     const { raw } = openCoreDb(path);
     try {
@@ -175,7 +173,7 @@ describe('openCoreDb', () => {
     }
   });
 
-  it('applies the PRD-186 PR4 user_settings migration', () => {
+  it('applies the user_settings migration', () => {
     const path = join(tmpDir, 'core.db');
     const { raw } = openCoreDb(path);
     try {

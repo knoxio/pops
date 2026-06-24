@@ -1,9 +1,7 @@
 /**
- * Tests for the URI resolver dispatcher (PRD-101 US-08).
- *
- * Relocated from `apps/pops-api/src/modules/core/uri/resolver.test.ts`. The
- * stub manifests keep the assertions focused on dispatch logic — install
- * gating, type lookup, narrow→wide result translation.
+ * Tests for the URI resolver dispatcher. The stub manifests keep the
+ * assertions focused on dispatch logic — install gating, type lookup,
+ * narrow→wide result translation.
  */
 import { describe, expect, it, vi } from 'vitest';
 

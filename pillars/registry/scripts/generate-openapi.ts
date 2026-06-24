@@ -3,10 +3,9 @@
  * `src/contract/rest.ts` to a static `openapi/registry.openapi.json`.
  *
  * The contract is the canonical declaration of the registry REST wire surface;
- * this script is a pure projection of it. The document currently covers
- * only the migrated domains (entities) and grows as each tRPC slice is
- * converted to ts-rest. Polyglot consumers consume the JSON directly; TS
- * consumers feed it through `openapi-typescript` (see `generate-api-types.ts`).
+ * this script is a pure projection of it. Polyglot consumers consume the JSON
+ * directly; TS consumers feed it through `openapi-typescript` (see
+ * `generate-api-types.ts`).
  *
  * Output is deterministic (recursively sorted keys + oxfmt pass) so the
  * `pnpm generate:openapi && git diff --exit-code` drift check is stable.

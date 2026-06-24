@@ -1,10 +1,9 @@
 /**
- * Integration tests for the `shell.*` REST surface (PRD-100, US-03), driven
- * through the real Express app via supertest.
+ * Integration tests for the `shell.*` REST surface, driven through the real
+ * Express app via supertest.
  *
- * Mirrors the legacy `core.shell.manifest` tRPC coverage on the REST
- * transport: the manifest reflects the `POPS_APPS` / `POPS_OVERLAYS` install
- * set, defaulting to the full known set when unrestricted. Auth gating is
+ * The manifest reflects the `POPS_APPS` / `POPS_OVERLAYS` install set,
+ * defaulting to the full known set when unrestricted. Auth gating is
  * intentionally NOT asserted: REST runs under docker-net trust (non-identity
  * domain), so there is no `ctx.user` to bounce on.
  */

@@ -1,10 +1,9 @@
 /**
- * Cross-pillar health probe (ADR-026 pre-flight P3).
+ * Cross-pillar health probe (ADR-026).
  *
- * Relocated from `apps/pops-api/src/modules/core/pillars/health-probe.ts`.
  * Fans out concurrent `GET {baseUrl}/health` requests against the live
  * `POPS_PILLARS` registry and reports each pillar as `'healthy'` or
- * `'unavailable'`. The aggregator runs inside the core pillar because base
+ * `'unavailable'`. The aggregator runs inside the registry pillar because base
  * URLs are container-network addresses unreachable from the browser; the
  * shell calls a single `GET /pillars/health` and gets the aggregate.
  *

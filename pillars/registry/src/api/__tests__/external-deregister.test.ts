@@ -1,12 +1,13 @@
 /**
- * Integration tests for `POST /core.registry.deregister` (Theme 13 PRD-228 US-04).
+ * Integration tests for `POST /core.registry.deregister`
+ * (dynamic-pillar-registration).
  *
  * Drives the external clean-shutdown surface through `supertest`.
  * Acceptance criteria covered:
  *   - happy path: 200 + row DELETEd + `deregistered` event with
  *     `reason: 'requested'`.
  *   - missing row (already deregistered): idempotent 200 with no event
- *     emitted (PRD: "DELETE is idempotent").
+ *     emitted.
  *   - internal-origin row: 403 with
  *     `internal-pillar-not-deregisterable-externally`.
  *   - malformed body: 400.

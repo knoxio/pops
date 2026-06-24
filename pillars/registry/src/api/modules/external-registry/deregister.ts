@@ -1,5 +1,5 @@
 /**
- * HTTP-JSON deregister handler for external pillars (Theme 13 PRD-228 US-04).
+ * HTTP-JSON deregister handler for external pillars.
  *
  * An external pillar shutting down cleanly POSTs the deregister route. Both
  * the canonical `/registry/deregister` and the legacy `/core.registry.deregister`
@@ -10,9 +10,9 @@
  * Behaviour:
  *   - Trust model (ADR-027): the docker network is the boundary.
  *   - DELETE is idempotent: a missing row returns `{ ok: true }` with
- *     no event emitted (acceptance criterion).
+ *     no event emitted.
  *   - On a real DELETE a `{ event: 'deregistered', reason: 'requested' }`
- *     payload fires on the PRD-163 bus.
+ *     payload fires on the registry event bus.
  *   - Refuses to delete `origin = 'internal'` rows — an in-network caller
  *     should not be able to nuke an in-tree pillar by accident.
  */

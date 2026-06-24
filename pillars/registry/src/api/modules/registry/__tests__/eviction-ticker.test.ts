@@ -1,18 +1,6 @@
 /**
- * Unit tests for the PRD-228 US-02 hard-eviction ticker.
- *
- * The ticker runs a single synchronous pass via `runEvictionTick`; the
- * tests drive that directly so we don't have to wait on a real
- * `setInterval`. Acceptance criteria covered:
- *   - external rows whose live status is `unavailable` and whose
- *     `statusUpdatedAt` is older than `EVICTION_THRESHOLD_MS` are
- *     DELETEd and a `deregistered` event is emitted with the right
- *     reason + `evictedAt`.
- *   - internal rows are NEVER evicted regardless of status / age.
- *   - rows still inside the threshold are left alone (no-op pass).
- *   - a row that never received a heartbeat is evicted with
- *     `reason: 'never-heartbeated'`; one that did is `'lost-heartbeat'`.
- *   - empty registry / nothing-to-evict is a clean no-op (no events).
+ * The tests drive `runEvictionTick` directly rather than the interval, so a
+ * pass is synchronous and there's nothing to wait on.
  */
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';

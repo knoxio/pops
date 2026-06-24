@@ -1,12 +1,5 @@
 /**
- * `POPS_PILLARS` environment variable parser inside the core-api process.
- *
- * Functionally identical to `apps/pops-api/src/modules/core/pillars/env.ts`
- * — kept as a local copy so core-api can boot without a runtime
- * dependency on pops-api. The two implementations should be promoted
- * into a shared `packages/core-contract` (or `@pops/types`) package once
- * a third consumer needs them. Until then the contract guard tests in
- * pops-api keep this behaviour pinned.
+ * `POPS_PILLARS` environment variable parser.
  *
  * Format: `id:baseUrl[,id:baseUrl,...]`
  *   - `id` lowercase kebab-case pillar slug (`food`, `finance`, …)

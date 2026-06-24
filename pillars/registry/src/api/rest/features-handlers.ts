@@ -1,26 +1,16 @@
 /**
- * Handlers for the `features.*` sub-router (epic 05 / S2).
- *
- * Thin REST adapter over S1's feature-toggle service. Every route is
- * identity-gated — the monolith served all six through `protectedProcedure`:
+ * Handlers for the `features.*` sub-router. Every route is identity-gated:
  *
  *   - `getManifests`, `setEnabled` are system-level: any protected principal
  *     (a human session OR a service account scoped for `core.features.<op>`)
- *     passes via {@link requireProtected}, mirroring `settings.*`.
+ *     passes via {@link requireProtected}.
  *   - `list`, `isEnabled`, `setUserPreference`, `clearUserPreference` resolve a
- *     per-user value (`ctx.user.email`), so they require a HUMAN principal via
- *     {@link requireUser}. A service account carries no email; rejecting it at
- *     the gate (401) is the faithful pillar mirror of the monolith's
- *     `protectedProcedure` + unconditional `ctx.user.email` deref.
- *
- * Service domain errors map exactly as the monolith router did:
- *   - `FeatureNotFoundError`  → 404 (PRD-101: an undeclared key is a bug).
- *   - `FeatureGateError`      → 400 (enable blocked by failing gate).
- *   - `FeatureScopeError`     → 400 (write targets the wrong scope).
+ *     per-user value, so they require a HUMAN principal via {@link requireUser}.
+ *     A service account carries no email, so it bounces at the gate with a 401.
  *
  * The gates run INSIDE `runHttp`, so the `UnauthorizedError` they throw is
- * mapped to a 401 envelope. The translated `Validation`/`NotFound` errors ride
- * the same `HttpError` mapping.
+ * mapped to a 401 envelope, as are the translated `Validation`/`NotFound`
+ * errors from {@link mapServiceError}.
  */
 import { type CoreDb } from '../../db/index.js';
 import { readPrincipal, requireProtected, requireUser, type User } from '../middleware/identity.js';
@@ -48,9 +38,8 @@ type Req = ServerInferRequest<typeof coreFeaturesContract>;
 const SCOPE_PREFIX = 'core.features';
 
 /**
- * Translate the feature service's domain errors into the REST `HttpError`
- * mapping (`FeatureNotFoundError` → 404, `FeatureGateError` /
- * `FeatureScopeError` → 400). Anything else propagates untouched.
+ * Translate the feature service's domain errors into REST `HttpError`
+ * subclasses. Anything unrecognized propagates untouched.
  */
 function mapServiceError(err: unknown): never {
   if (err instanceof FeatureNotFoundError) {

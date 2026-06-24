@@ -1,21 +1,12 @@
 /**
- * Service account exposed by the core pillar admin surface.
+ * Service account exposed by the registry pillar's admin surface.
  *
- * Mirrors `apps/pops-core-api/src/modules/service-accounts/types.ts`
- * (`ServiceAccountSchema`) and the live `service_accounts` table
- * (migration `0054_service_accounts`).
+ * `keyPrefix` — and NOT `keyHash` — is the public-safe identifier that crosses
+ * the wire. The full hash (`key_hash` in storage) and the raw plaintext key
+ * must never leave the server.
  *
- * `keyPrefix` — and NOT `keyHash` — is the public-safe identifier that
- * crosses the wire. The full hash (`key_hash` in storage) and the raw
- * plaintext key never leave the server; the brief's suggestion to expose
- * `keyHash` would leak material that should stay server-side.
- *
- * `revokedAt` reflects the storage column (PRD-153 calls it `disabledAt`
- * but the live shape uses `revokedAt`). The contract follows the live
- * wire field name rather than the brief.
- *
- * `scopes` is the set of pillar/permission scopes the key is allowed to
- * call (e.g. `'finance:read'`, `'core:admin'`).
+ * `scopes` is the set of pillar/permission scopes the key is allowed to call
+ * (e.g. `'finance:read'`, `'core:admin'`).
  */
 export interface ServiceAccount {
   id: string;
