@@ -22,8 +22,6 @@ describe('attachServerCleanup', () => {
   let errSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
-    // Restored at the end of each test via the .restoreAllMocks below — keeps
-    // the global console.error untouched even if an assertion throws first.
     errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
   });
 
@@ -44,9 +42,8 @@ describe('attachServerCleanup', () => {
     expect(errSpy).not.toHaveBeenCalled();
   });
 
-  // Regression: an `await` inside the event listener used to discard the
-  // returned promise, so a rejection here would crash the process with an
-  // unhandled rejection. The .catch must absorb it.
+  // A rejected server.close() must not escape the 'close' listener as an
+  // unhandled rejection; the .catch in attachServerCleanup absorbs it.
   it('logs and swallows rejected server.close()', async () => {
     const res = new EventEmitter();
     const boom = new Error('close exploded');

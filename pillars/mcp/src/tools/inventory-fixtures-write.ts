@@ -99,7 +99,7 @@ const fixturesUpdate: ToolDef = {
     },
     required: ['id'],
   },
-  // Empty-patch rejection happens at the tRPC layer via UpdateFixtureSchema.refine.
+  // Empty-patch rejection is enforced by the inventory pillar via UpdateFixtureSchema.refine.
   handler: async (args) => {
     const id = reqStr(args, 'id');
     if (!id) return toolError('Missing required field: id');

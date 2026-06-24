@@ -59,9 +59,9 @@ type ContactsEntityListInput = {
 };
 
 // Entities live on the CONTACTS pillar — the authoritative entity store
-// (PRD-163). The finance↔transactions usage rollup is finance's, but the entity
-// table itself is contacts'. Reached over the same REST pillar SDK as the
-// finance calls above.
+// (pillars/contacts/docs/prds/entities). The finance↔transactions usage rollup
+// is finance's, but the entity table itself is contacts'. Reached over the same
+// REST pillar SDK as the finance calls above.
 type ContactsShape = {
   contacts: {
     entities: {
