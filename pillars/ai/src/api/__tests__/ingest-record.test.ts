@@ -4,7 +4,7 @@
  * Express app via supertest against a temp SQLite (the ai pillar's own
  * baseline migration).
  *
- * Covers the GATE-P1 acceptance: internal-token gate (403 without the token),
+ * Covers: internal-token gate (403 without the token),
  * a valid record writes exactly one `ai_inference_log` row with the field
  * mapping applied (cached 0|1, promptVersion→metadata.prompt_version,
  * contextId→context_id), an invalid/malformed domain 400s, the handler is

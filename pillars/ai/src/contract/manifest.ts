@@ -1,9 +1,6 @@
 /**
- * Structural `ModuleManifest` for the ai pillar — the source the module
- * registry's discovery walk consumes (PRD-241) via the package's `./manifest`
- * export. Previously inlined in the registry pillar's (formerly `@pops/core`)
- * contract package while AI Ops lived inside it; now owned here as a
- * first-class pillar (PRD-055).
+ * Structural `ModuleManifest` for the ai pillar — the source the registry
+ * pillar's discovery walk consumes via the package's `./manifest` export.
  *
  * `surfaces: ['app']` — the AI usage dashboard (`@pops/app-ai`) is the pillar's
  * UI surface, loaded by the shell via the in-repo bundle map.

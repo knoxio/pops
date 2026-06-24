@@ -1,5 +1,5 @@
 /**
- * Error-spike rule evaluator (PRD-092 US-07).
+ * Error-spike rule evaluator (see pillars/ai/docs/prds/ai-observability).
  *
  * Counts rows in the rolling window matching the rule's optional provider /
  * model scope and fires a candidate when the error rate (status in

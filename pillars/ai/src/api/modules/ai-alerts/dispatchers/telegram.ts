@@ -1,5 +1,5 @@
 /**
- * Telegram dispatcher for AI alerts (PRD-092 US-07, PRD-088).
+ * Telegram dispatcher for AI alerts.
  *
  * Pushes a message to the Moltbot Telegram chat using the Bot API directly.
  * The bot token + chat ID are read from environment variables:
@@ -8,8 +8,7 @@
  *   POPS_ALERTS_TELEGRAM_CHAT_ID     the chat ID to deliver to
  *
  * When either variable is unset the dispatcher is treated as not configured
- * and silently skips delivery — this matches the PRD note "If Moltbot is not
- * configured, skip Telegram delivery silently."
+ * and silently skips delivery.
  */
 import { logger } from '../../../shared/logger.js';
 

@@ -1,9 +1,8 @@
 /**
  * Invariant tests for the ai-model-pricing cache against an in-memory
- * SQLite seeded with the `ai_model_pricing` schema inline. The table
- * has no core-db migration file yet (PRD-186 sibling cutover owns
- * that), so the test boots the schema directly from the canonical
- * shape.
+ * SQLite. The `ai_model_pricing` schema is booted inline here rather
+ * than from the pillar migration so the cache contract is exercised in
+ * isolation from the rest of the baseline schema.
  *
  * Cache-hit + cache-miss + TTL invalidation + DB-error fallback are
  * driven via the `now` injection point so the test is deterministic

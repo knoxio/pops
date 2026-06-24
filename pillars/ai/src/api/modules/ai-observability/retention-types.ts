@@ -1,5 +1,5 @@
 /**
- * Type declarations for the inference log retention job (PRD-092 US-08).
+ * Type declarations for the inference log retention job.
  *
  * Kept in their own module to avoid an import cycle between the main
  * `retention` orchestrator and the SQL helpers in `retention-db`.

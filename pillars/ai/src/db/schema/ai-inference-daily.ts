@@ -3,10 +3,11 @@ import { index, integer, real, sqliteTable, text, uniqueIndex } from 'drizzle-or
 import type { InferInsertModel, InferSelectModel } from 'drizzle-orm';
 
 /**
- * Daily aggregation table for AI inference logs (PRD-092 US-08).
+ * Daily aggregation table for AI inference logs
+ * (see pillars/ai/docs/prds/ai-observability).
  *
- * Once raw `ai_inference_log` rows pass the retention horizon (default 90 days),
- * a scheduled job rolls them up into one row per
+ * Once raw `ai_inference_log` rows pass the retention horizon, a scheduled job
+ * rolls them up into one row per
  * `(date, provider, model, operation, domain)` tuple and deletes the originals.
  *
  * The table is append-mostly — written exclusively by the retention job,
@@ -38,9 +39,8 @@ export const aiInferenceDaily = sqliteTable(
     budgetBlockedCount: integer('budget_blocked_count').notNull().default(0),
   },
   (table) => [
-    // Unique on the natural aggregation key so upserts can target it. SQLite
-    // treats NULLs as distinct, so we always store a sentinel empty string
-    // when domain is null (handled in the service layer).
+    // Unique on the natural aggregation key so upserts can target it (relies on
+    // the `domain` NULL-sentinel coercion noted on the column above).
     uniqueIndex('idx_ai_inference_daily_key').on(
       table.date,
       table.provider,

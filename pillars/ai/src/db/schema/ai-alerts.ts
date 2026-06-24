@@ -1,9 +1,11 @@
 /**
- * `ai_alerts` (PRD-092 US-07) — fired alerts produced by the evaluator job.
+ * `ai_alerts` (see pillars/ai/docs/prds/ai-observability) — fired alerts
+ * produced by the evaluator job.
  *
  * `scope_detail` is a human-readable scope identifier used both for display
  * and for deduplication; the evaluator suppresses inserts when an alert with
- * the same `(type, scope_detail)` was created within the last hour.
+ * the same `(type, scope_detail)` was created within the dedupe window
+ * (`idx_ai_alerts_dedupe` covers that lookup).
  */
 import { index, integer, real, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 

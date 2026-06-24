@@ -3,8 +3,8 @@
  *
  * Canonical definitions for the AI-ops observability slice
  * (`ai_inference_log`/`ai_inference_daily`/budgets/alerts/providers/
- * pricing) extracted out of `core` (PRD-055). The flat `settings` table
- * backs `@pops/pillar-settings` for the pillar's own `ai.*` keys.
+ * pricing). The flat `settings` table backs `@pops/pillar-settings` for
+ * the pillar's own `ai.*` keys.
  */
 export { aiAlertRules } from './schema/ai-alert-rules.js';
 export { aiAlerts } from './schema/ai-alerts.js';

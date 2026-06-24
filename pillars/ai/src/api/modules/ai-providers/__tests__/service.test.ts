@@ -1,11 +1,3 @@
-/**
- * Tests for the AI providers service (ported from
- * `apps/pops-api/src/modules/core/ai-providers/service.test.ts`).
- *
- * Runs against an in-memory `core.db` opened per-test via `openAiDb`;
- * the request-scoped drizzle handle is threaded explicitly into every
- * service call. `fetch` is stubbed per-test for the health-check paths.
- */
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';

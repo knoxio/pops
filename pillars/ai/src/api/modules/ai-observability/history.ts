@@ -1,10 +1,9 @@
 /**
  * History endpoint helpers — UNIONs the recent rows in `ai_inference_log`
- * with the historical aggregates in `ai_inference_daily` (PRD-092 US-08)
- * so the dashboard sees a continuous timeline regardless of the retention
- * boundary.
+ * with the historical aggregates in `ai_inference_daily` so the dashboard
+ * sees a continuous timeline regardless of the retention boundary.
  *
- * Split out of `service.ts` to keep both files under the file-size lint cap.
+ * Spec: pillars/ai/docs/prds/ai-observability
  */
 import { and, gte, lte, sql } from 'drizzle-orm';
 

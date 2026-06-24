@@ -1,32 +1,20 @@
 /**
- * `ai-alerts.*` sub-router — AI alert rules + fired alerts (PRD-092 US-07).
- *
- * The legacy tRPC router nests a `rules` sub-router plus top-level
- * list/acknowledge/runNow. Mapping:
- *
- *   rules.list        (query)               → GET    /ai-alerts/rules
- *   rules.seedDefaults(mutation, no input)  → POST   /ai-alerts/rules/seed-defaults
- *   rules.get         (query, id)           → GET    /ai-alerts/rules/:id
- *   rules.create      (mutation, body)      → POST   /ai-alerts/rules
- *   rules.update      (mutation, id+body)   → PATCH  /ai-alerts/rules/:id
- *   rules.setEnabled  (mutation, id+enabled)→ PATCH  /ai-alerts/rules/:id/enabled
- *   rules.delete      (mutation, id)        → DELETE /ai-alerts/rules/:id
- *   list              (query, filters)      → GET    /ai-alerts
- *   acknowledge       (mutation, id)        → POST   /ai-alerts/:id/acknowledge
- *   runNow            (mutation, no input)  → POST   /ai-alerts/run
+ * `aiAlerts` sub-router — AI alert rules + fired alerts.
  *
  * Non-obvious choices:
- *   - `seedDefaults` is declared BEFORE `get`/`update`/`delete` so its literal
- *     `/rules/seed-defaults` path is registered ahead of the `/rules/:id`
- *     param route and wins the match (ts-rest registers in contract-key order).
- *   - `update`/`setEnabled` move `id` from the tRPC body into the path; the
- *     handler merges the path id back into the service input.
- *   - `rules.get` and `acknowledge` returned `null` → `NOT_FOUND` in tRPC; the
- *     handlers throw `NotFoundError` → 404 to preserve that contract.
+ *   - `seedDefaultRules` is declared BEFORE `getRule`/`updateRule`/`deleteRule`
+ *     so its literal `/ai-alerts/rules/seed-defaults` path is registered ahead
+ *     of the `/ai-alerts/rules/:id` param route and wins the match (ts-rest
+ *     registers in contract-key order).
+ *   - `updateRule`/`setRuleEnabled` carry `id` in the path; the handler merges
+ *     the path id back into the service input.
+ *   - `getRule` and `acknowledge` throw `NotFoundError` → 404 (via `runHttp`)
+ *     when the id resolves to nothing.
  *   - the `acknowledged` list filter is a boolean; on the wire it arrives as a
  *     string, so it's modelled as a `'true' | 'false'` enum the handler coerces.
  *
- * Output shapes mirror `ai-alerts/types.ts` + the service/evaluator returns.
+ * Output shapes mirror `api/modules/ai-alerts/types.ts` + the service/evaluator
+ * returns.
  */
 import { initContract } from '@ts-rest/core';
 import { z } from 'zod';
@@ -39,7 +27,7 @@ const AlertRuleType = z.enum(['budget-threshold', 'error-spike', 'latency-degrad
 const AlertSeverity = z.enum(['warning', 'critical']);
 const AlertChannel = z.enum(['telegram', 'nudge']);
 
-/** Mirrors `AlertRule` in `ai-alerts/types.ts`. */
+/** Mirrors `AlertRule` in `api/modules/ai-alerts/types.ts`. */
 const AlertRuleSchema = z.object({
   id: z.number(),
   type: AlertRuleType,
@@ -52,7 +40,7 @@ const AlertRuleSchema = z.object({
   updatedAt: z.string(),
 });
 
-/** Mirrors `FiredAlert` in `ai-alerts/types.ts`. */
+/** Mirrors `FiredAlert` in `api/modules/ai-alerts/types.ts`. */
 const FiredAlertSchema = z.object({
   id: z.number(),
   ruleId: z.number().nullable(),
@@ -72,7 +60,7 @@ const DispatchedAlertSchema = FiredAlertSchema.extend({
   channels: z.array(AlertChannel),
 });
 
-/** Mirrors `RunEvaluationResult` in `ai-alerts/evaluator.ts`. */
+/** Mirrors `RunEvaluationResult` in `api/modules/ai-alerts/evaluator.ts`. */
 const RunEvaluationResultSchema = z.object({
   rulesEvaluated: z.number(),
   candidates: z.number(),

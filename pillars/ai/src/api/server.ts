@@ -1,12 +1,12 @@
 /**
- * Entry point for the ai pillar HTTP server (PRD-055).
+ * Entry point for the ai pillar HTTP server.
  *
  * Opens its OWN `ai.db` via `openAiDb`, serves the AI-ops telemetry surface +
  * the cross-pillar ingest, and (when `POPS_REGISTRY_ENABLED=true`) registers
- * with core's registry via `bootstrapPillar` — the same handshake every pillar
- * uses. The two AI-ops schedulers (observability rollup + alert evaluation) are
- * env-gated OFF by default and run queue-free. SIGTERM/SIGINT stop the
- * schedulers, deregister, then close the HTTP server and DB.
+ * with the registry pillar via `bootstrapPillar` — the same handshake every
+ * pillar uses. The two AI-ops schedulers (observability rollup + alert
+ * evaluation) are env-gated OFF by default and run queue-free. SIGTERM/SIGINT
+ * stop the schedulers, deregister, then close the HTTP server and DB.
  */
 import { bootstrapPillar, type PillarBootstrapHandle } from '@pops/pillar-sdk/bootstrap';
 

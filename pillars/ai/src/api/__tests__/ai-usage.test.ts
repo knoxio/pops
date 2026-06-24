@@ -1,15 +1,10 @@
 /**
  * Integration tests for the `ai-usage.*` REST surface, driven through the real
- * Express app via supertest.
- *
- * Mirrors the legacy tRPC coverage on the REST transport: stats aggregation
- * (zeros, single entry, cache-hit-rate over the inference log's `cached`
- * column) and date-range history filtering. The AI-entity disk cache surface
- * stayed in core (finance-categorizer state, re-homed to finance later), so its
- * stats/prune/clear endpoints are not part of the ai pillar's telemetry slice.
- *
- * Auth gating is intentionally NOT asserted: REST runs under docker-net trust
- * (non-identity domain), so there is no `ctx.user` to bounce on.
+ * Express app via supertest: stats aggregation (zeros, single entry,
+ * cache-hit-rate over the inference log's `cached` column) and date-range
+ * history filtering. The AI-entity disk cache surface is owned by the finance
+ * pillar, so its stats/prune/clear endpoints are not part of the ai pillar's
+ * telemetry slice.
  */
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';

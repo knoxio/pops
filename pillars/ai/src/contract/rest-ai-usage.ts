@@ -1,17 +1,8 @@
 /**
- * `ai-usage.*` sub-router — AI usage analytics + cache maintenance
- * (`core.aiUsage.*`).
+ * `aiUsage` sub-router — AI usage analytics reads.
  *
- * Mapping from the legacy tRPC router:
- *   - `getStats`        (query, no input)      → `GET  /ai-usage/stats`
- *   - `getHistory`      (query, date range)    → `GET  /ai-usage/history` (query params)
- *   - `cacheStats`      (query, no input)      → `GET  /ai-usage/cache`
- *   - `clearStaleCache` (mutation, maxAgeDays) → `POST /ai-usage/cache/prune` (body)
- *   - `clearAllCache`   (mutation, no input)   → `DELETE /ai-usage/cache`
- *
- * Response shapes mirror `ai-usage/service.ts` + `ai-usage/cache.ts` exactly.
- * `clearStaleCache` carries a body, so it must be POST (a GET can't carry one);
- * `clearAllCache` is a bodyless purge of the whole cache, so it's a DELETE.
+ * `getStats` is bodyless; `getHistory` takes an optional date range as query
+ * params. Response shapes mirror `api/modules/ai-usage/service.ts` exactly.
  */
 import { initContract } from '@ts-rest/core';
 import { z } from 'zod';

@@ -1,15 +1,9 @@
 /**
- * Integration tests for the `ai-observability.*` REST surface
- * (`core.aiObservability.*`), driven through the real Express app via
- * supertest.
- *
- * Mirrors the legacy tRPC service coverage on the REST transport: stats
- * totals + breakdowns, history grouping, latency percentiles + slow queries,
- * per-model quality metrics, and the filter query (provider scoping). All
- * usage is seeded into `ai_inference_log`.
- *
- * Auth gating is intentionally NOT asserted: REST runs under docker-net trust
- * (non-identity domain), so there is no `ctx.user` to bounce on.
+ * Integration tests for the `ai-observability.*` REST surface, driven through
+ * the real Express app via supertest: stats totals + breakdowns, history
+ * grouping, latency percentiles + slow queries, per-model quality metrics, and
+ * the filter query (provider scoping). All usage is seeded into
+ * `ai_inference_log`.
  */
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';

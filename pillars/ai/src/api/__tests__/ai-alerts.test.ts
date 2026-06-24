@@ -1,19 +1,13 @@
 /**
- * Integration tests for the `ai-alerts.*` REST surface (PRD-092 US-07),
- * driven through the real Express app via supertest.
- *
- * Mirrors the legacy tRPC coverage on the REST transport across the nested
- * rule CRUD + seeding, fired-alert listing/acknowledgement, and the
- * evaluation trigger:
+ * Integration tests for the `ai-alerts.*` REST surface, driven through the real
+ * Express app via supertest, across the nested rule CRUD + seeding, fired-alert
+ * listing/acknowledgement, and the evaluation trigger:
  *   - rules: create → get → list → update → setEnabled → delete, seedDefaults
- *   - rules.get / acknowledge 404 on unknown id (preserving the tRPC NOT_FOUND)
+ *   - rules.get / acknowledge 404 on unknown id
  *   - the literal `/rules/seed-defaults` route wins over `/rules/:id`
  *   - list fired alerts with the acknowledged filter (string-coerced boolean)
  *   - runNow returns evaluation counters (no rules → no dispatch, no network)
  *   - validation 400 at the contract boundary (bad type, non-positive threshold)
- *
- * Auth gating is intentionally NOT asserted: REST runs under docker-net trust
- * (non-identity domain), so there is no `ctx.user` to bounce on.
  */
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';

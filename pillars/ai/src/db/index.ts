@@ -2,9 +2,8 @@
  * Backend-safe barrel for the ai pillar's persistence layer.
  *
  * Hosts the AI-ops observability slice (`ai_inference_log`/
- * `ai_inference_daily`/budgets/alerts/providers/pricing) extracted out of
- * `core` (PRD-055), plus the flat `settings` table backing the pillar's
- * own `ai.*` keys.
+ * `ai_inference_daily`/budgets/alerts/providers/pricing), plus the flat
+ * `settings` table backing the pillar's own `ai.*` keys.
  */
 export * from './errors.js';
 export * from './row-types.js';

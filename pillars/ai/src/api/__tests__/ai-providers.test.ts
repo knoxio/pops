@@ -1,15 +1,10 @@
 /**
- * Integration tests for the `ai-providers.*` REST surface
- * (`core.aiProviders.*`), driven through the real Express app via supertest.
- *
- * Mirrors the legacy tRPC service coverage on the REST transport: upsert
- * (provider + nested model pricing), list, get (including the NULLABLE
- * unknown-id contract — null body, NOT 404), and health checks (success +
- * failure, with `fetch` mocked so no real network is hit). Validation 400 is
- * asserted at the contract boundary (bad type / empty id).
- *
- * Auth gating is intentionally NOT asserted: REST runs under docker-net trust
- * (non-identity domain), so there is no `ctx.user` to bounce on.
+ * Integration tests for the `ai-providers.*` REST surface, driven through the
+ * real Express app via supertest: upsert (provider + nested model pricing),
+ * list, get (including the NULLABLE unknown-id contract — null body, NOT 404),
+ * and health checks (success + failure, with `fetch` mocked so no real network
+ * is hit). Validation 400 is asserted at the contract boundary (bad type /
+ * empty id).
  */
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';

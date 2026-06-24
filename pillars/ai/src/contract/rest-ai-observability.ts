@@ -1,23 +1,16 @@
 /**
- * `ai-observability.*` sub-router — AI observability dashboards
- * (`core.aiObservability.*`).
+ * `aiObservability` sub-router — AI observability dashboards.
  *
- * Mapping from the legacy tRPC router (all `query`, all carrying only the
- * optional `ObservabilityFilters` — provider/model/domain/operation +
- * start/end date — so each maps to a `GET` with those as query params):
- *   - `getStats`          → `GET /ai-observability/stats`
- *   - `getHistory`        → `GET /ai-observability/history`
- *   - `getLatencyStats`   → `GET /ai-observability/latency`
- *   - `getQualityMetrics` → `GET /ai-observability/quality`
- *
- * Output shapes mirror `ai-observability/types.ts` exactly.
+ * Every route is a `GET` carrying the optional `ObservabilityFilters`
+ * (provider/model/domain/operation + start/end date) as query params. Output
+ * shapes mirror `api/modules/ai-observability/types.ts` exactly.
  */
 import { initContract } from '@ts-rest/core';
 import { z } from 'zod';
 
 const c = initContract();
 
-/** Mirrors `observabilityFiltersSchema` in `ai-observability/types.ts`. */
+/** Mirrors `observabilityFiltersSchema` in `api/modules/ai-observability/types.ts`. */
 const ObservabilityFilters = z.object({
   provider: z.string().optional(),
   model: z.string().optional(),

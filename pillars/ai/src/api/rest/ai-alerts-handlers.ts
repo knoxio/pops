@@ -1,12 +1,11 @@
 /**
- * Handlers for the `ai-alerts.*` sub-router.
+ * Handlers for the ai-alerts contract.
  *
- * Wraps the existing `ai-alerts/service.ts` (rule CRUD + seeding) and the
+ * Wraps `ai-alerts/service.ts` (rule CRUD + seeding) and the
  * `ai-alerts/evaluator.ts` re-exports (`listAlerts`, `acknowledgeAlert`,
- * `runEvaluation`). The tRPC router threw `NOT_FOUND` when `getRule` /
- * `acknowledgeAlert` returned `null`; the REST handlers throw `NotFoundError`
- * → 404 to preserve that. `update` / `setEnabled` merge the path `id` back
- * into the service input (the tRPC input carried `id` in the body).
+ * `runEvaluation`). When `getRule` / `acknowledgeAlert` return `null` the
+ * handler throws `NotFoundError` → 404. `updateRule` / `setRuleEnabled` merge
+ * the path `id` into the service input, which expects `id` in its payload.
  */
 import { type AiDb } from '../../db/index.js';
 import { acknowledgeAlert, listAlerts, runEvaluation } from '../modules/ai-alerts/evaluator.js';

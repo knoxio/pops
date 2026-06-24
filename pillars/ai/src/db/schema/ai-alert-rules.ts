@@ -1,6 +1,6 @@
 /**
- * `ai_alert_rules` (PRD-092 US-07) — configurable rules that the alert
- * evaluator job runs every 5 minutes to decide whether to fire an alert.
+ * `ai_alert_rules` (see pillars/ai/docs/prds/ai-observability) — configurable
+ * rules that the alert evaluator job runs to decide whether to fire an alert.
  *
  * - `type` is one of `budget-threshold`, `error-spike`, `latency-degradation`.
  * - `threshold_value` semantics depend on type:

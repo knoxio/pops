@@ -1,5 +1,6 @@
 /**
- * Public types for the AI alert subsystem (PRD-092 US-07).
+ * Public types for the AI alert subsystem
+ * (see pillars/ai/docs/prds/ai-observability).
  *
  * Rule type strings map 1:1 to evaluator implementations under `evaluators/`;
  * adding a new rule type requires both an entry here and a matching evaluator

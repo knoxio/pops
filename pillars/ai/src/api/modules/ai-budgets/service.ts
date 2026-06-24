@@ -1,13 +1,11 @@
 /**
- * AI budgets module — CRUD + budget status for `core.aiBudgets.*`.
+ * AI budgets module — CRUD + budget status.
  *
- * Every read and write goes through the relocated `aiUsageService`
- * resolved against the request-scoped core drizzle handle (`ctx.coreDb`),
- * so `listBudgets`, `getBudgetStatus`, and `upsertBudget` all land on
- * `core.db`. Per-budget usage aggregation (`sumInferenceLogUsage`) reads
- * from the same store the inference writes land on, so usage reflects
- * every recorded call immediately — there is no read/write staleness
- * window.
+ * `listBudgets`, `getBudgetStatus`, and `upsertBudget` go through
+ * `aiUsageService` against the pillar's `AiDb` handle. Per-budget usage
+ * aggregation (`sumInferenceLogUsage`) reads from the same DB the inference
+ * writes land on, so usage reflects every recorded call immediately — there
+ * is no read/write staleness window.
  */
 import { aiUsageService, type AiBudgetRow, type AiDb } from '../../../db/index.js';
 
@@ -61,16 +59,16 @@ function computeProjectedExhaustion(
 }
 
 /**
- * READ — forwards to `aiUsageService.listBudgets` against `core.db`.
+ * READ — forwards to `aiUsageService.listBudgets`.
  */
 export function listBudgets(db: AiDb): Budget[] {
   return aiUsageService.listBudgets(db);
 }
 
 /**
- * WRITE — upsert lands on `core.db` via `aiUsageService.upsertBudget`.
- * Returns the persisted row including the canonicalised `scopeValue`
- * (`null` for global scope regardless of the supplied value).
+ * WRITE — upsert via `aiUsageService.upsertBudget`. Returns the persisted
+ * row including the canonicalised `scopeValue` (`null` for global scope
+ * regardless of the supplied value).
  */
 export function upsertBudget(db: AiDb, input: UpsertBudgetInput): Budget {
   return aiUsageService.upsertBudget(db, {
@@ -85,7 +83,7 @@ export function upsertBudget(db: AiDb, input: UpsertBudgetInput): Budget {
 
 /**
  * READ — budgets come from `aiUsageService.listBudgets`; per-budget usage
- * comes from `aiUsageService.sumInferenceLogUsage` against `core.db`.
+ * comes from `aiUsageService.sumInferenceLogUsage`.
  */
 export function getBudgetStatus(db: AiDb): BudgetStatus[] {
   const start = monthStart();

@@ -1,12 +1,9 @@
 /**
  * Tests for the AI observability service, retention rollup, daily summary
- * and the env-gated scheduler (ported/condensed from the monolith's
- * service.test.ts / summary.test.ts / retention.test.ts).
+ * and the env-gated scheduler.
  *
- * Runs against an in-memory `core.db` opened per-test; the request-scoped
- * drizzle handle is threaded explicitly. Usage rows are seeded via the
- * relocated `aiUsageService.createInferenceLog` rather than the monolith's
- * raw-SQL `seedAiUsage`.
+ * Runs against a temp-dir SQLite DB opened per-test; the drizzle handle is
+ * threaded explicitly. Usage rows are seeded via `aiUsageService.createInferenceLog`.
  */
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -343,7 +340,6 @@ describe('startObservabilityScheduler', () => {
     delete process.env[ENV_KEY];
     const stop = startObservabilityScheduler(db, { intervalMs: 1 });
     stop();
-    // No summary should have been written.
     expect(settingsService.getSettingOrNull(db, OBSERVABILITY_SUMMARY_SETTING_KEY)).toBeNull();
   });
 
