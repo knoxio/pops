@@ -1,6 +1,6 @@
 # Spike — Feature toggles (install-time and runtime)
 
-Investigation only — recommendations, no code changes. Sibling spikes: [deployment-split](./deployment-split-spike.md), [modular-apps](./modular-apps-spike.md).
+Investigation only — recommendations, no code changes. Sibling spike: [modular-apps](./modular-apps-spike.md).
 
 ## Question
 
@@ -157,6 +157,6 @@ This is the smallest of the three spikes and the one with the clearest ROI. Wort
 
 ## Next steps if we proceed
 
-- PRD under theme `01-foundation`: "Feature flag framework".
+- PRD under theme `foundation`: `feature-toggles-framework`.
 - ADR: "Feature flags in the `settings` table, per-module manifests, one read path".
 - Audit existing env-var checks in `apps/pops-api/src/` and migrate them one per PR.

@@ -8,14 +8,14 @@ Build the pairwise comparison system (per ADR-010). Two movies presented side by
 
 ## PRDs
 
-| #   | PRD                                                                                      | Summary                                                                                                                                   | Status      |
-| --- | ---------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- | ----------- |
-| 037 | [Ratings & Comparisons](../prds/037-ratings-comparisons/README.md)                       | Compare arena page, dimension management, ELO scoring algorithm, rankings page, radar charts on detail pages, quick-pick flow             | Done        |
-| 062 | [Comparison Intelligence](../prds/062-comparison-intelligence/README.md)                 | Probabilistic pair selection, staleness model, dimension exclusion, watch blacklist, skip cooloff, score confidence, freshness indicators | Done        |
-| 063 | [Post-Watch Debrief](../prds/063-post-watch-debrief/README.md)                           | Rapid-fire comparison session for newly watched movies — one opponent per dimension, median-score calibration                             | Done        |
-| 064 | [Batch Tier List](../prds/064-batch-tier-list/README.md)                                 | Drag-and-drop S/A/B/C/D tier ranking for 8 movies per dimension, implied pairwise comparisons                                             | Done        |
-| 066 | [Arena Redesign](../prds/066-arena-redesign/README.md)                                   | Zone-based layout, dimension dropdown, tooltips — UI-only redesign of the compare arena                                                   | Done        |
-| 067 | [Comparison History Enhancements](../prds/067-comparison-history-enhancements/README.md) | ELO delta badges in history rows, search filter, delete button UX                                                                         | In progress |
+| #   | PRD                                                                                  | Summary                                                                                                                                   | Status         |
+| --- | ------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------- | -------------- |
+| 037 | [Ratings & Comparisons](../prds/ratings-comparisons/README.md)                       | Compare arena page, dimension management, ELO scoring algorithm, rankings page, radar charts on detail pages, quick-pick flow             | Done           |
+| 062 | [Comparison Intelligence](../prds/comparison-intelligence/README.md)                 | Probabilistic pair selection, staleness model, dimension exclusion, watch blacklist, skip cooloff, score confidence, freshness indicators | Done           |
+| —   | [Post-Watch Debrief](../ideas/post-watch-debrief.md)                                 | Rapid-fire comparison session for newly watched movies — one opponent per dimension, median-score calibration                             | Idea (unbuilt) |
+| 064 | [Batch Tier List](../prds/batch-tier-list/README.md)                                 | Drag-and-drop S/A/B/C/D tier ranking for 8 movies per dimension, implied pairwise comparisons                                             | Done           |
+| 066 | [Arena Redesign](../prds/arena/README.md)                                            | Zone-based layout, dimension dropdown, tooltips — UI-only redesign of the compare arena                                                   | Done           |
+| 067 | [Comparison History Enhancements](../prds/comparison-history-enhancements/README.md) | ELO delta badges in history rows, search filter, delete button UX                                                                         | In progress    |
 
 ## Dependencies
 

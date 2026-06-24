@@ -14,10 +14,10 @@
 
 ## Epics
 
-| #   | Epic                            | Summary            | Status                             |
-| --- | ------------------------------- | ------------------ | ---------------------------------- |
-| 0   | [{Epic name}](epics/00-slug.md) | {One-line summary} | {Not started / In progress / Done} |
-| 1   | [{Epic name}](epics/01-slug.md) | {One-line summary} | {Status}                           |
+| Epic                           | Summary            | Status                             |
+| ------------------------------ | ------------------ | ---------------------------------- |
+| [{Epic name}](epics/{slug}.md) | {One-line summary} | {Not started / In progress / Done} |
+| [{Epic name}](epics/{slug}.md) | {One-line summary} | {Status}                           |
 
 {Dependency notes: which epics block which, what can be parallelised.}
 

@@ -8,18 +8,18 @@ Build the output layer that transforms stored knowledge into usable artifacts. E
 
 ## PRDs
 
-| #   | PRD                                                              | Summary                                                                               | Status      |
-| --- | ---------------------------------------------------------------- | ------------------------------------------------------------------------------------- | ----------- |
-| 082 | [Query Engine](../prds/082-query-engine/README.md)               | Natural language Q&A, scope-aware retrieval, source attribution, multi-domain queries | Done        |
-| 083 | [Document Generation](../prds/083-document-generation/README.md) | Reports, summaries, timelines — scope-filtered, audience-aware output documents       | Done        |
-| 084 | [Proactive Nudges](../prds/084-proactive-nudges/README.md)       | Consolidation proposals, staleness alerts, pattern detection, notification delivery   | In progress |
+| #   | PRD                                                          | Summary                                                                               | Status      |
+| --- | ------------------------------------------------------------ | ------------------------------------------------------------------------------------- | ----------- |
+| 082 | [Query Engine](../prds/query-engine/README.md)               | Natural language Q&A, scope-aware retrieval, source attribution, multi-domain queries | Done        |
+| 083 | [Document Generation](../prds/document-generation/README.md) | Reports, summaries, timelines — scope-filtered, audience-aware output documents       | Done        |
+| 084 | [Proactive Nudges](../prds/proactive-nudges/README.md)       | Consolidation proposals, staleness alerts, pattern detection, notification delivery   | In progress |
 
-PRD-082 (Query Engine) is the foundation — PRDs 083 and 084 depend on the retrieval and grounding patterns it establishes. PRD-083 and PRD-084 can parallelise after PRD-082.
+`query-engine` (Query Engine) is the foundation — PRDs 083 and 084 depend on the retrieval and grounding patterns it establishes. `document-generation` and `proactive-nudges` can parallelise after `query-engine`.
 
 ## Dependencies
 
 - **Requires:** Epic 01 (Thalamus — retrieval engine), Epic 02 (Ingest — needs content to exist)
-- **Unlocks:** Epic 04 (Glia uses nudge patterns from PRD-084), Epic 05 (Ego consumes all three Emit modes)
+- **Unlocks:** Epic 04 (Glia uses nudge patterns from `proactive-nudges`), Epic 05 (Ego consumes all three Emit modes)
 
 ## Out of Scope
 

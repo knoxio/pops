@@ -1,9 +1,9 @@
 /**
  * HTTP-JSON deregister handler for external pillars (Theme 13 PRD-228 US-04).
  *
- * An external pillar shutting down cleanly POSTs the deregister route,
- * currently `/core.registry.deregister` (the canonical `/registry/deregister`
- * lands in a later phase and is not mounted yet), so the dispatcher can drop
+ * An external pillar shutting down cleanly POSTs the deregister route. Both
+ * the canonical `/registry/deregister` and the legacy `/core.registry.deregister`
+ * form are mounted on the same handler (see `app.ts`), so the dispatcher can drop
  * its route immediately, rather than waiting for the missed-heartbeat →
  * unavailable → eviction chain to land.
  *

@@ -1,13 +1,13 @@
 # Moltbot
 
 [Moltbot](https://github.com/moltbot/moltbot) is the Telegram channel for POPS
-([PRD-088 US-02](../../pillars/cerebrum/docs/prds/088-ego-channels/us-02-moltbot-channel.md)).
+(see the cerebrum [ego-channels PRD](../cerebrum/docs/prds/ego-channels/README.md)).
 This directory ships:
 
 - The **config** files (prod + dev) that get mounted into the upstream
   `moltbot/moltbot:latest` container.
 - The **skill prompts** (`pops-cerebrum/`, `pops-finance/`) that turn `/capture`,
-  `/ask`, and `/help` Telegram messages into pops-api calls.
+  `/ask`, and `/help` Telegram messages into pillar REST calls.
 - A small **validator script** (`scripts/validate-config.sh`) that the compose
   stack runs as a one-shot init container before the bot starts so missing
   secrets or an empty `allowed_user_ids` fail loudly instead of silently
@@ -17,7 +17,7 @@ The bot itself is the upstream image — we don't fork it.
 
 ## First-run runbook
 
-Estimated 10–15 minutes from a clean checkout (PRD-088 acceptance target).
+Estimated 10–15 minutes from a clean checkout (ego-channels PRD acceptance target).
 
 ### 1. Create the Telegram bot
 
@@ -32,30 +32,24 @@ Message [@userinfobot](https://t.me/userinfobot). It replies with your numeric
 user ID (e.g. `123456789`). Only this ID will be allowed to send messages —
 the validator refuses to start the bot until at least one ID is configured.
 
-### 3. Mint a pops-api service-account key
+### 3. Mint a registry service-account key
 
-The bot calls pops-api as a machine client using a service-account key. The
+The bot calls the pillars as a machine client using a service-account key. The
 key is hashed at rest; the plaintext is shown exactly once at creation time.
 
-From a logged-in shell (Cloudflare Access session) call:
+Service accounts are owned by the `registry` pillar. From a logged-in shell
+(Cloudflare Access session) mint one with its admin-only REST endpoint:
 
 ```bash
-pnpm --filter @pops/api exec tsx -e '
-  import { appRouter } from "./src/router.js";
-  const c = appRouter.createCaller({
-    user: { email: "you@example.com" },
-    serviceAccount: null,
-  });
-  const r = await c.core.serviceAccounts.create({
-    name: "moltbot",
-    scopes: ["cerebrum.ingest", "cerebrum.query", "cerebrum.retrieval"],
-  });
-  console.log(r.plaintextKey);
-'
+curl -sS -X POST https://pops.local/registry/service-accounts \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "name": "moltbot",
+    "scopes": ["cerebrum.ingest", "cerebrum.query", "cerebrum.retrieval"]
+  }'
 ```
 
-(or hit `core.serviceAccounts.create` from the shell admin UI once the
-matching panel ships — see follow-ups in #2496). Add `finance.transactions`,
+The response includes the one-time `plaintextKey`. Add `finance.transactions`,
 `finance.budgets`, etc. to the scope list only if you actually run the
 finance skill.
 
@@ -85,7 +79,7 @@ any file that still contains `REPLACE_ME`.
 ### 5. Add your user ID to the config
 
 ```yaml
-# apps/moltbot/config/config.yml
+# pillars/moltbot/config/config.yml
 telegram:
   allowed_user_ids: [123456789] # your Telegram user ID from step 2
 ```
@@ -134,19 +128,18 @@ Stop with `docker compose -f infra/docker-compose.dev.yml --profile moltbot down
 
 ## Authentication contract
 
-Skills authenticate to pops-api using:
+Skills authenticate to the pillars using:
 
 ```
 X-API-Key: <plaintext key from pops_api_key secret>
 ```
 
-pops-core-api rejects the call with 401 if the key is missing/invalid or
-403 if the key is valid but the row's `scopes` don't cover the procedure
-path (e.g. `moltbot` calling `core.serviceAccounts.create` will hit 403).
-See `apps/pops-core-api/src/modules/service-accounts/` for the
-implementation and rotation API. Requests reach pops-core-api via the
-nginx dispatcher in `apps/pops-shell/nginx.conf` that routes
-`/trpc/core.serviceAccounts.*` to the core pillar container.
+The target pillar rejects the call with 401 if the key is missing/invalid or
+403 if the key is valid but the row's `scopes` don't cover the requested
+route (e.g. `moltbot` calling `POST /registry/service-accounts` will hit 403).
+See `pillars/registry/src/contract/rest-service-accounts.ts` for the
+service-account mint/revoke API. Requests reach each pillar via the
+`shell` nginx reverse proxy that fronts every service.
 
 ## Why a separate validator container?
 

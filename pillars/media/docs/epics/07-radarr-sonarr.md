@@ -8,13 +8,13 @@ Integrate with Radarr (movies) and Sonarr (TV) for status display and request ma
 
 ## PRDs
 
-| #   | PRD                                                                          | Summary                                                                                                                                                    | Status |
-| --- | ---------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
-| 040 | [Arr Status Display](../prds/040-arr-status-display/README.md)               | Read-only status badges on detail pages (monitored, downloading, available), download queue display. Shared base client pattern for both Radarr and Sonarr | Done   |
-| 041 | [Radarr Request Management](../prds/041-radarr-request-management/README.md) | Request movies from within POPS, quality profile selection, search triggers, monitoring management                                                         | Done   |
-| 042 | [Sonarr Request Management](../prds/042-sonarr-request-management/README.md) | Series management, season/episode monitoring, calendar view, quality profiles, future vs past season handling                                              | Done   |
+| #   | PRD                                                                      | Summary                                                                                                                                                    | Status |
+| --- | ------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| 040 | [Arr Status Display](../prds/arr-status-display/README.md)               | Read-only status badges on detail pages (monitored, downloading, available), download queue display. Shared base client pattern for both Radarr and Sonarr | Done   |
+| 041 | [Radarr Request Management](../prds/radarr-request-management/README.md) | Request movies from within POPS, quality profile selection, search triggers, monitoring management                                                         | Done   |
+| 042 | [Sonarr Request Management](../prds/sonarr-request-management/README.md) | Series management, season/episode monitoring, calendar view, quality profiles, future vs past season handling                                              | Done   |
 
-PRD-040 is prerequisite (base client). PRD-041 and PRD-042 can be built in parallel after that.
+`arr-status-display` is prerequisite (base client). `radarr-request-management` and `sonarr-request-management` can be built in parallel after that.
 
 ## Dependencies
 

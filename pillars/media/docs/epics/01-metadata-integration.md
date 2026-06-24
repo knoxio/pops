@@ -8,12 +8,12 @@ Build the service layer for fetching metadata from external APIs. TMDB for movie
 
 ## PRDs
 
-| #   | PRD                                                    | Summary                                                                                                   | Status |
-| --- | ------------------------------------------------------ | --------------------------------------------------------------------------------------------------------- | ------ |
-| 029 | [TMDB Client](../prds/029-tmdb-client/README.md)       | HTTP client, token bucket rate limiter, search, metadata fetch, image download/cache, add-to-library flow | Done   |
-| 030 | [TheTVDB Client](../prds/030-thetvdb-client/README.md) | Auth flow (JWT), rate limiting, search, seasons/episodes fetch, image download/cache                      | Done   |
+| #   | PRD                                                | Summary                                                                                                   | Status |
+| --- | -------------------------------------------------- | --------------------------------------------------------------------------------------------------------- | ------ |
+| 029 | [TMDB Client](../prds/tmdb-client/README.md)       | HTTP client, token bucket rate limiter, search, metadata fetch, image download/cache, add-to-library flow | Done   |
+| 030 | [TheTVDB Client](../prds/thetvdb-client/README.md) | Auth flow (JWT), rate limiting, search, seasons/episodes fetch, image download/cache                      | Done   |
 
-PRD-029 and PRD-030 can be built in parallel — independent APIs, independent clients.
+`tmdb-client` and `thetvdb-client` can be built in parallel — independent APIs, independent clients.
 
 ## Dependencies
 

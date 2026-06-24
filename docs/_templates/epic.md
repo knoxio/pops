@@ -1,4 +1,4 @@
-# Epic {NN}: {Name}
+# {Name}
 
 > Theme: [{Theme name}](../README.md)
 
@@ -8,9 +8,9 @@
 
 ## PRDs
 
-| #     | PRD                                      | Summary            | Status   |
-| ----- | ---------------------------------------- | ------------------ | -------- |
-| {NNN} | [{PRD name}](../prds/NNN-slug/README.md) | {One-line summary} | {Status} |
+| PRD                                    | Summary            | Status   |
+| -------------------------------------- | ------------------ | -------- |
+| [{PRD name}](../prds/{slug}/README.md) | {One-line summary} | {Status} |
 
 {Parallelisation notes: which PRDs can be built concurrently, which block others.}
 

@@ -8,16 +8,16 @@ Build the autonomous curation workers that maintain engram quality over time. Gl
 
 ## PRDs
 
-| #   | PRD                                                        | Summary                                                                                       | Status  |
-| --- | ---------------------------------------------------------- | --------------------------------------------------------------------------------------------- | ------- |
-| 085 | [Curation Workers](../prds/085-curation-workers/README.md) | Pruner, consolidator, linker, auditor — the four Glia worker types                            | Done    |
-| 086 | [Trust Graduation](../prds/086-trust-graduation/README.md) | Three-phase progression (propose → act+report → silent), approval tracking, demotion triggers | Partial |
+| #   | PRD                                                    | Summary                                                                                       | Status  |
+| --- | ------------------------------------------------------ | --------------------------------------------------------------------------------------------- | ------- |
+| 085 | [Curation Workers](../prds/curation-workers/README.md) | Pruner, consolidator, linker, auditor — the four Glia worker types                            | Done    |
+| 086 | [Trust Graduation](../prds/trust-graduation/README.md) | Three-phase progression (propose → act+report → silent), approval tracking, demotion triggers | Partial |
 
-PRD-085 and PRD-086 develop in parallel — the workers (085) and the trust framework (086) are independent codepaths that integrate at the action dispatch layer. Workers can run in Propose-only mode while the trust system is built.
+`curation-workers` and `trust-graduation` develop in parallel — the workers (085) and the trust framework (086) are independent codepaths that integrate at the action dispatch layer. Workers can run in Propose-only mode while the trust system is built.
 
 ## Dependencies
 
-- **Requires:** Epic 00 (engram storage), Epic 01 (Thalamus — similarity detection for consolidation), Epic 03 (Emit PRD-084 — nudge delivery for proposals)
+- **Requires:** Epic 00 (engram storage), Epic 01 (Thalamus — similarity detection for consolidation), Epic 03 (Emit `proactive-nudges` — nudge delivery for proposals)
 - **Unlocks:** Epic 06 (Reflex can trigger Glia actions), self-sustaining knowledge base quality
 
 ## Out of Scope

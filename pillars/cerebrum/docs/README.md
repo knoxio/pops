@@ -44,7 +44,7 @@ Cerebrum is a subsystem umbrella containing multiple named components:
 | 2   | [Ingest](epics/02-ingest.md)                 | Manual/agent/capture input, classification, entity extraction, scope inference | Done    |
 | 3   | [Emit](epics/03-emit.md)                     | Query engine, document generation, proactive nudges                            | Partial |
 | 4   | [Glia](epics/04-glia.md)                     | Curation workers (pruner, consolidator, linker, auditor), trust graduation     | Partial |
-| 5   | [Ego](epics/05-ego.md)                       | Chat agent — shell panel, MCP tools, Moltbot, CLI. Supersedes PRD-054          | Partial |
+| 5   | [Ego](epics/05-ego.md)                       | Chat agent — shell panel, MCP tools, Moltbot, CLI. Supersedes `ego-core`       | Partial |
 | 6   | [Reflex](epics/06-reflex.md)                 | Automation triggers — event, threshold, scheduled. reflexes.toml               | Done    |
 | 7   | [Plexus](epics/07-plexus.md)                 | Plugin system — adapter interface, core integrations (email, calendar, GitHub) | Done    |
 
@@ -59,7 +59,7 @@ Epics 0-3 form Phase 1 (MVP): store, index, ingest, retrieve. Epics 4-5 form Pha
 | Curation autonomy     | Three-phase trust graduation    | Earns trust incrementally, per-action-type, with automatic demotion (ADR-021)  |
 | Vector storage        | sqlite-vec                      | Same database, same backup pipeline, sufficient at scale (ADR-018)             |
 | Job processing        | BullMQ + Redis                  | Durable, retryable, dashboard-ready (ADR-016)                                  |
-| External API contract | OpenAPI via trpc-openapi        | Non-TS consumers get a contract, tRPC stays primary (ADR-017)                  |
+| External API contract | ts-rest + zod, OpenAPI emitted  | Typed REST contract; non-TS consumers get an OpenAPI document (ADR-017)        |
 | Engram security       | Server-side, encrypted backups  | Never in git, mandatory encrypted backup, localhost-only MCP                   |
 | Content typing        | Soft templates with typed hints | Templates suggest structure, types are classification hints not constraints    |
 

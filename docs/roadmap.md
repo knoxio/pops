@@ -1,323 +1,108 @@
 # POPS Roadmap
 
-Sequenced by dependency, not by date. Target: feature-complete by end of 2026.
-
-## How to read this
-
-Each phase unlocks the next. Within a phase, items can be parallelised. The roadmap is a living document — reorder as priorities shift, but respect the dependency chains.
-
-## App Priority Order
-
-Sequenced by daily value, effort, and dependencies:
-
-| #   | App                            | Rationale                                                                                       |
-| --- | ------------------------------ | ----------------------------------------------------------------------------------------------- |
-| 1   | Media Tracker                  | Quick win, self-contained, validates multi-app architecture                                     |
-| 2   | Inventory                      | High daily use, grows into a core app                                                           |
-| 3   | Finance Polish + Subscriptions | Reduce friction, add subscriptions as a feature (not separate app)                              |
-| 4   | Fitness Tracker                | Gym and training log. Health integrations (Apple Health, meal logging) layer on later           |
-| 5   | Documents Vault                | Low effort, high connectivity — unlocks receipt/warranty linking for inventory, finance, travel |
-| 6   | Travel Planner                 | Benefits from finance (budgets), documents (bookings), and AI (planning) already being in place |
-| 7   | Books / Reading                | Same pattern as media tracker, low effort once that template exists                             |
-| 8   | Food (Recipes & Meal Prep)     | Promoted from "long-term" — meal-prep is a daily-life pain point. Theme 07, in progress         |
-| 9   | Maintenance & Chores           | Natural extension of inventory, reminder-driven                                                 |
-| 10  | Contacts / CRM-lite            | Lowest urgency — gift tracking, events                                                          |
-| 11  | Home Automation                | Biggest unknown, explore only if HomeAssistant leaves a clear gap                               |
-
----
-
-## Implementation Tracker
-
-Live status of every theme and epic. Updated as work completes.
-
-### Phase 0 — Platform
-
-> Application-side platform: CI/CD, image packaging + GHCR contract, database operations, cortex runtime. Host-side concerns (ansible, vault, networking, backups, monitoring, Watchtower) are the deployer's responsibility; the knoxio home lab implements them in [`knoxio/homelab-infra`](https://github.com/knoxio/homelab-infra).
-
-| Epic                                   | Status      | Notes                                                                                                                                  |
-| -------------------------------------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| CI/CD workflows (PRD-016)              | Done        | Per-area quality + docker-build + publish-images.yml; no deploy step in this repo                                                      |
-| Application packaging & GHCR (PRD-096) | In progress | Public compose contract + Watchtower hook; release versioning (US-05) outstanding                                                      |
-| Database Operations (PRD-060)          | Done        | Drizzle on startup, production guards, pre-migration backups                                                                           |
-| MCP Interface (PRD-102, 103, 105)      | In progress | HTTP MCP server + full inventory CRUD write tools (PRD-103) + fixture MCP tools (PRD-105); 22 tools shipped; PRD-102 tests outstanding |
-| Fixtures Data Model (PRD-104)          | Done        | `fixtures` + `item_fixture_connections` tables, migration 0057, full tRPC CRUD API                                                     |
-
-#### Cortex Infrastructure
-
-| Epic                         | Status | Notes                                                                                           |
-| ---------------------------- | ------ | ----------------------------------------------------------------------------------------------- |
-| Redis container & connection | Done   | Redis 7 Alpine, ioredis v5, persistence disabled, healthcheck (#1945)                           |
-| Job queue (BullMQ)           | Done   | Typed queues, worker process, DLQ, Plex sync migrated, jobs management API (#1946)              |
-| OpenAPI secondary contract   | Done   | trpc-openapi, spec at /api/docs, CI validation, jobs router annotated (#1950)                   |
-| Vector storage (sqlite-vec)  | Done   | sqlite-vec extension, embedding schema, similarity search, chunker, background pipeline (#1948) |
-
-#### Server-side (tracked in `homelab-infra`)
-
-| PRD                                 | Status      | Repo          |
-| ----------------------------------- | ----------- | ------------- |
-| PRD-012 Hardware & OS Provisioning  | Done        | homelab-infra |
-| PRD-013 Docker Runtime              | Done        | homelab-infra |
-| PRD-014 Networking & Access         | Done        | homelab-infra |
-| PRD-015 Secrets Management          | Done        | homelab-infra |
-| PRD-017 Backups                     | Partial     | homelab-infra |
-| PRD-018 Monitoring                  | Done        | homelab-infra |
-| PRD-095 Pops Rollout via Watchtower | In progress | homelab-infra |
-
-### Phase 1 — Foundation
-
-| Epic                                  | Status      | Notes                                                                                                                  |
-| ------------------------------------- | ----------- | ---------------------------------------------------------------------------------------------------------------------- |
-| Project bootstrap (pnpm, Turbo, mise) | Done        | pnpm v10, Turbo orchestration, mise task runner                                                                        |
-| UI component library (`@pops/ui`)     | Done        | 86+ components, Storybook, Tailwind v4                                                                                 |
-| Shell & app switcher (`pops-shell`)   | Done        | Lazy-loaded apps, AppRail, responsive sidebar, app theme colour propagation                                            |
-| API modularisation (`pops-api`)       | Done        | 4 domain modules (core, finance, inventory, media)                                                                     |
-| DB schema patterns & migrations       | Done        | 28 tables, timestamp migrations, entity types                                                                          |
-| Responsive foundation                 | Done        | Tailwind v4 breakpoints, mobile-first, touch targets                                                                   |
-| Drizzle ORM migration                 | Done        | All modules use Drizzle ORM; raw SQL eliminated                                                                        |
-| Platform search (Epic 07)             | Done        | All 3 PRDs complete: search engine (PRD-057), search UI with keyboard nav (PRD-056), contextual intelligence (PRD-058) |
-| Modular module runtime (Epic 10)      | Not started | PRDs 097-100: lint boundaries, ModuleManifest, overlay surfaces + ego dual-surface, Tier 1 `POPS_APPS` env loader      |
-
-### Phase 2 — Core Apps
-
-#### Finance
-
-| Area                                          | Status | Notes                                                                                            |
-| --------------------------------------------- | ------ | ------------------------------------------------------------------------------------------------ |
-| Transaction ledger (CRUD, filtering, tagging) | Done   | 6 pages, inline editing                                                                          |
-| Import pipeline (CSV wizard, entity matching) | Done   | 7-step wizard, all 7 PRDs complete including ANZ PDF parser (PRD-022)                            |
-| Entity registry                               | Done   | Aliases, default tags, AI fallback                                                               |
-| Corrections (learned rules)                   | Done   | Classification + proposals, tag-rule wizard, rule manager priority/preview/override all complete |
-| Budgets                                       | Done   | Monthly/yearly, active/inactive                                                                  |
-| Wishlist                                      | Done   | Savings goals with progress                                                                      |
-| AI categorisation                             | Done   | Claude Haiku, disk-cached, cost-tracked                                                          |
-
-#### Media
-
-| Epic                        | Status | Notes                                                                                                                                     |
-| --------------------------- | ------ | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| Data model & API module     | Done   | Split tables, tRPC routers, 28 tables                                                                                                     |
-| TMDB client (movies)        | Done   | Search, metadata, poster cache, rate limiting                                                                                             |
-| TheTVDB client (TV)         | Done   | Auth, search, seasons/episodes, poster cache                                                                                              |
-| App package & core UI       | Done   | 12 pages, MediaCard, grids, detail views                                                                                                  |
-| Watchlist management        | Done   | Priority, filters, auto-remove on watch                                                                                                   |
-| Watch history & tracking    | Done   | Episode-level, chronological history                                                                                                      |
-| Ratings & comparisons       | Done   | Compare arena, ELO scoring, radar charts, rankings                                                                                        |
-| Discovery & recommendations | Done   | Discover page (PRDs 038, 060) and shelf-based discovery (PRD-065) all done                                                                |
-| Plex sync                   | Done   | Library import (paginated), watch history sync (local + Discover cloud), watchlist sync (bidirectional), auto-check on add, settings page |
-| Radarr & Sonarr             | Done   | Status badges, Radarr request management, Sonarr request management — all done                                                            |
-| Library rotation            | Done   | Automated movie lifecycle: source lists, daily add/remove cycle, disk space gating (PRDs 070-072)                                         |
-
-#### Inventory
-
-| Epic                                               | Status   | Notes                                              |
-| -------------------------------------------------- | -------- | -------------------------------------------------- |
-| Schema (locations, connections, photos, asset IDs) | Done     | Hierarchical locations, junction table             |
-| App package & CRUD UI                              | Done     | 6 pages, list/grid, detail, create/edit            |
-| Location tree management                           | Done     | Hierarchical browser, contents panel               |
-| Connections & graph                                | Done     | Bidirectional links, connection trace              |
-| Paperless-ngx integration                          | Done     | Document linking, thumbnails                       |
-| Warranty, value & reporting                        | Done     | Insurance report, warranty page, value breakdown   |
-| Notion import                                      | Not done | One-time migration script; may no longer be needed |
-
-#### AI Operations
-
-| Epic                               | Status | Notes                                                                                 |
-| ---------------------------------- | ------ | ------------------------------------------------------------------------------------- |
-| AI operations app (`@pops/app-ai`) | Done   | Usage, model config, rules browser, prompt viewer, cache management — all pages built |
-
-#### Fitness
-
-| Epic            | Status      | Notes          |
-| --------------- | ----------- | -------------- |
-| Fitness tracker | Not started | No code exists |
-
-#### Documents Vault
-
-| Epic          | Status      | Notes                                          |
-| ------------- | ----------- | ---------------------------------------------- |
-| Documents app | Not started | Paperless integration exists in inventory only |
-
-### Cerebrum — Phase 1 (MVP)
-
-| Epic                          | Status  | Notes                                                                                                                                                                                               |
-| ----------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Engram Storage (format, CRUD) | Done    | PRD-077 (format, templates, index schema, CRUD, tRPC, provisioning) + PRD-078 (scope model) complete                                                                                                |
-| Thalamus (indexing/retrieval) | Done    | PRD-079 (indexing/sync) + PRD-080 (retrieval engine: semantic, structured, hybrid, context assembly) complete                                                                                       |
-| Ingest (input pipeline)       | Done    | PRD-081 complete — pipeline stages (US-02–US-06), capture-first manual surface (US-01), post-ingest review (US-07), bulk paste (US-08), global capture hotkey (US-09), scope reconciliation (US-10) |
-| Emit (output production)      | Partial | PRD-082 (Query Engine) done. Document generation and proactive nudges not started                                                                                                                   |
-
-### Cerebrum — Phase 2 (Curation & Interface)
-
-| Epic                    | Status  | Notes                                                                                |
-| ----------------------- | ------- | ------------------------------------------------------------------------------------ |
-| Glia (curation workers) | Partial | PRD-085 (workers) done. PRD-086 (trust graduation) partial — review UI + reverts gap |
-| Ego (chat agent)        | Partial | PRD-088 (Ego Channels) done. PRD-087 (Ego Core) partial — SSE streaming gap remains  |
-
-### Cerebrum — Phase 3 (Automation & Ecosystem)
-
-| Epic                   | Status | Notes                                                                    |
-| ---------------------- | ------ | ------------------------------------------------------------------------ |
-| Reflex (automation)    | Done   | PRD-089 complete — definitions, event/threshold/scheduled triggers, mgmt |
-| Plexus (plugin system) | Done   | PRD-090 (architecture) + PRD-091 (email, calendar, GitHub adapters) done |
-
-### Phase 1 — Foundation (continued)
-
-| Epic                    | Status | Notes                                                                       |
-| ----------------------- | ------ | --------------------------------------------------------------------------- |
-| Unified Settings System | Done   | Self-registering settings page, replaces scattered Plex/Arr/Rotation/AI UIs |
-
-### Phase 3 — AI Layer
-
-| Epic                              | Status      | Notes                                                                              |
-| --------------------------------- | ----------- | ---------------------------------------------------------------------------------- |
-| AI overlay (contextual assistant) | Superseded  | Absorbed by Cerebrum Epic 05 (Ego)                                                 |
-| AI inference & monitoring         | Not started | Proactive insights, anomaly detection                                              |
-| AI observability                  | Not started | Multi-provider tracking, budget enforcement, latency/quality metrics, local models |
-
-### Phase 4 — Expansion Apps
-
-| Theme           | Status      | Notes                                                                                                                                                                                                                   |
-| --------------- | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Travel planner  | Not started |                                                                                                                                                                                                                         |
-| Books / Reading | Not started |                                                                                                                                                                                                                         |
-| Food (theme 07) | In progress | Epic 00 (schema) underway; Epic 01 (recipe management) + Epic 03 (review queue) + Epic 05 (meal planning, PRD-143 done bar deferred Playwright E2E) in flight. See [pillars/food/docs/](../pillars/food/docs/README.md) |
-
-### Phase 5 — Mobile & Hardware
-
-| Epic                 | Status      | Notes               |
-| -------------------- | ----------- | ------------------- |
-| Native iOS app       | Not started | PWA works on mobile |
-| HomePad / wall mount | Not started |                     |
-
-### Phase 6 — Long Tail
-
-| Epic                 | Status      | Notes |
-| -------------------- | ----------- | ----- |
-| Maintenance & chores | Not started |       |
-| Contacts / CRM-lite  | Not started |       |
-| Home automation      | Not started |       |
-
----
-
-## Phase Descriptions
-
-### Phase 0 — Platform
-
-> Application packaging, CI/CD, database operations, and the cortex runtime that supports the rest of pops. Server-side provisioning (ansible, vault, networking, backups, monitoring) lives in [`knoxio/homelab-infra`](https://github.com/knoxio/homelab-infra) and is tracked there.
-
-- **CI/CD** — GitHub Actions per-area quality gates + image publishing to GHCR
-- **Application packaging** — Public `infra/docker-compose.yml` + Watchtower hook so any deployer with a Docker host can run pops
-- **Database Operations** — Drizzle migrations on startup, production guards, pre-migration backups
-- **Cortex Infrastructure** — Redis (job queue + cache), BullMQ (durable workers), OpenAPI (secondary API contract), sqlite-vec (vector storage)
-
-**Depends on:** Nothing.
-**Unlocks:** Production deployment for all phases. Cortex Infrastructure unlocks the Cortex service and Phase 3 AI Layer.
-
-**Server-side (homelab-infra):** Hardware/OS, Docker runtime, Cloudflare Tunnel, Ansible Vault, Backups, Monitoring, Pops rollout via Watchtower.
-
-### Phase 1 — Foundation
-
-> Build the shared platform that all apps run on.
-
-- **Shell & App Switcher** — Multi-app shell with shared layout, routing, navigation, theming
-- **UI Component Library** — Shared components in `@pops/ui`. DataTable, forms, inputs, cards
-- **API Modularisation** — Domain routers as tRPC modules under one Express server
-- **DB Schema Patterns** — Conventions for migrations, shared entities, cross-domain foreign keys
-- **Responsive Foundation** — Shell and shared components work on mobile viewports from day one
-
-**Depends on:** Infrastructure (for deployment).
-**Unlocks:** Every app below.
-
-### Phase 2 — Core Apps
-
-> Build the highest-value apps on the foundation.
-
-- **Media Tracker** — Movies and TV shows. Categorisation, recommendations, watchlist. Plex/Radarr/Sonarr/TMDB integration
-- **Inventory** — Full CRUD. Warranties, purchase linking, Paperless-ngx receipt linking. Highest daily-use app
-- **Finance Polish + Subscriptions** — Reduce friction, automate more, add subscriptions tracking
-- **Fitness Tracker** — Training log: exercises, sets, reps, progress tracking, workout history
-- **Documents Vault** — Surfaces Paperless-ngx within POPS. Links receipts/warranties to inventory and transactions
-
-**Depends on:** Phase 1 (shell, shared UI, modular API).
-**Unlocks:** Cross-domain linking, AI layer, remaining apps.
-
-### Cerebrum
-
-> Personal cognitive infrastructure — a self-curating knowledge base that compounds over a lifetime.
-
-- **Engram Storage** — Markdown files with YAML frontmatter, template system, hierarchical scope model
-- **Thalamus** — Indexing middleware: file watcher, frontmatter sync, embedding generation, cross-source retrieval
-- **Ingest** — Input pipeline: manual, agent, capture channels with classification, entity extraction, scope inference
-- **Emit** — Output production: natural language Q&A, document generation, proactive nudges
-- **Glia** — Autonomous curation: pruner, consolidator, linker, auditor with trust graduation
-- **Ego** — Chat agent: shell panel, MCP tools, Moltbot, CLI. Supersedes AI Overlay
-- **Reflex** — Automation: event/threshold/scheduled triggers via reflexes.toml
-- **Plexus** — Plugin system: adapter interface, email/calendar/GitHub integrations
-
-**Depends on:** Infrastructure Epic 08 (Redis, BullMQ, sqlite-vec, OpenAPI). Phase 2 core apps for cross-domain queries.
-**Unlocks:** The "system does more for me" promise. Lifetime personal knowledge base.
-
-### Phase 3 — AI Layer
-
-> The intelligence layers that make POPS proactive.
-
-- **AI Overlay** — Superseded by Cerebrum Epic 05 (Ego)
-- **AI Categorisation & Input** — Automated data entry, entity matching, transaction categorisation. Extends import pipeline patterns to new domains
-- **AI Inference & Monitoring** — Proactive insights, anomaly detection, smart automations. Moltbot alerts, scheduled analysis
-
-**Depends on:** Phase 2 (needs multiple domains with real data). Cerebrum (Ego replaces AI Overlay).
-**Unlocks:** The "system does more for me" promise.
-
-### Phase 4 — Expansion Apps
-
-> Additional domains. Each benefits from the AI layer.
-
-- **Travel Planner** — Trip planning, organising, tracking. Links to finance, documents, recipes
-- **Books / Reading** — Same architecture as media tracker. Reading list, reviews, recommendations
-- **[Food](../pillars/food/docs/README.md)** — Recipes, ingredients, meal prep, multimodal ingestion (web URLs, Instagram reels, screenshots, text). Links to finance (grocery spend), inventory (kitchen gear). Promoted into active work; foundational schema epic in progress
-
-**Depends on:** Phase 2 (architecture proven), Phase 3 (AI reduces input friction).
-
-### Phase 5 — Mobile & Hardware
-
-> Dedicated mobile experience and wall-mounted dashboard.
-
-- **Native Mobile App** — iOS app, daily driver on iPhone
-- **HomePad / Wall Mount** — Dashboard mode optimised for always-on tablet. Widgets from every domain
-
-**Depends on:** Multiple apps live with stable APIs.
-
-### Phase 6 — Long Tail
-
-> Build when the core is solid and there's bandwidth.
-
-- **Maintenance & Chores** — Extends inventory with service schedules and reminders
-- **Contacts / CRM-lite** — Gift tracking, event planning
-- **Home Automation** — HomeAssistant integration if there's a clear gap
-
-**Depends on:** Core platform mature.
-
----
-
-## Dependency Chain
-
-```
-Infrastructure → Foundation → Core Apps ──→ AI Layer → Expansion Apps → Mobile → Long Tail
-       │                          │                         ^
-       │                          └── AI Categorisation ────┘
-       │                               (grows with each domain)
-       │
-       └── Cortex Infra → Cerebrum (Phase 1: Store/Index/Ingest/Emit)
-                              │
-                              ├── Phase 2: Glia + Ego
-                              │
-                              └── Phase 3: Reflex + Plexus
-```
-
-## Cross-cutting (not phased)
-
-These grow incrementally rather than shipping as a single phase:
-
-- **AI Categorisation** — Extends as new domains are added
-- **Responsive Design** — Every app must work on mobile from day one (PWA)
-- **Cross-domain Linking** — Shared entities, foreign keys between domains, unified search
+A current-state snapshot of the platform and a forward view. For why POPS exists
+and the design principles, see [vision.md](vision.md). For per-pillar detail,
+follow the links into each pillar's `docs/README.md`.
+
+POPS is a fleet of independent REST pillars. Each owns its own SQLite database,
+serves a ts-rest + zod contract (Rust pillars: axum + OpenAPI), exports a
+`./manifest`, and self-registers with the `registry` pillar on boot. Search,
+settings, navigation, AI tools, and routing are all projected from the **live
+registry** at request time — nothing compiles against a static pillar list.
+
+## Today — the live platform
+
+### Foundations (Done)
+
+| Foundation                                | What it gives the fleet                                                                                                                                                                                                                                          |
+| ----------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [Platform](themes/platform/README.md)     | CI gates + per-pillar GHCR images, the public `infra/docker-compose.yml` deploy contract + Watchtower hook, per-pillar Drizzle-at-boot DB lifecycle, Redis + BullMQ job queue, sqlite-vec, OpenAPI projection, the MCP gateway                                   |
+| [Foundation](themes/foundation/README.md) | The `@pops/ui` design system + Storybook, the registry-driven shell (app rail, nav, theming, accent propagation), the per-pillar REST contract pattern, DB/migration conventions, settings + feature-toggle manifest dimensions, lint-enforced module boundaries |
+| [Federation](themes/federation/README.md) | The `@pops/pillar-sdk`, the registry protocol (register / heartbeat / snapshot / SSE), the manifest dimensions (search / AI tools / settings / sinks), the search + AI-tool orchestrator, and a language-neutral wire spec proven by the Rust `contacts` pillar  |
+
+### Data pillars (Done unless noted)
+
+| Pillar                                                 | Port | One-liner                                                                                                                             |
+| ------------------------------------------------------ | ---- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| [registry](themes/federation/README.md)                | 3001 | Runtime directory — pillars register and heartbeat here; the sole source of truth for fleet membership                                |
+| [inventory](../pillars/inventory/docs/README.md)       | 3002 | Home inventory: connectivity graph over a hierarchical location tree, photos, asset IDs, Paperless-ngx receipts, insurance reports    |
+| [media](../pillars/media/docs/README.md)               | 3003 | Movie/TV tracking + taste learning: 1v1 ELO comparisons, recommendations, Plex / Radarr / Sonarr / TMDB / TheTVDB, library rotation   |
+| [finance](../pillars/finance/docs/README.md)           | 3004 | Personal finance: bank-CSV imports with entity matching, learned-rule + AI categorisation, budgets, wishlist                          |
+| [food](../pillars/food/docs/README.md)                 | 3005 | Recipes, meal planning, batch/pantry FIFO, multimodal ingest (web / Instagram / screenshot / text) — _in progress_                    |
+| [lists](../pillars/lists/docs/README.md)               | 3006 | Generic domain-agnostic lists (shopping / packing / todo / generic); the substrate food and others push items into                    |
+| [cerebrum](../pillars/cerebrum/docs/README.md)         | 3007 | Personal cognitive infrastructure: Markdown engrams, semantic + structured retrieval, autonomous curation, Ego chat agent — _partial_ |
+| [ai](../pillars/ai/docs/README.md)                     | 3008 | AI observability: one inference log across every pillar, cost/latency/quality dashboards, budgets, alerts — _partial_                 |
+| [orchestrator](../pillars/orchestrator/docs/README.md) | 3009 | Stateless cross-pillar aggregator (no DB): federated search fan-out + the live AI-tool registry                                       |
+| [contacts](../pillars/contacts/docs/README.md)         | 3010 | The entities directory (people / companies / places). The one **Rust** pillar — the cross-language federation proof                   |
+
+Supporting pillars: [shell](../pillars/shell/docs/README.md) (the SPA host + nginx
+dispatcher, owns no data), [mcp](../pillars/mcp/docs/README.md) (HTTP MCP gateway —
+binds `3002` via `MCP_PORT`, overlapping inventory's external port; it dispatches
+to pillars over REST and owns no DB), and `moltbot` (Telegram surface).
+
+## In progress / partial
+
+| Area                                                         | What's done                                                                         | What's missing                                                                                                   |
+| ------------------------------------------------------------ | ----------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| [Food](../pillars/food/docs/README.md)                       | Schema, recipe management, review queue, meal planning, multimodal ingest in flight | End-to-end polish and the long ideas backlog (Instagram acquisition, substitution graph, shopping-list fidelity) |
+| Cerebrum — [Emit](../pillars/cerebrum/docs/epics/03-emit.md) | Query engine grounds NL questions in engrams                                        | Document generation and proactive nudges                                                                         |
+| Cerebrum — [Glia](../pillars/cerebrum/docs/epics/04-glia.md) | Curation workers (pruner, consolidator, linker, auditor)                            | Trust-graduation review UX and reverts                                                                           |
+| Cerebrum — [Ego](../pillars/cerebrum/docs/epics/05-ego.md)   | Ego channels + core chat agent                                                      | SSE streaming, recent-action history summarisation, CLI                                                          |
+| [AI Ops](../pillars/ai/docs/README.md)                       | Inference log, dashboards, budget tracking, alerts                                  | The pre-call budget gate (block / warn / fall back to a local model before an over-budget call)                  |
+| Foundation — UI / responsive / search                        | Shell, settings, feature toggles, module boundaries all shipped                     | `@pops/ui` token/component coverage, responsive adaptations, and search ranking are each Partial                 |
+| Federation — SDK / shell drift                               | Server proxy, discovery, registry, Rust peer all live                               | Several SDK + shell PRDs sit at `To Review` / `Partial` pending drift-gate and external-bundle wiring            |
+
+The roadmap no longer tracks status PRD-by-PRD. Each theme/pillar README's epic
+and PRD tables are the source of truth; the statuses above are the genuinely
+unfinished surfaces.
+
+## Forward
+
+### Bridge pillars — POPS as additive to a device ecosystem
+
+A [bridge pillar](ideas/bridge-pillars.md) has the exact shape of any pillar, but
+its source of truth is an upstream system rather than user-entered data. It mirrors
+the upstream into its own SQLite and exposes it through the standard `searchAdapter`
+and `aiTools` dimensions, so upstream entities become searchable and AI-callable
+inside POPS with no bespoke integration code.
+
+- [HA bridge](ideas/ha-bridge-pillar.md) — the reference bridge: mirror every Home
+  Assistant entity + state, expose reads/control as AI tools, accept outbound `sinks`.
+- [POPS → HA event publisher](ideas/pops-to-ha-event-publisher.md) — the first real
+  consumer of the `sinks` dimension: POPS events become HA `fire_event` calls.
+- `mqtt-bridge` / `esphome-bridge` — fork the HA shape onto other upstreams.
+
+POPS does not compete with Home Assistant on device count or automation logic —
+it observes and controls, additively.
+
+### Runtime LAN discovery — registry as the sole source of truth
+
+The north star for the federation contract: a pillar (in-repo, external, or on
+another box) joins purely at runtime by registering with the `registry` pillar —
+no compiled list, no rebuild of the shell, no edit in this repo. The remaining
+`To Review` / `Partial` federation PRDs (registry-driven shell UI, external-bundle
+lazy-loading, contract drift CI) close the gap toward that being fully hands-off.
+
+### New domains
+
+Promoted from the [app-ideas brainstorm](ideas/app-ideas.md) when deliberately
+prioritised — each is a new pillar following the proven shape:
+
+| Domain      | Sketch                                                                                      |
+| ----------- | ------------------------------------------------------------------------------------------- |
+| Documents   | Surface Paperless-ngx across POPS; link receipts/warranties/manuals to items + transactions |
+| Fitness     | Gym/training log — exercises, sets, reps, progress; Apple Health later                      |
+| Travel      | Trip planning; links to finance (budgets), documents (bookings), food (local cuisine)       |
+| Books       | Reading tracker; reuses media's pairwise-comparison taste engine                            |
+| Maintenance | Service schedules, renewals, recurring chores; extends inventory                            |
+| Social      | Contacts/CRM-lite — gift tracking, event planning over the `contacts` directory             |
+| Mobile      | Native iOS daily driver + wall-mounted HomePad dashboard over the existing PWA              |
+
+### Deeper roadmaps per pillar
+
+Each shipped pillar carries its own `docs/ideas/` backlog of refinements — the
+richest are [food](../pillars/food/docs/ideas/), [media](../pillars/media/docs/ideas/),
+[cerebrum](../pillars/cerebrum/docs/ideas/), [finance](../pillars/finance/docs/ideas/),
+and [inventory](../pillars/inventory/docs/ideas/). The platform-level
+[`docs/ideas/`](ideas/) directory holds the cross-cutting forward work (bridge
+pillars, federation SDK/shell hardening, subscription model, settings federation).

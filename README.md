@@ -6,7 +6,7 @@ Each pillar owns its own SQLite database (there is no shared store). Claude API 
 
 ## Architecture
 
-POPS is a set of independent **REST pillars**. Each pillar is a standalone service that owns its own SQLite database, serves a [ts-rest](https://ts-rest.com) contract built from zod, projects an OpenAPI document, exports a `./manifest`, and self-registers with the `core` registry on boot. The frontend is one SPA (`pops-shell`) that lazy-loads per-domain feature apps, each talking to its pillar over a generated REST client. Cross-pillar calls go through the REST `@pops/pillar-sdk` `pillar()` client.
+POPS is a set of independent **REST pillars**. Each pillar is a standalone service that owns its own SQLite database, serves a [ts-rest](https://ts-rest.com) contract built from zod, projects an OpenAPI document, exports a `./manifest`, and self-registers with the `registry` pillar on boot. The frontend is one SPA (the `shell` pillar) that lazy-loads per-domain feature apps, each talking to its pillar over a generated REST client. Cross-pillar calls go through the REST `@pops/pillar-sdk` `pillar()` client.
 
 ```
 Interfaces
@@ -17,7 +17,7 @@ Interfaces
 pops-shell (UI pillar) ── React SPA, Vite + nginx reverse proxy (fronts every service)
        │
 REST pillars (one SQLite DB each, ts-rest + OpenAPI, self-registering)
-  core      :3001  registry / settings / users / service-accounts / ai-ops / entities / features
+  registry  :3001  registry / settings / users / service-accounts / entities / features
   inventory :3002  items, locations, warranties, insurance
   media     :3003  movies & TV, watchlist, watch history, Plex/Radarr/Sonarr sync
   finance   :3004  transactions, budgets, wishlists, entities, CSV import
@@ -39,21 +39,21 @@ External APIs
 
 ### Pillars
 
-A pillar is any service registered with the `core` registry that exposes `/manifest.json` (ADR-035). Three kinds:
+A pillar is any service registered with the `registry` pillar that exposes `/manifest.json` (ADR-035). Three kinds:
 
 - **Data pillars** — the seven services above. Each owns a SQLite DB under `pillars/<id>/src/db`, streamed to backup via `infra/litestream/<id>.yml`.
 - **Bridge pillars** — adapters that mirror an external system into the platform (e.g. the Home Assistant bridge).
-- **UI pillars** — `pops-shell` registers as `id: 'shell'` and hosts the SPA.
+- **UI pillars** — the `shell` pillar registers as `id: 'shell'` and hosts the SPA.
 
-`core` is the registry/platform pillar; every other pillar registers itself against it at startup.
+`registry` is the registry/platform pillar; every other pillar registers itself against it at startup.
 
 ### Adding a pillar
 
-A new data pillar needs: a `pillars/<id>/` package with its own SQLite DB and zod-backed ts-rest contract, an OpenAPI snapshot under `pillars/<id>/openapi/`, a `./manifest` export that self-registers with `core`, a unique port, a `pillars/<id>/Dockerfile`, an `infra/litestream/<id>.yml` backup config, and a compose service in `infra/docker-compose.yml` + `infra/docker-compose.dev.yml`. On the frontend, add a `packages/app-<id>/` feature app that consumes the pillar through its generated Hey API client (`openapi-ts`), and wire it into `pops-shell`.
+A new data pillar needs: a `pillars/<id>/` package with its own SQLite DB and zod-backed ts-rest contract, an OpenAPI snapshot under `pillars/<id>/openapi/`, a `./manifest` export that self-registers with the `registry` pillar, a unique port, a `pillars/<id>/Dockerfile`, an `infra/litestream/<id>.yml` backup config, and a compose service in `infra/docker-compose.yml` + `infra/docker-compose.dev.yml`. On the frontend, add a `pillars/<id>/app` feature app that consumes the pillar through its generated Hey API client (`openapi-ts`), and wire it into the `shell` pillar.
 
 ### Wire Format
 
-Pillar-to-pillar and consumer-to-pillar communication uses a versioned JSON-over-HTTP wire format. See [`WIRE-FORMAT.md`](WIRE-FORMAT.md) for the TL;DR and the canonical spec.
+Pillar-to-pillar and consumer-to-pillar communication uses a versioned JSON-over-HTTP wire format. See the [cross-language wire-format spec](docs/themes/federation/prds/cross-language-wire-format-spec/README.md) for the canonical contract.
 
 ### Docker Networks
 
@@ -67,21 +67,21 @@ Pillar-to-pillar and consumer-to-pillar communication uses a versioned JSON-over
 
 ## Domains
 
-| Domain            | Pillar      | Frontend app    | What it does                                                                                                                      |
-| ----------------- | ----------- | --------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| **Finance**       | `finance`   | `app-finance`   | Transactions, budgets, wishlists, entities, CSV import wizard with multi-stage entity matching + AI fallback, learned corrections |
-| **Media**         | `media`     | `app-media`     | Movies & TV library, watchlist, watch history, ELO comparison arena, discovery, Plex/Radarr/Sonarr sync                           |
-| **Inventory**     | `inventory` | `app-inventory` | Items, hierarchical locations, connections graph, warranties, insurance reports, Paperless-ngx document linking                   |
-| **Food**          | `food`      | `app-food`      | Food domain with an ingest worker                                                                                                 |
-| **Lists**         | `lists`     | `app-lists`     | Lists                                                                                                                             |
-| **Cerebrum**      | `cerebrum`  | `app-cerebrum`  | Memory / retrieval / ego — engram storage, semantic retrieval, curation (+ worker)                                                |
-| **AI Operations** | `core`      | `app-ai`        | Usage tracking, model config, rules browser, prompt viewer, cache management (served by the `core` pillar)                        |
+| Domain            | Pillar      | Frontend app            | What it does                                                                                                                      |
+| ----------------- | ----------- | ----------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| **Finance**       | `finance`   | `pillars/finance/app`   | Transactions, budgets, wishlists, entities, CSV import wizard with multi-stage entity matching + AI fallback, learned corrections |
+| **Media**         | `media`     | `pillars/media/app`     | Movies & TV library, watchlist, watch history, ELO comparison arena, discovery, Plex/Radarr/Sonarr sync                           |
+| **Inventory**     | `inventory` | `pillars/inventory/app` | Items, hierarchical locations, connections graph, warranties, insurance reports, Paperless-ngx document linking                   |
+| **Food**          | `food`      | `pillars/food/app`      | Food domain with an ingest worker                                                                                                 |
+| **Lists**         | `lists`     | `pillars/lists/app`     | Lists                                                                                                                             |
+| **Cerebrum**      | `cerebrum`  | `pillars/cerebrum/app`  | Memory / retrieval / ego — engram storage, semantic retrieval, curation (+ worker)                                                |
+| **AI Operations** | `ai`        | `pillars/ai/app`        | Usage tracking, model config, rules browser, prompt viewer, cache management (served by the `ai` pillar)                          |
 
 ## Tech Stack
 
 | Layer      | Technology                                                                                                                                                                                                                                             |
 | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Runtime    | Node.js 24, pnpm 10 workspaces, Turborepo                                                                                                                                                                                                              |
+| Runtime    | Node.js 24, pnpm 10 workspaces, mise per-unit tasks, cargo (Rust `contacts` pillar)                                                                                                                                                                    |
 | Database   | One SQLite DB per pillar via Drizzle ORM                                                                                                                                                                                                               |
 | API        | Per-pillar REST: zod → ts-rest contracts → OpenAPI; frontend consumes generated Hey API (`@hey-api/openapi-ts`) clients; cross-pillar via the `@pops/pillar-sdk` `pillar()` client                                                                     |
 | Frontend   | React, Vite, React Router, Tailwind v4, shadcn/ui                                                                                                                                                                                                      |
@@ -121,7 +121,7 @@ For local development, the dev Docker Compose stack (`infra/docker-compose.dev.y
 docker compose -f infra/docker-compose.dev.yml up -d --build
 ```
 
-The shell fronts the stack via its nginx reverse proxy and routes browser traffic to each pillar by port: `core :3001`, `inventory :3002`, `media :3003`, `finance :3004`, `food :3005`, `lists :3006`, `cerebrum :3007`, with the orchestrator on `:3009`. Run a single pillar directly with `cd pillars/<id> && pnpm dev`.
+The shell fronts the stack via its nginx reverse proxy and routes browser traffic to each pillar by port: `registry :3001`, `inventory :3002`, `media :3003`, `finance :3004`, `food :3005`, `lists :3006`, `cerebrum :3007`, `ai :3008`, `contacts :3010`, with the orchestrator on `:3009`. Run a single pillar directly with `cd pillars/<id> && pnpm dev`.
 
 ## Development
 
@@ -157,7 +157,7 @@ mise lint && mise typecheck    # Must pass before every push
 Playwright with two modes: **mocked** (fast, no real DB) and **integration** (real SQLite via named env system). Named envs auto-skip external API calls — safe to run in CI without credentials.
 
 ```bash
-cd apps/pops-shell && pnpm test:e2e
+cd pillars/shell && pnpm test:e2e
 ```
 
 ## Deploy
@@ -203,9 +203,9 @@ If the packages are public there is no setup needed.
 
 The compose file mounts each `secrets/<name>` file into containers via Docker file-based secrets (`/run/secrets/<name>`). All ten secret files must exist for `docker compose up` to succeed; leave a file empty if the corresponding integration is unused.
 
-Pushing to `main` builds and publishes one image per pillar — `ghcr.io/knoxio/pops-<id>` (e.g. `pops-core`, `pops-finance`, `pops-media`, …) plus `ghcr.io/knoxio/pops-shell` and `ghcr.io/knoxio/pops-docs`. The [`publish-images.yml`](.github/workflows/publish-images.yml) workflow discovers each pillar's `pillars/<id>/Dockerfile` and publishes it. The compose file ships a Watchtower service that polls GHCR every 60s and rolls out new digests for any container labelled `com.centurylinklabs.watchtower.enable=true`.
+Pushing to `main` builds and publishes one image per pillar — `ghcr.io/knoxio/pops-<id>` (e.g. `pops-registry`, `pops-finance`, `pops-media`, …) plus `ghcr.io/knoxio/pops-shell` and `ghcr.io/knoxio/pops-docs`. The [`publish-images.yml`](.github/workflows/publish-images.yml) workflow discovers each pillar's `pillars/<id>/Dockerfile` and publishes it. The compose file ships a Watchtower service that polls GHCR every 60s and rolls out new digests for any container labelled `com.centurylinklabs.watchtower.enable=true`.
 
-Override `POPS_IMAGE_TAG` in `.env` to pin a release. Track stability over freshness by pinning a semver tag (`POPS_IMAGE_TAG=v0.1.0`, `v0.1`, or `v0`) — see the [release runbook](docs/runbooks/DEPRECATED_cut-release.md) — or pin to a specific build with `POPS_IMAGE_TAG=sha-abc1234`. Use the dev compose for local builds:
+Override `POPS_IMAGE_TAG` in `.env` to pin a release. Track stability over freshness by pinning a semver tag (`POPS_IMAGE_TAG=v0.1.0`, `v0.1`, or `v0`) — see the [release runbook](docs/runbooks/cut-release.md) — or pin to a specific build with `POPS_IMAGE_TAG=sha-abc1234`. Use the dev compose for local builds:
 
 ```bash
 docker compose -f infra/docker-compose.dev.yml up -d --build
@@ -215,35 +215,28 @@ Server provisioning (Docker, secrets, Cloudflare Tunnel, backups, github runner)
 
 ## Repo Structure
 
+There are exactly **two unit kinds**: `pillars/` (services) and `libs/` (shared libraries). No `apps/`, no `packages/`, no turbo, no `pops-api` monolith.
+
 ```
-pillars/                   # One REST pillar per folder — owns SQLite DB, ts-rest contract, OpenAPI, manifest, Dockerfile
-├── core/                  # Registry / platform: registry, settings, users, service-accounts, ai-ops, entities, features
-├── inventory/
-├── media/
-├── finance/
-├── food/                  # + ingest worker
-├── lists/
-└── cerebrum/              # Memory / retrieval / ego (+ worker)
+pillars/                   # One pillar per folder — owns SQLite DB, ts-rest contract, OpenAPI, manifest, its app/ frontend, Dockerfile
+├── registry/              # Registry / platform: registry, settings, users, service-accounts, features (formerly `core`)
+├── inventory/  media/  finance/  food/  lists/  cerebrum/   # Domain data pillars (food + cerebrum run workers)
+├── ai/                    # AI-ops pillar (:3008): providers, usage/telemetry, ingest
+├── contacts/              # Rust pillar (:3010, axum + OpenAPI)
+├── orchestrator/          # Federated search + AI-tool registry (GET /ai/tools), owns no DB
+├── shell/                 # UI pillar: React SPA host (Vite + nginx reverse proxy), lazy-loads each pillar's app/
+├── mcp/                   # MCP gateway (binds :3002 in code via MCP_PORT)
+├── docs/                  # OpenAPI docs browser
+└── moltbot/               # Telegram bot config + skills (no Dockerfile, uses upstream image)
 
-apps/
-├── pops-shell/            # UI pillar: React SPA host (Vite + nginx reverse proxy), lazy-loads app-* feature apps
-├── pops-orchestrator/     # Federated search + AI-tool registry (GET /ai/tools), owns no DB
-├── pops-mcp/              # MCP gateway
-├── pops-cli/              # CLI tooling
-├── pops-docs/             # OpenAPI docs browser
-└── moltbot/               # Telegram bot config + skills
-
-packages/
-├── app-finance/ app-media/ app-inventory/ app-food/ app-lists/ app-cerebrum/ app-ai/   # Per-domain frontend feature apps
-├── pillar-sdk/            # REST cross-pillar SDK (pillar() client) + manifest/registry helpers
+libs/                      # Shared libraries (no service, no DB)
+├── sdk/                   # @pops/pillar-sdk — REST cross-pillar SDK (pillar() client) + manifest/registry/discovery helpers
 ├── types/                 # ModuleManifest + pillar manifest types
 ├── db-types/              # Shared DB type helpers
-├── shared-schema/         # Shared zod schemas
 ├── module-registry/       # Module/pillar registry helpers
 ├── ui/                    # @pops/ui component library (shadcn-based)
 ├── navigation/            # App navigation config
-├── overlay-ego/           # Shared ego overlay
-└── wire-conformance/      # Wire-format conformance fixtures/tests
+└── overlay-ego/           # Shared ego overlay
 
 infra/
 ├── docker-compose.yml     # Production service definitions (ghcr.io/knoxio/pops-<id> images + Watchtower)
@@ -252,5 +245,5 @@ infra/
 
 docs/
 ├── roadmap.md             # Implementation tracker
-└── themes/                # Cross-cutting PRDs, epics, user stories (pillar-scoped docs live under pillars/<id>/docs/)
+└── themes/                # Cross-cutting themes + PRDs (pillar-scoped docs live under pillars/<id>/docs/)
 ```

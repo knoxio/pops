@@ -319,7 +319,7 @@ The graph also enables "I have a glut of zucchini, what recipes use it OR have i
 
 - **Finance** — match grocery-line-items from transaction imports to canonical ingredients (long-tail of fuzzy matching; lean on the existing ingest pattern). Answers "how much did I spend on tomatoes this year".
 - **Inventory** — kitchen gear tied to recipes ("requires stand mixer"). Recipe filter "what can I make with what I own".
-- **Cerebrum** — recipes and cook events are an embeddable source per [PRD 079](../../../cerebrum/docs/prds/079-engram-indexing/us-04-cross-source-index.md). Surfaces "what should I cook tonight" suggestions from engrams about preferences, mood, weather.
+- **Cerebrum** — recipes and cook events are an embeddable source per [PRD 079](../../../cerebrum/docs/prds/indexing/README.md). Surfaces "what should I cook tonight" suggestions from engrams about preferences, mood, weather.
 - **Travel** — destination cuisine research; saved recipes tagged by trip.
 
 ## Risks and open spec items
