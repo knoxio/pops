@@ -1,5 +1,5 @@
 /**
- * ts-rest handlers for `cerebrum.query.*` (docs/prds/query-engine).
+ * ts-rest handlers for `cerebrum.query.*` (pillars/cerebrum/docs/prds/query-engine).
  *
  * Each handler builds a request-scoped {@link QueryService} bound to the pillar
  * db (drizzle + raw + vec availability), the injected peer/embedding retrieval

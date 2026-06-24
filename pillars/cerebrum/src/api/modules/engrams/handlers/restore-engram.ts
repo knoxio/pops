@@ -1,6 +1,6 @@
 /**
  * Restore an archived engram back to its original `{type}/{id}.md` location
- * with `status: active`. The inverse of `archiveEngram` (see docs/prds/trust-graduation).
+ * with `status: active`. The inverse of `archiveEngram` (see pillars/cerebrum/docs/prds/trust-graduation).
  *
  * Idempotent: restoring an already-active engram (or one whose file is no
  * longer under `.archive/`) is a no-op that returns the current path.

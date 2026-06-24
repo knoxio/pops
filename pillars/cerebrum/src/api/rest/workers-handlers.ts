@@ -1,5 +1,5 @@
 /**
- * ts-rest handlers for `workers.*` (docs/prds/curation-workers) — the Glia curation workers.
+ * ts-rest handlers for `workers.*` (pillars/cerebrum/docs/prds/curation-workers) — the Glia curation workers.
  *
  * Each `run*` builds a request-scoped worker bound to the in-pillar
  * {@link EngramService} + {@link HybridSearchService} and runs it; `dryRun`

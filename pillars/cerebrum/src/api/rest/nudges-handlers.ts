@@ -1,5 +1,5 @@
 /**
- * ts-rest handlers for `cerebrum.nudges.*` (docs/prds/proactive-nudges).
+ * ts-rest handlers for `cerebrum.nudges.*` (pillars/cerebrum/docs/prds/proactive-nudges).
  *
  * Read/dismiss ride {@link createNudgeReadService} bound to the pillar db
  * handle; the write surface (`scan` / `act` / `configure`) rides

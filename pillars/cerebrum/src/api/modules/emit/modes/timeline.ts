@@ -1,5 +1,5 @@
 /**
- * Timeline generation mode (see docs/prds/document-generation).
+ * Timeline generation mode (see pillars/cerebrum/docs/prds/document-generation).
  *
  * Orders dated engrams chronologically into a sequence of entries.
  */

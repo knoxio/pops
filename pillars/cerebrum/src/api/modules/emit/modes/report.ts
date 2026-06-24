@@ -1,5 +1,5 @@
 /**
- * Report generation mode (see docs/prds/document-generation).
+ * Report generation mode (see pillars/cerebrum/docs/prds/document-generation).
  *
  * A report requires at least MIN_SOURCES_FOR_REPORT sources; with fewer,
  * checkReportSources short-circuits with an insufficient-data notice.

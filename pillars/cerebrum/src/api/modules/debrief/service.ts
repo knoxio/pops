@@ -1,5 +1,5 @@
 /**
- * Query layer for the `cerebrum.debrief.*` surface (docs/prds/debrief).
+ * Query layer for the `cerebrum.debrief.*` surface (pillars/cerebrum/docs/prds/debrief).
  *
  * Reads/writes `debrief_sessions` + `debrief_results` through a drizzle
  * handle. The media tuple, `watchHistoryId`, `dimensionId` and `comparisonId`

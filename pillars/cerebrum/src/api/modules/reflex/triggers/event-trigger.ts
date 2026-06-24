@@ -1,7 +1,7 @@
 /**
  * Event trigger — pure matcher of engram lifecycle events against reflex
  * conditions. No event-bus subscription or action dispatch happens here; see
- * docs/prds/reflex-system.
+ * pillars/cerebrum/docs/prds/reflex-system.
  */
 import type { EngramEventPayload, EventTriggerConfig, ReflexDefinition } from '../types.js';
 

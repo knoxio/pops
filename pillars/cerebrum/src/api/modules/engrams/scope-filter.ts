@@ -111,7 +111,7 @@ const CONTEXT_MAP: Record<string, string[]> = {
 /**
  * Map free-text contextual hints to scope prefix arrays.
  * This is a simple keyword map — LLM-based inference is intentionally out of
- * scope (see docs/prds/scope-model).
+ * scope (see pillars/cerebrum/docs/prds/scope-model).
  *
  * @example
  * inferScopesFromContext("at work")   // ["work"]

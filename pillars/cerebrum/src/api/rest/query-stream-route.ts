@@ -1,5 +1,5 @@
 /**
- * SSE route handler for streaming cerebrum query answers (docs/prds/query-engine).
+ * SSE route handler for streaming cerebrum query answers (pillars/cerebrum/docs/prds/query-engine).
  *
  * `POST /query/stream` — ts-rest can't model SSE, so this is mounted as a plain
  * Express handler in `app.ts` BEFORE `createExpressEndpoints(...)`. The body

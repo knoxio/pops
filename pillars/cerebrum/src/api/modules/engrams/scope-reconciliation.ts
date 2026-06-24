@@ -1,6 +1,6 @@
 /**
  * ScopeReconciliationService — propose canonical scopes for user-typed
- * suggestions (see docs/prds/scope-model).
+ * suggestions (see pillars/cerebrum/docs/prds/scope-model).
  *
  * Pure lexical/structural matching against the existing scope vocabulary.
  * No LLM calls, no I/O.

@@ -1,5 +1,5 @@
 /**
- * PatternDetector (see docs/prds/proactive-nudges).
+ * PatternDetector (see pillars/cerebrum/docs/prds/proactive-nudges).
  *
  * Detects recurring topics, emerging themes, and contradictions across
  * engrams. The tag-frequency and time-series passes are pure synchronous

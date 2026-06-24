@@ -1,5 +1,5 @@
 /**
- * Citation tracking for engrams (see docs/prds/proactive-nudges).
+ * Citation tracking for engrams (see pillars/cerebrum/docs/prds/proactive-nudges).
  *
  * Tracks how many times engrams are cited in query responses. Cited engrams
  * are considered less stale — citation count adjusts the per-engram staleness

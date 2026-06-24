@@ -1,5 +1,5 @@
 /**
- * Summary generation mode (see docs/prds/document-generation).
+ * Summary generation mode (see pillars/cerebrum/docs/prds/document-generation).
  *
  * Produces a digestible overview of engrams within a date range (weekly
  * digest, monthly review), capping sources at MAX_SUMMARY_SOURCES.

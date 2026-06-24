@@ -1,6 +1,6 @@
 /**
  * CitationParser — extracts and validates inline source citations from LLM
- * output against the retrieved source set (see docs/prds/query-engine).
+ * output against the retrieved source set (see pillars/cerebrum/docs/prds/query-engine).
  *
  * Handles:
  *  - Bracketed engram IDs: [eng_20260417_0942_agent-coordination]

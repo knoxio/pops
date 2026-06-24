@@ -1,7 +1,7 @@
 /**
  * Scheduled trigger — pure cron helpers for schedule reflexes: next-fire-time
  * computation, cron validation, and BullMQ job-name/id derivation. No queue is
- * registered here; see docs/prds/reflex-system.
+ * registered here; see pillars/cerebrum/docs/prds/reflex-system.
  */
 import { CronExpressionParser } from 'cron-parser';
 

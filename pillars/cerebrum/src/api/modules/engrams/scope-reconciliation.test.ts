@@ -1,5 +1,5 @@
 /**
- * Unit tests for ScopeReconciliationService (see docs/prds/scope-model).
+ * Unit tests for ScopeReconciliationService (see pillars/cerebrum/docs/prds/scope-model).
  */
 import { describe, expect, it } from 'vitest';
 
@@ -194,7 +194,7 @@ describe('ScopeReconciliationService.reconcile', () => {
     });
     const elapsed = performance.now() - start;
     // Generous ceiling so CI runners under load do not flake; the real target
-    // (docs/prds/scope-model) is far tighter.
+    // (pillars/cerebrum/docs/prds/scope-model) is far tighter.
     expect(elapsed).toBeLessThan(250);
   });
 });
