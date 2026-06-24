@@ -1,7 +1,6 @@
 # PRD: Application Packaging & GHCR Contract
 
 > Theme: [Platform](../../README.md)
-> Epic: [CI/CD Pipelines](../../epics/cicd-pipelines.md)
 > Status: Done
 
 ## Overview

@@ -1,6 +1,6 @@
 # Module Import Boundaries
 
-> Epic: [Modular Module Runtime](../../epics/modular-module-runtime.md)
+> Theme: [Foundation](../../README.md)
 > Status: Done
 
 ## Overview

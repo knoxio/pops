@@ -1,6 +1,6 @@
 # PRD: Storybook
 
-> Epic: [UI Component Library](../../epics/ui-component-library.md)
+> Theme: [Foundation](../../README.md)
 > Status: Done
 
 ## Overview

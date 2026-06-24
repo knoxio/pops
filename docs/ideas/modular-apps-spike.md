@@ -2,7 +2,7 @@
 
 Investigation only — recommendations, no code changes. Sibling spike: [feature-toggles](./feature-toggles-spike.md).
 
-Outcome: superseded by **Epic: Modular Module Runtime** ([docs/themes/foundation/epics/modular-module-runtime.md](../themes/foundation/epics/modular-module-runtime.md)). The spike below describes the goal-state architecture; PRDs 097–100 carry the implementation.
+Outcome: superseded by the **Modular Module Runtime** group in the [Foundation theme](../themes/foundation/README.md). The spike below describes the goal-state architecture; the [module-import-boundaries](../themes/foundation/prds/module-import-boundaries/README.md), [overlay-surfaces](../themes/foundation/prds/overlay-surfaces/README.md), and [plugin-contract](../themes/foundation/prds/plugin-contract/README.md) PRDs carry the implementation.
 
 ## Question
 

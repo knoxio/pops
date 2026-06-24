@@ -1,6 +1,5 @@
 # Curation Workers
 
-> Epic: [04 — Glia](../../epics/04-glia.md)
 > Status: Partial — all four workers compute and propose synchronously over REST; autonomy (background queue, trust-phase execution, query-hit tracking, glia.toml thresholds, link re-pointing) is not built. See [ideas/curation-workers-autonomy](../../ideas/curation-workers-autonomy.md).
 
 Four Glia curation workers keep the engram corpus healthy: **pruner** (staleness + orphan detection), **consolidator** (cluster-and-merge of near-duplicate engrams), **linker** (cross-reference discovery), and **auditor** (quality scoring, contradiction detection, coverage-gap flagging). Each worker scans the cerebrum pillar's own engram store, scores or compares engrams, and returns a uniform set of proposed `GliaAction` records. Workers curate existing content only — they never create or ingest knowledge.

@@ -1,6 +1,6 @@
 # PRD: Job Queue Infrastructure
 
-> Epic: [Cortex Infrastructure](../../epics/cortex-infrastructure.md)
+> Theme: [Platform](../../README.md)
 > Status: Done (per-pillar queues shipped; central management surface is an [idea](../../../../ideas/job-queue.md))
 
 ## Overview

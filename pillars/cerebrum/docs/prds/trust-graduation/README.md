@@ -1,6 +1,5 @@
 # Trust Graduation
 
-> Epic: [04 — Glia](../../epics/04-glia.md)
 > Status: Done — review-queue UX polish (payload-detail expansion, in-place Modify editor, new-proposal Moltbot push, nav badge) and two conflict edge cases are deferred to [ideas/trust-graduation-review-ux.md](../../ideas/trust-graduation-review-ux.md).
 
 Glia is the autonomous-curation trust router. Every curation action a worker proposes (`prune`, `consolidate`, `link`, `audit`) is recorded as a trackable state machine per action type. Action types start untrusted and earn autonomy incrementally: each type climbs `propose → act_report → silent` as it accumulates approvals, and is automatically demoted on bad behaviour (reverts). Every action is recorded immutably and destructive actions are reversible, so autonomy never means irreversibility.

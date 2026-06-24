@@ -1,6 +1,6 @@
 # PRD: MCP Server — AI Agent Gateway
 
-> Theme: [00 — Platform](../../README.md)
+> Theme: [Platform](../../README.md)
 > Status: Done
 > Pillar tree: [`@pops/mcp` domain overview](../../../../../pillars/mcp/docs/README.md) · per-tool surface: [MCP Tool Inventory](../../../../../pillars/mcp/docs/prds/tool-inventory/README.md)
 

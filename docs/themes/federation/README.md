@@ -54,41 +54,47 @@ type machinery. The [server-side consumer pattern](sdk-consumer-pattern.md) is t
 how-to companion for writing a cross-pillar call site (async signatures,
 `PillarCallError` handling, service-account auth, discovery cache, batch reads).
 
-| PRD                                                                       | Summary                                                                                                                                              | Status    |
-| ------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | --------- |
-| [Contract package scaffold](prds/contract-package-scaffold/README.md)     | Each pillar carries its own ts-rest + zod contract in-pillar; publishes exactly one `@pops/<id>` package (compiled contract + OpenAPI snapshot only) | To Review |
-| [Type generation pipeline](prds/type-generation-pipeline/README.md)       | Contract → committed OpenAPI → per-consumer typed REST client (`@hey-api/openapi-ts`); each stage drift-checked                                      | Partial   |
-| [Capability projection types](prds/capability-projection-types/README.md) | Type-level transforms over a `BaseContract` plus runtime `PILLARS` / `isKnownPillarId` / `PillarCallError`                                           | To Review |
-| [Server surface](prds/server-surface/README.md)                           | Server-side `pillar('id').router.proc(...)` proxy: service-account auth, internal hostname targeting, per-pillar handle memoisation                  | Done      |
-| [Discovery client](prds/discovery-client/README.md)                       | `lookupPillar()` / `pillarRegistry()` — TTL-cached snapshot of the registry's discovery view with background refresh and last-known fallback         | To Review |
-| [React SDK](prds/react-sdk/README.md)                                     | Root provider wiring cross-pillar client options, the registry SSE stream, and React Query into one `@pops/pillar-sdk/react` surface                 | To Review |
-| [React consumption primitives](prds/react-hooks/README.md)                | Stable `pillarQueryKey` builder + `PillarSdkProvider` context threading client options to hooks                                                      | Done      |
-| [Caching + invalidation](prds/caching-invalidation/README.md)             | Bridge the registry SSE event stream to React Query so consumers auto-refresh on registration / health change                                        | To Review |
-| [Ranking strategy](prds/ranking-strategy/README.md)                       | Pure `mergeResults` weighted-sum merge: per-pillar score normalisation to `[0,1]`, optional weight, ranked output                                    | To Review |
-| [Consumer import discipline](prds/consumer-import-discipline/README.md)   | Lint gate (dependency-cruiser) forbidding a consumer from reaching behind a peer's contract; CI-required with a shrink-only baseline                 | Done      |
+| PRD                                                                       | Summary                                                                                                                                                                      | Status    |
+| ------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------- |
+| [Contract package scaffold](prds/contract-package-scaffold/README.md)     | Each pillar carries its own ts-rest + zod contract in-pillar; publishes exactly one `@pops/<id>` package (compiled contract + OpenAPI snapshot only)                         | To Review |
+| [Type generation pipeline](prds/type-generation-pipeline/README.md)       | Contract → committed OpenAPI → per-consumer typed REST client (`@hey-api/openapi-ts`); each stage drift-checked                                                              | Partial   |
+| [Capability projection types](prds/capability-projection-types/README.md) | Type-level transforms over a `BaseContract` plus runtime `PILLARS` / `isKnownPillarId` / `PillarCallError`                                                                   | To Review |
+| [Server surface](prds/server-surface/README.md)                           | Server-side `pillar('id').router.proc(...)` proxy: service-account auth, internal hostname targeting, per-pillar handle memoisation                                          | Done      |
+| [Discovery client](prds/discovery-client/README.md)                       | `lookupPillar()` / `pillarRegistry()` — TTL-cached snapshot of the registry's discovery view with background refresh and last-known fallback                                 | To Review |
+| [React SDK](prds/react-sdk/README.md)                                     | Root provider wiring cross-pillar client options, the registry SSE stream, and React Query into one `@pops/pillar-sdk/react` surface                                         | To Review |
+| [React consumption primitives](prds/react-hooks/README.md)                | Stable `pillarQueryKey` builder + `PillarSdkProvider` context threading client options to hooks                                                                              | Done      |
+| [Caching + invalidation](prds/caching-invalidation/README.md)             | Bridge the registry SSE event stream to React Query so consumers auto-refresh on registration / health change                                                                | To Review |
+| [Ranking strategy](prds/ranking-strategy/README.md)                       | Pure `mergeResults` weighted-sum merge: per-pillar score normalisation to `[0,1]`, optional weight, ranked output                                                            | To Review |
+| [Consumer import discipline](prds/consumer-import-discipline/README.md)   | Lint gate (dependency-cruiser) forbidding a consumer from reaching behind a peer's contract; CI-required with a shrink-only baseline                                         | Done      |
+| [Client surface](prds/client-surface/README.md)                           | The developer-facing `pillar('id').…` call API: a proxy-backed runtime that resolves the target from the registry snapshot and returns a `CallResult<T>` discriminated union | Done      |
+| [Bootstrap pillar helper](prds/bootstrap-pillar-helper/README.md)         | `bootstrapPillar()`: a single-call boot helper that registers a pillar with the registry and runs its heartbeat ticker (registration + heartbeat only)                       | Done      |
+| [Manifest type generation](prds/manifest-type-generation/README.md)       | Each pillar's `<Pillar>Contract` interface generated into a committed `manifest.generated.ts`, re-exported from the stable `./manifest` path                                 | Partial   |
 
 ### Registry protocol (`pillars/registry`, `:3001`)
 
 The runtime directory: register, heartbeat, deregister, snapshot, SSE subscribe,
 plus the lifecycle math that keeps liveness honest.
 
-| PRD                                                                       | Summary                                                                                                                                                   | Status    |
-| ------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | --------- |
-| [Dynamic pillar registration](prds/dynamic-pillar-registration/README.md) | A pillar (in-repo or external) joins by POSTing the registry on boot; heartbeats every 10s; deregisters on clean shutdown; tagged `internal` / `external` | Done      |
-| [Registry schema + endpoints](prds/registry-schema-endpoints/README.md)   | The `pillar_registry` table, the raw HTTP/SSE register/heartbeat/deregister/snapshot/subscribe routes, the in-process event bus, nginx exposure rules     | To Review |
-| [Reconciliation on restart](prds/reconciliation-on-restart/README.md)     | On registry boot, demote rows with stale heartbeats to `unknown` before accepting traffic; ticker + lazy-status resolve from there                        | To Review |
+| PRD                                                                       | Summary                                                                                                                                                                                | Status    |
+| ------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------- |
+| [Dynamic pillar registration](prds/dynamic-pillar-registration/README.md) | A pillar (in-repo or external) joins by POSTing the registry on boot; heartbeats every 10s; deregisters on clean shutdown; tagged `internal` / `external`                              | Done      |
+| [Registry schema + endpoints](prds/registry-schema-endpoints/README.md)   | The `pillar_registry` table, the raw HTTP/SSE register/heartbeat/deregister/snapshot/subscribe routes, the in-process event bus, nginx exposure rules                                  | To Review |
+| [Reconciliation on restart](prds/reconciliation-on-restart/README.md)     | On registry boot, demote rows with stale heartbeats to `unknown` before accepting traffic; ticker + lazy-status resolve from there                                                     | To Review |
+| [Heartbeat lifecycle](prds/heartbeat-lifecycle/README.md)                 | The runtime status engine: turns heartbeat arrivals into `healthy` / `unavailable` / `unknown` state, hybrid lazy-on-read compute plus a 10s background ticker                         | Done      |
+| [Subscription model](prds/subscription-model/README.md)                   | Registry state changes streamed over SSE (`GET /registry/subscribe`): full-snapshot first frame, then one incremental frame per `registered` / `deregistered` / `health-changed` event | Done      |
 
 ### Manifest dimensions (`@pops/pillar-sdk/manifest-schema`)
 
 The pillar's capability declaration. One Zod schema pins the wire shape of every
 dimension a consumer projects.
 
-| PRD                                                                               | Summary                                                                                                                               | Status    |
-| --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- | --------- |
-| [Manifest schema + validator](prds/manifest-schema-validator/README.md)           | The canonical `ManifestPayloadSchema` + per-field validator, enforced at both the pillar and the registry                             | Done      |
-| [Search adapter manifest](prds/search-adapter-manifest/README.md)                 | A pillar declares `search.adapters[]` (entity type, query shape, fan-out path); the single registry-driven gate for search-capability | Done      |
-| [AI tool manifest](prds/ai-tool-manifest/README.md)                               | A pillar declares `ai.tools` descriptors (name, description, JSON-Schema params, optional URI types + settings scopes)                | To Review |
-| [Settings as a manifest dimension](prds/settings-as-manifest-dimension/README.md) | A pillar declares its settings UI under a `settings` block; `discoverSettings()` walks the snapshot to assemble the settings surface  | Done      |
+| PRD                                                                               | Summary                                                                                                                                                          | Status    |
+| --------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------- |
+| [Manifest schema + validator](prds/manifest-schema-validator/README.md)           | The canonical `ManifestPayloadSchema` + per-field validator, enforced at both the pillar and the registry                                                        | Done      |
+| [Search adapter manifest](prds/search-adapter-manifest/README.md)                 | A pillar declares `search.adapters[]` (entity type, query shape, fan-out path); the single registry-driven gate for search-capability                            | Done      |
+| [AI tool manifest](prds/ai-tool-manifest/README.md)                               | A pillar declares `ai.tools` descriptors (name, description, JSON-Schema params, optional URI types + settings scopes)                                           | To Review |
+| [Settings as a manifest dimension](prds/settings-as-manifest-dimension/README.md) | A pillar declares its settings UI under a `settings` block; `discoverSettings()` walks the snapshot to assemble the settings surface                             | Done      |
+| [Sinks as a manifest dimension](prds/sinks-manifest-dimension/README.md)          | A pillar declares `sinks[]` to receive a named event type from any peer (the inverse dimension); orchestrator `publishEvent` routes to every matching subscriber | Partial   |
 
 ### Search federation (`pillars/orchestrator`, `:3009`)
 
@@ -113,25 +119,29 @@ Build the model's tool list from the fleet and route calls back to owners.
 The single front door: registry-driven UI aggregation, per-pillar route guarding,
 two-tier ids, and a generated nginx dispatcher.
 
-| PRD                                                                             | Summary                                                                                                                                                                                | Status    |
-| ------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------- |
-| [Registry-driven shell UI aggregation](prds/registry-driven-shell-ui/README.md) | The shell discovers nav / pages / capture overlay by walking the registry; in-repo pillars wire via one bundle-map entry, external pillars lazy-`import()` their advertised ESM bundle | Partial   |
-| [PillarGuard](prds/pillar-guard-rewrite/README.md)                              | Per-pillar route guard short-circuiting a module's subtree to an "unavailable" placeholder when the owning pillar is unhealthy, from a boot health snapshot                            | Partial   |
-| [Two-tier pillar id](prds/two-tier-pillar-id/README.md)                         | Open tier (`PillarId = string`) for registry-fed surfaces; closed tier for the handful of in-tree surfaces that should fail the build on a missing entry                               | Done      |
-| [nginx config generator](prds/nginx-config-generator/README.md)                 | Render `nginx.conf` deterministically from the curated pillar list + upstream port map; a drift test fails CI on divergence                                                            | To Review |
-| [Contract drift CI](prds/contract-semver-ci/README.md)                          | CI re-runs each changed unit's `generate:*` scripts and hard-fails on any diff between freshly generated and committed OpenAPI / types / manifest                                      | To Review |
+| PRD                                                                             | Summary                                                                                                                                                                                      | Status    |
+| ------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------- |
+| [Registry-driven shell UI aggregation](prds/registry-driven-shell-ui/README.md) | The shell discovers nav / pages / capture overlay by walking the registry; in-repo pillars wire via one bundle-map entry, external pillars lazy-`import()` their advertised ESM bundle       | Partial   |
+| [PillarGuard](prds/pillar-guard-rewrite/README.md)                              | Per-pillar route guard short-circuiting a module's subtree to an "unavailable" placeholder when the owning pillar is unhealthy, from a boot health snapshot                                  | Partial   |
+| [Two-tier pillar id](prds/two-tier-pillar-id/README.md)                         | Open tier (`PillarId = string`) for registry-fed surfaces; closed tier for the handful of in-tree surfaces that should fail the build on a missing entry                                     | Done      |
+| [nginx config generator](prds/nginx-config-generator/README.md)                 | Render `nginx.conf` deterministically from the curated pillar list + upstream port map; a drift test fails CI on divergence                                                                  | To Review |
+| [Production registry-driven nginx](prds/prod-registry-driven-nginx/README.md)   | The `pops-shell` nginx image renders one `/<pillar>-api/` block per registered pillar from the live registry at container start, then reloads routes on every registry event with no rebuild | Done      |
+| [Contract drift CI](prds/contract-semver-ci/README.md)                          | CI re-runs each changed unit's `generate:*` scripts and hard-fails on any diff between freshly generated and committed OpenAPI / types / manifest                                            | To Review |
 
 ### Cross-language interop
 
-The language-neutral wire spec and its Rust proof.
+A pillar written in Rust, Go, Python, or any language drops into POPS as a peer of
+the TypeScript pillars: it implements the wire-level REST surface (value-direct
+envelope, status mapping, registry handshake, discovery, health) that OpenAPI alone
+does not describe, self-registers, and is reached by TS consumers through
+`pillar('id').…` with no language awareness. [ADR-033](../../architecture/adr-033-cross-language-pillar-contracts.md)
+makes the per-pillar OpenAPI snapshot the canonical schema-level contract; the spec
+covers the conventions around it.
 
-| PRD                                                                           | Summary                                                                                                                                                   | Status |
-| ----------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
-| [External pillar example (Rust)](prds/external-pillar-example-repo/README.md) | The shipped `contacts` pillar (axum + sqlx + utoipa): a production Rust pillar that owns its DB, serves an OpenAPI REST contract, and federates as a peer | Done   |
-
-See the [Cross-language interop epic](epics/cross-language-interop.md) for the
-wire-format specification scope and [ADR-033](../../architecture/adr-033-cross-language-pillar-contracts.md)
-for the cross-language contract decision.
+| PRD                                                                               | Summary                                                                                                                                                   | Status |
+| --------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| [Cross-language wire-format spec](prds/cross-language-wire-format-spec/README.md) | Normative REST wire contract a non-TS pillar implements: value-direct envelope, status mapping, manifest, registry handshake, discovery snapshot, health  | Done   |
+| [External pillar example (Rust)](prds/external-pillar-example-repo/README.md)     | The shipped `contacts` pillar (axum + sqlx + utoipa): a production Rust pillar that owns its DB, serves an OpenAPI REST contract, and federates as a peer | Done   |
 
 ## Key Decisions
 

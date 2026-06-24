@@ -1,7 +1,6 @@
 # Database Operations
 
 > Theme: [Platform](../../README.md)
-> Epic: [Database Operations](../../epics/database-operations.md)
 > Status: Done
 
 ## Overview

@@ -1,8 +1,6 @@
 # Food Data Management Page
 
 > Status: **Done** — six-tab `/food/data` curation surface, global search, and deep-link focus all shipped. The Ingredients "Has variants" / "Has no recipes referencing" filter chips and list pagination were never built; see [data-page-extensions](../../ideas/data-page-extensions.md).
->
-> Epic: [01 — Recipe & Ingredient Management](../../epics/01-recipe-ingredient-management.md)
 
 One page, six tabs, for curating everything the recipe DSL and ingest pipeline create permissively: **Ingredients** (with embedded variants and tags), **Aliases**, **Prep states**, **Substitutions**, **Conversions**, **Tags**. CRUD per tab, plus bulk operations where useful (merge aliases, bulk-approve LLM aliases). A global search box above the tabs spans the whole page. Conversions content is owned by the [conversion-table](../conversion-table/README.md) PRD, the Tags vocabulary view by [store-section-taxonomy](../store-section-taxonomy/README.md), and the substitution graph view by [substitution-graph-explorer](../substitution-graph-explorer/README.md) — this page reserves and mounts their slots.
 

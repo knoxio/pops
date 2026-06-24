@@ -1,6 +1,6 @@
 # PRD: OpenAPI Pillar Contract
 
-> Epic: [Cortex Infrastructure](../../epics/cortex-infrastructure.md)
+> Theme: [Platform](../../README.md)
 > Status: Done
 
 ## Overview

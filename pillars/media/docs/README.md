@@ -15,21 +15,97 @@ Build a personal media intelligence app — not just a tracker, but a system tha
 - "What should I watch tonight?" gives useful, personalised answers
 - Recommendations flow into action — request content directly through Radarr/Sonarr from within POPS
 
-## Epics
+## PRD Index
 
-| #   | Epic                                                                 | Summary                                                                                        | Status |
-| --- | -------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- | ------ |
-| 0   | [Data Model & API](epics/00-data-model-api.md)                       | Split tables (movies, shows, seasons, episodes), comparisons schema, REST contract             | Done   |
-| 1   | [Metadata Integration](epics/01-metadata-integration.md)             | TMDB (movies) and TheTVDB (TV) — search, metadata fetch, poster cache, rate limiting           | Done   |
-| 2   | [App Package & Core UI](epics/02-app-package-ui.md)                  | `@pops/app-media` — routes, pages, browse/search/detail views                                  | Done   |
-| 3   | [Tracking & Watchlist](epics/03-tracking-watchlist.md)               | Watch history, watchlist management, episode-level progress                                    | Done   |
-| 4   | [Ratings & Comparisons](epics/04-ratings-comparisons.md)             | 1v1 pairwise comparisons, ELO scoring, rankings, radar charts                                  | Done   |
-| 5   | [Discovery & Recommendations](epics/05-discovery-recommendations.md) | Trending, new releases, personalised suggestions                                               | Done   |
-| 6   | [Plex Sync](epics/06-plex-sync.md)                                   | Library import, watch history sync (local + Discover cloud), watchlist sync, auto-check on add | Done   |
-| 7   | [Radarr & Sonarr](epics/07-radarr-sonarr.md)                         | Status display, request management — evolves toward full Overseerr replacement                 | Done   |
-| 8   | [Library Rotation](epics/08-library-rotation.md)                     | Automated movie lifecycle: source lists, daily add/remove cycle, disk space gating             | Done   |
+**Data Model & API**
 
-Epic 0 is prerequisite to everything. Epic 1 prerequisite to 2. Epics 3-4 parallel after 2. Epic 5 depends on 4. Epics 6-7 parallel after 3. Epic 8 depends on 3, 6, and 7.
+The media domain schema (movies, TV hierarchy, comparisons, scores, watchlist, watch history) and the REST contract every other area builds on.
+
+| #   | PRD                                                     | Status |
+| --- | ------------------------------------------------------- | ------ |
+| 028 | [Media Data Model & API](prds/data-model-api/README.md) | Done   |
+
+**Metadata Integration**
+
+External metadata clients — TMDB for movies, TheTVDB for TV — each handling search, metadata fetch, poster download/cache, and rate limiting.
+
+| #   | PRD                                             | Status |
+| --- | ----------------------------------------------- | ------ |
+| 029 | [TMDB Client](prds/tmdb-client/README.md)       | Done   |
+| 030 | [TheTVDB Client](prds/thetvdb-client/README.md) | Done   |
+
+**App Package & Core UI**
+
+`@pops/app-media` — library browsing, external search with add-to-library, and detail views for movies and TV shows.
+
+| #   | PRD                                                       | Status  |
+| --- | --------------------------------------------------------- | ------- |
+| 031 | [Library Page](prds/library-page/README.md)               | Done    |
+| 032 | [Search Page](prds/search-page/README.md)                 | Done    |
+| 033 | [Movie Detail Page](prds/movie-detail-page/README.md)     | Done    |
+| 034 | [TV Show Detail Page](prds/tv-show-detail-page/README.md) | Partial |
+
+**Tracking & Watchlist**
+
+Watch history at episode level for TV, plus a prioritised watchlist that auto-removes on manual watches.
+
+| #   | PRD                                           | Status |
+| --- | --------------------------------------------- | ------ |
+| 035 | [Watch History](prds/watch-history/README.md) | Done   |
+| 036 | [Watchlist](prds/watchlist/README.md)         | Done   |
+
+**Ratings & Comparisons**
+
+Pairwise comparison across taste dimensions: pick a winner, ELO scores update, rankings and radar charts visualise the result.
+
+| #   | PRD                                                                               | Status         |
+| --- | --------------------------------------------------------------------------------- | -------------- |
+| 037 | [Ratings & Comparisons](prds/ratings-comparisons/README.md)                       | Done           |
+| 062 | [Comparison Intelligence](prds/comparison-intelligence/README.md)                 | Partial        |
+| 064 | [Batch Tier List](prds/batch-tier-list/README.md)                                 | Done           |
+| 066 | [Arena Redesign](prds/arena/README.md)                                            | Done           |
+| 067 | [Comparison History Enhancements](prds/comparison-history-enhancements/README.md) | Done           |
+| —   | [Comparison History — Search & Filter](prds/comparison-history-search/README.md)  | Done           |
+| —   | [Post-Watch Debrief](ideas/post-watch-debrief.md)                                 | Idea (unbuilt) |
+
+**Discovery & Recommendations**
+
+The recommendation engine and discover surface — trending, new releases, and personalised suggestions from comparison data, watch history, and genre preferences.
+
+| #   | PRD                                                                     | Status  |
+| --- | ----------------------------------------------------------------------- | ------- |
+| 038 | [Discovery & Recommendations](prds/discovery-recommendations/README.md) | Partial |
+| 060 | [Discover Page](prds/discover-page/README.md)                           | Done    |
+| 065 | [Shelf-Based Discovery](prds/shelf-discovery/README.md)                 | Done    |
+
+**Plex Sync**
+
+Polling-based sync with Plex: import library items, watch history, and watchlist. Plex is one input source — POPS owns the library.
+
+| #   | PRD                                                       | Status  |
+| --- | --------------------------------------------------------- | ------- |
+| 039 | [Plex Sync](prds/plex-sync/README.md)                     | Partial |
+| 059 | [Plex Watchlist Sync](prds/plex-watchlist-sync/README.md) | Partial |
+
+**Radarr & Sonarr**
+
+Radarr (movies) and Sonarr (TV) integration — status badges and full request management, replacing Overseerr as the single request interface inside POPS.
+
+| #   | PRD                                                                   | Status  |
+| --- | --------------------------------------------------------------------- | ------- |
+| 040 | [Arr Status Display](prds/arr-status-display/README.md)               | Partial |
+| 041 | [Radarr Request Management](prds/radarr-request-management/README.md) | Done    |
+| 042 | [Sonarr Request Management](prds/sonarr-request-management/README.md) | Partial |
+
+**Library Rotation**
+
+Automated movie lifecycle: source-fed candidates, a daily add/remove cycle gated on disk space, and a "leaving soon" grace period. Movies only.
+
+| #   | PRD                                               | Status  |
+| --- | ------------------------------------------------- | ------- |
+| 070 | [Rotation Engine](prds/rotation-engine/README.md) | Partial |
+| 071 | [Source Lists](prds/source-lists/README.md)       | Done    |
+| 072 | [Rotation UI](prds/rotation-ui/README.md)         | Partial |
 
 ## Key Decisions
 
@@ -62,3 +138,5 @@ Epic 0 is prerequisite to everything. Epic 1 prerequisite to 2. Epics 3-4 parall
 - Social features (shared reviews, public profiles)
 - Direct torrent/download management (Radarr/Sonarr handle that — POPS sends requests to them)
 - Live TV, sports, news, games
+  </content>
+  </invoke>

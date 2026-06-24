@@ -56,6 +56,8 @@ The `fixtures.*` sub-router is mounted into the inventory ts-rest contract (`res
 
 The public `Fixture` shape is `{ id, name, type, locationId, notes, createdAt, lastEditedTime }`. The connection shape is `{ id, itemId, fixtureId, createdAt }`.
 
+The platform pillar's [MCP Server](../../../../../docs/themes/platform/prds/mcp-server/README.md) exposes fixture CRUD and item-fixture connection tools on top of this contract — that PRD depends on this schema and these endpoints being live.
+
 - [x] All eight endpoints above are wired through the contract and backed by the fixtures service.
 - [x] `name` and `type` are required and rejected when empty on create; update requires at least one field.
 - [x] List filters by `locationId` and `type`; default page size 50, max 500.

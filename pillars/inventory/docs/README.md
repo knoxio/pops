@@ -19,19 +19,69 @@ Build a home inventory app that tracks every physical item — from a $5,000 Mac
 - Connection chain tracing from wall outlet to devices
 - Insurance-ready reports with item list, values, photos, and receipts
 
-## Epics
+## PRD Index
 
-| #   | Epic                                                                | Summary                                                                                | Status |
-| --- | ------------------------------------------------------------------- | -------------------------------------------------------------------------------------- | ------ |
-| 0   | [Schema & Data Model](epics/00-schema-data-model.md)                | Location tree, connections junction table, asset IDs, photos, notes                    | Done   |
-| 1   | [App Package & CRUD UI](epics/01-app-package-crud-ui.md)            | `@pops/app-inventory` — list/grid views, detail page, create/edit forms, photo gallery | Done   |
-| 2   | [Location Tree Management](epics/02-location-tree-management.md)    | Hierarchical browser, CRUD operations, item browsing per location                      | Done   |
-| 3   | [Connections & Graph](epics/03-connections-graph.md)                | Bidirectional links, connection chain tracing, graph visualisation                     | Done   |
-| 4   | [Paperless-ngx Integration](epics/04-paperless-integration.md)      | Document search, linking receipts/warranties/manuals, thumbnail display                | Done   |
-| 5   | [Warranty, Value & Reporting](epics/05-warranty-value-reporting.md) | Warranty alerts, asset value dashboard, room-level reports, insurance exports          | Done   |
-| 6   | [Fixtures](epics/06-fixtures.md)                                    | Infrastructure fixtures (outlets, panels) that items connect to; schema + REST API     | Done   |
+### Schema & Data Model
 
-Epic 0 prerequisite to everything. Epic 1 after 0. Epics 2-5 parallel after 1. Epic 6 parallel after 0.
+The inventory domain schema: items with rich metadata on a hierarchical location tree, bidirectional item connections, photos, and human-readable asset IDs. This is the foundation every other inventory feature builds on.
+
+| PRD                                                         | Summary                                                                                                                       | Status  |
+| ----------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | ------- |
+| [Inventory Data Model & API](prds/data-model-api/README.md) | Items table, locations tree (self-referential parent_id), connections junction table, photos, asset IDs, notes, REST contract | Partial |
+
+### App Package & CRUD UI
+
+The inventory app's core pages: browse every item, inspect one in full, and create or edit items with a location picker and photo upload.
+
+| PRD                                                 | Summary                                                                                                                      | Status |
+| --------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- | ------ |
+| [Items List Page](prds/items-list-page/README.md)   | Grid/table view of all items, filtering (type, location, condition), search by name and asset ID, view toggle, value summary | Done   |
+| [Item Detail Page](prds/item-detail-page/README.md) | Item metadata display, photo gallery, connections list, linked documents, purchase transaction link, location breadcrumb     | Done   |
+| [Item Create/Edit Form](prds/item-form/README.md)   | Dual-mode form (create/edit), location picker, photo upload with compression, asset ID generation, markdown notes            | Done   |
+
+### Location Tree Management
+
+A hierarchical location manager: arbitrary-depth tree with multiple roots (Home, Car, Storage Cage), full CRUD, reparenting, and item browsing per location.
+
+| PRD                                                                 | Summary                                                                                                                                               | Status  |
+| ------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
+| [Location Tree Management](prds/location-tree-management/README.md) | Tree browser, CRUD operations, drag-and-drop reordering, circular reference prevention, item browsing per location, mobile fallback for drag-and-drop | Partial |
+
+### Connections & Graph
+
+Bidirectional item-to-item connections and chain tracing: one connection row links two items and both see it. Trace from a wall outlet through power boards to every connected device, with an optional force-directed graph view.
+
+| PRD                                                     | Summary                                                                                                | Status |
+| ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ | ------ |
+| [Connections & Graph](prds/connections-graph/README.md) | Connect dialog, connections list on detail page, chain tracing with recursive CTE, graph visualisation | Done   |
+
+### Paperless-ngx Integration
+
+Link Paperless-ngx documents (receipts, warranties, manuals) to inventory items. POPS stores only the link, never document content; the feature is opt-in and invisible without its env config.
+
+| PRD                                                               | Summary                                                                                                         | Status |
+| ----------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- | ------ |
+| [Paperless-ngx Integration](prds/paperless-integration/README.md) | Document search modal, linking with tags, thumbnail display, graceful degradation when Paperless is unavailable | Done   |
+
+### Warranty, Value & Reporting
+
+Warranty tracking and asset-value reporting: surface items approaching warranty expiry with urgency tiers, and generate insurance-ready reports with item lists, replacement values, photos, and linked receipts.
+
+| PRD                                                                     | Summary                                                                                                                | Status |
+| ----------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- | ------ |
+| [Warranty Tracking](prds/warranty-tracking/README.md)                   | Warranties page with urgency tiers (expired, expiring soon, active), warranty alerts, expiry date tracking             | Done   |
+| [Value & Insurance Reporting](prds/value-insurance-reporting/README.md) | Total asset value dashboard, value breakdown by room/type, insurance-ready report with items, values, photos, receipts | Done   |
+
+### Fixtures & MCP Interface
+
+Expose the inventory domain to Claude via MCP write tools, and model fixtures — house infrastructure (outlets, panels, ports) that items connect to but the user does not own. Together these let a user dictate locations, items, and connections by conversation, no UI required.
+
+| PRD                                                       | Summary                                                       | Status  |
+| --------------------------------------------------------- | ------------------------------------------------------------- | ------- |
+| [Inventory MCP Write Tools](prds/mcp-write/README.md)     | MCP mutations for locations, items, and item-item connections | Done    |
+| [Fixtures Data Model](prds/fixtures-data-model/README.md) | `fixtures` table, `item_fixture_connections` table, REST API  | Partial |
+
+Fixture CRUD and item-fixture connection MCP tools live in the platform pillar's [MCP Server](../../../docs/themes/platform/prds/mcp-server/README.md) PRD, built on the fixtures REST contract above.
 
 ## Key Decisions
 

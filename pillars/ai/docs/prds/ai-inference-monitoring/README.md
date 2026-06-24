@@ -1,6 +1,5 @@
 # PRD: AI Inference & Monitoring
 
-> Epic: [AI Inference](../../epics/ai-inference.md)
 > Status: Partial — the standalone pillar and cross-pillar telemetry ingest are built; the proactive anomaly/summary/Moltbot layer is not (see [ideas](../../ideas/proactive-ai-monitoring.md)).
 
 ## Purpose

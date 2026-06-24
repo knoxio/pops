@@ -7,8 +7,6 @@ the published `node:22-slim` image lacks them, so the Instagram acquisition/STT/
 stages fail at runtime. That bake is deferred to
 [ideas/worker-media-toolchain-image](../../ideas/worker-media-toolchain-image.md).
 
-> Epic: [02 — Ingestion Pipeline](../../epics/02-ingestion-pipeline.md)
-
 The long-running food worker consumes BullMQ `food.ingest` jobs (producer side:
 `ingest-api` PRD), runs the per-kind extraction pipeline, and POSTs results back to the
 food pillar's internal-token-gated REST callback. This PRD owns the container lifecycle,

@@ -1,6 +1,6 @@
 # Redis Container & Connection
 
-> Epic: [Cortex Infrastructure](../../epics/cortex-infrastructure.md)
+> Theme: [Platform](../../README.md)
 > Status: Done
 > See: [ADR-016 — Redis as Queue and Cache Backend](../../../../architecture/adr-016-redis-queue-cache.md)
 

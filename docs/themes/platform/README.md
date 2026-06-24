@@ -18,22 +18,13 @@ Underneath packaging sits the shared runtime the pillars depend on: a Redis cont
 - The Redis + job-queue runtime, per-pillar OpenAPI contract, and sqlite-vec vector storage are all available to the application layer.
 - The MCP gateway exposes inventory, finance, media, and cerebrum data — read and write — to any MCP client on the local network.
 
-## Epics
-
-| Epic                                                    | Summary                                                                       | Status |
-| ------------------------------------------------------- | ----------------------------------------------------------------------------- | ------ |
-| [CI/CD Pipelines](epics/cicd-pipelines.md)              | GitHub Actions quality gates + per-pillar image publishing to GHCR            | Done   |
-| [Database Operations](epics/database-operations.md)     | Per-pillar Drizzle migrations at boot, production guards, independent backups | Done   |
-| [Cortex Infrastructure](epics/cortex-infrastructure.md) | Redis + BullMQ job queue, OpenAPI pillar contract, sqlite-vec vector storage  | Done   |
-| [MCP Interface](epics/mcp-interface.md)                 | Standalone HTTP MCP gateway exposing the fleet to AI agents over the LAN      | Done   |
-
-CI/CD and Database Operations are independent. Cortex Infrastructure depends on Database Operations (sqlite-vec reuses the per-pillar migration system). The MCP Interface depends on its target pillars and the registry being reachable.
-
 ## PRD Index
 
-Every PRD lives under [`prds/`](prds/), grouped by epic.
+Every PRD lives under [`prds/`](prds/), grouped by area.
 
 ### CI/CD + packaging
+
+GitHub Actions gates quality on every PR and publishes per-pillar images to GHCR on every push to `main`; there is no in-repo deployment step.
 
 | PRD                                                                           | Summary                                                                                                               | Status |
 | ----------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- | ------ |
@@ -42,11 +33,15 @@ Every PRD lives under [`prds/`](prds/), grouped by epic.
 
 ### Database lifecycle
 
+Each pillar applies its own Drizzle migration journal at boot, resolves its SQLite path safely, guards production data, and backs up independently, so a pillar's database survives any number of schema changes without data loss.
+
 | PRD                                                       | Summary                                                                                                        | Status |
 | --------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- | ------ |
 | [Database Operations](prds/database-operations/README.md) | Per-pillar SQLite lifecycle: Drizzle migration journal at boot, path resolution, independent Litestream backup | Done   |
 
 ### Cortex runtime
+
+The shared runtime the application layer depends on: a Redis container for queuing and caching, a BullMQ job queue for durable background work, each pillar's OpenAPI contract as the polyglot wire surface, and sqlite-vec for vector storage and semantic search.
 
 | PRD                                                            | Summary                                                                                          | Status |
 | -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ | ------ |
@@ -56,6 +51,8 @@ Every PRD lives under [`prds/`](prds/), grouped by epic.
 | [Vector Storage](prds/vector-storage/README.md)                | sqlite-vec extension, embedding schema, similarity search service, embedding generation pipeline | Done   |
 
 ### MCP gateway
+
+A standalone HTTP gateway (`@pops/mcp`) exposes the fleet through the Model Context Protocol, dispatching each tool call to the owning pillar over REST so AI agents on the LAN get read-and-write access to inventory, finance, media, and cerebrum data.
 
 | PRD                                     | Summary                                                                                                       | Status |
 | --------------------------------------- | ------------------------------------------------------------------------------------------------------------- | ------ |

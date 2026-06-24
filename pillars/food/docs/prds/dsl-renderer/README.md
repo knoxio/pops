@@ -1,7 +1,5 @@
 # DSL Renderer
 
-> Epic: [01 — Recipe & Ingredient Management](../../epics/01-recipe-ingredient-management.md)
-
 Status: **Done** — `onTimerStop` callback, a cooking-mode surface, the renderer-owned "card" middle size, an automated axe-core sweep, and the full parser-corpus parity suite are not built and live in [`docs/ideas/recipe-renderer-extensions.md`](../../ideas/recipe-renderer-extensions.md).
 
 Cookbook read view of a compiled recipe version. Takes the fully joined render payload and produces the styled detail page: hero image, header (title / version chip / summary / prep-cook-serves facts / yield / tags), ingredient list with scaling, and ordered steps whose inline `@ref` / `@time` / `@temperature` markers are resolved into clickable ingredient chips, tappable timer buttons, and temperature badges. Pure presentation — no fetching, no timer state, no DB access. The component lives at `pillars/food/app/src/components/RecipeRenderer.tsx` and is consumed today by the inbox inspector (`pages/inbox/inspector/InspectorRenderer.tsx`).

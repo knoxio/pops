@@ -1,6 +1,6 @@
 # PRD: Project Bootstrap
 
-> Epic: [Project Bootstrap](../../epics/project-bootstrap.md)
+> Theme: [Foundation](../../README.md)
 > Status: Done
 
 ## Overview

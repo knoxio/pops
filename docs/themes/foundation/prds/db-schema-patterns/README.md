@@ -1,6 +1,6 @@
 # DB Schema Patterns
 
-> Theme: [Foundation](../../README.md) · Epic: [DB Schema Patterns](../../epics/db-schema-patterns.md)
+> Theme: [Foundation](../../README.md)
 > Status: Done
 
 The database conventions every pillar follows. Each pillar owns its **own** SQLite database — there is no shared `pops.db`, no central schema, no monolith. A pillar's schema is private to that pillar; cross-pillar references are URI strings, not foreign keys. After this PRD, a new pillar can stand up a database that participates in the fleet without coordinating a global migration.

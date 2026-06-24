@@ -1,6 +1,5 @@
 # Ego Channels
 
-> Epic: [05 — Ego](../../epics/05-ego.md)
 > Status: Partial — MCP exposes read-only knowledge tools (`cerebrum.search`, `cerebrum.engrams.list`, `cerebrum.engrams.get`) and the Telegram/Moltbot channel ships `/capture` + `/ask`; the MCP write/ingest/NL-query tools and the `pops ego` terminal CLI are not built (see ideas).
 
 Thin adapter layers that let external surfaces talk to the cerebrum knowledge base and its Ego/query engine without embedding business logic. Each channel only translates its native input/output format to and from cerebrum's REST contract — retrieval, ingest, and Q&A all live in the cerebrum pillar (which owns the engrams, conversations, plexus and glia in its own SQLite DB).

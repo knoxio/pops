@@ -1,7 +1,5 @@
 # Hero Image Upload
 
-> Epic: [01 — Recipe & Ingredient Management](../../epics/01-recipe-ingredient-management.md)
->
 > Status: **Done.** Upload, removal, thumbnail generation, binary serving, and the edit-page uploader UI are all shipped. The only deferred item — excluding `FOOD_RECIPES_DIR` from Litestream replication — lives in an out-of-tree infra repo and is tracked in [ideas/hero-image-infra-and-formats.md](../../ideas/hero-image-infra-and-formats.md).
 
 Upload, store, thumbnail, and serve a single hero image per recipe, backing the `recipes.hero_image_path` column. One image per recipe (no carousel). The image lives on the recipe identity (`recipes`, not `recipe_versions`) so swapping a hero never bumps a version.

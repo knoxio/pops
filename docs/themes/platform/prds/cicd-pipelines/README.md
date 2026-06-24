@@ -1,6 +1,6 @@
 # PRD: CI/CD Pipelines
 
-> Epic: [CI/CD Pipelines](../../epics/cicd-pipelines.md)
+> Theme: [Platform](../../README.md)
 > Status: Done
 
 ## Overview

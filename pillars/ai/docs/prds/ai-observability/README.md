@@ -1,6 +1,5 @@
 # PRD: AI Observability Platform
 
-> Epic: [AI Observability](../../epics/ai-observability.md)
 > Status: Mostly built — log, providers, budget CRUD/status + evaluation primitives, stats/latency/quality, alerting, summary, and retention all ship; the call-time budget _enforcement_ gate (block/warn/fallback wiring, `budget-blocked` writes, typed error) is not built.
 
 ## Purpose

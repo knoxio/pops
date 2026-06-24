@@ -1,6 +1,6 @@
 # Cross-language pillar wire-format spec
 
-> Theme: [Federation](../../README.md) · Epic: [Cross-language interop](../../epics/cross-language-interop.md)
+> Theme: [Federation](../../README.md)
 >
 > Status: Done
 >

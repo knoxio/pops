@@ -1,6 +1,5 @@
 # Entity Matching Engine
 
-> Epic: [01 — Import Pipeline](../../epics/01-import-pipeline.md)
 > Status: Done — AI fallback ships without the disk cache / `ai_usage` ledger the doc once claimed; those are forward ideas (see `docs/ideas/`).
 
 Given a raw transaction description, decide which entity (merchant/payee) it belongs to and what tags to suggest. A deterministic ladder resolves the vast majority of rows; an optional, env-gated AI fallback handles the long tail. Reference data (entity names, aliases, default tags) is fetched live from the `contacts` pillar once per import run — finance keeps no local entity mirror.

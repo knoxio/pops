@@ -1,6 +1,5 @@
 # PRD: AI Configuration & Rules
 
-> Epic: [AI Operations App](../../epics/ai-operations-app.md)
 > Status: Partial — the cache-management page and `ai.*` settings are owned here; categorisation rules and prompt viewing live in the finance pillar.
 
 ## Purpose

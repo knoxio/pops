@@ -1,6 +1,6 @@
 # Responsive Foundation
 
-> Theme: [Foundation](../../README.md) · Epic: [Responsive Foundation](../../epics/responsive-foundation.md)
+> Theme: [Foundation](../../README.md)
 > Status: Partial
 
 The shell and every shared `@pops/ui` component work on every viewport, from a 375px phone to a 1536px+ desktop, with no horizontal overflow. Breakpoints, touch-target minimums, component adaptation patterns, and empty/error-state standards are defined once and inherited by every pillar app for free — a new app gets responsive behaviour simply by using the shared shell and component library.

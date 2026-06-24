@@ -1,6 +1,5 @@
 # Plugin Architecture (Plexus)
 
-> Epic: [07 — Plexus](../../epics/07-plexus.md)
 > Status: Partial — adapter interface, lifecycle manager, ingestion filters, and the adapter/filter REST surface are live. There is no HTTP `register` endpoint and no `plexus.toml` registry / credential resolution / file-watcher; adapters are registered in-process out-of-band, so the REST surface runs over an empty registry until something registers an adapter. See [ideas/plexus-toml-registry.md](../../ideas/plexus-toml-registry.md).
 
 Plexus is the cerebrum pillar's extension point for connecting to external data sources. Each adapter implements a standard TypeScript interface for ingesting external data into engrams (and optionally emitting outputs back out). This PRD owns the adapter contract, the in-process lifecycle manager, the ingestion-filter framework, and the REST surface that inspects and drives them. Adapter, filter, and lifecycle state live in the cerebrum pillar's own SQLite DB alongside engrams, plexus, glia, and conversations.

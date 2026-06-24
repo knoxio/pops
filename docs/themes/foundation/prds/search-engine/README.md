@@ -1,6 +1,6 @@
 # Search Engine
 
-> Theme: [01 — Foundation](../../README.md)
+> Theme: [Foundation](../../README.md)
 > Status: Partial
 
 ## Overview

@@ -18,42 +18,61 @@ Foundation is the shared substrate that turns a fleet of independent REST pillar
 - Cross-pillar and cross-lib internal imports are blocked by a CI lint gate; the known-violations baseline only ever shrinks.
 - A developer can clone the repo and reach a working dev environment with `mise setup && mise dev`.
 
-## Epics
-
-| Epic                                                      | Summary                                                                                                                  | Status  |
-| --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ | ------- |
-| [Project Bootstrap](epics/project-bootstrap.md)           | pnpm workspaces, mise task runner, `tsc -b` compiled graph, TypeScript strict, oxlint/oxfmt, Vitest/Playwright/Storybook | Done    |
-| [UI Component Library](epics/ui-component-library.md)     | `@pops/ui` — Shadcn/Radix primitives, composites, design tokens, centralised styling, Storybook                          | Partial |
-| [Shell & App Switcher](epics/shell-app-switcher.md)       | The shell — registry-driven app rail, lazy-loaded pillar frontends, two-level nav, accent propagation                    | Done    |
-| [API Server](epics/api-server.md)                         | Per-pillar REST contract pattern (ts-rest + zod; axum + OpenAPI for Rust), middleware, self-registration                 | Done    |
-| [DB Schema Patterns](epics/db-schema-patterns.md)         | Per-pillar SQLite, migration journals, entity types, cross-pillar URI references, PK conventions                         | Done    |
-| [Responsive Foundation](epics/responsive-foundation.md)   | Tailwind v4 breakpoints, mobile-first, 44×44px touch targets, component adaptations                                      | Partial |
-| [Drizzle ORM](epics/drizzle-orm.md)                       | Type-safe queries and schema-as-code per TypeScript pillar, replacing raw SQL                                            | Done    |
-| [Search](epics/search.md)                                 | Federated search from the TopBar — orchestrator fan-out, context-aware ranking, structured query syntax, URI linking     | Partial |
-| [Settings System](epics/settings-system.md)               | Single `/settings` route, registry-driven manifest dimension, each pillar serves its own `/settings/*` surface           | Done    |
-| [Feature Toggles](epics/feature-toggles.md)               | `FeatureManifest` + `isEnabled()` resolved from the registry snapshot, admin Features page, credential gating            | Done    |
-| [Modular Module Runtime](epics/modular-module-runtime.md) | Shell/app/overlay surface model, the manifest contract, env-driven install set, lint-enforced module boundaries          | Done    |
-
-Project Bootstrap is prerequisite to everything. UI Component Library, API Server, and DB Schema Patterns build on it independently. Shell & App Switcher needs the component library; Responsive Foundation needs both the components and the shell. Drizzle ORM follows DB Schema Patterns. Settings System needs DB Schema Patterns and the shell; Feature Toggles builds on Settings System. Modular Module Runtime ties together the shell, the REST contract, and the settings manifest into the unified plugin contract.
-
 ## PRD Index
 
-PRDs live under [`prds/`](prds/) as slug folders. The API Server and Drizzle ORM concerns are now captured by their epics ([api-server](epics/api-server.md), [drizzle-orm](epics/drizzle-orm.md)); the rest are greenfield slug PRDs here.
+PRDs live under [`prds/`](prds/) as slug folders, grouped below by the area they belong to. Shell and search-UI PRDs live in the [`shell` pillar](../../../pillars/shell/docs/prds/); the API-server and Drizzle-ORM contract patterns are captured directly in the PRDs that consume them.
 
-| PRD                                                                   | Epic                   | Summary                                                                                                      | Status  |
-| --------------------------------------------------------------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------ | ------- |
-| [Project Bootstrap](prds/project-bootstrap/README.md)                 | Project Bootstrap      | Monorepo toolchain, build graph, dev environment, test frameworks                                            | Done    |
-| [Design Tokens & Theming](prds/design-tokens-theming/README.md)       | UI Component Library   | One token system in `@pops/ui/theme`; colours, spacing, type, breakpoints; per-app accent propagation        | Partial |
-| [Components](prds/components/README.md)                               | UI Component Library   | Primitives, composites, and patterns, all token-driven — no hardcoded colours                                | Partial |
-| [Storybook](prds/storybook/README.md)                                 | UI Component Library   | One Storybook in `@pops/ui`, story discovery across libs and pillar frontends, theme/accent decorators       | Done    |
-| [DB Schema Patterns](prds/db-schema-patterns/README.md)               | DB Schema Patterns     | Per-pillar SQLite, migration journals, entity types, cross-pillar URI references, settings table             | Done    |
-| [Responsive Foundation](prds/responsive-foundation/README.md)         | Responsive Foundation  | Tailwind v4 breakpoints, mobile-first layout, touch targets, DataTable/Dialog/Form adaptations               | Partial |
-| [Search Engine](prds/search-engine/README.md)                         | Search                 | `POST /search` per pillar, orchestrator fan-out, ranking, context-based ordering, structured query syntax    | Partial |
-| [Unified Settings](prds/unified-settings/README.md)                   | Settings System        | Registry-driven settings dimension; each pillar serves a federated `/settings/*` surface from its own DB     | Done    |
-| [Feature Toggles Framework](prds/feature-toggles-framework/README.md) | Feature Toggles        | `FeatureManifest`, registry aggregation, `isEnabled(key, { user? })`, admin Features page, credential gating | Done    |
-| [Module Import Boundaries](prds/module-import-boundaries/README.md)   | Modular Module Runtime | dependency-cruiser rule set, known-violations baseline, CI gate that blocks new cross-unit violations        | Done    |
-| [Overlay Surfaces](prds/overlay-surfaces/README.md)                   | Modular Module Runtime | Overlay surface category, `overlay-ego` extraction, ego as a dual-surface (page + floating panel)            | Done    |
-| [Plugin Contract](prds/plugin-contract/README.md)                     | Modular Module Runtime | The manifest contract with all cross-cutting slots, self-registration, build-time registry drift guard       | Done    |
+**Project Bootstrap** — The monorepo toolchain every pillar and library is built on: package manager, task runner, tool-version pinning, the compiled-TS build graph, strict mode, linting, formatting, and test frameworks.
+
+| PRD                                                   | Summary                                                           | Status |
+| ----------------------------------------------------- | ----------------------------------------------------------------- | ------ |
+| [Project Bootstrap](prds/project-bootstrap/README.md) | Monorepo toolchain, build graph, dev environment, test frameworks | Done   |
+
+**UI Component Library** — `@pops/ui` (`libs/ui/`) is the single shared component library and token system; every pillar frontend and the shell consume it as source, never copy-pasting between pillars.
+
+| PRD                                                             | Summary                                                                                                | Status  |
+| --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ | ------- |
+| [Design Tokens & Theming](prds/design-tokens-theming/README.md) | One token system in `@pops/ui/theme`; colours, spacing, type, breakpoints; per-app accent propagation  | Partial |
+| [Components](prds/components/README.md)                         | Primitives, composites, and patterns, all token-driven — no hardcoded colours                          | Partial |
+| [Storybook](prds/storybook/README.md)                           | One Storybook in `@pops/ui`, story discovery across libs and pillar frontends, theme/accent decorators | Done    |
+
+**DB Schema Patterns** — The database conventions every pillar follows: each pillar owns its own SQLite database (no shared `pops.db`), with migration journals, shared entity types, cross-pillar references as URI strings (never foreign keys), and standard column patterns.
+
+| PRD                                                     | Summary                                                                                          | Status |
+| ------------------------------------------------------- | ------------------------------------------------------------------------------------------------ | ------ |
+| [DB Schema Patterns](prds/db-schema-patterns/README.md) | Per-pillar SQLite, migration journals, entity types, cross-pillar URI references, settings table | Done   |
+
+**Responsive Foundation** — The shell and every shared `@pops/ui` component work on every viewport, from a 375px phone to a 1536px+ desktop with no horizontal overflow, CSS-driven via Tailwind v4 with no JS viewport detection.
+
+| PRD                                                           | Summary                                                                                        | Status  |
+| ------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- | ------- |
+| [Responsive Foundation](prds/responsive-foundation/README.md) | Tailwind v4 breakpoints, mobile-first layout, touch targets, DataTable/Dialog/Form adaptations | Partial |
+
+**Search** — Platform-wide federated search from the TopBar: the orchestrator fans a query out to every search-capable pillar, prioritises the current app context, supports structured query syntax, and links results via universal object URIs ([ADR-012](../../architecture/adr-012-universal-object-uri.md)).
+
+| PRD                                           | Summary                                                                                                   | Status  |
+| --------------------------------------------- | --------------------------------------------------------------------------------------------------------- | ------- |
+| [Search Engine](prds/search-engine/README.md) | `POST /search` per pillar, orchestrator fan-out, ranking, context-based ordering, structured query syntax | Partial |
+
+**Settings System** — A single `/settings` route in the shell renders every pillar's configuration as a registry-driven manifest dimension; each pillar declares its sections and serves a federated `/settings/*` surface from its own database.
+
+| PRD                                                 | Summary                                                                                                  | Status |
+| --------------------------------------------------- | -------------------------------------------------------------------------------------------------------- | ------ |
+| [Unified Settings](prds/unified-settings/README.md) | Registry-driven settings dimension; each pillar serves a federated `/settings/*` surface from its own DB | Done   |
+
+**Feature Toggles** — A runtime feature-toggle layer above the settings system: each pillar declares a `FeatureManifest`, the registry aggregates every declaration from the live snapshot, and a single `isEnabled(key, { user? })` resolves state from capability, credentials, system flags, and per-user overrides.
+
+| PRD                                                                   | Summary                                                                                                      | Status |
+| --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ | ------ |
+| [Feature Toggles Framework](prds/feature-toggles-framework/README.md) | `FeatureManifest`, registry aggregation, `isEnabled(key, { user? })`, admin Features page, credential gating | Done   |
+
+**Modular Module Runtime** — The installed fleet is a runtime decision, not a compile-time one: a shell / app / overlay surface model, the manifest contract every pillar exports, the env-driven install set, and lint-enforced cross-unit import boundaries.
+
+| PRD                                                                 | Summary                                                                                                | Status |
+| ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ | ------ |
+| [Module Import Boundaries](prds/module-import-boundaries/README.md) | dependency-cruiser rule set, known-violations baseline, CI gate that blocks new cross-unit violations  | Done   |
+| [Overlay Surfaces](prds/overlay-surfaces/README.md)                 | Overlay surface category, `overlay-ego` extraction, ego as a dual-surface (page + floating panel)      | Done   |
+| [Plugin Contract](prds/plugin-contract/README.md)                   | The manifest contract with all cross-cutting slots, self-registration, build-time registry drift guard | Done   |
 
 ## Key Decisions
 

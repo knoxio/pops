@@ -1,6 +1,5 @@
 # Comparison History — Search & Filter by Movie Title
 
-> Epic: [04 — Ratings & Comparisons](../../epics/04-ratings-comparisons.md)
 > Status: Done
 
 Filter the paginated comparison-history list by movie title. Without it, a flat chronological list with only a dimension dropdown makes finding comparisons that involve a specific film impractical once there are hundreds of rows.

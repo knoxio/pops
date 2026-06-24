@@ -2,8 +2,6 @@
 
 Status: Done. Source plugins, candidate queue, exclusion list, weighted selection, and per-source interval sync are all shipped. Deferred ideas (candidate staleness, per-candidate contributing-source tracking, type-based default priorities) live in [docs/ideas/source-lists-staleness-and-priorities.md](../../ideas/source-lists-staleness-and-priorities.md).
 
-> Epic: [Library Rotation](../../epics/08-library-rotation.md)
-
 Source lists define where candidate movies come from. Each source is a plugin that fetches movies from an external list (the user's Plex watchlist, a friend's watchlist, TMDB top-rated, a Letterboxd list) into a unified candidate queue. A weighted-random selection policy picks from the queue using source priority and movie rating; an exclusion list blocks specific movies from ever being added. The [rotation cycle](../rotation-engine/README.md) drives sync + selection each tick.
 
 ## Data Model

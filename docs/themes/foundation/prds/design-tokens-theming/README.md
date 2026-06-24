@@ -1,6 +1,6 @@
 # PRD: Design Tokens & Theming
 
-> Theme: foundation — UI Component Library
+> Theme: [Foundation](../../README.md)
 > Status: Partial (token system shipped; app-package colour cleanup outstanding)
 
 ## Purpose

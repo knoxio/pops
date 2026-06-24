@@ -36,6 +36,6 @@ Module rules:
 
 ## Manifest-Driven Composition
 
-Each domain module exports a `ModuleManifest` ([plugin-contract](../themes/foundation/prds/plugin-contract/README.md)) declaring its router, schema, settings, and surfaces. The tRPC root composes only the routers of modules listed in `POPS_APPS` / `POPS_OVERLAYS`; modules absent from those env vars do not mount, and their migrations do not run. Default (`POPS_APPS` unset) preserves current behaviour. See [Epic: Modular Module Runtime](../themes/foundation/epics/modular-module-runtime.md) and [plugin-contract](../themes/foundation/prds/plugin-contract/README.md).
+Each domain module exports a `ModuleManifest` ([plugin-contract](../themes/foundation/prds/plugin-contract/README.md)) declaring its router, schema, settings, and surfaces. The tRPC root composes only the routers of modules listed in `POPS_APPS` / `POPS_OVERLAYS`; modules absent from those env vars do not mount, and their migrations do not run. Default (`POPS_APPS` unset) preserves current behaviour. See [plugin-contract](../themes/foundation/prds/plugin-contract/README.md).
 
 Cross-module import boundaries (`apps/pops-api/src/modules/<x>/**` may not import from `<y>/**` where x ≠ y, except `core`) are lint-enforced by [module-import-boundaries](../themes/foundation/prds/module-import-boundaries/README.md), not honour-system.

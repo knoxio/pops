@@ -1,6 +1,5 @@
 # PRD: AI Usage & Cost Tracking
 
-> Epic: [AI Operations App](../../epics/ai-operations-app.md)
 > Status: Done
 
 ## Purpose
