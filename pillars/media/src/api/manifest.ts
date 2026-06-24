@@ -7,9 +7,6 @@
  * route surface from the registry walk. Source values match
  * `pillars/media/app/src/routes.tsx` (icons in the kebab-case wire form
  * required by `NavConfigDescriptorSchema`).
- *
- * `routes` grows per migration slice — only domains served over REST are
- * listed. Movies is the first; later slices append their routes.
  */
 import {
   arrManifest,

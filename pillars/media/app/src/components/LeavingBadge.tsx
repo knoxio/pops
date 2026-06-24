@@ -1,7 +1,7 @@
 /**
  * LeavingBadge — countdown overlay showing when a movie is leaving the library.
  *
- * PRD-072 US-01
+ * Spec: pillars/media/docs/prds/rotation-ui
  */
 import { cn } from '@pops/ui';
 

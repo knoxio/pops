@@ -1,16 +1,11 @@
 /**
  * Env-only configuration for the Radarr/Sonarr (*arr) clients.
  *
- * NOTE: arr config is ENV-ONLY. The monolith resolved URL + API key as
- * `settings[key] ?? env`, persisting form edits to a `core/settings` table.
- * The pillar must not depend on `core/settings` or `apps/pops-api`, and a
- * server cannot write its own env at runtime, so env is the single source of
- * truth. The settings-save UI is a Phase D / deploy-config concern; the
- * `saveSettings` mutation was intentionally dropped (no REST route exists).
+ * arr config is env-only: a server cannot write its own env at runtime, so
+ * env is the single source of truth (there is no settings-save route).
  *
  * `RADARR_QUALITY_PROFILE_ID` / `RADARR_ROOT_FOLDER_PATH` supply the
- * `downloadAndProtect` rotation defaults that the monolith read from the
- * `rotation_*` settings keys.
+ * `downloadAndProtect` rotation defaults.
  */
 import { getEnv } from '../env.js';
 import { RadarrClient } from './radarr-client.js';

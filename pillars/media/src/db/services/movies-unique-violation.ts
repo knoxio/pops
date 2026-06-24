@@ -5,9 +5,8 @@
  * and column. Drizzle may wrap the original as `.cause`, so we walk the
  * cause chain.
  *
- * Mirrors `@pops/finance-db`'s `isBudgetUniqueViolation` shape. The broader
- * `SQLITE_CONSTRAINT` code is accepted as a defensive fallback for older
- * drivers that drop the suffix.
+ * The broader `SQLITE_CONSTRAINT` code is accepted as a defensive fallback
+ * for older drivers that drop the suffix.
  */
 const MAX_CAUSE_DEPTH = 5;
 

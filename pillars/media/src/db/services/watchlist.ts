@@ -2,17 +2,8 @@
  * Watchlist service — CRUD operations against the `watchlist` table on the
  * media pillar's SQLite database.
  *
- * Mirrors the legacy `apps/pops-api/src/modules/media/watchlist/service.ts`
- * surface but takes a `MediaDb` handle as the first argument so the calling
- * layer (pops-media-api routers, or future cross-pillar consumers) owns the
- * handle lifecycle. Matches the standard per-pillar service signature
- * pattern (db handle first, typed domain errors, no HTTP concerns).
- *
  * Read-side enrichment (joining `title`/`posterUrl` against `movies` and
- * `tv_shows`) lives on the legacy pops-api list handler — those tables
- * have not been split into `@pops/media-db` yet, so the join cannot be
- * done from this side. Per PRD-167 PR 1 scope, reads stay on the legacy
- * surface and only the writer surface is mirrored here.
+ * `tv_shows`) is done at the router boundary so this layer stays HTTP-free.
  */
 import { and, asc, count, desc, eq, type SQL } from 'drizzle-orm';
 

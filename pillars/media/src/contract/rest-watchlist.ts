@@ -1,10 +1,8 @@
 /**
  * `watchlist.*` sub-router — media watchlist CRUD + reorder.
  *
- * Wire shapes mirror the legacy `media.watchlist.*` tRPC router
- * (`toWatchlistEntry` + the add/update zod inputs). `title` / `posterUrl`
- * are nullable in the contract: the handlers serve `null` until the
- * enrichment join is wired (parity with the pops-media-api shadow).
+ * `title` / `posterUrl` are nullable in the contract: the handlers serve
+ * `null` until the enrichment join is wired.
  */
 import { initContract } from '@ts-rest/core';
 import { z } from 'zod';

@@ -5,15 +5,6 @@
  * from the discover surface so subsequent discovery passes can filter them
  * out. Each row is uniquely keyed by `tmdb_id` and stamped with a
  * `dismissed_at` timestamp via the SQLite table default.
- *
- * Services take a `MediaDb` handle as their first argument; the calling
- * layer (pops-api modules) is responsible for resolving the singleton or
- * transaction handle to pass in. Mirrors `@pops/media-db`'s
- * `shelf-impressions` service shape.
- *
- * The in-tree service in `apps/pops-api/src/modules/media/discovery/service.ts`
- * still routes through the shared `getDrizzle()` handle for now — PRD-170
- * PR 2 flips the reads (and PR 3 the writes) to this module.
  */
 import { eq } from 'drizzle-orm';
 

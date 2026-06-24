@@ -2,18 +2,13 @@ import type { MediaKind } from './watchlist-item.js';
 
 /**
  * A single watch event — a record that the user watched a movie or TV
- * show (rolled up to the show level) at a specific moment. Pins the
- * contract wire shape (camelCase) for downstream consumers. DB-internal
- * shape lives in `@pops/media-db` and is not surfaced through the
- * contract.
+ * show (rolled up to the show level) at a specific moment. Contract wire
+ * shape (camelCase) for downstream consumers. The DB-internal row shape
+ * lives in `src/db` and is not surfaced through the contract.
  *
- * The contract shape deliberately diverges from the live API row served
- * by `apps/pops-api/src/modules/media/watch-history`: that row carries
- * an integer `completed` flag (0/1) and uses `'episode'` as a media
- * type; this contract instead exposes a `progressPercent` in [0, 100]
- * (or `null` when unknown) and constrains `mediaType` to the
- * cross-pillar `MediaKind` union (`'movie' | 'tv-show'`). The mapper in
- * `apps/pops-media-api` translates from the row to this shape.
+ * `mediaType` is constrained to the cross-pillar `MediaKind` union;
+ * watch events are rolled up to the show level, so there is no `'episode'`
+ * kind.
  */
 export interface WatchEvent {
   id: string;

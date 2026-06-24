@@ -1,11 +1,6 @@
 /**
  * Library read queries against the media pillar's SQLite.
  *
- * Lifted from the pops-api monolith `library/list-service.ts` +
- * `service.ts` (getQuickPicks) and converted to the pillar's `(db, …)`
- * arg-passing pattern. Read-only: the library add/refresh mutations stay in
- * the monolith until the TMDB/TheTVDB clients land in the pillar (wave 2).
- *
  * The list endpoint unions movies + tv_shows into a single paginated grid;
  * the raw row shape is mapped to the `LibraryItem` wire shape at the handler
  * boundary so this layer stays HTTP-free.

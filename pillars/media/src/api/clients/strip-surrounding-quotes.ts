@@ -1,15 +1,9 @@
 /**
  * Strip balanced surrounding double-quote characters from a media title.
  *
- * Mirrors the semantics of migration `0042_strip_quoted_movie_titles.sql`
- * (and its TV-shows companion `0051`), which uses SQLite
- * `TRIM(title, '"')` gated by `title LIKE '"%"'` and
- * `TRIM(title, '"') != ''`.
- *
  * Use at upstream client mappers (TMDB / TheTVDB) so that titles returned
  * by the source API with surrounding quotes never reach the database in
- * that form (issues #2402 / #2403; root cause of #2343 — *Wuthering
- * Heights* 2026 returned by TMDB as `"Wuthering Heights"`).
+ * that form.
  *
  * Rules:
  * - Must start AND end with `"` — one-sided quotes are preserved.

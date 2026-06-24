@@ -1,7 +1,7 @@
 /**
  * Map media service errors to ts-rest response envelopes.
  *
- * Handlers translate `@pops/media` db domain errors into `HttpError`
+ * Handlers translate the pillar's db-layer domain errors into `HttpError`
  * subclasses carrying a real `statusCode` (`NotFoundError` → 404,
  * `ConflictError` → 409, `ValidationError` → 400, `BadGatewayError` → 502
  * for upstream provider failures). For those mapped statuses we return a
@@ -9,8 +9,7 @@
  * `HttpError`, or a non-HttpError) is re-thrown so Express's error pipeline
  * surfaces the real stack rather than a swallowed 500.
  *
- * `messageKey` is carried through so the FE keeps the i18n behaviour it
- * had under the tRPC `data.messageKey` wire shape.
+ * `messageKey` is carried through so the FE can drive i18n off it.
  */
 import { HttpError } from '../shared/errors.js';
 

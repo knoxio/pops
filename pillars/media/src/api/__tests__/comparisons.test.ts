@@ -1,13 +1,12 @@
 /**
  * Integration tests for the `comparisons.*` REST surface via supertest.
  *
- * Covers the ranking-engine core ported from the pops-api monolith: dimension
- * CRUD, recording a comparison (asserting the ELO delta on BOTH media), ELO
- * symmetry + expected-score math, ranking order by score, delete-triggers-
- * replay, smart-pair (valid pick + random fallback + insufficient), skip
- * cooloff suppression, mark/get staleness compounding, blacklist purge,
- * tier-list placement → comparisons conversion, recalcAll replay, and the
- * 404 / 400 contract mappings.
+ * Covers the ranking-engine core: dimension CRUD, recording a comparison
+ * (asserting the ELO delta on BOTH media), ELO symmetry + expected-score math,
+ * ranking order by score, delete-triggers-replay, smart-pair (valid pick +
+ * random fallback + insufficient), skip cooloff suppression, mark/get staleness
+ * compounding, blacklist purge, tier-list placement → comparisons conversion,
+ * recalcAll replay, and the 404 / 400 contract mappings.
  *
  * ELO with K=32, baseline 1500: two equal-rated players have expectedScore
  * 0.5, so the winner gains round(32 × (1 − 0.5)) = 16 and the loser loses 16.
@@ -181,7 +180,7 @@ describe('comparisons — record + ELO', () => {
     });
     const scores = await client().comparisons.scores({ mediaType: 'movie', mediaId: a.id });
     // outcome 0.7, expected 0.5 → +32*0.2 = +6.4 (score is an unrounded real;
-    // only the recorded delta is rounded, mirroring the monolith).
+    // only the recorded delta is rounded).
     expect(scores.data[0]?.score).toBeCloseTo(1506.4, 5);
     expect(scores.data[0]?.score).toBeGreaterThan(1500);
   });
@@ -401,7 +400,7 @@ describe('comparisons — tier list', () => {
     await watchMovie(a.id);
     await watchMovie(b.id);
     // Tier-list eligibility requires a media_scores row, so seed one via a
-    // recorded comparison (mirrors the monolith's `JOIN media_scores`).
+    // recorded comparison.
     await client().comparisons.record({
       dimensionId: dimId,
       mediaAType: 'movie',

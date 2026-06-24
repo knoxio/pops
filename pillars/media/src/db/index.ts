@@ -2,14 +2,8 @@
  * Backend-safe barrel for the media domain's persistence layer.
  *
  * Hosts the media pillar's tables (rotation, comparisons, watchlist, watch
- * history, movies, tv shows, discovery, debrief, shelf impressions, …)
- * extracted from `apps/pops-api/src/modules/media/` per ADR-026 / Track F
- * of `.claude/pillar-migration-roadmap.md`.
- *
- * Per the CI-never-breaks pattern the migration is incremental — this PR
- * scaffolds the package and moves only the `shelf-impressions` slice. The
- * remaining slices (watchlist, watch history, comparisons, rotation,
- * discovery, debrief, movies, tv shows, …) follow in subsequent PRs.
+ * history, movies, tv shows, discovery, debrief, shelf impressions, …) and
+ * their service modules.
  */
 export * from './row-types.js';
 export * from './schema.js';
@@ -266,6 +260,6 @@ export * as comparisonsService from './services/comparisons/index.js';
 /**
  * Reset comparison staleness for a media item (delete the row → fresh, 1.0).
  * Exported standalone so the watch-history log/batchLog paths can call it on
- * a (re)watch — a follow-up wires that up. Mirrors `comparisonsService.resetStaleness`.
+ * a (re)watch. Mirrors `comparisonsService.resetStaleness`.
  */
 export { resetStaleness } from './services/comparisons/staleness.js';

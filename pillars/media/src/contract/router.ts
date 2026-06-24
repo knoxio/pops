@@ -8,6 +8,6 @@
  *
  * The type name is retained because the generated manifest and the manifest
  * generator scripts reference it as the `router` field type. Mirrors the
- * food-contract `FoodRouter = unknown` shape.
+ * `FoodRouter = unknown` shape in `pillars/food/src/contract/router.ts`.
  */
 export type MediaRouter = unknown;

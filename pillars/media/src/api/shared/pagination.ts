@@ -1,11 +1,3 @@
-/**
- * Pagination response builder.
- *
- * Duplicated locally (export-surface only — media-api's REST handlers
- * don't need the Express `parsePagination` helper) so the pillar stands
- * alone of pops-api in the dependency graph.
- */
-
 /** Shape of pagination metadata returned by list endpoints. */
 export interface PaginationMeta {
   total: number;

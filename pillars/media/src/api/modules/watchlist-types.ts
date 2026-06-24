@@ -1,11 +1,8 @@
 /**
  * Watchlist wire-shape mapper for the media pillar REST surface.
  *
- * Lifted from the relocated `apps/pops-media-api` watchlist router so the
- * REST cutover is transparent. The legacy router enriches list rows with
- * `title` + `posterUrl` joined from `movies` / `tv_shows`; that enrichment
- * is served as `null` for now (parity with the pops-media-api shadow) and
- * wired up in a later slice once the watchlist read path needs it.
+ * `title`/`posterUrl` are enrichment fields joined from `movies` / `tv_shows`;
+ * they are currently served as `null` (no enrichment in the read path).
  */
 import type { MediaWatchlistRow } from '../../db/index.js';
 

@@ -2,9 +2,8 @@
  * Zod building blocks for the `rotation.*` REST contract.
  *
  * Split from `rest-rotation.ts` so the route map stays focused. Zod-only — no
- * imports from `src/api/` or `src/db/`, honouring the package boundary. Wire
- * shapes mirror the legacy `media.rotation.*` tRPC procedures (data plane); the
- * scheduler surface lives in `rest-rotation-scheduler.ts`.
+ * imports from `src/api/` or `src/db/`, honouring the package boundary. Covers
+ * the data plane; the scheduler surface lives in `rest-rotation-scheduler.ts`.
  */
 import { z } from 'zod';
 

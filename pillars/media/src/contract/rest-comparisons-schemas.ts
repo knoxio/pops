@@ -1,11 +1,7 @@
 /**
  * Wire request/response schemas for the `comparisons.*` REST sub-router —
  * split from `rest-comparisons.ts` to keep both within the per-file line cap.
- *
- * These mirror the monolith `comparisons` tRPC router's input schemas and the
- * `toDimension` / `toComparison` / `toMediaScore` mapper output shapes exactly,
- * so the REST cutover is transparent to the frontend. All shapes are flat (no
- * recursive `z.lazy`).
+ * All shapes are flat (no recursive `z.lazy`).
  */
 import { z } from 'zod';
 

@@ -1,11 +1,10 @@
 /**
  * TV-show / season / episode wire-shape mappers for the media pillar.
  *
- * Lifted verbatim from the legacy `media.tv-shows` tRPC router so the REST
- * cutover is transparent. TV-show poster/backdrop/logo URLs point at the
- * pillar's `/media/images/tv/...` byte route; season posters resolve to the
- * TMDB CDN directly (no local cache). `genres`/`networks` are parsed from
- * their JSON-encoded columns with an empty-array fallback.
+ * TV-show poster/backdrop/logo URLs point at the pillar's
+ * `/media/images/tv/...` byte route; season posters resolve to the TMDB CDN
+ * directly (no local cache). `genres`/`networks` are parsed from their
+ * JSON-encoded columns with an empty-array fallback.
  */
 import type { EpisodeRow, SeasonRow, TvShowRow } from '../../db/index.js';
 

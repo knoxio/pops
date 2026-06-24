@@ -1,11 +1,9 @@
 /**
  * Watch-history wire-shape mappers for the media pillar REST surface.
  *
- * `toWatchHistoryEntry` is the verbatim passthrough from the legacy
- * `media.watch-history` tRPC router (id, mediaType, mediaId, watchedAt,
- * completed). The enriched / progress wire shapes are owned by the db service
- * layer (the computation lives there) and re-exported here as the API surface
- * types so the handlers and contract stay aligned.
+ * The enriched / progress wire shapes are owned by the db service layer (the
+ * computation lives there) and re-exported here as the API surface types so
+ * the handlers and contract stay aligned.
  */
 import type {
   BatchLogResult,
@@ -32,7 +30,7 @@ export interface WatchHistoryEntry {
   completed: number;
 }
 
-/** Map a SQLite row to the API response shape (verbatim passthrough). */
+/** Map a SQLite row to the API response shape. */
 export function toWatchHistoryEntry(row: WatchHistoryRow): WatchHistoryEntry {
   return {
     id: row.id,

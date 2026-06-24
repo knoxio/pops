@@ -1,8 +1,8 @@
 /**
  * Integration tests for the `discovery.*` REST surface via supertest.
  *
- * Covers the discover surface ported from the pops-api monolith: the dismiss
- * pile round-trip, the preference profile reflecting seeded scores + genres,
+ * Covers the discover surface: the dismiss pile round-trip, the preference
+ * profile reflecting seeded scores + genres,
  * from-your-server excluding watched + ordering by profile, TMDB trending /
  * recommendations shape (client mocked), trendingPlex null without a token, session
  * assembly (shelves with items, impressions recorded, dismissed excluded), and

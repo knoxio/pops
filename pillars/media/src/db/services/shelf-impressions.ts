@@ -1,11 +1,6 @@
 /**
  * Shelf impressions service — tracks how often each shelf has been shown so
  * that freshness scores can down-rank recently-surfaced shelves.
- *
- * Services take a `MediaDb` handle as their first argument; the calling
- * layer (pops-api modules) is responsible for resolving the singleton or
- * transaction handle to pass in. Follows the standard db-arg service
- * signature pattern.
  */
 import { count, gte, lt } from 'drizzle-orm';
 

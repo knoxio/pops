@@ -3,12 +3,9 @@
  *
  * These orchestrate the upstream metadata clients (TMDB / TheTVDB) and the
  * pillar db services — an api-layer concern, NOT a db service: the `src/db`
- * layer stays HTTP-free. Ported from the legacy `media.library` tRPC service,
- * repointing the db handle + services onto the pillar's `(db, …)` services.
+ * layer stays HTTP-free.
  *
- * NOTE: the monolith's addMovie also fired a best-effort Plex Discover
- * watch-status check. The plex domain hasn't been ported yet (a later
- * slice), so that side-effect is deliberately dropped here.
+ * `addMovie` deliberately does NOT fire a Plex Discover watch-status check.
  */
 import {
   type CreateMovieInput,

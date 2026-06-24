@@ -1,15 +1,11 @@
 /**
- * `rotation.*` scheduler routes (slice 11b) — control + observe the
- * in-process rotation-cycle controller (`src/api/cron/rotation-scheduler.ts`)
- * and read the rotation log. Spread into `mediaRotationContract` so operation
- * ids stay `rotation.<route>`.
+ * `rotation.*` scheduler routes — control + observe the in-process
+ * rotation-cycle controller (`src/api/cron/rotation-scheduler.ts`) and read the
+ * rotation log. Spread into `mediaRotationContract` so operation ids stay
+ * `rotation.<route>`.
  *
- * Re-architecture vs the monolith: the monolith armed a `node-cron` task; the
- * pillar drives a recursive `setTimeout` interval via a module-level singleton
- * (cron-parser is not a workspace dep — see the controller header). The wire
- * shapes mirror the legacy `scheduler.*` tRPC procedures (status / toggle /
- * runNow / cancelLeaving / getLeavingMovies / getLastCycleLog / getDiskSpace /
- * listRotationLog / getRotationLogStats).
+ * The controller drives a recursive `setTimeout` interval via a module-level
+ * singleton (cron-parser is not a workspace dep — see the controller header).
  */
 import { z } from 'zod';
 

@@ -1,21 +1,15 @@
 /**
- * In-process rotation-cycle scheduler (slice 11b).
+ * In-process rotation-cycle scheduler: a recursive `setTimeout` driven by a
+ * MODULE-LEVEL singleton controller, mirroring `plex-scheduler.ts`. The
+ * `server.ts` boot path and the REST `/rotation/scheduler/{toggle,run-now}`
+ * handlers all drive the SAME timer, and the next tick is armed only AFTER the
+ * current cycle resolves (no pile-up). One immediate tick fires on `start`.
  *
- * Re-architected from the monolith's `node-cron` task to a recursive
- * `setTimeout` driven by a MODULE-LEVEL singleton controller, mirroring
- * `plex-scheduler.ts`: the `server.ts` boot path and the REST
- * `/rotation/scheduler/{toggle,run-now}` handlers all drive the SAME timer,
- * and the next tick is armed only AFTER the current cycle resolves (no
- * pile-up). One immediate tick fires on `start`.
- *
- * Cron-vs-interval decision: `cron-parser` / `node-cron` are NOT workspace
- * dependencies of `@pops/media`, so per the migration runbook this controller
- * runs on a fixed INTERVAL (env `MEDIA_ROTATION_INTERVAL_MS`, default daily)
- * rather than parsing a cron expression. The monolith's
- * `rotation_cron_expression` is still read/persisted as stored config (the FE
- * settings surface keeps editing it) but does not drive the timer; `nextRunAt`
- * is computed from the interval. Swap in a cron parser later by replacing
- * `armDelayMs` + `nextRunAt` only.
+ * The controller runs on a fixed INTERVAL (env `MEDIA_ROTATION_INTERVAL_MS`,
+ * default daily), NOT a cron parser. `rotation_cron_expression` is still
+ * read/persisted as stored config (the settings UI keeps editing it) but does
+ * NOT drive the timer; `nextRunAt` is computed from the interval. To swap in a
+ * cron parser, replace the interval arming + `nextRunAt` only.
  *
  * Persisted state lives in `rotation_settings` (`rotation_enabled` +
  * `rotation_cron_expression`); `resumeIfEnabled` reads it on boot.
@@ -72,7 +66,7 @@ function persistDisabled(db: MediaDb): void {
 /**
  * Run one cycle, writing exactly one `rotation_log` row. A concurrent call
  * (cycle already running) writes a skipped row and returns without re-entering
- * the cycle, matching the monolith's single-flight guard.
+ * the cycle (single-flight guard).
  */
 async function runCycle(db: MediaDb): Promise<void> {
   if (isCycleRunning) {

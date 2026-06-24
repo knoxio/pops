@@ -1,10 +1,8 @@
 /**
  * `shelfImpressions.*` sub-router — discover-shelf impression tracking.
  *
- * Mirrors the relocated `media.shelfImpressions.*` tRPC surface
- * (`shelfImpressionsService`). `getShelfFreshness` 404s when the shelf has
- * zero impressions in the window (callers wanting the freshness floor use
- * the default instead).
+ * `freshness` 404s when the shelf has zero impressions in the window (callers
+ * wanting the freshness floor use the default instead).
  */
 import { initContract } from '@ts-rest/core';
 import { z } from 'zod';

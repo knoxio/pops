@@ -1,10 +1,6 @@
 /**
  * `watch-history.*` sub-router — watch-event logging + read/progress surface.
  *
- * Wire shapes mirror the legacy `media.watch-history.*` tRPC router
- * (`toWatchHistoryEntry` passthrough + the progress / recent-enrichment
- * handler outputs) so the REST cutover is transparent to the FE.
- *
  * Route order matters: the literal sub-paths (`recent`, `progress/:tvShowId`,
  * `batch-progress`, `batch`) are declared BEFORE `/watch-history/:id` so the
  * Express adapter doesn't capture them as the `:id` segment.

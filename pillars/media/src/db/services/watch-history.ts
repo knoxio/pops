@@ -1,19 +1,6 @@
 /**
  * Watch history CRUD against the media pillar's SQLite via drizzle.
  *
- * Services take a `MediaDb` handle as their first argument; the calling
- * layer (pops-api modules) is responsible for resolving the singleton
- * or transaction handle to pass in. Mirrors `@pops/media-db`'s movies
- * service signature.
- *
- * Procedure surface tracks the PRD-168 contract plus a `getById` helper
- * for the router layer:
- * `media.watchHistory.{list, byItem, byDateRange, add, getById, update, delete}`.
- * The in-tree service in `apps/pops-api/src/modules/media/watch-history/`
- * still routes through the shared `getDrizzle()` handle for now —
- * PRD-168 PR 3 flips that to `getMediaDrizzle()` and routes through
- * this module.
- *
  * `watchedAt` is stored as SQLite `datetime('now')` text — second-precision
  * `YYYY-MM-DD HH:MM:SS` UTC. When the caller omits it on insert we resolve
  * the value in JS up front (same format) so it can be reused for the row,
@@ -22,12 +9,10 @@
  * same item inside the same second deliberately raise
  * `WatchHistoryConflictError` with the resolved timestamp.
  *
- * Cross-table orchestration that today lives in the in-tree handlers
- * (auto-removing watchlist rows on a movie completion, queueing a debrief
- * session, resetting comparison staleness, …) stays at the router/module
- * layer until the dependent tables are themselves resident in the media
- * pillar's SQLite. This package owns persistence; orchestration is a
- * caller concern.
+ * Cross-table orchestration (auto-removing watchlist rows on a movie
+ * completion, queueing a debrief session, resetting comparison staleness, …)
+ * stays at the router/module layer. This package owns persistence;
+ * orchestration is a caller concern.
  */
 import { and, count, desc, eq, gte, lte, type SQL } from 'drizzle-orm';
 

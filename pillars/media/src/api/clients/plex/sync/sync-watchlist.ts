@@ -2,10 +2,6 @@
  * Plex watchlist sync — polls the Plex Discover cloud watchlist and reconciles
  * it into the pillar's `watchlist` table (insert new, upgrade source, remove
  * or downgrade entries no longer present upstream).
- *
- * Ported from the monolith `media/plex/sync-watchlist.ts`. The monolith's
- * cross-store migration shim (`getMediaDrizzle` vs `getDrizzle`) is gone — the
- * pillar owns a single store, so all reads/writes use the one passed handle.
  */
 import { and, eq, isNotNull } from 'drizzle-orm';
 

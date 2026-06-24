@@ -1,9 +1,6 @@
 /**
  * Rotation-cycle log persistence against the media pillar's SQLite.
  *
- * HTTP-free; `(db, …)`-arg. Ported from the monolith `rotation-log.ts`
- * (the cycle-log writer) and the `rotation-scheduler-router.ts` read
- * procedures (`listRotationLog` / `getRotationLogStats` / `getLastCycleLog`).
  * The api-layer rotation cycle owns the {@link RotationCycleLog} shape; this
  * service just serialises the per-movie detail lists to the `details` JSON
  * column and reads them back.
@@ -130,7 +127,7 @@ function computeStreak(db: MediaDb): number {
   return streak;
 }
 
-/** Summary statistics for the rotation log page. PRD-072 US-06. */
+/** Summary statistics for the rotation log page. */
 export function getRotationLogStats(db: MediaDb): RotationLogStats {
   const totals = db
     .select({

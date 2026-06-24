@@ -1,17 +1,10 @@
 /**
  * Standalone opener for the media pillar's SQLite database.
  *
- * Phase 2 PR 1 of the media pillar migration scaffolds the per-pillar
- * connection so subsequent PRs can flip readers/writers over without
- * touching pops-api's existing singleton. The opener is intentionally
- * minimal — it does NOT load the sqlite-vec extension or the
- * vector-index helpers (those stay with pops-api's `getDrizzle()` for
- * now) and it relies on drizzle-orm's built-in `migrate` helper to apply
- * the in-package migrations journal at `packages/media-db/migrations/meta/_journal.json`.
- *
- * No production consumer wires this up yet. Subsequent PRs add the
- * `MEDIA_SQLITE_PATH` env-var read in pops-api, the boot-time call, and
- * the data backfill from the shared pops.db.
+ * Intentionally minimal — it does NOT load the sqlite-vec extension or the
+ * vector-index helpers, and relies on drizzle-orm's built-in `migrate`
+ * helper to apply the in-pillar migrations journal at
+ * `migrations/meta/_journal.json`.
  *
  * Follows the standard per-pillar database-opener pattern.
  */
@@ -55,11 +48,10 @@ export interface OpenedMediaDb {
  * Side effects:
  *   - The parent directory of `path` is created if missing (recursive).
  *   - `journal_mode=WAL`, `foreign_keys=ON`, and `busy_timeout=5000` are
- *     enabled to match the shared singleton in `apps/pops-api/src/db.ts`.
- *   - Every migration in `packages/media-db/migrations/meta/_journal.json`
- *     is applied via drizzle's built-in migrator (idempotent — re-running
- *     against the same DB short-circuits on the `__drizzle_migrations`
- *     hash check).
+ *     enabled.
+ *   - Every migration in `migrations/meta/_journal.json` is applied via
+ *     drizzle's built-in migrator (idempotent — re-running against the same
+ *     DB short-circuits on the `__drizzle_migrations` hash check).
  *
  * If the migration apply throws (corrupt DB, malformed migration, missing
  * folder), the raw handle is closed before the error is re-thrown so the

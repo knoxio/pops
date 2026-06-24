@@ -1,17 +1,12 @@
 /**
  * `rotation.*` sub-router — the rotation data plane: candidate queue,
  * exclusion list, sources (CRUD + sync + Plex-friends picker), and the
- * runtime-tunable settings.
+ * runtime-tunable settings. The scheduler routes are spread in from
+ * `rest-rotation-scheduler.ts`.
  *
- * Ported from the monolith `media.rotation.*` tRPC routers (candidates,
- * exclusions, sources, config) + the scheduler procedures (slice 11b, spread
- * from `rest-rotation-scheduler.ts`: status / toggle / runNow / cancelLeaving /
- * leaving / lastCycle / diskSpace / log / log-stats).
- *
- * Config is repointed off `core/settings` onto the pillar-owned
- * `rotation_settings` kv table. Route order matters: literal sub-paths are
- * declared before `:tmdbId` / `:id` params so the Express adapter doesn't
- * capture them as the parametric segment.
+ * Config lives in the pillar-owned `rotation_settings` kv table. Route order
+ * matters: literal sub-paths are declared before `:tmdbId` / `:id` params so
+ * the Express adapter doesn't capture them as the parametric segment.
  */
 import { initContract } from '@ts-rest/core';
 import { z } from 'zod';

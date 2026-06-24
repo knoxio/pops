@@ -4,7 +4,7 @@ import { useState } from 'react';
 /**
  * SourceManagementSection — CRUD UI for rotation source management.
  *
- * PRD-072 US-03
+ * Spec: pillars/media/docs/prds/source-lists
  */
 import { CRUDManagementSection } from '@pops/ui';
 
