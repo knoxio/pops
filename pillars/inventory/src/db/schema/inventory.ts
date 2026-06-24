@@ -44,8 +44,9 @@ export const homeInventory = sqliteTable(
     purchasedFromName: text('purchased_from_name'),
     purchasePrice: real('purchase_price'),
     /**
-     * Soft cross-pillar reference to the owning `core` pillar's user/scope.
-     * Shape: `pops://core/user/<email>`. Same reconciliation semantics as
+     * Soft cross-pillar reference to the user/scope owned by the `registry`
+     * pillar (`core` is the legacy URI namespace/alias). Shape:
+     * `pops://core/user/<email>`. Same reconciliation semantics as
      * `purchaseTransactionUri`.
      */
     ownerUri: text('owner_uri'),

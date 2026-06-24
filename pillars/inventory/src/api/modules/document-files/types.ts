@@ -69,7 +69,7 @@ export const UploadDocumentSchema = z.object({
   itemId: z.string().min(1, 'Item ID is required'),
   fileName: z.string().min(1, 'File name is required').max(255, 'File name too long'),
   mimeType: z.string().min(1, 'MIME type is required'),
-  /** Base64-encoded file bytes. The router decodes this to a Buffer. */
+  /** Base64-encoded file bytes. The REST handler decodes this to a Buffer. */
   fileBase64: z.string().min(1, 'File content is required'),
 });
 export type UploadDocumentSchemaInput = z.infer<typeof UploadDocumentSchema>;
