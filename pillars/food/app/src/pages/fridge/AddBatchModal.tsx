@@ -10,7 +10,7 @@ import { FormError } from './form-controls.js';
 import { useAddBatchForm } from './useAddBatchForm.js';
 
 /**
- * "+ Add batch" modal — PRD-147.
+ * "+ Add batch" modal.
  *
  * Form state + mutation live in `useAddBatchForm`. The JSX sub-sections
  * live in `AddBatchModal.sections.tsx`. This file just stitches them

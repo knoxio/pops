@@ -1,10 +1,9 @@
 /**
- * PRD-143 — "Add plan entry" modal.
+ * "Add plan entry" modal: `(date, slot)` is pre-filled from the trigger;
+ * the form adds a recipe typeahead plus servings and notes. On success the
+ * caller's `onAdded` runs after the week query invalidates.
  *
- * Pre-filled `(date, slot)` from the trigger. Recipe picker uses
- * `food.recipes.list` typeahead; servings + notes round out the form.
- * Submit calls `food.plan.addEntry`; on success the caller's `onAdded`
- * runs after the week query invalidates.
+ * Spec: pillars/food/docs/prds/planning-page
  */
 import { type ReactElement } from 'react';
 

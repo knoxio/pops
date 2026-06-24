@@ -1,5 +1,5 @@
 /**
- * Single row inside the Aliases table (PRD-122-C).
+ * Single row inside the Aliases table.
  *
  * Switches between read mode and inline edit mode. Read mode shows the
  * alias text, target label, source chip, and the raw ISO `created_at`
@@ -76,7 +76,7 @@ function AliasCell({ row, onUpdateAlias }: AliasCellProps) {
   // Cancel is tracked via a ref because the onKeyDown → blur transition
   // is synchronous and `useState` updates don't flush until the next
   // render. A ref is read in the same tick `commitEdit` runs, so Escape
-  // reliably suppresses the commit (Copilot review round 2 on PR #2724).
+  // reliably suppresses the commit.
   const cancelRef = useRef(false);
 
   function commitEdit(): void {

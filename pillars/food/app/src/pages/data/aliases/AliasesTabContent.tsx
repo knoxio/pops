@@ -1,14 +1,14 @@
 /**
- * `/food/data/aliases` tab content (PRD-122-C).
+ * `/food/data/aliases` tab content.
  *
  * Orchestrates the data hook, mutation hooks, toolbar, table, and the
  * Add/Merge dialogs. Keeps no data state of its own beyond dialog
  * open/closed — everything else lives in `useAliasesData`.
  *
- * Per Copilot review on PR #2724 — dialog `useState` setters are
- * declared BEFORE `useAliasMutations`, so the mutation hook can close
- * dialogs from its per-mutation success path. A failed create/merge
- * leaves the dialog open so the user can retry without re-typing.
+ * Dialog `useState` setters are declared BEFORE `useAliasMutations`, so
+ * the mutation hook can close dialogs from its per-mutation success path.
+ * A failed create/merge leaves the dialog open so the user can retry
+ * without re-typing.
  */
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';

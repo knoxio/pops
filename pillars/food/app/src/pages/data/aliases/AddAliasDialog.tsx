@@ -1,9 +1,9 @@
 /**
- * Add-alias dialog (PRD-122-C).
+ * Add-alias dialog.
  *
  * Composes the target picker with a single text input + source selector.
- * Source defaults to `user` per PRD-122. The submit button is disabled
- * until both the alias text is non-empty AND a target is picked.
+ * Source defaults to `user`. The submit button is disabled until both the
+ * alias text is non-empty AND a target is picked.
  */
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';

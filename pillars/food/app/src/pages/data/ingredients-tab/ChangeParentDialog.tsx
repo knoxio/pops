@@ -1,8 +1,7 @@
 /**
- * Modal for changing an ingredient's parent. Wires
- * `food.ingredients.changeParent` which re-validates the parent chain (depth
- * ≤ 3 and acyclic per PRD-106). Self-as-parent is filtered out client-side
- * for clarity even though the service also rejects it.
+ * Modal for changing an ingredient's parent. The server re-validates the
+ * parent chain (depth ≤ 3 and acyclic). Self-as-parent is filtered out
+ * client-side for clarity even though the service also rejects it.
  */
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';

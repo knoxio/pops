@@ -1,10 +1,11 @@
 /**
- * Preview pane for the send-to-list modal — PRD-142.
+ * Preview pane for the send-to-list modal
+ * (pillars/food/docs/prds/send-to-list).
  *
- * Shows the canonical items (post-aggregation, post-scale) and the
- * unconverted items in two grouped lists with a `…N more` collapser that
- * expands inline. PRD §UI shows first 5 + "…N more"; using 6 here keeps
- * the section readable on tall recipes without an immediate cutoff.
+ * Shows canonical items (post-aggregation, post-scale) and unconverted items
+ * in two grouped lists with a `…N more` collapser that expands inline. The
+ * collapse threshold sits one above the spec's "first 5" to keep tall
+ * recipes readable without an immediate cutoff.
  */
 import { useState, type ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -48,10 +49,10 @@ interface Row {
 }
 
 function toRow(item: PrepareOutput['canonicalItems'][number]): Row {
-  // First sourceLineId is unique per preview row — canonical items aggregate
-  // multiple lines but the first id is stable across renders, and unconverted
-  // items each have exactly one line id. Beats label-as-key (collisions on
-  // identical text) and idx (lint: no-array-index-key).
+  // First sourceLineId is unique per preview row and stable across renders:
+  // canonical items aggregate multiple lines but the first id is stable,
+  // unconverted items have exactly one line id. Label-as-key collides on
+  // identical text, so it's only the fallback when no line id exists.
   return { key: String(item.sourceLineIds[0] ?? item.label), label: item.label };
 }
 

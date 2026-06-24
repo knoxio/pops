@@ -1,11 +1,11 @@
 /**
  * Storybook stories for the Prep states tab's `AddPrepStateDialog`
- * (PRD-122-C / Tab 3).
+ * (pillars/food/docs/prds/data-page).
  *
  * The dialog is a pure-presentation component (slug + name inputs +
- * submit/cancel) that takes all data via props, so no tRPC mocking is
+ * submit/cancel) that takes all data via props, so no network mocking is
  * needed. Stories cover the open + submitting states; the full tab
- * (`PrepStatesTabContent`) consumes `trpc.food.prepStates.*` and is
+ * (`PrepStatesTabContent`) calls the prep-states REST endpoints and is
  * exercised in the RTL suite, not Storybook.
  */
 import { createInstance, type i18n } from 'i18next';

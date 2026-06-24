@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 import { FoodLandingPage } from '../FoodLandingPage.js';
 
-describe('PRD-118 — FoodLandingPage', () => {
+describe('FoodLandingPage', () => {
   it('renders heading + intro without crashing', () => {
     render(<FoodLandingPage />);
     expect(screen.getByRole('heading', { name: /food/i, level: 1 })).toBeInTheDocument();
@@ -14,7 +14,6 @@ describe('PRD-118 — FoodLandingPage', () => {
     render(<FoodLandingPage />);
     expect(screen.getByText(/^Recipes$/)).toBeInTheDocument();
     expect(screen.getByText(/^Manage data$/)).toBeInTheDocument();
-    // Two cards, two "Coming soon" tags.
     expect(screen.getAllByText(/coming soon/i).length).toBeGreaterThanOrEqual(2);
   });
 });

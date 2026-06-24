@@ -1,5 +1,5 @@
 /**
- * PRD-152 — RTL coverage for the FromPlanPage.
+ * Spec: pillars/food/docs/prds/plan-shopping-generator
  */
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen } from '@testing-library/react';

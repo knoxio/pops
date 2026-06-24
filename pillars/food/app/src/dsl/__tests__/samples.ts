@@ -1,12 +1,13 @@
 /**
- * 11 sample recipes covering the grammar's positive surface — PRD-114 AC.
+ * Sample recipes covering the grammar's positive surface.
+ * See pillars/food/docs/prds/dsl-parser.
  *
  * Duplicated from the food pillar's `src/dsl/__tests__/samples.ts`. The
  * canonical copy lives there alongside the parser tests; this copy stays
- * here because the Lezer parity test (which stays in app-food alongside
- * the Lezer grammar) needs the same fixtures and importing test files
- * across workspace boundaries would require exporting test data through
- * the public package barrel.
+ * here because the Lezer parity test (which lives alongside the Lezer
+ * grammar under pillars/food/app) needs the same fixtures, and importing
+ * test files across pillar boundaries would require exporting test data
+ * through the package's public barrel.
  */
 
 export const SIMPLE_PLATE = `@recipe(
@@ -110,7 +111,6 @@ export const NON_YIELDING_TECHNIQUE = `@recipe(slug="blanch", title="Blanching",
 @step("Drop @1 into salted boiling water for @time(60:s), then shock in ice water.")
 `;
 
-/** Round-trip sample list for the printer test. */
 export const ALL_SAMPLES = [
   ['simple plate', SIMPLE_PLATE],
   ['component with yield', COMPONENT_WITH_YIELD],

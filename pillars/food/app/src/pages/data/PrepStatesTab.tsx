@@ -1,6 +1,6 @@
 /**
  * `/food/data/prep-states` route entry. Defers to the tab's content
- * tree under `./prep-states/` (PRD-122-C).
+ * tree under `./prep-states/`.
  */
 import { PrepStatesTabContent } from './prep-states/index.js';
 

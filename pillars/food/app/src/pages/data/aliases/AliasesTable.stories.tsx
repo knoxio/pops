@@ -1,12 +1,9 @@
 /**
- * Storybook coverage for the pure sub-components of the Aliases tab
- * (PRD-122-C).
+ * Storybook coverage for the pure sub-components of the Aliases tab.
  *
- * The full `AliasesTabContent` consumes tRPC hooks that aren't trivial
- * to mock at the Storybook level; the table and toolbar both take all
- * their data via props, so they get stories directly. `apps/pops-storybook/`
- * picks these up via the `packages/*\/src/**\/*.stories.*` glob the
- * RecipeRenderer story file documents.
+ * The full `AliasesTabContent` consumes data hooks that aren't trivial to
+ * mock at the Storybook level; the table and toolbar both take all their
+ * data via props, so they get stories directly.
  */
 import { createInstance, type i18n } from 'i18next';
 import { useMemo, useState } from 'react';

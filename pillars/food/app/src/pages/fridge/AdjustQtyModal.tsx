@@ -1,7 +1,7 @@
 /**
- * Adjust qty modal — PRD-147.
+ * Adjust qty modal.
  *
- * Records spoilage / waste / correction. PRD-145's `adjustBatchQty`
+ * Records spoilage / waste / correction. The `adjustBatchQty` service
  * enforces sign rules: spoiled + wasted require delta < 0; correction
  * allows either sign. NegativeQty surfaces if delta would push the
  * batch below zero.

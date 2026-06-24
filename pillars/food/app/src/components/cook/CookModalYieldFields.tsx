@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Input, Label } from '@pops/ui';
 
 /**
- * Yield qty + unit + location + expires fields for `CookModal` — PRD-144.
+ * Yield qty + unit + location + expires fields for `CookModal`.
  *
  * Hidden when the recipe's version has no `yield_ingredient_id`; the
  * parent only mounts this component for yielding recipes.

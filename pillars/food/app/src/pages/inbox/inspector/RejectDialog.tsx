@@ -1,9 +1,3 @@
-/**
- * PRD-135 — reject dialog. Reason picker (5-value enum) + optional note;
- * the note becomes required when reason is `other`. Wraps PRD-136's
- * `food.inbox.reject` mutation; navigates back to the inbox Drafts tab
- * on success.
- */
 import { useMutation } from '@tanstack/react-query';
 import { type ReactElement, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -88,9 +82,9 @@ export function RejectDialog({ open, onOpenChange, versionId, onRejected }: Prop
             disabled={mutation.isPending || noteRequired}
             onClick={() => {
               // Trim before send so the persisted `note` matches what the
-              // client-side `noteRequired` check evaluated against (Copilot
-              // R1). Empty trimmed strings collapse to `undefined` so the
-              // server doesn't persist a whitespace-only note.
+              // client-side `noteRequired` check evaluated against. Empty
+              // trimmed strings collapse to `undefined` so the server doesn't
+              // persist a whitespace-only note.
               const trimmed = note.trim();
               mutation.mutate({
                 versionId,

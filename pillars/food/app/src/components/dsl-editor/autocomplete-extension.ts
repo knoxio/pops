@@ -1,5 +1,5 @@
 /**
- * DSL editor autocomplete — CodeMirror extension factory (PRD-120 part B).
+ * DSL editor autocomplete — CodeMirror extension factory.
  *
  * Returns an `Extension[]` to be merged into the editor state. The
  * extension is built once per `DslEditor` mount and never reconfigured
@@ -7,15 +7,13 @@
  * each call sees the latest props without re-creating the extension
  * compartment.
  *
- * `closeOnBlur` defaults to `true` so clicking outside the editor
- * dismisses the popup; `activateOnTyping` defaults to `true` so the
- * source fires as the user types without needing Ctrl-Space. The
- * defaults are explicit here so future debugging doesn't blame
- * @codemirror/autocomplete's release-version drift.
+ * `closeOnBlur` and `activateOnTyping` are set explicitly (rather than
+ * relying on @codemirror/autocomplete's defaults) so version drift in the
+ * dependency can't silently change the behaviour.
  *
- * Part F adds a `tooltipClass` marker so the bottom-drawer CSS rules in
- * `dslAutocompleteTheme` can re-anchor the popup to the viewport floor
- * on screens narrower than 768px (PRD-120 mobile rule).
+ * The `tooltipClass` marker lets the bottom-drawer CSS rules in
+ * `dslAutocompleteTheme` re-anchor the popup to the viewport floor on
+ * screens narrower than 768px.
  */
 import { autocompletion } from '@codemirror/autocomplete';
 import { EditorView } from '@codemirror/view';

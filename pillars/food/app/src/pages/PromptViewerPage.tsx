@@ -1,9 +1,7 @@
 /**
- * PRD-133 — Read-only viewer for the food AI prompt templates.
- *
- * Mirrors `@pops/app-finance`'s PromptViewerPage. Renders one card per
- * entry in `FOOD_PROMPTS`. Operator-facing surface — useful when
- * iterating on ingest quality without opening the repo.
+ * Read-only operator viewer for the food AI prompt templates — one card per
+ * entry in `FOOD_PROMPTS`. Useful when iterating on ingest quality without
+ * opening the repo.
  *
  * To edit a prompt: change the constant in
  * `pillars/food/app/src/prompts/`, bump its version string, deploy.

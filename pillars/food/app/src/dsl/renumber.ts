@@ -1,5 +1,5 @@
 /**
- * Recipe-DSL renumber transform — PRD-120 part E.
+ * Recipe-DSL renumber transform.
  *
  * Given a source string and a permutation describing the desired order of
  * `@ingredient(...)` declarations, produces:

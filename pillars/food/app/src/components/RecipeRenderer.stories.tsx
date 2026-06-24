@@ -11,11 +11,9 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import type { ResolvedStepBody, RecipeVersionWithCompiledData } from './recipe-render-types.js';
 
 /**
- * PRD-121 stories — `apps/pops-storybook/.storybook/main.ts` discovers
- * stories from `packages/*\/src/**\/*.stories.@(...)`, so this file lives
- * inside the package even though PRD line 249 spells out the path
- * `apps/pops-storybook/src/stories/food/...`. The story coverage matches
- * the PRD list verbatim; the path note is in the PR description.
+ * RecipeRenderer stories — `libs/ui/.storybook/main.ts` discovers stories
+ * from `pillars/*\/*\/src/**\/*.stories.@(...)`, so this file lives next
+ * to the component.
  */
 
 function useFoodI18n(): i18n {

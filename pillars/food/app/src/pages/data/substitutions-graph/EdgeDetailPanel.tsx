@@ -1,10 +1,8 @@
 import { useTranslation } from 'react-i18next';
 /**
- * Side panel that opens when the user clicks an edge in the graph.
- *
- * Shows from → to (each clickable to refocus the radial view), the
- * substitution ratio with a verbal interpretation, context tags, scope,
- * notes, and an "Edit in table view" link back to PRD-122's CRUD tab.
+ * Side panel that opens when the user clicks an edge in the graph. The
+ * from/to labels refocus the radial view; "Edit in table view" links to
+ * the substitutions CRUD table.
  */
 import { Link } from 'react-router';
 

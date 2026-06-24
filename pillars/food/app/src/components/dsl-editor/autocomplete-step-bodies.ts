@@ -1,5 +1,5 @@
 /**
- * DSL editor autocomplete — step-body scanner (PRD-120 part B).
+ * DSL editor autocomplete — step-body scanner.
  *
  * Two pure passes over the document:
  *
@@ -17,9 +17,10 @@
  *
  * Neither pass parses the document — both are tokenisation-shallow
  * string walks that honour the `\"` and `\\` escapes the DSL string
- * literal allows. The hand-rolled parser at PRD-114 is the only thing
- * that knows the full grammar; this scanner only needs enough
- * structure to disambiguate top-level vs string-body cursor positions.
+ * literal allows. The hand-rolled parser (pillars/food/src/dsl, the
+ * `@pops/food/dsl` entry) is the only thing that knows the full grammar;
+ * this scanner only needs enough structure to disambiguate top-level vs
+ * string-body cursor positions.
  */
 export interface StepBodyContext {
   /** Offset of the first character inside the opening `"` of the body. */
@@ -162,9 +163,9 @@ export function collectStepIndexes(text: string): readonly IngredientIndexEntry[
       match = re.exec(region);
     }
   }
-  // Sort numerically — the regex order is document order; PRD-119 may
-  // renumber, so the autocomplete should always show ascending indexes
-  // even if the user mid-edit has them out of order in the doc.
+  // Sort numerically — the regex order is document order, but the doc can
+  // hold out-of-order indexes mid-edit; the autocomplete always shows
+  // ascending indexes.
   return out.toSorted((a, b) => Number(a.index) - Number(b.index));
 }
 

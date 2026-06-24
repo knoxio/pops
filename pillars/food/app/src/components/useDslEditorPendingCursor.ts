@@ -1,10 +1,9 @@
 /**
- * PRD-135 — imperative cursor-move hook for the DSL editor.
+ * Imperative cursor-move hook for the DSL editor.
  *
- * Extracted from `useDslEditorView.ts` to keep that hook under the per-file
- * line cap. The dispatch fires whenever the `pendingCursor` prop changes
- * identity, so callers should bump `nonce` (or supply a fresh object) when
- * they want the same coordinates re-applied.
+ * The dispatch fires whenever the `pendingCursor` prop changes identity, so
+ * callers should bump `nonce` (or supply a fresh object) when they want the
+ * same coordinates re-applied.
  */
 import { type MutableRefObject, useEffect } from 'react';
 

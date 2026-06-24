@@ -1,10 +1,10 @@
 /**
- * Add-prep-state dialog (PRD-122-C / Tab 3).
+ * Add-prep-state dialog (pillars/food/docs/prds/data-page).
  *
  * Prep states have heavy reference impact (every recipe_line references
  * one), so v1 only supports add — no rename, no delete. The dialog
- * collects a slug + name pair; submit fires `onSubmit` which is wired
- * to `food.prepStates.create` server-side.
+ * collects a slug + name pair; submit fires `onSubmit`, which the parent
+ * wires to the `POST /prep-states` REST endpoint.
  */
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';

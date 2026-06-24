@@ -1,7 +1,6 @@
 /**
- * Conversions tab (PRD-123 Phase C). Two-section page: Unit conversions
- * (top) + Ingredient weights (bottom). Each section is self-contained
- * (own queries, own filters, own dialogs); this file is only the layout.
+ * Conversions tab layout only. Each section is self-contained (own
+ * queries, own filters, own dialogs).
  */
 import { useTranslation } from 'react-i18next';
 

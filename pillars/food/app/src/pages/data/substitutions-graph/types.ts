@@ -1,13 +1,11 @@
 /**
- * Local view-model types for the PRD-148 substitution graph explorer.
+ * Local view-model types for the substitution graph explorer.
  *
- * These mirror the wire shape produced by `food.substitutions.graphView`
- * (defined in `apps/pops-api/src/modules/food/routers/substitutions.ts`).
- * They are duplicated here intentionally so the page components remain a
- * self-contained unit for vitest + RTL — no cross-package type plumbing
- * between the page tests and the running pops-api router. The wire shape
- * itself is covered end-to-end by `substitutions-graph.test.ts` on the API
- * side; here we exercise rendering against the shape.
+ * These mirror the wire shape served by the food contract's graphView
+ * route (`pillars/food/src/contract/rest-substitutions.ts`, generated
+ * into `app/src/food-api/types.gen.ts`). They are duplicated here
+ * intentionally so the page components stay a self-contained unit for
+ * vitest + RTL; here we exercise rendering against the shape.
  */
 export interface SubGraphNode {
   id: string;

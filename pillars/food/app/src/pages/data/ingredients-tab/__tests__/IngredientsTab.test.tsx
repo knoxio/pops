@@ -1,17 +1,6 @@
 /**
- * PRD-122-B / PRD-122-B2 — ingredients tab UI smoke tests.
- *
  * Mocks the generated food SDK so the tree renders against a controlled
- * dataset; asserts:
- *   - the tree groups children under their parents
- *   - selecting a node renders the detail panel
- *   - the create dialog opens and submits via the mutation
- *   - the create dialog surfaces a server error
- *   - rename / change-parent / delete flows wire to the right mutations
- *   - variant create + edit + delete flows wire to the right mutations
- *   - delete-with-blockers disables the destructive button and lists blockers
- *   - the `?focus=<slug>` deep-link selects + highlights the matching node
- *   - the not-found banner appears when `?focus` doesn't match anything
+ * dataset.
  */
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, waitFor, within } from '@testing-library/react';
@@ -146,7 +135,7 @@ beforeEach(() => {
   variantsDeleteMock.mockResolvedValue({ data: { ok: true } });
 });
 
-describe('PRD-122-B — IngredientsTab', () => {
+describe('IngredientsTab', () => {
   it('renders the tree with children nested under their parent', async () => {
     const fruit = row({ id: 1, slug: 'fruit', name: 'Fruit' });
     const banana = row({ id: 2, slug: 'banana', name: 'Banana', parentId: 1 });
@@ -232,7 +221,7 @@ describe('PRD-122-B — IngredientsTab', () => {
   });
 });
 
-describe('PRD-122-B2 — detail-panel CRUD', () => {
+describe('detail-panel CRUD', () => {
   function seedSelectedBanana(variants: readonly VariantRow[] = []) {
     const banana = row({ id: 5, slug: 'banana', name: 'Banana' });
     seedList([banana, row({ id: 6, slug: 'fruit', name: 'Fruit' })]);
@@ -378,7 +367,7 @@ describe('PRD-122-B2 — detail-panel CRUD', () => {
   });
 });
 
-describe('PRD-122-B2 — ?focus=<slug> deep-link', () => {
+describe('?focus=<slug> deep-link', () => {
   it('selects the matching ingredient and highlights its tree row', async () => {
     const apple = row({ id: 7, slug: 'apple', name: 'Apple' });
     seedList([apple]);

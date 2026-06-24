@@ -5,9 +5,8 @@ import { Button } from '@pops/ui';
 import { formatQty } from './cook-format.js';
 
 /**
- * PRD-146 — sub-components for `ShortfallRow`: the radio fieldset, the
- * partial-qty editor, and the row header. Split out to keep the parent
- * row under the per-function line cap.
+ * Sub-components for `ShortfallRow`: the radio fieldset, the partial-qty
+ * editor, and the row header.
  */
 import type { ReactNode } from 'react';
 

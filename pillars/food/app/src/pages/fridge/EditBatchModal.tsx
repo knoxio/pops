@@ -1,8 +1,8 @@
 /**
- * Edit batch modal — PRD-147.
+ * Edit batch modal.
  *
- * Edits expiry / notes / prepState only. Other fields delegated to
- * Relocate / Adjust qty per PRD-145's service split.
+ * Edits expiry / notes / prepState only. Other fields delegate to
+ * Relocate / Adjust qty, matching the batch service split.
  */
 import { type FormEvent, type ReactElement } from 'react';
 

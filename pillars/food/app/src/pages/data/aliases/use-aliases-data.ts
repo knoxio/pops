@@ -1,5 +1,5 @@
 /**
- * Aliases tab data + selection state (PRD-122-C).
+ * Aliases tab data + selection state.
  *
  * Wraps `aliasesListWithTargets` plus the table's own UI state
  * (sort, filter, selection). Mutations live alongside in
@@ -97,7 +97,7 @@ export function useAliasesData(): UseAliasesData {
   // Filter changes always clear the current selection — once the visible
   // rows change, the selection count + has-llm-selection flags would
   // otherwise reflect rows the user can no longer see, which makes the
-  // toolbar's enabled state misleading (Copilot review on PR #2724).
+  // toolbar's enabled state misleading.
   const setFilter = useCallback((next: AliasesFilter) => {
     setFilterState(next);
     setSelectedIds(new Set());

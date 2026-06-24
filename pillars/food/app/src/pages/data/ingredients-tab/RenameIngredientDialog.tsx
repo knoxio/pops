@@ -1,11 +1,10 @@
 /**
  * Modal for renaming an ingredient's canonical slug.
  *
- * Calls `food.ingredients.rename` which atomically updates `ingredients.slug`
- * and `slug_registry.slug` (PRD-106 contract). Existing compiled `recipe_lines`
- * rows stay linked because they FK on `ingredient_id`, but recipe DSL bodies
- * referencing the old slug will fail on next compile — the description warns
- * the user about that.
+ * The rename atomically updates `ingredients.slug` and `slug_registry.slug`.
+ * Existing compiled `recipe_lines` rows stay linked because they FK on
+ * `ingredient_id`, but recipe DSL bodies referencing the old slug will fail
+ * on next compile — the description warns the user about that.
  */
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';

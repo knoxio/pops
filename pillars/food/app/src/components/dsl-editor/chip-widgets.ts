@@ -1,5 +1,5 @@
 /**
- * `WidgetType` subclasses rendered by the chip extension (PRD-120 part D).
+ * `WidgetType` subclasses rendered by the chip extension.
  *
  * Each widget produces a small inline DOM element that replaces (or marks)
  * the source range while keeping the document text intact — the user can

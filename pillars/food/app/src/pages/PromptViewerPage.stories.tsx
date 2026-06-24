@@ -1,11 +1,3 @@
-/**
- * PRD-133 — Storybook coverage for the prompt viewer page.
- *
- * `apps/pops-storybook/.storybook/main.ts` discovers stories from
- * `packages/*\/src/**\/*.stories.@(ts|tsx)`, so this file lives next to
- * the page (same convention `DslEditor.stories.tsx` /
- * `RecipeRenderer.stories.tsx` adopted).
- */
 import { createInstance, type i18n as I18n } from 'i18next';
 import { useMemo } from 'react';
 import { I18nextProvider, initReactI18next } from 'react-i18next';

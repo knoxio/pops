@@ -1,5 +1,5 @@
 /**
- * Merge-aliases dialog (PRD-122-C).
+ * Merge-aliases dialog.
  *
  * Pick a canonical target; the selected alias rows re-point at it inside
  * one server-side transaction. Rows already at the chosen target are

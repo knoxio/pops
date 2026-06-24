@@ -1,8 +1,8 @@
 /**
- * Data hook for the FromPlanPage — PRD-152.
+ * Data hook for the FromPlanPage.
  *
- * Drives `food.shopping.previewFromPlan` from the user-picked range and
- * exposes `generateFromPlan` so the page stays free of tRPC plumbing.
+ * Drives `shoppingPreview` from the user-picked range and exposes
+ * `shoppingGenerate` as a mutation.
  *
  * No polling — the preview is a snapshot at range-change time.
  */

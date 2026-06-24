@@ -1,8 +1,3 @@
-/**
- * Storybook for the recipe detail-page action menu. Forward-compat slot
- * showcased via `extraItems` — PRD-142 / PRD-144 will populate it for
- * Cook now / Send to shopping list.
- */
 import { createInstance } from 'i18next';
 import { useMemo } from 'react';
 import { I18nextProvider, initReactI18next } from 'react-i18next';

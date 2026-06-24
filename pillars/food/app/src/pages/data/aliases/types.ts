@@ -1,9 +1,9 @@
 /**
- * Shared types for the Aliases tab on `/food/data/aliases` (PRD-122-C).
+ * Shared types for the Aliases tab on `/food/data/aliases`.
  *
- * These mirror the wire shapes exposed by the food.aliases tRPC router.
- * Keeping them in one place stops accidental drift across the sub-files
- * that compose the tab (toolbar, table, dialogs).
+ * These mirror the wire shapes exposed by the food pillar's aliases REST
+ * contract. Keeping them in one place stops accidental drift across the
+ * sub-files that compose the tab (toolbar, table, dialogs).
  */
 export type AliasSource = 'user' | 'llm' | 'ingest';
 

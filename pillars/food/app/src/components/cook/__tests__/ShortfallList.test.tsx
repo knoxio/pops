@@ -1,16 +1,4 @@
 /**
- * PRD-146 — RTL coverage for the shortfall resolution surface.
- *
- *  - 3 unresolved shortfalls render with three radio options each
- *  - external radio resolves the shortfall in-place
- *  - batch-override radio opens `BatchOverridePicker`; selecting a
- *    batch writes a `kind='batch-override'` resolution
- *  - partial radio opens the same picker; selecting writes
- *    `kind='partial'` with the partial-qty editor visible
- *  - mark-cooked gate flips from disabled to enabled exactly when all
- *    three shortfalls have been resolved
- *  - scale change resets state + surfaces the scale-reset banner
- *
  * The nested `BatchOverridePicker` drives `batchesSearchForConsume` +
  * `substitutionsResolveForLine` through React Query, so the generated SDK
  * module is mocked and each render is wrapped in a `QueryClientProvider`.
@@ -142,7 +130,7 @@ function renderHost(props: HostProps): ReturnType<typeof render> {
   return render(<ShortfallHost {...props} />, { wrapper: Wrapper });
 }
 
-describe('ShortfallList — PRD-146', () => {
+describe('ShortfallList', () => {
   it('lists every unresolved shortfall with the expected radios + Mark-cooked stays disabled until all are resolved', async () => {
     mockSearchItems([makeBatch({ id: 42 })]);
     sdk.substitutionsResolveForLine.mockResolvedValue({ data: undefined });

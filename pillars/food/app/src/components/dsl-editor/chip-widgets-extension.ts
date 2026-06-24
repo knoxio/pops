@@ -1,15 +1,15 @@
 /**
- * CodeMirror extension wiring for the DSL chip widgets (PRD-120 part D).
+ * CodeMirror extension wiring for the DSL chip widgets.
  *
  * Two visual modes selected by the caller:
  *
  *   - `chipWidgetsExtension({ compact: false })` — replaces each chip range
  *     with a `WidgetType` (the default desktop behaviour).
  *   - `chipWidgetsExtension({ compact: true })` — uses `Decoration.mark`
- *     instead so the source characters stay visible. PRD-120 calls this out
- *     for mobile widths (<768px): widget replacement shrinks tap targets
- *     dangerously, so on mobile the chip becomes an inline label that
- *     simply colours the source range.
+ *     instead so the source characters stay visible. This is the mobile
+ *     mode (<768px): widget replacement shrinks tap targets dangerously,
+ *     so on mobile the chip becomes an inline label that simply colours the
+ *     source range.
  *
  * The matchMedia → compartment dance that picks between the two lives in
  * `useDslEditorView.ts`; this module just builds the extension array.
@@ -149,8 +149,8 @@ function formatPillLabel(chip: InlineFuncChip): string {
  * event-routing pipeline doesn't fire reliably for synthetic clicks on
  * widget DOM in jsdom — attaching directly to `contentDOM` bypasses that
  * and lets the tests drive the chip via `fireEvent.click`. The keydown
- * handler covers Enter/Space so chips stay reachable via Tab → activate,
- * which the PRD calls out as an accessibility requirement.
+ * handler covers Enter/Space so chips stay reachable via Tab → activate
+ * (accessibility requirement).
  */
 function jumpToFromChip(chip: HTMLElement, view: EditorView): boolean {
   const raw = chip.getAttribute('data-chip-jump-from');

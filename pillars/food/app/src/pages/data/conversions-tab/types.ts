@@ -1,8 +1,7 @@
 /**
- * Wire-shape mirrors for the `food.conversions.*` endpoints (PRD-123
- * Phase D). Derived from the generated Hey API food SDK response types so
- * any schema change to the server output flows through to the UI without
- * manual updates.
+ * Wire-shape mirrors for the `food.conversions.*` endpoints, derived from
+ * the generated food SDK response types so any schema change to the server
+ * output flows through to the UI without manual updates.
  */
 import type {
   ConversionsListUnitsResponses,

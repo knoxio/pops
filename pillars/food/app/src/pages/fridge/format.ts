@@ -20,8 +20,8 @@ export function formatQty(qty: number, unit: BatchUnit): string {
 export function formatExpiry(expiresAt: string | null, daysToExpiry: number | null): string {
   if (expiresAt === null) return '—';
   const date = new Date(expiresAt);
-  // PRD-147 — date-only stamps come back as UTC midnight. We render in UTC
-  // so the visible day matches `daysToExpiry` (which is also UTC-anchored);
+  // Date-only stamps come back as UTC midnight. We render in UTC so the
+  // visible day matches `daysToExpiry` (which is also UTC-anchored);
   // showing the local-tz day would skew by one in negative offsets.
   const formatted = date.toLocaleDateString(undefined, {
     month: 'short',

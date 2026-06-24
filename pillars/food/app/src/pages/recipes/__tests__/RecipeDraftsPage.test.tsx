@@ -92,7 +92,7 @@ beforeEach(() => {
   navigateMock.mockReset();
 });
 
-describe('PRD-119-D — RecipeDraftsPage', () => {
+describe('recipe-crud-pages — RecipeDraftsPage', () => {
   it('shows the loading state while drafts are fetching', () => {
     recipesListDraftsMock.mockReturnValue(new Promise(() => {}));
     render(

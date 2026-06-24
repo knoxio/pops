@@ -1,5 +1,5 @@
 /**
- * Single batch row in the fridge sectioned list — PRD-147.
+ * Single batch row in the fridge sectioned list.
  *
  * Renders the variant / prep / qty / expiry line with a kebab menu
  * exposing Edit / Relocate / Adjust / Cook / Delete. The page owns

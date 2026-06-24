@@ -1,11 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 /**
- * PRD-143 — slot management drawer.
- *
- * Lists `plan_slots` rows; default slots can be reordered but not
- * renamed or deleted, custom slots support inline rename + delete (when
- * not in use). "+ Add slot" form at the bottom validates the slug
+ * Slot management drawer: lists `plan_slots` rows. Default slots can be
+ * reordered but not renamed or deleted; custom slots support inline rename
+ * and delete (when not in use). The "+ Add slot" form validates the slug
  * grammar client-side before calling the API.
+ *
+ * Spec: pillars/food/docs/prds/plan-entry-model
  */
 import { useState, type ReactElement } from 'react';
 

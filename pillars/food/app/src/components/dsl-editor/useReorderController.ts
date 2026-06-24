@@ -1,6 +1,6 @@
 /**
  * `useReorderController` — bridges the React panel state with the
- * imperative CodeMirror view for PRD-120 part E.
+ * imperative CodeMirror view.
  *
  * Responsibilities:
  *
@@ -12,10 +12,9 @@
  *
  * The hook deliberately does NOT debounce, persist, or re-scan as the
  * user moves rows — the snapshot is frozen for the lifetime of the open
- * dialog. If the underlying document changed between open and apply
- * (e.g. the user typed in another tab via tRPC sync), we re-check by
- * rescanning at apply-time and bail out with a no-op if the structure
- * changed underneath us.
+ * dialog. If the underlying document changed between open and apply, we
+ * re-check by rescanning at apply-time and bail out with a no-op if the
+ * structure changed underneath us.
  */
 import { useCallback, useMemo, useRef, useState } from 'react';
 

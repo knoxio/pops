@@ -1,5 +1,5 @@
 /**
- * Unit tests for the chip scanner (PRD-120 part D).
+ * Unit tests for the chip scanner.
  *
  * Pure function — no DOM, no CodeMirror. Each case asserts on the chip
  * offsets and the `index → declaration` map directly.
@@ -93,7 +93,7 @@ describe('scanForChips', () => {
   });
 
   it('survives unterminated @step body without throwing', () => {
-    const source = '@step("Mash the @1 in a bowl'; // missing closing quote
+    const source = '@step("Mash the @1 in a bowl';
     expect(() => scanForChips(source)).not.toThrow();
     expect(scanForChips(source).chips).toEqual([]);
   });

@@ -1,14 +1,13 @@
 /**
- * DSL editor autocomplete — canonical unit list (PRD-120 part B).
+ * DSL editor autocomplete — canonical unit list.
  *
- * The DSL grammar (ADR-023 + PRD-114) allows any lowercase identifier
- * after `qty:`; the parser does not constrain unit names. PRD-116's
- * normaliser only knows `g`, `ml`, `count` natively, plus the alias
- * table populated by PRD-123. The suggestion list mirrors the built-in
- * units the editor knows about deterministically — anything else the
- * user types still parses; the suggestion list is a convenience, not a
- * gate. Add a constant here when PRD-123 promotes a new alias to first-
- * class status.
+ * The DSL grammar (ADR-023) allows any lowercase identifier after `qty:`;
+ * the parser does not constrain unit names. The normaliser only knows
+ * `g`, `ml`, `count` natively, plus the alias table. The suggestion list
+ * mirrors the built-in units the editor knows about deterministically —
+ * anything else the user types still parses; the suggestion list is a
+ * convenience, not a gate. Add a constant here when a new alias is
+ * promoted to first-class status.
  *
  * Keep the ordering stable: canonical units first, then volume aliases,
  * then weight aliases, then time/temperature, then `none`. The dropdown
@@ -38,8 +37,8 @@ export const DSL_UNIT_SUGGESTIONS: readonly UnitSuggestion[] = [
 
 /** The DSL function names the editor surfaces after a bare `@`. The
  *  insertion text omits the trailing `(` so the user keeps their typing
- *  momentum into the argument list. Keep the order matching PRD-120's
- *  Autocomplete table so the smoke tests stay deterministic. */
+ *  momentum into the argument list. The order is load-bearing — the smoke
+ *  tests assert against it. */
 export interface FunctionSuggestion {
   slug: string;
   label: string;

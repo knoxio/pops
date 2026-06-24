@@ -1,12 +1,11 @@
 /**
- * Self-contained source scanner for the DSL editor's chip widgets (PRD-120
- * part D).
+ * Self-contained source scanner for the DSL editor's chip widgets.
  *
- * The chip extension cannot use PRD-114's AST: `parseRecipeDsl` returns
- * `{ ok: false, errors }` with NO ast on any parse failure, and the user is
- * constantly producing partial documents while typing. `StepBodyPart` also
- * carries no `SourceSpan` for inline refs, so even a successful parse
- * wouldn't supply chip offsets.
+ * The chip extension cannot use the DSL parser's AST: `parseRecipeDsl`
+ * returns `{ ok: false, errors }` with NO ast on any parse failure, and the
+ * user is constantly producing partial documents while typing.
+ * `StepBodyPart` also carries no `SourceSpan` for inline refs, so even a
+ * successful parse wouldn't supply chip offsets.
  *
  * Instead this scanner walks the text linearly:
  *

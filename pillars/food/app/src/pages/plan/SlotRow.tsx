@@ -1,7 +1,9 @@
 /**
- * One row inside the slot-management drawer. Renders the slot name
- * (editable for custom slots), reorder up/down buttons, and a delete
- * affordance — defaults are locked per PRD-143 / PRD-111 invariants.
+ * One row inside the slot-management drawer: the slot name (editable for
+ * custom slots), reorder up/down buttons, and a delete affordance. Default
+ * slots are locked — they can be reordered but not renamed or deleted.
+ *
+ * Spec: pillars/food/docs/prds/plan-entry-model
  */
 import { useState, type ReactElement } from 'react';
 

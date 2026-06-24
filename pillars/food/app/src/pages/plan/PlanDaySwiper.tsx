@@ -1,14 +1,14 @@
 /**
- * PRD-143 — mobile day-at-a-time swiper.
+ * Mobile day-at-a-time swiper: a vertical stack of slot sections for a
+ * single visible day, with prev / next arrows plus a touch swipe gesture to
+ * navigate between the seven days of the current ISO week. Shares the dnd
+ * context, cell rendering, and add / edit hooks with `PlanWeekGrid` so
+ * behaviour stays identical at narrow viewports — only the framing changes
+ * (one column of stacked cells instead of a 7-column table). The Mon→Sun
+ * index is internal state; the caller still owns the visible week via
+ * `weekStart`.
  *
- * Vertical stack of slot sections for a single visible day, with prev /
- * next arrows + a touch swipe gesture to navigate between the seven
- * days of the current ISO week. Shares the dnd context, cell
- * rendering, and add / edit hooks with `PlanWeekGrid` so behaviour
- * stays identical at narrow viewports — the only thing that changes is
- * the framing (one column of stacked cells instead of a 7-column
- * table). The Mon→Sun index is internal state; the caller still owns
- * the visible week via `weekStart`.
+ * Spec: pillars/food/docs/prds/planning-page
  */
 import { DndContext } from '@dnd-kit/core';
 import { useCallback, useEffect, useRef, useState, type ReactElement } from 'react';

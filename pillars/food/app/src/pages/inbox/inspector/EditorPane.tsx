@@ -1,15 +1,7 @@
 /**
- * PRD-135 — editor pane.
- *
- * Two tabs: Editor (mounts PRD-120's `DslEditor`, debounced save) and
- * Renderer (lazy-loads PRD-121's `RecipeRenderer` via
- * `food.recipes.getForRendering`). Save fires `food.recipes.saveDraft`
- * and on success invalidates the inspector query so the band + signals +
- * proposed slugs refresh.
- *
  * Archived versions render the editor in `readOnly` mode and hide the
- * Save button; the renderer remains live for archived versions (a
- * frozen view of what was archived).
+ * Save button; the renderer stays live for archived versions, a frozen
+ * view of what was archived.
  */
 import { useMutation } from '@tanstack/react-query';
 import { type ReactElement, useEffect, useRef, useState } from 'react';
@@ -46,8 +38,7 @@ export function EditorPane({ draft, onSaved, pendingCursor }: Props): ReactEleme
   // `draft.bodyDsl` (Save → invalidate, sibling-tab approve, etc.) — without
   // this, a stale `body` could overwrite the on-server DSL on the next Save.
   // The `lastSyncedDsl` ref prevents the user's in-flight unsaved edits from
-  // being clobbered by a refetch that returned the same value they last
-  // saved (Copilot R1).
+  // being clobbered by a refetch that returned the same value they last saved.
   const lastSyncedDsl = useRef(draft.bodyDsl);
   useEffect(() => {
     if (draft.bodyDsl === lastSyncedDsl.current) return;

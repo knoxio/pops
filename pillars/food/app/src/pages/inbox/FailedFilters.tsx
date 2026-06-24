@@ -1,9 +1,7 @@
 /**
- * PRD-138 — filter chip group for the Failed-ingests tab.
- *
- * Error-code chip set is dynamic — auto-populated from
- * `food.inbox.failedErrorCodes` so newly emitted codes surface without a
- * UI change. Kind + sinceDays chips mirror the Rejected tab pattern.
+ * Filter chip group for the Failed-ingests tab. The error-code chip set is
+ * dynamic — `availableErrorCodes` comes from the `inboxFailedErrorCodes`
+ * endpoint so newly emitted codes surface without a UI change.
  */
 import { type ReactElement } from 'react';
 

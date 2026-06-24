@@ -1,6 +1,6 @@
 /**
  * Unit tests for `spanToRange` — the SourceSpan → CodeMirror offset
- * converter used by the issues extension (PRD-120 part C).
+ * converter used by the issues extension.
  *
  * Covers the contract documented at the top of `issues-span.ts`:
  *   - 1-indexed line/column input, exclusive `endCol`
@@ -21,7 +21,7 @@ function stateFor(doc: string): EditorState {
   return EditorState.create({ doc });
 }
 
-describe('spanToRange — PRD-120 part C', () => {
+describe('spanToRange', () => {
   it('maps a single-line span to the correct offset pair', () => {
     const state = stateFor('@ingredient(1, banana:raw:foo, 1:cup)');
     // `foo` lives at columns 27–29 (1-indexed). The `:` after `raw` is at

@@ -1,5 +1,5 @@
 /**
- * Date-range helpers for the FromPlanPage — PRD-152.
+ * Date-range helpers for the FromPlanPage.
  *
  * Keeps the date math out of the component so the tests can exercise the
  * "↺ This week" snap, the +6 default, and the > 90-day client-side gate
@@ -27,7 +27,7 @@ export function defaultRange(today: Date = new Date()): { start: string; end: st
 }
 
 export function isoMondayFor(today: Date = new Date()): string {
-  // toISOString is in UTC; map to ISO Monday by walking back to dow=1.
+  // Normalise to UTC midnight so DST/TZ never shifts the weekday, then walk back to ISO Monday (dow=1).
   const utc = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()));
   const dow = utc.getUTCDay(); // 0=Sun..6=Sat
   const offset = dow === 0 ? -6 : 1 - dow;

@@ -1,13 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 /**
- * Header controls for the PRD-148 substitution graph explorer.
+ * Header controls for the substitution graph explorer.
  *
  * Scope toggle / context dropdown are controlled by URL state; the
- * search input owns local state and debounces its URL-sync by 200ms
- * (per PRD-148 spec) so per-keystroke typing doesn't churn the
- * tRPC query or the browser history. Deep links land with the URL's
- * `q` value pre-populated.
+ * search input owns local state and debounces its URL-sync by 200ms so
+ * per-keystroke typing doesn't churn the data query or the browser
+ * history. Deep links land with the URL's `q` value pre-populated.
  */
 import { Link } from 'react-router';
 

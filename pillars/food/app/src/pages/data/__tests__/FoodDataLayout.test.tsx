@@ -1,14 +1,13 @@
 /**
- * PRD-122 — /food/data shell smoke tests.
+ * /food/data shell smoke tests.
  *
  * Drives the layout through `createMemoryRouter` so the `Outlet`
  * + `NavLink` + redirect machinery exercises the real React Router
- * resolution path. Each tab's body is asserted via the i18n title
- * (sourced from `apps/pops-shell/.../food.json`).
+ * resolution path.
  *
  * The route tree imports tab modules via `React.lazy`, so the
  * RouterProvider is wrapped in a Suspense boundary; without it,
- * CI runs hit the lazy module's pending promise and `findByText`
+ * runs hit the lazy module's pending promise and `findByText`
  * times out before resolution.
  */
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -70,27 +69,15 @@ function renderAt(initialPath: string) {
   );
 }
 
-describe('PRD-122 — /food/data shell', () => {
+describe('/food/data shell', () => {
   it('redirects /food/data to /food/data/ingredients by default', async () => {
     renderAt('/food/data');
     expect(await screen.findByRole('heading', { name: /manage data/i })).toBeInTheDocument();
-    // The redirect lands on the Ingredients tab; the mobile dropdown
-    // mirrors the active slug, so its value reflects the redirect target.
     const dropdown = (await screen.findByLabelText(/data tabs/i, {
       selector: 'select',
     })) as HTMLSelectElement;
     expect(dropdown.value).toBe('ingredients');
   });
-
-  // Per-tab content + route tests below previously asserted on the
-  // placeholder text rendered by each lazy tab module. Under vitest's
-  // full-suite run, the lazy chunk loading cascades through the same
-  // worker pool that other test files have already exercised, and the
-  // resolution intermittently stalls on the Suspense fallback. The
-  // active-tab semantics are covered by `getActiveTabSlug` unit tests
-  // below (pure function, deterministic) and the tablist + dropdown
-  // tests further down (which run synchronously off the URL via
-  // `useLocation`, no lazy chunks involved).
 
   it('exposes a desktop tablist with one entry per tab', async () => {
     renderAt('/food/data/ingredients');

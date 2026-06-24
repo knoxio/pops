@@ -1,21 +1,17 @@
 /**
- * DSL editor autocomplete — cursor-context classifier (PRD-120 part B).
+ * DSL editor autocomplete — cursor-context classifier.
  *
  * Inspects the document slice immediately before the cursor and reports
- * which of the seven autocomplete sources should fire. Pure: no
- * CodeMirror imports, no async work, no document mutation. Tests drive
- * it with raw strings + offsets so the matrix from PRD-120's
- * "Autocomplete" section can be verified case-by-case without spinning
- * up an editor.
+ * which autocomplete source should fire. Pure: no CodeMirror imports, no
+ * async work, no document mutation.
  *
  * The classifier walks **backwards** from the cursor over the prefix
  * because the grammar is line-aware (`@step("...")` bodies can span
  * lines via the parser but autocomplete only needs the unbalanced-paren
  * region between the cursor and the most recent unclosed `@<func>(` or
- * the last newline outside a step body). Implementation note: a full
- * recursive-descent reparse on every keystroke is overkill — the
- * suffix-walk is sufficient for the contexts the PRD enumerates and
- * stays under the per-file lint cap.
+ * the last newline outside a step body). A full recursive-descent reparse
+ * on every keystroke is overkill — the suffix-walk is sufficient for the
+ * contexts that exist.
  */
 import { findStepBodyAtOffset } from './autocomplete-step-bodies';
 
@@ -37,9 +33,10 @@ export type CursorContext =
   /** Inside a `@step("...")` body after `@` — step refs (index OR slug). */
   | { kind: 'step-ref'; from: number; query: string; bodyStart: number };
 
-/** Identifier characters per PRD-114's grammar: lowercase + digits +
- *  hyphen. Numbers also need to be recognised at the start (for `@N`
- *  step refs and `qty:` values). */
+/** Identifier characters per the DSL grammar
+ *  (pillars/food/docs/prds/dsl-parser): lowercase + digits + hyphen.
+ *  Numbers also need to be recognised at the start (for `@N` step refs
+ *  and `qty:` values). */
 const IDENT_RE = /^[a-z0-9-]+$/;
 
 export function classifyCursor(text: string, pos: number): CursorContext {

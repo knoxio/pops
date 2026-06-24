@@ -1,11 +1,11 @@
 /**
- * PRD-143 — desktop week grid.
- *
- * 7-column × N-slot grid. Each cell hosts a sortable list of plan
- * entries. Drag across cells calls `moveEntry`; drag within a cell calls
- * `reorderSlot`. The mobile day-swiper variant lives in
- * `PlanDaySwiper.tsx`; `PlanPage` picks one or the other via
+ * Desktop week grid: a 7-column × N-slot table where each cell hosts a
+ * sortable list of plan entries. Dragging across cells calls `moveEntry`;
+ * dragging within a cell calls `reorderSlot`. The mobile day-swiper variant
+ * lives in `PlanDaySwiper.tsx`; `PlanPage` picks one or the other via
  * `useIsMobile`.
+ *
+ * Spec: pillars/food/docs/prds/planning-page
  */
 import { DndContext } from '@dnd-kit/core';
 

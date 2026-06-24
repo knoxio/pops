@@ -1,9 +1,6 @@
 /**
- * PRD-149 — Same-variant section of `BatchOverridePicker`.
- *
- * Behaviour unchanged from PRD-146 — only relocated so the parent
- * picker stays under the per-file lint cap with the new Substitutions
- * section sitting alongside it.
+ * Same-variant section of `BatchOverridePicker`: batches whose variant
+ * matches the line's, FIFO-ordered.
  */
 import { useTranslation } from 'react-i18next';
 

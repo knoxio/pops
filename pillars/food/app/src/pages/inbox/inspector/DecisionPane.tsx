@@ -1,12 +1,3 @@
-/**
- * PRD-135 — decision pane.
- *
- * Top-to-bottom: quality band card, auto-create banner, proposed-slug
- * list (with cursor-move callback), decision controls (Approve / Reject
- * or Undo for archived). Partial-draft sources surface a Re-run pipeline
- * button alongside Approve / Reject; `auth-dead` disables it with a
- * tooltip linking to the IG cookie runbook.
- */
 import { useMutation } from '@tanstack/react-query';
 import { type ReactElement, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -183,13 +174,12 @@ function RerunPipelineButton({
   onRequeued: () => void;
 }): ReactElement {
   const { t } = useTranslation('food');
-  // PRD-135 §"Partial-draft retry variant" — `auth-dead` is disabled until
-  // the operator refreshes cookies out-of-band (see the IG cookie runbook).
+  // `auth-dead` stays disabled until the operator refreshes IG cookies
+  // out-of-band; nothing the UI can do recovers it.
   const isDisabled = partialReason === 'auth-dead';
   // `partial` is a terminal state, so the inspector's poll stops; without an
   // explicit invalidate after re-queue the UI sticks on the old partial draft
-  // until the user reloads. Bumping `onRequeued` invalidates the query
-  // (Copilot R1).
+  // until the user reloads. Bumping `onRequeued` invalidates the query.
   const mutation = useMutation({
     mutationFn: async (input: { sourceId: number }) => unwrap(await ingestRetry({ body: input })),
     onSuccess: () => {

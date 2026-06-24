@@ -1,7 +1,3 @@
-/**
- * Storybook stories for the recipe list-page card. Pure-presentation —
- * no tRPC dependency, so the stories drive the variants directly.
- */
 import { MemoryRouter } from 'react-router';
 
 import { RecipeListCard } from './RecipeListCard';

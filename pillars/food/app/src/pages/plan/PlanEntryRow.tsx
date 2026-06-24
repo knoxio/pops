@@ -1,10 +1,9 @@
 /**
- * PRD-143 — plan entry card row.
+ * One row per plan entry inside a cell: a servings badge, a status chip when
+ * cooked, and a drag handle that greys out when the entry is locked by a
+ * cook. Clicking the row body opens `PlanEntryEditSheet`.
  *
- * One row per plan entry inside a cell. Truncates title to 18 chars,
- * shows a servings badge when >1, a status chip when cooked, and a tiny
- * drag handle (greyed when locked by cook). Clicking the body opens
- * `PlanEntryEditSheet`.
+ * Spec: pillars/food/docs/prds/planning-page
  */
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';

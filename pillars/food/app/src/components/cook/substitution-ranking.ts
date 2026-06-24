@@ -1,8 +1,8 @@
 /**
- * PRD-149 — substitution candidate ranking.
+ * Substitution candidate ranking.
  *
- * Pure function so the Vitest fixture in `BatchOverridePicker.test.tsx`
- * can pin the order independent of React. Sort key per the PRD:
+ * Pure function so the Vitest fixture in `substitution-ranking.test.ts`
+ * can pin the order independent of React. Sort key:
  *
  *   1. `|ratio - 1.0|` ASC
  *   2. context-tag overlap (with the recipe's tags) DESC

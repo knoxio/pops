@@ -1,5 +1,5 @@
 /**
- * Hover tooltip provider for the issues extension (PRD-120 part C).
+ * Hover tooltip provider for the issues extension.
  *
  * On hover, looks up every `CompileEditorIssue` whose `loc` covers the
  * pointer offset and renders them stacked in a single tooltip. Multiple

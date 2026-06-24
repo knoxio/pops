@@ -1,5 +1,5 @@
 /**
- * Diagnostic gutter for the issues extension (PRD-120 part C).
+ * Diagnostic gutter for the issues extension.
  *
  * Renders a single marker per line that contains at least one issue.
  * Error wins over info when both exist on the same line (so the user
@@ -59,7 +59,6 @@ export const issuesGutter = gutter({
     if (count === 0) return null;
     return new IssueMarker(hasError ? 'error' : 'info', count);
   },
-  // Force a re-render when the issues field updates.
   lineMarkerChange(update) {
     const before = update.startState.field(issuesField, false);
     const after = update.state.field(issuesField, false);

@@ -14,14 +14,9 @@
  *
  * `recipes.hero_image_path` stores the relative path of the original
  * (`<recipe_id>/hero.<ext>`); thumbnail paths are derived at read time.
- *
- * The same constants are mirrored inside
- * `apps/pops-api/src/modules/food/hero-image/paths.ts` — pops-api does not
- * depend on `@pops/app-food` at runtime, so the absolute-path helpers are
- * duplicated there. Keep both in sync if the layout ever changes.
  */
 
-/** Hard-coded default — kept in sync with `apps/pops-api/.env.example`. */
+/** Hard-coded default for `FOOD_RECIPES_DIR`. */
 export const DEFAULT_FOOD_RECIPES_DIR = './data/food/recipes';
 
 /** File extensions allowed for the original hero upload. */
@@ -104,7 +99,6 @@ export function heroImageUrl(
   variant: HeroImageVariant = 'original'
 ): string | null {
   if (!currentPath) return null;
-  // Split on POSIX separator — the column is always written with `/`.
   const match = /^(\d+)\/hero\.(jpg|jpeg|png|webp)$/.exec(currentPath);
   if (!match) return null;
   const recipeId = match[1] ?? '';

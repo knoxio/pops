@@ -1,5 +1,5 @@
 /**
- * Pure-function coverage for `format.ts` (PRD-122-C).
+ * Pure-function coverage for `format.ts`.
  *
  * The sort comparator + target label helpers are the only "business
  * logic" in the Aliases tab — keeping them unit-tested ensures the

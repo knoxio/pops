@@ -1,7 +1,8 @@
 /**
- * Default name for the "Create new list" radio per PRD-142 §UI:
- * `"Shopping list — <yyyy-MM-dd>"`. Pulled out so the test suite can
- * inject a stable clock without freezing the whole modal.
+ * Default name for the "Create new list" radio
+ * (pillars/food/docs/prds/send-to-list): `"Shopping list — <yyyy-MM-dd>"`.
+ * Pulled out so the test suite can inject a stable clock without freezing
+ * the whole modal.
  */
 import { format } from 'date-fns';
 

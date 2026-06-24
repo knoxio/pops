@@ -1,10 +1,11 @@
 /**
- * PRD-143 — shared drag-and-drop wiring for the planning surface.
+ * Shared drag-and-drop wiring for the planning surface: a single
+ * `DragEndEvent` handler plus the sensor and mutation stack used by both
+ * `PlanWeekGrid` (desktop) and `PlanDaySwiper` (mobile). Keeping it in one
+ * place means a touch tap on the mobile swiper resolves the same way it does
+ * on the desktop grid.
  *
- * Exposes a single `DragEndEvent` handler plus the sensor + mutation
- * stack used by both `PlanWeekGrid` (desktop) and `PlanDaySwiper`
- * (mobile). Keeping it in one place means a touch tap on the mobile
- * swiper resolves the same way it does on the desktop grid.
+ * Spec: pillars/food/docs/prds/planning-page
  */
 import {
   type DragEndEvent,

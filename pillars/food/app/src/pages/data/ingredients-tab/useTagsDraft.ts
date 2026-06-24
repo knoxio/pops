@@ -1,5 +1,5 @@
 /**
- * PRD-151 — local-draft state for the ingredient Tags chip editor.
+ * Local-draft state for the ingredient Tags chip editor.
  *
  * Tracks the in-progress chip set independently of the server payload so
  * the user can add / remove tags freely and only commit on Save. The hook
@@ -10,8 +10,8 @@
  *   - dirty flag, save / reset wires, server-side error mapping
  *
  * Kept separate from `IngredientTagsEditor.tsx` so the component itself
- * stays under the per-function lint cap (60 lines) and so the draft
- * machinery is unit-testable in isolation.
+ * stays under the per-function lint cap and so the draft machinery is
+ * unit-testable in isolation.
  */
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';

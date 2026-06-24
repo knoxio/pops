@@ -1,13 +1,11 @@
 /**
- * `BatchOverridePicker` — PRD-146 + PRD-149 (sections amendment).
+ * `BatchOverridePicker` — two sticky-header sections inside one dropdown:
  *
- * Two sticky-header sections inside one dropdown:
- *
- *   - **Same-variant** (PRD-146): batches whose `variantId` matches the
- *     line's variant, FIFO-ordered.
- *   - **Substitutions** (PRD-149): every valid sub edge for the line's
- *     variant × its non-empty batches, ranked by the picker's pure
- *     ranking fn. Capped at 5 entries with a "Show all" expander.
+ *   - **Same-variant**: batches whose `variantId` matches the line's
+ *     variant, FIFO-ordered.
+ *   - **Substitutions**: every valid sub edge for the line's variant ×
+ *     its non-empty batches, ranked by the picker's pure ranking fn.
+ *     Capped at 5 entries with a "Show all" expander.
  *
  * Selection routes through a discriminated `BatchPickerSelection` so the
  * shortfall row can wire same-variant vs sub picks into the right

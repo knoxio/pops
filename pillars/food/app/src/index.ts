@@ -15,9 +15,7 @@ export type { TimerButtonProps } from './components/TimerButton';
 export { TempBadge } from './components/TempBadge';
 export type { TempBadgeProps } from './components/TempBadge';
 
-// PRD-120 — DSL Editor (Part A scaffold + Part B autocomplete + Part C
-// issues prop + Part D chip widgets + Part E reorder/renumber). Panel +
-// scanner exported so downstream stories / pages can drive them
+// Panel + scanner exported so downstream stories / pages can drive them
 // deterministically without reaching into the dsl-editor subtree.
 export { DslEditor } from './components/DslEditor';
 export type { DslEditorProps } from './components/DslEditor';

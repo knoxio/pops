@@ -1,8 +1,8 @@
 /**
- * PRD-143 — tiny `matchMedia` hook that flips the planning surface to its
- * mobile layout at `<768px` (the PRD's mobile breakpoint). Returns `false`
- * in non-browser environments so SSR / unit tests render the grid by
- * default; tests that want the mobile view stub `window.matchMedia`.
+ * `matchMedia` hook that flips the planning surface to its mobile layout at
+ * the `MOBILE_QUERY` breakpoint. Returns `false` in non-browser environments
+ * so SSR and unit tests render the grid by default; tests that want the
+ * mobile view stub `window.matchMedia`.
  */
 import { useEffect, useState } from 'react';
 

@@ -1,12 +1,3 @@
-/**
- * PRD-146 — RTL coverage for `ConsumePreviewPanel`.
- *
- *  - happy path: 8 fully-covered lines; panel auto-collapsed when no
- *    shortfalls exist
- *  - expanding shows the first N rows + a "show 3 more" expander
- *  - shortfall presence flips the panel to expanded-by-default
- *  - empty-need state renders the dashed empty card
- */
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
@@ -36,7 +27,7 @@ function fifoFor(needs: readonly LineConsumeNeed[]): Map<number, LineResolution>
   return map;
 }
 
-describe('ConsumePreviewPanel — PRD-146', () => {
+describe('ConsumePreviewPanel', () => {
   it('renders the empty state when no lines are resolved', () => {
     render(<ConsumePreviewPanel lineNeeds={[]} resolutionMap={new Map()} hasShortfalls={false} />);
     expect(screen.getByText(/no ingredient lines to consume/i)).toBeInTheDocument();

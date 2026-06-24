@@ -1,5 +1,5 @@
 /**
- * Send-to-list integration helpers for `RecipeDetailPage` — PRD-142.
+ * Send-to-list integration helpers for `RecipeDetailPage`.
  *
  * Extracted from the page so the page stays under the per-file lint cap.
  * `useSendFlow` owns the modal open/close state; `canSendRecipe` is the

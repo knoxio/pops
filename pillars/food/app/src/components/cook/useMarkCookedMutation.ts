@@ -1,14 +1,13 @@
 /**
- * Mutation hook for `food.cook.markCooked` — PRD-144.
+ * Mutation hook for `markCooked`.
  *
  * Owns the result-shape branching (`ok: true` → close + onSuccess; `ok:
  * false` → i18n error surface) and the search-for-consume cache
- * invalidation. PRD-146 reads the same cache when its real
- * `BatchOverridePicker` lands, so any cook must invalidate it.
+ * invalidation. The `BatchOverridePicker` reads that cache, so any cook
+ * must invalidate it.
  *
  * `onSuccess` receives the chosen yield location alongside the run +
- * batch ids so the parent toast can localise the message per location
- * (Copilot R1).
+ * batch ids so the parent toast can localise the message per location.
  */
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';

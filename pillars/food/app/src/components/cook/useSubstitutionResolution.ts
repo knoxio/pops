@@ -1,9 +1,8 @@
 /**
- * PRD-149 — hook wrapping `food.substitutions.resolveForLine`.
- *
- * Wires the cook-modal picker's Substitutions section to the new tRPC
- * query owned by Epic 06. Returns the resolved candidates plus the
- * loading / error state the picker uses to gate rendering.
+ * Hook wrapping the `substitutionsResolveForLine` query, which feeds the
+ * cook-modal picker's Substitutions section. Returns the resolved
+ * candidates plus the loading / error state the picker uses to gate
+ * rendering.
  *
  * The query keys on `(recipeVersionId, lineIndex)` so opening the picker
  * for a different line re-fetches automatically. Stale data is fine for
@@ -50,8 +49,8 @@ export function useSubstitutionResolution(
   const resolution = query.data;
   // Stable JSON key for the contextTags array so useMemo's dep array
   // doesn't see a fresh reference on every render (callers often spread
-  // the recipe's tags inline). Mirrors the pattern used by
-  // useCookResolution for shortfall keys.
+  // the recipe's tags inline). Mirrors the stable-key pattern in
+  // useCookResolution.
   const contextTagsKey = JSON.stringify(
     args.recipeContextTags ?? resolution?.recipeContextTags ?? []
   );

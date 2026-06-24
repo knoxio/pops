@@ -1,15 +1,16 @@
 /**
- * PRD-144 — cook event recording modal.
+ * Cook event recording modal. Captures scale, yield, location, expires,
+ * rating, notes. The Mark cooked button gates on form validity AND the
+ * shortfall resolution state from `useCookResolution`.
  *
- * Opens from two entry points (PRD-119's "Cook now" action menu and
- * PRD-143's plan-entry "Mark cooked" — when 143 lands). Captures scale,
- * yield, location, expires, rating, notes. The Mark cooked button gates
- * on form validity AND PRD-146's shortfall resolution state (the
- * `useCookResolution` hook is a stub returning `unresolvedCount: 0` for
- * now; PRD-146 wires the real shortfall UI).
+ * The modal feeds `useCookResolution` an empty shortfall set because
+ * `prepareCook` does not yet emit server shortfalls, so the gate is
+ * currently inert (`unresolvedShortfallCount` stays 0). The live
+ * server→modal shortfall feed is tracked in
+ * `pillars/food/docs/ideas/fifo-consumption-ui-live-wiring.md`.
  *
- * The mutation is one transactional `food.cook.markCooked` round-trip;
- * success closes the modal — the parent `CookNowPortal` owns the toast.
+ * The mutation is one transactional `markCooked` round-trip; success
+ * closes the modal — the parent `CookNowPortal` owns the toast.
  */
 import { type ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -35,7 +36,7 @@ export interface CookedSuccess {
   /**
    * The location the user selected for the yielded batch, propagated so
    * the parent toast can render a location-aware message instead of
-   * hardcoding "fridge" (Copilot R1). `null` for yieldless cooks.
+   * hardcoding "fridge". `null` for yieldless cooks.
    */
   location: 'pantry' | 'fridge' | 'freezer' | 'other' | null;
 }
@@ -46,7 +47,7 @@ export interface CookModalProps {
   planEntryId?: number;
   isOpen: boolean;
   onClose: () => void;
-  /** Called after a successful `food.cook.markCooked`. */
+  /** Called after a successful `markCooked`. */
   onCookedSuccess?: (result: CookedSuccess) => void;
 }
 

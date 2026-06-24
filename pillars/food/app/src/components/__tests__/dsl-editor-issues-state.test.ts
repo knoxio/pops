@@ -1,6 +1,5 @@
 /**
- * Unit tests for the issues `StateField` + `setIssuesEffect` — PRD-120
- * part C.
+ * Unit tests for the issues `StateField` + `setIssuesEffect`.
  *
  * Drives the state field through an `EditorState` directly so we cover:
  *   - dispatching `setIssuesEffect` populates decorations
@@ -47,7 +46,7 @@ const ISSUE_B: CompileEditorIssue = {
   slug: 'banana',
 };
 
-describe('issues StateField — PRD-120 part C', () => {
+describe('issues StateField', () => {
   it('starts with no decorations', () => {
     const state = stateFor('hello world');
     expect(decorationCount(state)).toBe(0);
@@ -121,7 +120,7 @@ describe('issues StateField — PRD-120 part C', () => {
   });
 });
 
-describe('getIssuesForOffset — PRD-120 part C', () => {
+describe('getIssuesForOffset', () => {
   it('returns issues whose span covers the offset', () => {
     const state = stateFor('hello world');
     // ISSUE_A covers cols 1..5 → offsets [0, 4) (half-open, like

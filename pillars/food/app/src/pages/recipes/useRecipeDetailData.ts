@@ -26,8 +26,8 @@ export interface RecipeDetailState {
 }
 
 /**
- * Combine the two reads PRD-119-B's detail page needs: the heavy compile
- * payload (via `recipes.getForRendering`) and the draft count (via
+ * Combine the two reads the detail page needs: the heavy compile payload
+ * (via `recipes.getForRendering`) and the draft count (via
  * `recipes.listDrafts`). Drafts is keyed off the slug only so it
  * stays cached across version-no navigation, AND its fetch is gated by
  * `includeDrafts` so the historic-version page doesn't pay for a count

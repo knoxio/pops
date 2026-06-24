@@ -1,11 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
 /**
- * "Cook now" picker — PRD-147.
+ * "Cook now" picker.
  *
  * Lists recipes whose current version references this batch's variant.
- * The match is variant-only (not prep-aware) — a prep-aware solver
- * arrives in Epic 06. Clicking a recipe navigates to its detail page;
- * the cook flow takes over there.
+ * The match is variant-only, not prep-aware. Clicking a recipe navigates
+ * to its detail page; the cook flow takes over there.
  */
 import { type ReactElement } from 'react';
 import { Link, useNavigate } from 'react-router';

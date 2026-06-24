@@ -20,8 +20,8 @@ import { useRecipeDetailData } from './useRecipeDetailData.js';
 /**
  * `/food/recipes/:slug` — read view of the current version.
  *
- * Wraps PRD-121's `RecipeRenderer variant='detail'` with the recipe-page
- * shell: action menu, scale provider (forward-compat for PRD-142/144),
+ * Wraps `RecipeRenderer variant='detail'` with the recipe-page shell:
+ * action menu, scale provider (feeds the Cook now / Send-to-list flows),
  * missing-current banner, and an archive confirm flow.
  */
 export function RecipeDetailPage(): ReactElement {
@@ -128,7 +128,7 @@ interface ErrorBranchArgs {
 }
 
 function renderErrorBranch({ slug, error, draftCount, archive, t }: ErrorBranchArgs): ReactElement {
-  // PRD-119-API throws NOT_FOUND with three distinct message shapes; we
+  // The API throws NOT_FOUND with three distinct message shapes; we
   // route "has no published version" to the missing-current banner so
   // the user isn't told "could not load recipe" when the cause is "no
   // version published yet" (drafts may still exist).

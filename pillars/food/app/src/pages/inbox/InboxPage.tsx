@@ -1,12 +1,7 @@
 /**
- * PRD-134 — top-level page for `/food/inbox`.
- *
- * Reads the `?tab=` query param + the URL hash, mounts the right tab body,
- * and pushes filter / tab updates back into the URL so refresh + shared
- * links keep the user in the same state.
- *
- * The Rejected + Failed tab content lands from PRD-138 (already on `main`).
- * This PRD owns the shell + the Drafts tab + the URL plumbing.
+ * Top-level page for `/food/inbox`. Reads the `?tab=` query param + the URL
+ * hash, mounts the right tab body, and pushes filter / tab updates back into
+ * the URL so refresh + shared links keep the user in the same state.
  */
 import { useQuery } from '@tanstack/react-query';
 import { type ReactElement, useCallback, useEffect } from 'react';

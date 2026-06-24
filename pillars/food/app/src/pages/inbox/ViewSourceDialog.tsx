@@ -1,22 +1,13 @@
 /**
- * PRD-138 / PRD-134 — read-only dialog showing the original ingest input.
+ * Read-only dialog showing the original ingest input, rendered per kind:
+ *   - url-web / url-instagram → link + iframe preview, sandboxed to
+ *     `allow-same-origin` only (scripts disabled).
+ *   - text → a stub placeholder; the saved caption is not surfaced yet.
+ *   - screenshot → `<img>` from the source's screenshot endpoint.
  *
- * Per-kind rendering:
- *   - url-web / url-instagram → `<a>` link + sandboxed iframe preview
- *     (the `sandbox="allow-same-origin"` only — scripts disabled).
- *   - text → `<pre>` of the saved caption (fetched via inspection of the
- *     `ingest_sources.caption` column on the row; PRD-138 v1 receives
- *     this through a follow-up tRPC peek, but for now we render a stub
- *     copy explaining how to inspect via the source endpoint).
- *   - screenshot → `<img src="/food-api/ingest/source/<id>/screenshot">`.
- *
- * No DSL editor — there's no draft to edit at this point.
- *
- * Props accept a narrow `ViewSource` shape (sourceId / ingestKind /
- * sourceUrl / optional errorCode) so PRD-134's draft rows can mount the
- * dialog from an `InboxDraftRow` without paying for the full `FailedRow`
- * surface. PRD-138's `FailedTab` still passes a `FailedRow`; the dialog
- * just narrows the fields it needs.
+ * Props take a narrow `ViewSource` shape (sourceId / ingestKind / sourceUrl /
+ * optional errorCode) so draft rows can open it from an `InboxDraftRow`
+ * without the full `FailedRow` surface.
  */
 import { type ReactElement } from 'react';
 

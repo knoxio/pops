@@ -1,5 +1,5 @@
 /**
- * PRD-149 — Substitutions section of `BatchOverridePicker`.
+ * Substitutions section of `BatchOverridePicker`.
  *
  * Cross-product candidate × batch rendering with a 5-item display cap
  * + "Show all" expander. Loading / error / empty states sit alongside

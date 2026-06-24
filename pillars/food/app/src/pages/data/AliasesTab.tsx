@@ -1,6 +1,6 @@
 /**
  * `/food/data/aliases` route entry. Defers to the tab's content tree
- * under `./aliases/` (PRD-122-C).
+ * under `./aliases/`.
  */
 import { AliasesTabContent } from './aliases/index.js';
 

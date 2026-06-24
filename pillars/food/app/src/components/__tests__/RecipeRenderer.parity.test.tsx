@@ -1,5 +1,5 @@
 /**
- * Round-trip parity test — PRD-121 AC line 248.
+ * Round-trip parity test.
  *
  * Feeds a static `RecipeVersionWithCompiledData` fixture (typed from the
  * `recipes.getForRendering` wire response) to `RecipeRenderer` and asserts
@@ -251,7 +251,7 @@ function makeLine(
   };
 }
 
-describe('PRD-121 — Round-trip parity (compiled fixture → render)', () => {
+describe('Round-trip parity (compiled fixture → render)', () => {
   it('renders every recipe_lines row as an ingredient list <li>', () => {
     render(<RecipeRenderer recipeVersion={PANCAKES} />);
     expect(screen.getAllByTestId('recipe-ingredient-row')).toHaveLength(3);

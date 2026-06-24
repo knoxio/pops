@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 /**
- * Per-recipe card on `/food/solve` — PRD-150.
+ * Per-recipe card on `/food/solve`.
  *
  * Icon (📗 clean / ⚠ subs needed) + title + status line + sub
  * breakdown + "Cook this" button. The whole card title links to the

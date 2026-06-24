@@ -1,9 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 /**
- * Soft-delete confirm — PRD-147.
+ * Soft-delete confirm.
  *
  * Distinguishes non-empty vs empty batches in the confirm copy. Calls
- * `food.batches.delete` (PRD-145 soft-delete via `deleted_at`).
+ * `batchesDelete`, which soft-deletes via `deleted_at`.
  */
 import { useEffect, useState, type ReactElement } from 'react';
 
