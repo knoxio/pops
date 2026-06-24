@@ -46,8 +46,9 @@ export const listItems = sqliteTable(
   (t) => [
     index('idx_list_items_list').on(t.listId),
     index('idx_list_items_checked').on(t.listId, t.checked),
-    // The migration makes this partial (WHERE ref_id IS NOT NULL); drizzle-kit
-    // can't express the WHERE clause, so the runtime DDL diverges from here.
+    // The migration creates this index partial (WHERE ref_id IS NOT NULL);
+    // drizzle-kit can't express the WHERE clause, so the migration's index
+    // diverges from this schema definition.
     index('idx_list_items_ref').on(t.refKind, t.refId),
   ]
 );

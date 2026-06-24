@@ -6,8 +6,8 @@
  * `src/db/services/*.ts`.
  *
  * The type uses `Record<string, unknown>` (not `Record<string, never>`) so the
- * alias matches both a narrow per-table handle and the opener's `getDrizzle()`
- * return shape.
+ * alias matches both a narrow per-table handle and the drizzle handle that
+ * `openListsDb` returns.
  */
 import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
 
