@@ -1,10 +1,8 @@
 /**
  * Seasons CRUD against the media pillar's SQLite via drizzle.
  *
- * Lifted from the pops-api monolith `tv-shows/seasons-service.ts` and
- * converted to the pillar's `(db, …)` arg-passing + db-domain-error pattern
- * (the monolith threw HTTP errors directly; the pillar keeps the db layer
- * HTTP-free and maps to status codes at the handler boundary).
+ * Throws typed domain errors; the db layer stays HTTP-free and the handler
+ * boundary maps them to status codes.
  */
 import { and, asc, eq } from 'drizzle-orm';
 

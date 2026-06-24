@@ -1,17 +1,10 @@
 /**
- * Pilot entity for `@pops/media-contract`. This is a deliberate stub
- * shape — id/title/year/tmdbId/lastEditedTime — sized to exercise the
- * round-trip tests + manifest + OpenAPI generators without committing
- * the contract to the full 25-field surface of the live
- * `apps/pops-api/src/modules/media/movies/types.ts` `Movie` type. The
- * production shape migrates in a follow-up PRD-153 US-07-style content
- * migration for media.
+ * A movie in the media pillar's contract wire shape (camelCase) for
+ * downstream consumers (apps, iOS Swift codegen, SDK).
  *
- * `lastEditedTime` is an ISO-8601 timestamp validated by `MovieSchema`
- * via `.datetime()`. `tmdbId` is a string here (not the live numeric id)
- * so the contract is wire-format agnostic — the TMDB id surface across
- * pillars varies (number on movies, occasionally string on cross-source
- * shows), and string keeps the OpenAPI snapshot stable.
+ * `tmdbId` is typed as a nullable string in this hand-authored consumer
+ * interface. The served REST contract (`rest-movies.ts`) models tmdbId as a
+ * number — keep that representational difference in mind when reconciling them.
  */
 export interface Movie {
   id: string;

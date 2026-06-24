@@ -1,16 +1,4 @@
-/**
- * Movies CRUD against the media pillar's SQLite via drizzle.
- *
- * Services take a `MediaDb` handle as their first argument; the calling
- * layer (pops-api modules) is responsible for resolving the singleton
- * or transaction handle to pass in. Mirrors `@pops/finance-db`'s
- * service signature pattern.
- *
- * The in-tree service in `apps/pops-api/src/modules/media/movies/`
- * still routes through the shared `getDrizzle()` handle for now —
- * PRD-165 PR 3 flips that to `getMediaDrizzle()` and routes through
- * this module.
- */
+/** Movies CRUD against the media pillar's SQLite via drizzle. */
 import { and, count, desc, eq, like, type SQL, sql } from 'drizzle-orm';
 
 import { MovieConflictError, MovieNotFoundError } from '../errors.js';
@@ -24,9 +12,8 @@ export type MovieRow = typeof movies.$inferSelect;
 
 /**
  * Public alias for the persisted movie row. The UI-side view-model
- * (poster/backdrop URL derivation, JSON-parsed genres) is constructed in
- * pops-api's `toMovie` helper at the router boundary so this package
- * stays HTTP-free.
+ * (poster/backdrop URL derivation, JSON-parsed genres) is constructed at
+ * the router boundary so this layer stays HTTP-free.
  */
 export type Movie = MovieRow;
 

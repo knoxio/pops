@@ -1,10 +1,8 @@
 /**
  * The media pillar's manifest route inventory — the `media.<domain>.<route>`
- * names the central registry advertises. Only domains served over REST are
- * listed; the list grows per migration slice.
+ * names the central registry advertises.
  *
- * Split out of `manifest.ts` so that file stays within the per-file line cap as
- * the route inventory expands.
+ * Split out of `manifest.ts` to keep that file within the per-file line cap.
  */
 import type { ManifestPayload } from '@pops/pillar-sdk/manifest-schema';
 

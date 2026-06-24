@@ -1,14 +1,10 @@
 /**
- * `plex.*` sub-router — Plex Media Server connection + auth.
+ * `plex.*` sub-router — Plex Media Server connection + auth: connection state,
+ * library listing, URL get/set, username, the plex.tv PIN auth handshake, and
+ * the config-only section-id / sync-status reads. Sync + scheduler routes are
+ * spread in from `rest-plex-sync.ts` / `rest-plex-scheduler.ts`.
  *
- * Ported from the monolith `media.plex.*` tRPC routers (connection + auth).
- * Wire shapes mirror the legacy procedures: connection state, library
- * listing, URL get/set, username, the plex.tv PIN auth handshake, and the
- * config-only section-id / sync-status reads.
- *
- * Token persistence is repointed onto the pillar-owned `plex_settings`
- * table (the pillar cannot reach `core/settings`); the sync orchestration
- * (sync-*.ts / scheduler.ts) stays in the monolith for slices 9b/9c.
+ * The token is persisted in the pillar-owned `plex_settings` table.
  */
 import { initContract } from '@ts-rest/core';
 import { z } from 'zod';

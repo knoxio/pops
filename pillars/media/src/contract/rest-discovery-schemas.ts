@@ -2,8 +2,7 @@
  * Zod building blocks for the `discovery.*` REST contract.
  *
  * Split from `rest-discovery.ts` so the route map stays focused. Zod-only — no
- * imports from `src/api/` or `src/db/`, honouring the package boundary. Wire
- * shapes mirror the legacy `media.discovery.*` tRPC procedures.
+ * imports from `src/api/` or `src/db/`, honouring the package boundary.
  */
 import { z } from 'zod';
 

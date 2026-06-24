@@ -1,16 +1,4 @@
-/**
- * TV shows CRUD against the media pillar's SQLite via drizzle.
- *
- * Services take a `MediaDb` handle as their first argument; the calling
- * layer (pops-api modules) is responsible for resolving the singleton
- * or transaction handle to pass in. Mirrors `@pops/finance-db`'s
- * service signature pattern.
- *
- * The in-tree service in `apps/pops-api/src/modules/media/tv-shows/`
- * still routes through the shared `getDrizzle()` handle for now —
- * PRD-166 PR 3 flips that to `getMediaDrizzle()` and routes through
- * this module.
- */
+/** TV shows CRUD against the media pillar's SQLite via drizzle. */
 import { and, asc, count, eq, like, type SQL } from 'drizzle-orm';
 
 import { TvShowConflictError, TvShowNotFoundError } from '../errors.js';
@@ -24,8 +12,7 @@ export type TvShowRow = typeof tvShows.$inferSelect;
 /**
  * Public alias for the persisted TV show row. The UI-side view-model
  * (poster/backdrop URL derivation, JSON-parsed genres + networks) is
- * constructed in pops-api's mapper at the router boundary so this
- * package stays HTTP-free.
+ * constructed at the router boundary so this layer stays HTTP-free.
  */
 export type TvShow = TvShowRow;
 

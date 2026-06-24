@@ -3,9 +3,9 @@
  *
  * When rotation is enabled: shows "Add to Queue" and "Download" buttons
  * with status badges (In Queue, Excluded).
- * When rotation is disabled: delegates to the existing RequestMovieButton.
+ * When rotation is disabled: delegates to RequestMovieButton.
  *
- * PRD-072 US-05
+ * Spec: pillars/media/docs/prds/rotation-ui
  */
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';

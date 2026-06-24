@@ -1,10 +1,8 @@
 /**
  * Pillar-local environment access for the upstream metadata clients.
  *
- * The media pillar must not depend on `core/settings` or `apps/pops-api`,
- * so the TMDB / TheTVDB clients read their API keys and tuning knobs
- * straight from `process.env` via these helpers instead of the monolith's
- * `env.ts` / settings table.
+ * The TMDB / TheTVDB clients read their API keys and tuning knobs straight
+ * from `process.env` via these helpers.
  */
 
 /** Read an env var, returning `undefined` when unset or empty. */

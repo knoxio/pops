@@ -9,8 +9,7 @@
  *      stretched via `scrypt`.
  *
  * Ciphertext layout (base64-encoded): `iv (12 bytes) | tag (16 bytes) |
- * ciphertext`. This matches the monolith's wire format so tokens written
- * before the migration decrypt unchanged once the seed is carried over.
+ * ciphertext`.
  */
 import { createCipheriv, createDecipheriv, randomBytes, scryptSync } from 'node:crypto';
 

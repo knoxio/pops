@@ -1,10 +1,8 @@
 /**
  * `movies.*` sub-router — movie CRUD.
  *
- * Response/body schemas mirror the legacy `media.movies.*` tRPC wire shapes
- * (`toMovie` + the create/update zod inputs) so the REST cutover is
- * transparent to the FE. Movie ids are numeric SQLite autoincrement keys;
- * `tmdbId` is the natural key enforced unique by the db layer.
+ * Movie ids are numeric SQLite autoincrement keys; `tmdbId` is the natural key
+ * enforced unique by the db layer.
  */
 import { initContract } from '@ts-rest/core';
 import { z } from 'zod';
@@ -13,7 +11,7 @@ import { ERR_RESPONSES, IdParam, MessageSchema, PaginationMetaSchema } from './r
 
 const c = initContract();
 
-/** Wire shape served by the movie handlers (mirrors `toMovie`). */
+/** Wire shape served by the movie handlers. */
 export const MovieSchema = z.object({
   id: z.number(),
   tmdbId: z.number(),

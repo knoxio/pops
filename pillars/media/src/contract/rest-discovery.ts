@@ -4,9 +4,8 @@
  * recommendations / context picks / genre spotlight, and shelf session
  * assembly + paging.
  *
- * Ported from the monolith `media.discovery.*` tRPC routers (basic / tmdb /
- * shelf). `trendingPlex` returns the Plex Discover trending feed, or `null`
- * when Plex is not connected (no token).
+ * `trendingPlex` returns the Plex Discover trending feed, or `null` when Plex
+ * is not connected (no token).
  *
  * Route order matters: literal sub-paths are declared before `:tmdbId` /
  * `:shelfId` params so the Express adapter doesn't capture them parametrically.

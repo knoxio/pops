@@ -4,7 +4,7 @@
  * are mocked at `globalThis.fetch` with a (method, url-substring) route
  * table, so the assertions exercise the real client → handler → contract
  * path. Token persistence is exercised end-to-end against a fresh on-disk
- * `plex_settings` table (proving the 0034 migration applies).
+ * `plex_settings` table.
  */
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';

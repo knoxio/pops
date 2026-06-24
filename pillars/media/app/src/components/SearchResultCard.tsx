@@ -6,7 +6,7 @@ import { Link } from 'react-router';
  * and an "Add to Library" / "In Library" action.
  * When the item is already in the library (`inLibrary === true`) and has a
  * 'leaving' rotation status, a LeavingBadge is rendered to indicate the
- * removal countdown (PRD-072 US-01).
+ * removal countdown.
  */
 import { cn } from '@pops/ui';
 

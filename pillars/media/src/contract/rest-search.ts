@@ -1,12 +1,8 @@
 /**
  * `search.*` sub-router — live metadata search over the upstream providers
  * (TMDB movies + TheTVDB series). No database: each route is a thin
- * pass-through to the env-configured provider client.
- *
- * Wire shapes mirror the legacy `media.search.*` tRPC router exactly
- * (`search.movies` → TMDB `TmdbSearchResponse`, `search.tvShows` →
- * `{ results: TvdbSearchResult[] }`) so the REST cutover is transparent to
- * the FE. A provider outage surfaces as 502 via `BadGatewayError`.
+ * pass-through to the env-configured provider client. A provider outage
+ * surfaces as 502 via `BadGatewayError`.
  */
 import { initContract } from '@ts-rest/core';
 import { z } from 'zod';

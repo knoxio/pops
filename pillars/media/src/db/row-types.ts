@@ -1,15 +1,14 @@
 /**
  * Public `Row`/`Insert` aliases for the media-owned tables.
  *
- * Centralised here so consumers can `import type { MovieRow } from
- * '@pops/media-db'` without reaching into a service module. The
- * underlying tables live in `./schema/*.ts` (PRD-245 US-04).
+ * Centralised here and re-exported via `./index.js` so consumers import media
+ * row types from one place without reaching into a service or schema module.
+ * The underlying tables live in `./schema/*.ts`.
  *
  * Service-owned types (`MovieRow`, `TvShowRow`, `WatchHistoryRow`,
- * `MediaWatchlistRow`, `DismissedDiscoverRow`) are also exported by
- * their respective service modules and re-exported via `./index.ts`;
- * this file hosts the remaining inferred row aliases plus the
- * `MEDIA_TYPES` constant relocated from `@pops/db-types`.
+ * `MediaWatchlistRow`, `DismissedDiscoverRow`) are also exported by their
+ * respective service modules and re-exported via `./index.ts`; this file
+ * hosts the remaining inferred row aliases plus the `MEDIA_TYPES` constant.
  */
 import type { InferInsertModel, InferSelectModel } from 'drizzle-orm';
 

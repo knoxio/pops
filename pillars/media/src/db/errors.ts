@@ -2,8 +2,7 @@
  * Typed errors raised by the media domain service layer.
  *
  * Plain Error subclasses — the service layer doesn't know about HTTP.
- * The pops-api router/middleware maps them to status codes when surfacing
- * to clients. Mirrors `@pops/finance-db`'s error pattern.
+ * The router/middleware maps them to status codes when surfacing to clients.
  */
 
 export class MovieNotFoundError extends Error {

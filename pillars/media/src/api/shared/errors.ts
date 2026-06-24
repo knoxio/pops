@@ -1,12 +1,9 @@
 /**
- * HTTP-shaped domain errors used by media-api REST handlers.
+ * HTTP-shaped domain errors used by the media REST handlers.
  *
- * Intentionally NOT imported from `apps/pops-api/src/shared/errors.ts` —
- * the per-pillar container stands alone of pops-api in the dependency
- * graph. Each error carries an optional `messageKey` so the frontend can
- * look up the translated string while the EN-AU fallback lives in
- * `message`; the REST error mapping plumbs it through the wire error shape
- * so clients keep receiving `data.messageKey` after the cutover.
+ * Each error carries an optional `messageKey` so the frontend can resolve a
+ * translated string while the EN-AU fallback lives in `message`; the REST
+ * error mapping plumbs it through the wire error body as a top-level `messageKey`.
  */
 export class HttpError extends Error {
   /** i18n key the frontend uses to resolve a localised message. */

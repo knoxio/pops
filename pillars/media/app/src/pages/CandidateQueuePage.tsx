@@ -1,11 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link, useSearchParams } from 'react-router';
 
-/**
- * CandidateQueuePage — tabbed view of rotation candidate queue.
- *
- * PRD-072 US-04
- */
 import { Badge, PageHeader, Tabs, TabsContent, TabsList, TabsTrigger } from '@pops/ui';
 
 import { unwrap } from '../media-api-helpers.js';

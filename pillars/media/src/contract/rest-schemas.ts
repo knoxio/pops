@@ -6,10 +6,8 @@
  * from `src/api/` or `src/db/`, so the contract honours the package
  * boundary (consumers see only `.`).
  *
- * These schemas describe the ACTUAL wire shapes the handlers serve (the
- * `to<Entity>` mappers in the legacy tRPC routers), not the idealised
- * `schemas/` entities from the pre-migration refactor. The OpenAPI
- * projection is therefore an honest description of what the server does.
+ * These schemas describe the actual wire shapes the handlers serve, so the
+ * OpenAPI projection is an honest description of what the server does.
  */
 import { z } from 'zod';
 
@@ -35,7 +33,7 @@ export const PaginationMetaSchema = z.object({
 
 /**
  * Error envelope. `messageKey` carries the i18n key the FE resolves to a
- * localised string (preserved from the tRPC `data.messageKey` wire shape).
+ * localised string.
  */
 export const ErrorBodySchema = z.object({
   message: z.string(),

@@ -4,7 +4,6 @@
  *
  * Reads: list (paginated, page-based), genres, and quick-pick. Mutations:
  * addMovie / refreshMovie (TMDB) and addTvShow / refreshTvShow (TheTVDB).
- * Wire shapes mirror the legacy `media.library.*` tRPC procedures.
  */
 import { initContract } from '@ts-rest/core';
 import { z } from 'zod';

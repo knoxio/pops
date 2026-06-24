@@ -1,9 +1,8 @@
 /**
  * `tv-shows.*` sub-router — TV-show CRUD plus nested seasons & episodes.
  *
- * Wire shapes mirror the legacy `media.tv-shows.*` tRPC router. Seasons and
- * episodes are nested under their parents on create/list; deletes target the
- * resource directly. Numeric ids are coerced from the path.
+ * Seasons and episodes are nested under their parents on create/list; deletes
+ * target the resource directly. Numeric ids are coerced from the path.
  */
 import { initContract } from '@ts-rest/core';
 import { z } from 'zod';

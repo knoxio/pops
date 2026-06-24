@@ -2,9 +2,8 @@
  * Entry point for the media pillar HTTP server.
  *
  * Boots the process with the `/health` + `/pillars` probes and the REST
- * surface generated from `src/contract/rest.ts`. The process opens its OWN
- * `media.db` connection via `openMediaDb` rather than reaching back into
- * pops-api's singleton.
+ * surface generated from `src/contract/rest.ts`. The process opens its own
+ * `media.db` connection via `openMediaDb`.
  *
  * When `POPS_REGISTRY_ENABLED=true`, the process registers a media manifest
  * with the central registry on boot via `bootstrapPillar`. SIGTERM triggers
@@ -53,8 +52,8 @@ const selfBaseUrl = resolveSelfBaseUrl();
 const mediaDb = openMediaDb(resolveMediaSqlitePath());
 const app = createMediaApiApp({ mediaDb, version, selfBaseUrl });
 
-// Periodic Plex sync scheduler (slice 9c). When PLEX_SCHEDULER_ENABLED is
-// set, force-start with the PLEX_SCHEDULER_INTERVAL_MS interval; otherwise
+// Periodic Plex sync scheduler. When PLEX_SCHEDULER_ENABLED is set,
+// force-start with the PLEX_SCHEDULER_INTERVAL_MS interval; otherwise
 // auto-resume from the persisted `plex_scheduler_enabled` flag in
 // plex_settings. The controller is a module-level singleton so the REST
 // start/stop handlers drive the same timer.
@@ -71,7 +70,7 @@ if (process.env['PLEX_SCHEDULER_ENABLED'] === 'true') {
   plexScheduler.resumeIfEnabled(mediaDb.db);
 }
 
-// Rotation-cycle scheduler (slice 11b). Mirror of the Plex scheduler:
+// Rotation-cycle scheduler. Mirror of the Plex scheduler:
 // MEDIA_ROTATION_SCHEDULER_ENABLED force-starts; otherwise auto-resume from
 // the persisted `rotation_enabled` flag. The controller is a module-level
 // singleton so the REST toggle/run-now handlers drive the same timer.

@@ -1,12 +1,9 @@
 /**
  * Discovery session + shelf caps.
  *
- * The monolith read these from `core/settings`; the pillar must not depend on
- * `core/settings` or `apps/pops-api`, so each value is read from `process.env`
- * with the SAME default the settings table shipped (mirroring the comparisons /
- * tmdb precedent). The env keys mirror the
- * `contract/settings/discovery-manifest.ts` field keys, upper-snake-cased.
- * Centralised here so every reader resolves the same value.
+ * Each value reads from `process.env`; the env keys are the
+ * `src/contract/settings/discovery-manifest.ts` field keys, upper-snake-cased.
+ * Centralised here so every reader resolves the same default.
  */
 import { getEnvInt } from '../../clients/env.js';
 

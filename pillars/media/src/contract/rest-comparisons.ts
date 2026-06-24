@@ -3,10 +3,6 @@
  * pairwise comparisons (ELO), media scores, rankings, smart/random pairs,
  * exclusion, staleness, and tier lists.
  *
- * Wire shapes mirror the legacy `media.comparisons.*` tRPC router exactly
- * (`toDimension` / `toComparison` / `toMediaScore` + the pair/ranking/tier
- * handler outputs) so the REST cutover is transparent to the FE.
- *
  * Route order matters: literal sub-paths (`/comparisons/for-media`,
  * `/comparisons/smart-pair`, `/comparisons/batch`, `/comparisons/skip`,
  * `/comparisons/blacklist-movie`, `/comparisons/recalc-all`) are declared

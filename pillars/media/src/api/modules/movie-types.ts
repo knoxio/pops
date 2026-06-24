@@ -1,11 +1,9 @@
 /**
  * Movie wire-shape mapper for the media pillar REST surface.
  *
- * `toMovie` is lifted verbatim from the legacy `media.movies` tRPC router so
- * the REST cutover is byte-for-byte transparent to the FE. The computed
- * `posterUrl`/`backdropUrl`/`logoUrl` point back at the `/media/images`
- * Express byte route the pillar also mounts; `genres` is parsed from the
- * JSON-encoded column with an empty-array fallback.
+ * The computed `posterUrl`/`backdropUrl`/`logoUrl` point back at the
+ * `/media/images` Express byte route the pillar also mounts; `genres` is
+ * parsed from the JSON-encoded column with an empty-array fallback.
  */
 import type { MovieRow } from '../../db/index.js';
 

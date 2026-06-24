@@ -2,10 +2,8 @@
  * Media domain table barrel.
  *
  * Canonical definitions for media-owned tables (comparisons, dismissed
- * discover, episodes, media scores, watchlist, movies, rotation,
- * seasons, shelf impressions, sync logs / job results, TV shows, watch
- * history) live in this package per PRD-245 US-04 (audit H6/H7).
- *
+ * discover, episodes, media scores, watchlist, movies, rotation, seasons,
+ * shelf impressions, sync logs / job results, TV shows, watch history).
  */
 export { comparisonDimensions } from './schema/comparison-dimensions.js';
 export { comparisonSkipCooloffs } from './schema/comparison-skip-cooloffs.js';

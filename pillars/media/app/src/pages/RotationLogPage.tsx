@@ -3,11 +3,6 @@ import { ChevronLeft, ChevronRight, ScrollText } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router';
 
-/**
- * RotationLogPage — paginated history of rotation cycle events.
- *
- * PRD-072 US-06
- */
 import { Button, Card, CardContent, PageHeader, Skeleton } from '@pops/ui';
 
 import { unwrap } from '../media-api-helpers.js';

@@ -4,7 +4,7 @@
  * Thin pass-throughs to the env-configured TMDB / TheTVDB clients (no db).
  * Provider failures (`TmdbApiError` / `TvdbApiError`) are translated to
  * `BadGatewayError` (502) at this boundary; everything else propagates to
- * Express. Wire shapes mirror the legacy `media.search.*` tRPC outputs.
+ * Express.
  */
 import { getTvdbClient } from '../clients/thetvdb/index.js';
 import { TvdbApiError } from '../clients/thetvdb/types.js';

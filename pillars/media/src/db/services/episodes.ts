@@ -1,9 +1,4 @@
-/**
- * Episodes CRUD against the media pillar's SQLite via drizzle.
- *
- * Lifted from the pops-api monolith `tv-shows/episodes-service.ts` and
- * converted to the pillar's `(db, …)` arg-passing + db-domain-error pattern.
- */
+/** Episodes CRUD against the media pillar's SQLite via drizzle. */
 import { and, asc, count, eq } from 'drizzle-orm';
 
 import { EpisodeConflictError, EpisodeNotFoundError } from '../errors.js';
