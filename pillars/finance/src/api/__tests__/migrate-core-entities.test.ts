@@ -1,7 +1,7 @@
 /**
- * Unit tests for the core→contacts entity migrator (PRD-163 N4): the pure
- * row→contact mapping and the idempotent orchestration (create-or-fetch-by-name,
- * re-run safety, summary).
+ * Unit tests for the core→contacts entity migrator: the pure row→contact
+ * mapping and the idempotent orchestration (create-or-fetch-by-name, re-run
+ * safety, summary).
  */
 import { describe, expect, it, vi } from 'vitest';
 

@@ -1,15 +1,11 @@
 /**
  * `tagRules.*` sub-router — the tag-suggestion rule surface (vocabulary +
- * ChangeSet propose/preview/apply/reject).
+ * ChangeSet propose/preview/apply/reject). The `transaction_tag_rules` +
+ * `tag_vocabulary` tables live in the finance db. The propose/preview
+ * computations are deterministic (no AI) and operate on caller-supplied
+ * transactions, so the domain has no cross-pillar coupling.
  *
- * This domain is finance-owned (the `transaction_tag_rules` + `tag_vocabulary`
- * tables live in the finance db) but is served today from the monolith's
- * `core.tagRules.*` tRPC router. The REST shape here is the migration target;
- * the propose/preview computations are deterministic (no AI) and operate on
- * caller-supplied transactions, so the domain has no cross-pillar coupling.
- *
- * tRPC `query` procedures that carry a request body (propose/preview) become
- * `POST` here — a GET cannot carry the transactions array.
+ * propose/preview are `POST`: a GET cannot carry the transactions array.
  */
 import { initContract } from '@ts-rest/core';
 import { z } from 'zod';

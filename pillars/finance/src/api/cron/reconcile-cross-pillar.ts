@@ -1,21 +1,20 @@
 /**
  * Nightly reconciliation worker for the finance pillar's cross-pillar
- * URI denormalisation (PRD-251 US-03).
+ * owner-URI denormalisation.
  *
  * For every distinct `owner_uri` currently stored on `budgets`, the worker
- * asks core whether the URI still resolves (`core.users.get`). On a
- * "not-found" response the worker marks every budgets row referencing the
- * URI as stale (`owner_uri_stale_at = now`) without deleting anything —
- * existence is best-effort per the PRD. Transient errors (the core pillar
- * is unavailable, the call times out, the SDK reports `degraded`) are
- * logged and the row is left untouched until the next tick. Malformed
- * URIs (those that fail to parse against `pops://core/<type>/<id>`) are
+ * asks the registry pillar whether the URI still resolves (via
+ * `registry.users.get`). On a "not-found" response the worker marks every
+ * budgets row referencing the URI as stale (`owner_uri_stale_at = now`)
+ * without deleting anything — existence is best-effort. Transient errors
+ * (the registry is unavailable, the call times out, the SDK reports
+ * `degraded`) are logged and the row is left untouched until the next tick.
+ * URIs the registry rejects as malformed surface as `bad-uri`; they are
  * logged for ops and the row is preserved as well.
  *
- * Scheduling mirrors `apps/pops-ha-bridge-api/src/retention-worker.ts`:
- * a recursive `setTimeout` so the next tick is only armed after the
- * current one resolves, and so the implementation is trivial to drive
- * with `vi.useFakeTimers()` in tests. The fan-out call inside a tick is
+ * A recursive `setTimeout` arms the next tick only after the current one
+ * resolves, which also makes the worker trivial to drive with
+ * `vi.useFakeTimers()` in tests. The fan-out call inside a tick is
  * sequential rather than parallel — production has at most a few thousand
  * distinct owner URIs per pillar and the periodic-cron contract prefers
  * predictable load against the owning pillar over a thundering herd.

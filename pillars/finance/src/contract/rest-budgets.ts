@@ -1,9 +1,6 @@
 /**
- * `budgets.*` sub-router — budget CRUD.
- *
- * Response/body schemas mirror the legacy `finance.budgets.*` tRPC wire
- * shapes (`toBudget` enriched with spend aggregates + the create/update
- * zod inputs) so the REST cutover is transparent to the FE.
+ * `budgets.*` sub-router — budget CRUD. The served budget shape is enriched
+ * with spend aggregates (`spent`, `remaining`).
  */
 import { initContract } from '@ts-rest/core';
 import { z } from 'zod';

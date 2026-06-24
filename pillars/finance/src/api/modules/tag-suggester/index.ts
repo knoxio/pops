@@ -8,11 +8,9 @@
  *   4. Entity defaults — the contact's `defaultTags`, supplied by the caller
  *      from the live contacts fetch (source: "entity")
  *
- * Ported from `apps/pops-api/src/modules/finance/tag-suggester/index.ts`.
- * Finance-owned: the rule/correction sources read finance-db tables via the
- * injected `FinanceDb` handle. The entity-default tags no longer read a local
- * mirror — they come from `entityDefaultTags`, a `contactId → tags` map the
- * caller builds from the contacts pillar (PRD-163 US-03).
+ * The rule/correction sources read finance-db tables via the injected
+ * `FinanceDb` handle. The entity-default tags come from `entityDefaultTags`, a
+ * `contactId → tags` map the caller builds from the contacts pillar.
  */
 import { type FinanceDb, transactionCorrectionsService } from '../../../db/index.js';
 import { findMatchingTagRules } from './tag-rule-matching.js';

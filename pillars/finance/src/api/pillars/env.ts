@@ -1,11 +1,6 @@
 /**
  * `POPS_PILLARS` environment variable parser inside the finance-api process.
  *
- * Functionally identical to `apps/pops-api/src/modules/core/pillars/env.ts`
- * — kept as a local copy so finance-api can boot without a runtime
- * dependency on pops-api. The two implementations should be promoted into
- * a shared package once a third consumer needs them.
- *
  * Format: `id:baseUrl[,id:baseUrl,...]`
  *   - `id` lowercase kebab-case pillar slug (`food`, `finance`, …)
  *   - `baseUrl` fully-qualified http(s) origin (trailing slashes stripped)

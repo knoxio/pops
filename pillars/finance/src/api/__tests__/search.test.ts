@@ -1,13 +1,12 @@
 /**
  * Integration tests for the `search.*` REST surface — finance's slice of
- * unified search, aggregating the transactions / budgets / wishlist adapters
- * the monolith bound in `apps/pops-api/src/modules/search-adapters.ts`.
+ * unified search, aggregating the transactions / budgets / wishlist adapters.
  *
  * The suite seeds rows through the pillar's own CRUD endpoints, then asserts
- * each adapter's ported ranking is preserved: exact (1.0) > prefix (0.8) >
- * contains (0.5), per-adapter descending sort, the wishlist not-yet-purchased
- * filter, the legacy `uri` shapes, and the transaction-type normalization.
- * An empty / whitespace query short-circuits to an empty hit list.
+ * each adapter's ranking: exact (1.0) > prefix (0.8) > contains (0.5),
+ * per-adapter descending sort, the wishlist not-yet-purchased filter, the `uri`
+ * shapes, and the transaction-type normalization. An empty / whitespace query
+ * short-circuits to an empty hit list.
  */
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';

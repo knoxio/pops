@@ -5,8 +5,8 @@
  * `TransactionTagRuleRow`, `TransactionCorrectionRow`) live in their
  * respective service modules and are re-exported from `./index.ts`.
  *
- * Hosted here per PRD-245 US-08 so consumers can pull all finance row
- * shapes from a single `@pops/finance-db` entry point.
+ * Hosted here so all finance row shapes are re-exported from a single
+ * `./index.ts` (the pillar-internal db barrel).
  */
 import type { InferInsertModel, InferSelectModel } from 'drizzle-orm';
 

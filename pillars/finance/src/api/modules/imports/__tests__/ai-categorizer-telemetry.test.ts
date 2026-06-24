@@ -1,10 +1,9 @@
 /**
- * Telemetry-migration tests for the finance categorizer. The Anthropic SDK is
- * the only mock (it is the network boundary; tests MUST NOT reach a real API);
- * the `@pops/ai-telemetry` wrapper runs for real with an injected fake
- * `report` + `lookupPricing`, so these assert the categorizer reports usage to
- * the ai pillar with the right operation/domain and returns its result
- * unchanged.
+ * Telemetry tests for the finance categorizer. The Anthropic SDK is the only
+ * mock (it is the network boundary; tests MUST NOT reach a real API); the
+ * `@pops/ai-telemetry` wrapper runs for real with an injected fake `report` +
+ * `lookupPricing`, so these assert the categorizer reports usage to the ai
+ * pillar with the right operation/domain and returns its result unchanged.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -94,7 +93,6 @@ describe('categorizeWithAi — telemetry', () => {
     expect(record.status).toBe('success');
     expect(record.inputTokens).toBe(100);
     expect(record.outputTokens).toBe(20);
-    // 100/1e6 * 1 + 20/1e6 * 5 = 0.0002 — same per-Mtok pricing as the fake lookup.
     expect(record.costUsd).toBeCloseTo(0.0002, 9);
     expect(record.contextId).toBe('import_batch:batch-9');
   });

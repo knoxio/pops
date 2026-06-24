@@ -1,20 +1,14 @@
 import { dirname, join } from 'node:path';
 
 /**
- * Standalone resolver for the finance pillar's SQLite path inside the
- * finance-api container.
- *
- * Intentionally NOT imported from pops-api — finance-api is supposed to
- * be runnable without pops-api in the dependency graph. The precedence
- * chain mirrors pops-api's resolver verbatim so the two processes agree
- * on the location of `finance.db` given the same env: a deployer who only
- * sets `SQLITE_PATH` (legacy contract) still ends up with `finance.db`
- * next to `pops.db`.
+ * Resolves the finance pillar's `finance.db` location.
  *
  * Resolution order:
  *   1. `FINANCE_SQLITE_PATH` (absolute or relative).
- *   2. `<dirname(SQLITE_PATH)>/finance.db` if the shared path is set.
- *   3. `./data/finance.db` (matches the shared default's `./data/pops.db`).
+ *   2. `<dirname(SQLITE_PATH)>/finance.db` when the shared `SQLITE_PATH`
+ *      env is set — a deployer that only sets `SQLITE_PATH` still gets
+ *      `finance.db` placed alongside it.
+ *   3. `./data/finance.db`.
  */
 export const DEFAULT_FINANCE_SQLITE_PATH = './data/finance.db';
 

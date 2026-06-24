@@ -1,15 +1,13 @@
 /**
- * Cross-pillar owner-URI helpers for the finance pillar (PRD-251 US-03).
+ * Cross-pillar owner-URI helpers for the finance pillar.
  *
  * `budgets.owner_uri` holds a soft, URI-shaped reference to the contact that
  * owns the budget, in the canonical `pops://contacts/contact/<id>` shape
- * (PRD-163 OD-7 — entities are owned by the contacts pillar). The
- * reconciliation cron in `apps/pops-finance-api/src/cron/reconcile-cross-pillar.ts`
- * walks the distinct URIs, asks the owning pillar (via core's `/uri/resolve`
- * dispatcher, which proxies to contacts) whether each one still resolves, and
+ * (entities are owned by the contacts pillar). A reconciliation cron walks the
+ * distinct URIs, asks the owning pillar whether each one still resolves, and
  * uses {@link markBudgetOwnerUriStale} / {@link clearBudgetOwnerUriStale} to
- * mark or clear the `owner_uri_stale_at` flag. Read-time fan-out is forbidden
- * per the PRD — the cron is the only writer.
+ * mark or clear the `owner_uri_stale_at` flag. Read-time fan-out is forbidden —
+ * the cron is the only writer.
  */
 import { eq, isNotNull, sql } from 'drizzle-orm';
 

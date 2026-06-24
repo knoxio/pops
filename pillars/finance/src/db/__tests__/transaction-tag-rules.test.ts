@@ -1,27 +1,23 @@
 /**
  * Invariant tests for the transaction-tag-rules service against an
  * in-memory SQLite seeded with the canonical `transaction_tag_rules`,
- * `tag_vocabulary`, and `entities` DDL. Pure DB + service layer — no tRPC,
- * no Express, no auth middleware.
+ * `tag_vocabulary`, and `entities` DDL — DB + service layer only.
  *
- * Three foreign-key dimensions are exercised:
- *   (1) `entity_id` -> `entities(id)` is the only SQL-level FK on the table
- *       and must be honoured when `foreign_keys = ON`. A bad `entityId`
- *       must be rejected by SQLite, not silently accepted.
+ * The fixture builds its own `entities` table with the `entity_id` FK so
+ * SQLite-level FK behaviour stays testable in isolation (production's
+ * mirror was dropped in 0057). Three dimensions are exercised:
+ *   (1) `entity_id` -> `entities(id)` is honoured when `foreign_keys = ON`:
+ *       a bad `entityId` is rejected by SQLite, not silently accepted.
  *   (2) `tags` JSON references against `tag_vocabulary.tag` are a logical
  *       relationship only — there is no SQL FK, so the table accepts tags
- *       that are not in the vocabulary. We assert that explicitly so the
- *       cutover (PR 3) does not surprise the in-tree consumer, which
- *       enforces the relationship at the preview layer.
- *   (3) `tag_vocabulary` itself is co-seeded so the sibling-table fixture
- *       proves the package's barrel re-export from N5 is functional and
- *       so future PRs that wire the preview layer here have a reference
- *       harness.
+ *       absent from the vocabulary.
+ *   (3) `tag_vocabulary` is co-seeded so the sibling-table barrel export
+ *       has a reference harness.
  *
  * The DDL is inlined for the same reason as the wish-list and
- * tag-vocabulary suites: the package's own `0026_little_frank_castle.sql`
- * mixes table creation with `INSERT OR IGNORE` seed data we do not want
- * leaking into these unit tests.
+ * tag-vocabulary suites: `0026_little_frank_castle.sql` mixes table
+ * creation with `INSERT OR IGNORE` seed data we do not want leaking into
+ * these unit tests.
  */
 import Database from 'better-sqlite3';
 import { eq } from 'drizzle-orm';
@@ -139,7 +135,7 @@ describe('createTransactionTagRule', () => {
     expect(created.entityId).toBeNull();
   });
 
-  it('applies legacy defaults: confidence=0.95, isActive=true, priority=0', () => {
+  it('applies defaults: confidence=0.95, isActive=true, priority=0', () => {
     const created = createTransactionTagRule(harness.db, {
       descriptionPattern: 'COLES',
       matchType: 'exact',
@@ -230,7 +226,7 @@ describe('listTransactionTagRules', () => {
     expect(listTransactionTagRules(harness.db)).toEqual([]);
   });
 
-  it('orders by (confidence DESC, times_applied DESC) to match the legacy router', () => {
+  it('orders by (confidence DESC, times_applied DESC)', () => {
     const lowConf = createTransactionTagRule(harness.db, {
       descriptionPattern: 'A',
       matchType: 'exact',

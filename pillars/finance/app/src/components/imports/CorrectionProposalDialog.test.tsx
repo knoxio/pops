@@ -15,10 +15,6 @@ import {
 
 import type { CorrectionRule } from './RulePicker';
 
-// ---------------------------------------------------------------------------
-// Mock state
-// ---------------------------------------------------------------------------
-
 type ProposeData = {
   changeSet: {
     source?: string;
@@ -39,10 +35,8 @@ const { mockDescriptionsForPreview } = vi.hoisted(() => ({
   mockDescriptionsForPreview: vi.fn(),
 }));
 
-// All corrections operations are now finance REST; the generated SDK fns
-// delegate to the per-operation mock vars so the existing test controls
-// (mockProposeData / mockPreviewMutateAsync / …) keep driving the flow. They
-// return Hey API `{ data }` envelopes so the real `unwrap` resolves them.
+// The generated SDK fns delegate to the per-operation mock vars and return
+// Hey API `{ data }` envelopes so the real `unwrap` resolves them.
 vi.mock('../../finance-api/index.js', () => ({
   transactionsDescriptionsForPreview: (...args: unknown[]) => mockDescriptionsForPreview(...args),
   correctionsProposeChangeSet: () => Promise.resolve({ data: mockProposeData }),
@@ -79,10 +73,6 @@ vi.mock('sonner', () => ({
     info: vi.fn(),
   },
 }));
-
-// ---------------------------------------------------------------------------
-// Kept utility tests (these were the entirety of the previous .test.ts)
-// ---------------------------------------------------------------------------
 
 describe('normalizeForMatch', () => {
   it('uppercases, strips digits, and collapses whitespace', () => {
@@ -175,10 +165,6 @@ describe('transactionMatchesSignal', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// serverOpToLocalOp — hydration of targetRule from the server-provided map
-// ---------------------------------------------------------------------------
-
 function makeRule(overrides: Partial<CorrectionRule> = {}): CorrectionRule {
   return {
     id: 'rule-1',
@@ -249,10 +235,6 @@ describe('serverOpToLocalOp', () => {
     expect(local.targetRule).toBe(rule);
   });
 });
-
-// ---------------------------------------------------------------------------
-// scopePreviewTransactions — per-op filter + cap at the server zod max
-// ---------------------------------------------------------------------------
 
 function addOp(pattern: string, matchType: 'exact' | 'contains' | 'regex' = 'contains'): LocalOp {
   return {
@@ -334,10 +316,6 @@ describe('scopePreviewTransactions', () => {
     expect(truncated).toBe(false);
   });
 });
-
-// ---------------------------------------------------------------------------
-// Component tests: multi-rule diff editor (PRD-028 US-06)
-// ---------------------------------------------------------------------------
 
 const EMPTY_SUMMARY = {
   total: 0,
@@ -659,12 +637,10 @@ describe('CorrectionProposalDialog', () => {
     fireEvent.change(input, { target: { value: 'replace with a transfer rule' } });
     fireEvent.click(screen.getByRole('button', { name: /^Send$/i }));
 
-    // User message echoed in transcript.
     await waitFor(() => {
       expect(screen.getByText('replace with a transfer rule')).toBeInTheDocument();
     });
 
-    // The mutation was called with the current ChangeSet, instruction, and signal.
     await waitFor(() => {
       expect(mockReviseMutateAsync).toHaveBeenCalledTimes(1);
     });
@@ -679,15 +655,14 @@ describe('CorrectionProposalDialog', () => {
     expect(call.signal).toBeTruthy();
     expect(Array.isArray(call.triggeringTransactions)).toBe(true);
 
-    // The revised ops replace the local list (1 op from the mock response).
+    // The revised ops replace the local list rather than appending.
     await waitFor(() => {
       expect(screen.getByText(/Operations \(1\)/)).toBeInTheDocument();
     });
     expect(screen.getByText(/TRANSFER → Transfer/)).toBeInTheDocument();
 
-    // The rationale appears in the transcript as the assistant message. It
-    // also appears in the context panel rationale row, so we just assert at
-    // least one match exists.
+    // The rationale appears both in the transcript and in the context panel
+    // rationale row, so assert at least one match exists.
     expect(
       screen.getAllByText(/Replaced with a transfer rule per user request/).length
     ).toBeGreaterThan(0);
@@ -809,10 +784,6 @@ describe('CorrectionProposalDialog', () => {
     expect(applyBtn).toBeDisabled();
   });
 });
-
-// ---------------------------------------------------------------------------
-// US-14: Save & Learn acceptance criteria
-// ---------------------------------------------------------------------------
 
 describe('US-14: Save & Learn — acceptance criteria', () => {
   // AC-2 / AC-3: Opening the dialog shows a bundled ChangeSet proposal that
@@ -968,11 +939,10 @@ describe('US-14: Save & Learn — acceptance criteria', () => {
     renderDialog();
 
     await waitFor(() => {
-      // The auto-preview runs, meaning the proposal was fetched and rendered.
+      // The auto-preview running confirms the proposal was fetched and rendered.
       expect(mockPreviewMutateAsync).toHaveBeenCalled();
     });
 
-    // No rule change has been persisted; only an explicit Approve click triggers this.
     expect(mockAddPendingChangeSet).not.toHaveBeenCalled();
   });
 });

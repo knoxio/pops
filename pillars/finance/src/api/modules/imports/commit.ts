@@ -7,13 +7,12 @@
  * SQLite transaction opens (network can't live inside a better-sqlite3 sync
  * transaction). Each pre-create carries `{ name, type }` and is idempotent —
  * a 409 dup-name fetches the existing contact id so a retry after a rolled-back
- * finance tx reuses the contact (PRD-163 OD-8/S1). The resolved tempId→id map
- * is threaded into the synchronous transaction.
+ * finance tx reuses the contact. The resolved tempId→id map is threaded into
+ * the synchronous transaction.
  *
- * Ported from the monolith `lib/transaction-persistence.ts` (the commit half).
- * Db-injected: the outer `db.transaction` handle (`tx`) is threaded into every
- * inner service so the correction/tag-rule ChangeSet applies nest as savepoints
- * rather than opening independent transactions.
+ * The outer `db.transaction` handle (`tx`) is threaded into every inner service
+ * so the correction/tag-rule ChangeSet applies nest as savepoints rather than
+ * opening independent transactions.
  */
 import { type FinanceDb, importsService, tagVocabularyService } from '../../../db/index.js';
 import { type ContactsClient } from '../../contacts/client.js';
@@ -39,11 +38,10 @@ interface RuleApplyCounts {
 /**
  * Pre-create every pending contact against the contacts pillar BEFORE the
  * finance transaction opens, returning the tempId→contact-id map. Each create
- * carries `{ name, type }` (preserving the type override the old in-tx
- * `UPDATE entities SET type` performed) and is create-or-fetch-by-name, so a
- * retry after a rolled-back finance tx reuses the existing contact (OD-8).
- * `entitiesCreated` counts ONLY real inserts — a reused (already-existing)
- * contact must not inflate the commit result's "Entities Created" card.
+ * carries `{ name, type }` and is create-or-fetch-by-name, so a retry after a
+ * rolled-back finance tx reuses the existing contact. `entitiesCreated` counts
+ * ONLY real inserts — a reused (already-existing) contact must not inflate the
+ * commit result's "Entities Created" card.
  */
 async function preCreatePendingContacts(
   contacts: ContactsClient,

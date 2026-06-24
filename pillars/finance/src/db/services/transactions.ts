@@ -1,12 +1,8 @@
 /**
  * Transactions CRUD against finance's SQLite via drizzle.
  *
- * Mirrors the wish-list pattern: db-arg services, typed domain errors,
- * no HTTP / tRPC concerns. The in-tree service at
- * `apps/pops-api/src/modules/finance/transactions/service.ts` still
- * uses `getDrizzle()`; this package version takes a `FinanceDb` handle
- * as its first argument. PR 3 of phase 1 flips the router to call into
- * here.
+ * Standard service pattern: db-arg services, typed domain errors, no HTTP
+ * concerns.
  *
  * The `tags` column is stored as a JSON-encoded array of strings — the
  * caller passes a `string[]` and persists `JSON.stringify(...)`. The
@@ -144,9 +140,9 @@ export function getTransaction(db: FinanceDb, id: string): TransactionRow {
 /**
  * Create a new transaction. Generates a UUID, persists, and returns the row.
  *
- * `type` defaults to '' for parity with the in-tree service — the column is
- * `NOT NULL` and historic rows have empty-string defaults rather than a real
- * categorisation. `tags` defaults to `[]` serialised.
+ * `type` defaults to '' — the column is `NOT NULL` and historic rows carry
+ * empty-string defaults rather than a real categorisation. `tags` defaults to
+ * `[]` serialised.
  */
 export function createTransaction(db: FinanceDb, input: CreateTransactionInput): TransactionRow {
   const id = crypto.randomUUID();

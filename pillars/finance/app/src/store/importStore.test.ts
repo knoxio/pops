@@ -4,10 +4,6 @@ import { type ChangeSet, type ProcessedTransaction, useImportStore } from './imp
 
 import type { ParsedTransaction } from '@pops/finance';
 
-// ---------------------------------------------------------------------------
-// importStore — parsedTransactionsFingerprint / processedForFingerprint tests
-// ---------------------------------------------------------------------------
-
 function makeTxn(checksum: string, description = 'WOOLWORTHS'): ParsedTransaction {
   return {
     date: '2026-01-15',
@@ -116,10 +112,6 @@ describe('importStore — parsed/processed fingerprint', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// Step range — currentStep supports 1..8 (PRD-031 adds step 7; rule creation adds step 6)
-// ---------------------------------------------------------------------------
-
 describe('importStore — step range', () => {
   beforeEach(() => {
     useImportStore.getState().reset();
@@ -145,17 +137,13 @@ describe('importStore — step range', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// Pending entities (PRD-030 US-01)
-// ---------------------------------------------------------------------------
-
 const sampleChangeSet: ChangeSet = {
   source: 'ai',
   reason: 'test',
   ops: [{ op: 'add', data: { descriptionPattern: 'TEST', matchType: 'exact' } }],
 };
 
-describe('importStore — pendingEntities (PRD-030 US-01)', () => {
+describe('importStore — pendingEntities (local-first-import)', () => {
   beforeEach(() => {
     useImportStore.getState().reset();
   });
@@ -244,11 +232,7 @@ describe('importStore — pendingEntities (PRD-030 US-01)', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// Pending changeSets (PRD-030 US-02)
-// ---------------------------------------------------------------------------
-
-describe('importStore — pendingChangeSets (PRD-030 US-02)', () => {
+describe('importStore — pendingChangeSets (local-first-import)', () => {
   beforeEach(() => {
     useImportStore.getState().reset();
   });

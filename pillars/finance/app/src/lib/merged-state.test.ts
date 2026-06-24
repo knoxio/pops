@@ -6,10 +6,6 @@ import type { Correction, Entity } from '@pops/finance';
 
 import type { ChangeSet, PendingChangeSet, PendingEntity } from '../store/importStore';
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
 function makeRule(overrides: Partial<Correction> = {}): Correction {
   return {
     id: 'rule-1',
@@ -61,10 +57,6 @@ function makePendingEntity(overrides: Partial<PendingEntity> = {}): PendingEntit
     ...overrides,
   };
 }
-
-// ---------------------------------------------------------------------------
-// computeMergedRules — PRD-030 US-03
-// ---------------------------------------------------------------------------
 
 describe('computeMergedRules', () => {
   it('returns dbRules unchanged (referential equality) when no pending ChangeSets', () => {
@@ -125,7 +117,7 @@ describe('computeMergedRules', () => {
       ],
     });
 
-    // After cs1, the added rule gets a temp ID like "temp:1"
+    // cs2 must edit the temp id that cs1's add assigns, so read it back first.
     const intermediateResult = computeMergedRules(dbRules, [cs1]);
     const addedRuleId = intermediateResult[0].id;
 
@@ -222,9 +214,8 @@ describe('computeMergedRules', () => {
   });
 
   it('preserves tags as string[] (not a JSON-encoded string) after applying ops', () => {
-    // Regression guard: the previous implementation leaked CorrectionRow (tags: string)
-    // out of the merge, which caused downstream edit ops to send `tags: "[\"grocery\"]"`
-    // and fail server-side Zod validation.
+    // Merged rules must expose tags as string[]: a leaked CorrectionRow (tags: string)
+    // makes downstream edit ops send `tags: "[\"grocery\"]"` and fail server-side Zod validation.
     const dbRules = [makeRule({ id: 'r1', tags: ['grocery'] })];
     const cs = makePendingChangeSet({
       ops: [{ op: 'edit', id: 'r1', data: { confidence: 0.9 } }],
@@ -234,10 +225,6 @@ describe('computeMergedRules', () => {
     expect(merged?.tags).toEqual(['grocery']);
   });
 });
-
-// ---------------------------------------------------------------------------
-// computeMergedEntities — PRD-030 US-04
-// ---------------------------------------------------------------------------
 
 describe('computeMergedEntities', () => {
   it('returns dbEntities unchanged when no pending entities', () => {
@@ -263,7 +250,6 @@ describe('computeMergedEntities', () => {
 
     const result = computeMergedEntities(dbEntities, pending);
     expect(result).toHaveLength(1);
-    // The pending entity replaces the DB one — proven by the temp id, not 'e1'.
     expect(result[0].id).toMatch(/^temp:entity:/);
     expect(result[0].name).toBe('Woolworths');
   });
@@ -281,7 +267,6 @@ describe('computeMergedEntities', () => {
 
     const result = computeMergedEntities(dbEntities, pending);
     expect(result).toHaveLength(3);
-    // Sorted alphabetically: Aldi (non-colliding DB), Coles (pending), Woolworths (pending)
     expect(result[0].name).toBe('Aldi');
     expect(result[0].id).toBe('e3');
     expect(result[1].name).toBe('Coles');
@@ -308,7 +293,6 @@ describe('computeMergedEntities', () => {
 
     const result = computeMergedEntities([], pending);
     expect(result).toHaveLength(2);
-    // Sorted alphabetically
     expect(result[0].name).toBe('Another Corp');
     expect(result[1].name).toBe('New Corp');
     expect(result[0].aliases).toEqual([]);

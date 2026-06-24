@@ -1,10 +1,8 @@
 /**
  * Entry point for the finance pillar HTTP server.
  *
- * Boots the process with the `/health` + `/pillars` probes and the REST
- * surface generated from `src/contract/rest.ts`. The process opens its
- * OWN `finance.db` connection via `openFinanceDb` rather than reaching
- * back into pops-api's singleton.
+ * Boots the `/health` + `/pillars` probes and the REST surface, opening
+ * its own `finance.db` connection via `openFinanceDb`.
  *
  * When `POPS_REGISTRY_ENABLED=true`, the process registers a finance
  * manifest with the central registry on boot via `bootstrapPillar`.
@@ -59,8 +57,8 @@ const app = createFinanceApiApp({
   contacts: createContactsClient(),
 });
 
-// Nightly cross-pillar URI reconciliation (PRD-251 US-03). Reads peer
-// pillars over HTTP via the pillar SDK proxy — no compile-time coupling.
+// Nightly cross-pillar URI reconciliation. Reads peer pillars over HTTP
+// via the pillar SDK proxy — no compile-time coupling.
 const reconcileHandle = startReconcileCrossPillarWorker({
   db: financeDb.db,
   lookupOwnerUri: createPillarOwnerUriLookup(),

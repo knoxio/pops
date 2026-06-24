@@ -1,9 +1,9 @@
 /**
  * Handler for the `entityUsage.*` sub-router — contacts enriched with their
- * per-entity `transactionCount`, joined in memory against finance transactions
- * (PRD-163 US-06). The contact attributes arrive from the live
- * `pillar('contacts').entities.list` fetch already in wire shape (aliases /
- * defaultTags as arrays), so the handler only attaches the count and shape.
+ * per-entity `transactionCount`, joined in memory against finance transactions.
+ * The contact attributes arrive from the live `pillar('contacts').entities.list`
+ * fetch already in wire shape (aliases / defaultTags as arrays), so the handler
+ * only attaches the count and shape.
  */
 import { type EntityUsageRow, type FinanceDb, listEntityUsage } from '../../db/index.js';
 import { type ContactsClient } from '../contacts/client.js';

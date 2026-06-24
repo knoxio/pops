@@ -1,9 +1,8 @@
 /**
  * Typed errors raised by the finance domain service layer.
  *
- * These are plain Error subclasses — the service layer doesn't know about
- * HTTP. The pops-api router/middleware maps them to the appropriate status
- * codes when surfacing to clients. Follows the standard typed-error pattern.
+ * Plain Error subclasses — the service layer stays HTTP-agnostic. The API
+ * layer maps each to its status code when surfacing to clients.
  */
 
 export class WishListItemNotFoundError extends Error {

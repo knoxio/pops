@@ -1,16 +1,16 @@
 /**
  * Entity-usage rollup — contacts enriched with their per-entity
  * `transactionCount`, computed by joining the live contact set against finance
- * `transactions.entityId` IN MEMORY (PRD-163 US-06, contacts plan OD-4).
+ * `transactions.entityId` IN MEMORY.
  *
  * Entities are owned by the contacts pillar; finance keeps no mirror table.
- * The rollup is still finance-served because only finance can count
+ * The rollup is finance-served because only finance can count
  * `finance.transactions` per entity — but the entity attributes (name, type,
  * abn, aliases, …) come from a per-request `pillar('contacts').entities.list`
  * fetch, NOT a local join. The fetched set is held only for the request.
  *
- * Contacts-down degrades gracefully: the injected client returns an empty set
- * (OD-3 / S4), so the list renders empty rather than throwing.
+ * Contacts-down degrades gracefully: the injected client returns an empty set,
+ * so the list renders empty rather than throwing.
  */
 import { isNotNull, sql } from 'drizzle-orm';
 

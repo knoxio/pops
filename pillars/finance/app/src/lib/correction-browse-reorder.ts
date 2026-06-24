@@ -3,7 +3,7 @@ import { newClientId } from '../components/imports/hooks/useLocalOps';
 import type { LocalOp } from '../components/imports/correction-proposal-shared';
 import type { CorrectionRule } from '../components/imports/RulePicker';
 
-/** Priority order for browse sidebar (PRD-032 US-05). */
+/** Priority order for browse sidebar. */
 export function compareRulesForBrowse(a: CorrectionRule, b: CorrectionRule): number {
   const pa = a.priority - b.priority;
   if (pa !== 0) return pa;

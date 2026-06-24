@@ -1,17 +1,10 @@
 /**
  * Invariant tests for the transactions service against an in-memory SQLite
- * seeded with the canonical `transactions` DDL. Pure DB + service layer —
- * no tRPC, no Express, no auth middleware.
+ * seeded with the canonical `transactions` DDL — DB + service layer only.
  *
- * Higher-level router coverage lives in pops-api's own integration suite
- * and exercises the same service via the pops-api wrapper.
- *
- * The DDL is inlined (rather than read from the shared baseline
- * `0000_naive_chameleon.sql` or the package's own `0053_finance_pillar_baseline`)
- * because those create the entire pre-modular schema and applying them for
- * every test here is wasted work. Phase 1 PR 2 of N2 will move the canonical
- * statement into the package's own migration journal alongside the other
- * finance-owned tables — until then this inlined copy is the test fixture.
+ * The DDL is inlined rather than applied from the migration journal so
+ * each test runs against a lean single-table fixture instead of the full
+ * finance schema.
  */
 import Database from 'better-sqlite3';
 import { drizzle } from 'drizzle-orm/better-sqlite3';

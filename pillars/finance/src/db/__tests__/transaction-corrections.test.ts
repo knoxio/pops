@@ -1,21 +1,17 @@
 /**
  * Invariant tests for the transaction-corrections service against an
  * in-memory SQLite seeded with the canonical `transaction_corrections`
- * DDL. Pure DB + service layer — no tRPC, no Express, no auth middleware.
+ * DDL — DB + service layer only.
  *
- * The DDL inlined here is the post-baseline shape — i.e. the table after
- * 0000 (baseline), 0025 (`is_active`), 0026 (mid-2025 columns), and 0027
- * (`priority`) have all been applied. The full migration journal already
- * has package coverage in `open-finance-db.test.ts`; this suite owns the
- * narrower service-contract invariants and keeps the fixture lean so each
- * test can run against a fresh table without paying the
- * hundreds-of-tables baseline cost.
+ * The inlined DDL is the fully-migrated shape (through the 0027 `priority`
+ * column). The migration journal itself is covered by
+ * `open-finance-db.test.ts`; this suite owns the narrower service-contract
+ * invariants and keeps the fixture lean.
  *
- * Note: `entity_id` is intentionally NOT given a FK constraint in this
- * inlined DDL — the production schema's `references(entities.id)` is
- * outside the scope of this slice's service contract and dragging the
- * `entities` table in would make the fixture brittle. The service does
- * not depend on FK enforcement for correctness.
+ * `entity_id` carries no FK constraint here, matching production: 0057
+ * dropped the `entities` mirror and the `references(entities.id)` FK once
+ * entities moved to the contacts pillar. The service does not depend on
+ * FK enforcement for correctness.
  */
 import Database from 'better-sqlite3';
 import { eq } from 'drizzle-orm';
@@ -233,7 +229,7 @@ describe('createOrUpdateTransactionCorrection — conflict path', () => {
     expect(after.confidence).toBe(1.0);
   });
 
-  it('overwrites tags with [] on the conflict path when input.tags is omitted (in-tree fidelity)', () => {
+  it('overwrites tags with [] on the conflict path when input.tags is omitted', () => {
     const id = seedCorrection(harness.raw, {
       descriptionPattern: 'COFFEE',
       matchType: 'exact',

@@ -1,13 +1,12 @@
 /**
  * Integration tests for the `imports.*` REST surface against the real Express
- * app, with the contacts pillar provided by an injected fake (PRD-163 N3):
- * the matcher fetches the contact set live and matches in memory; commit
- * pre-creates pending contacts (create-or-fetch-by-name) BEFORE the finance tx;
- * createEntity goes to contacts. Covers the session-poll pattern, dedup,
- * executeImport writes, the re-evaluation endpoints (404/412 mapping), atomic
- * commit (temp-id resolution, changeset application, rollback, retroactive
- * reclassification), the OD-8 409 idempotency, and OD-3 contacts-down
- * degradation.
+ * app, with the contacts pillar provided by an injected fake: the matcher
+ * fetches the contact set live and matches in memory; commit pre-creates pending
+ * contacts (create-or-fetch-by-name) BEFORE the finance tx; createEntity goes to
+ * contacts. Covers the session-poll pattern, dedup, executeImport writes, the
+ * re-evaluation endpoints (404/412 mapping), atomic commit (temp-id resolution,
+ * changeset application, rollback, retroactive reclassification), 409
+ * idempotency on a pre-existing contact name, and contacts-down degradation.
  *
  * The AI categorizer is stubbed off, so unmatched rows land in `uncertain` with
  * `'No entity match found'` and the AI counters stay zero.
@@ -115,7 +114,7 @@ describe('imports.processImport — session poll + live-fetch matching', () => {
     expect(result.matched[0]?.entity.matchType).toBe('alias');
   });
 
-  it('degrades to a no-match run when contacts is unavailable (OD-3) — never throws', async () => {
+  it('degrades to a no-match run when contacts is unavailable — never throws', async () => {
     const c = client(makeContactsFake({ unavailable: true }));
 
     const { sessionId } = await c.imports.processImport({
@@ -493,7 +492,7 @@ describe('imports.commitImport — pre-create contacts then write the finance tx
     expect(contacts.entities.find((e) => e.name === 'ATO')?.type).toBe('government');
   });
 
-  it('is idempotent on a 409: a pre-existing contact name reuses the existing id (OD-8)', async () => {
+  it('is idempotent on a 409: a pre-existing contact name reuses the existing id', async () => {
     const contacts = withContacts([{ id: 'preexisting-ato', name: 'ATO', type: 'government' }]);
     const c = client(contacts);
     const tempId = 'temp:entity:00000000-0000-0000-0000-00000000000a';

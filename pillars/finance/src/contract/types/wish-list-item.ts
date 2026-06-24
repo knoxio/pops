@@ -4,8 +4,8 @@ export type WishListPriority = (typeof WISH_LIST_PRIORITIES)[number];
 
 /**
  * A single row on a user's wishlist. The shape mirrors the API response
- * (camelCase) — DB-internal shape lives in `@pops/finance-db` and is not
- * surfaced through the contract.
+ * (camelCase) — the DB-internal shape lives in the pillar's `src/db` layer and
+ * is not surfaced through the contract.
  */
 export interface WishListItem {
   id: string;

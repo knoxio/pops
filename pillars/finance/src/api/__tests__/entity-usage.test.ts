@@ -2,8 +2,8 @@
  * Integration tests for the `entityUsage.*` REST surface — contacts enriched
  * with a per-entity `transactionCount`, computed by joining the live contact
  * set (fetched from the contacts pillar) against finance `transactions.entityId`
- * IN MEMORY (PRD-163 US-06 / OD-4). The contact set is provided by an injected
- * fake; transactions are seeded directly into the finance db.
+ * IN MEMORY. The contact set is provided by an injected fake; transactions are
+ * seeded directly into the finance db.
  *
  * Covers the transactionCount rollup, orphanedOnly / search / type filters,
  * pagination, the aliases/defaultTags projection, and contacts-down degradation.
@@ -128,7 +128,7 @@ describe('entityUsage — transactionCount rollup over the live contact set', ()
     expect(alpha?.defaultTags).toEqual(['groceries']);
   });
 
-  it('degrades to an empty list when contacts is unavailable (OD-3)', async () => {
+  it('degrades to an empty list when contacts is unavailable', async () => {
     const down = makeContactsFake({ unavailable: true });
     const { data, pagination } = await client(down).entityUsage.list();
     expect(data).toEqual([]);

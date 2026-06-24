@@ -2,15 +2,8 @@
  * Backend-safe barrel for the finance domain's persistence layer.
  *
  * Hosts finance-owned tables (transactions, budgets, wish list, tag rules,
- * tag vocabulary, corrections). Extracted from
- * `apps/pops-api/src/modules/finance/` as the first mature-pillar migration
- * following the core pilot, per ADR-026.
- *
- * Per the CI-never-breaks pattern the migration is incremental. The
- * shipped slices so far are wish-list, tag-vocabulary, transaction-tag-rules,
- * and transaction-corrections (all scaffolded — cutover lands in later PRs).
- * The remaining slices (budgets, transactions, imports, URI dispatcher)
- * follow in subsequent PRs.
+ * tag vocabulary, corrections) and re-exports each table's service plus its
+ * row/input types from a single entry point.
  */
 export * from './errors.js';
 export * from './row-types.js';

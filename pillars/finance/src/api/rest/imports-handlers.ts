@@ -5,7 +5,7 @@
  * store, kick off the work (process in the background; execute synchronously),
  * and return `{ sessionId }` immediately — the FE then polls getImportProgress.
  *
- * Error translation (preserving the monolith's tRPC error codes):
+ * Error translation:
  *   - unknown session                       → 404 (finance.import.sessionNotFound)
  *   - session not completed / no result     → 412 (finance.import.sessionNotReady)
  *   - completed but wrong result type       → 412 (finance.import.sessionNotProcessResult)

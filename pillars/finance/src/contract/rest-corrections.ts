@@ -1,15 +1,14 @@
 /**
  * `corrections.*` sub-router — the learned transaction-correction rule surface.
+ * The `transaction_corrections` table lives in the finance db. Serves the
+ * deterministic CRUD + the ChangeSet preview/apply/merged-list surface, plus
+ * the AI cluster (analyze / generate-rules / propose / revise / reject) —
+ * Anthropic via the finance env key; rejection-feedback + AI config reached
+ * over the registry settings server SDK, best-effort.
  *
- * Finance-owned (the `transaction_corrections` table lives in the finance db).
- * Serves the deterministic CRUD + the ChangeSet preview/apply/merged-list
- * surface, plus the AI cluster (analyze / generate-rules / propose / revise /
- * reject) — Anthropic via the finance env key; rejection-feedback + AI config
- * reached over the core settings server SDK, best-effort.
- *
- * tRPC `query` procedures that carry a request body (`findMatch`,
- * `previewMatches`, `listMerged`, `previewChangeSet`) become `POST` here — a GET
- * cannot carry the body, and static paths keep them clear of `/corrections/:id`.
+ * Read endpoints that carry a request body (`findMatch`, `previewMatches`,
+ * `listMerged`, `previewChangeSet`) are `POST`: a GET cannot carry the body,
+ * and their static paths keep them clear of `/corrections/:id`.
  *
  * Schemas live in `rest-corrections-schemas.ts`; the ChangeSet schemas are
  * re-exported here because the in-pillar imports pipeline imports them from
