@@ -1,5 +1,5 @@
 /**
- * Local dev server for pops-docs (Theme 13 PRD-219 US-05).
+ * Local dev server for pops-docs (spec: pillars/docs/docs/prds/swagger-container).
  *
  * Behaviour:
  *   1. Runs `collect-specs.ts` once to populate `dist/`
