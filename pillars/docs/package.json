@@ -2,7 +2,7 @@
   "name": "@pops/docs",
   "version": "0.1.0",
   "private": true,
-  "description": "Static container serving Stoplight Elements pointed at every contract's OpenAPI snapshot (Theme 13 PRD-219).",
+  "description": "Static container serving Stoplight Elements pointed at every contract's OpenAPI snapshot.",
   "type": "module",
   "scripts": {
     "build": "tsx scripts/collect-specs.ts",
