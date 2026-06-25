@@ -1,6 +1,6 @@
 # Contract-shaped React hooks
 
-Net-new React hooks on top of the shipped [React SDK](../themes/federation/prds/react-sdk/README.md) provider. None of these exist in `libs/sdk/src/react` today — the surface there is `PillarSdkProvider`, `usePillarSdkOptions`, `pillarQueryKey`, and the subscription bridge. The pieces below would bind the existing `pillar()` client, `pillarRegistry()` discovery, and the URI layer to React.
+Net-new React hooks on top of the shipped [React SDK](../themes/federation/prds/react-sdk.md) provider. None of these exist in `libs/sdk/src/react` today — the surface there is `PillarSdkProvider`, `usePillarSdkOptions`, `pillarQueryKey`, and the subscription bridge. The pieces below would bind the existing `pillar()` client, `pillarRegistry()` discovery, and the URI layer to React.
 
 ## `usePillar<P>(p)`
 

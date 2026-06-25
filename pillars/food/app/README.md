@@ -7,8 +7,8 @@ Food domain frontend module: recipes, ingredients, meal planning, and multimodal
 Scaffold only. Pages, services, schema, and tRPC procedures arrive incrementally per
 the food theme PRDs.
 
-- Spec: [`pillars/food/docs/`](../../pillars/food/docs/) — theme README, epics, and PRDs.
-- This package: [PRD-118](../../pillars/food/docs/prds/118-app-food-scaffold/README.md).
+- Spec: [`pillars/food/docs/`](../docs/) — domain overview and PRDs.
+- This package: [app shell PRD](../docs/prds/app-shell.md).
 
 ## Layout
 

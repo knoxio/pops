@@ -1,6 +1,6 @@
 # Federated query orchestrator — unbuilt extensions
 
-Specified for the [federated query orchestrator](../themes/federation/prds/federated-query-orchestrator/README.md)
+Specified for the [federated query orchestrator](../themes/federation/prds/federated-query-orchestrator.md)
 but not implemented. The shipped orchestrator fans out, isolates failures, and
 merges sections; these four refinements are open.
 

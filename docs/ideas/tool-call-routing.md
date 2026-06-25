@@ -1,6 +1,6 @@
 # Tool-call routing — orchestrator model-loop wiring
 
-Deferred slice of [Tool-call routing](../themes/federation/prds/tool-call-routing/README.md).
+Deferred slice of [Tool-call routing](../themes/federation/prds/tool-call-routing.md).
 
 ## What exists
 
@@ -8,7 +8,7 @@ The routing primitive `invokeTool()` and the provider adapter ship in `libs/sdk/
 
 ## What is missing
 
-The orchestrator pillar (`pillars/orchestrator`) currently consumes only `buildToolList()` ([dynamic tool list](../themes/federation/prds/dynamic-tool-list/README.md)) to advertise the tool surface. Nothing in production actually calls `invokeTool()`:
+The orchestrator pillar (`pillars/orchestrator`) currently consumes only `buildToolList()` ([dynamic tool list](../themes/federation/prds/dynamic-tool-list.md)) to advertise the tool surface. Nothing in production actually calls `invokeTool()`:
 
 - No live conversation loop reads the model's `tool_use` / `function_call` blocks and dispatches them through `invokeTool`.
 - The provider adapter (`toAnthropicToolResult` / `toOpenAiToolMessage`) has no production caller — its output is never fed back into an Anthropic or OpenAI request.

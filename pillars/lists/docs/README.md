@@ -16,13 +16,13 @@ opaque integer pointers it never dereferences.
 
 ## What's here
 
-| Doc                                                                    | Scope                                                                                          |
-| ---------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| [prds/schema](prds/schema/README.md)                                   | `lists` + `list_items` tables, the polymorphic `ref_kind`/`ref_id` link, archive/delete rules. |
-| [prds/shell-module](prds/shell-module/README.md)                       | The `lists` module manifest, `/lists` route registration, sidebar entry.                       |
-| [prds/crud-ui](prds/crud-ui/README.md)                                 | The generic `/lists` index + `/lists/:id` detail UI — kind-agnostic list and item CRUD.        |
-| [prds/shopping-specialisation](prds/shopping-specialisation/README.md) | The `kind='shopping'` UX layer: uncheck-all, clear-checked, sort modes, touch-tuned rows.      |
-| [ideas/](ideas/)                                                       | Unbuilt directions (todo/packing specialisations, section grouping, templates).                |
+| Doc                                                             | Scope                                                                                          |
+| --------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| [prds/schema](prds/schema.md)                                   | `lists` + `list_items` tables, the polymorphic `ref_kind`/`ref_id` link, archive/delete rules. |
+| [prds/shell-module](prds/shell-module.md)                       | The `lists` module manifest, `/lists` route registration, sidebar entry.                       |
+| [prds/crud-ui](prds/crud-ui.md)                                 | The generic `/lists` index + `/lists/:id` detail UI — kind-agnostic list and item CRUD.        |
+| [prds/shopping-specialisation](prds/shopping-specialisation.md) | The `kind='shopping'` UX layer: uncheck-all, clear-checked, sort modes, touch-tuned rows.      |
+| [ideas/](ideas/)                                                | Unbuilt directions (todo/packing specialisations, section grouping, templates).                |
 
 ## Architecture at a glance
 

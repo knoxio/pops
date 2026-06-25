@@ -53,7 +53,7 @@ A new data pillar needs: a `pillars/<id>/` package with its own SQLite DB and zo
 
 ### Wire Format
 
-Pillar-to-pillar and consumer-to-pillar communication uses a versioned JSON-over-HTTP wire format. See the [cross-language wire-format spec](docs/themes/federation/prds/cross-language-wire-format-spec/README.md) for the canonical contract.
+Pillar-to-pillar and consumer-to-pillar communication uses a versioned JSON-over-HTTP wire format. See the [cross-language wire-format spec](docs/themes/federation/prds/cross-language-wire-format-spec.md) for the canonical contract.
 
 ### Docker Networks
 

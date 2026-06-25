@@ -1,6 +1,6 @@
 # Source Lists: staleness, contributing-source tracking, type-based default priorities
 
-Forward-looking refinements to the shipped rotation source/candidate system ([PRD source-lists](../prds/source-lists/README.md)). None of these are built today.
+Forward-looking refinements to the shipped rotation source/candidate system ([PRD source-lists](../prds/source-lists.md)). None of these are built today.
 
 ## Candidate staleness
 

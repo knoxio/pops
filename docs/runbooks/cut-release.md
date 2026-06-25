@@ -2,7 +2,7 @@
 
 > Audience: anyone with `write` access to `knoxio/pops`.
 > Frequency: only when you want to pin a stable point — day-to-day deploys need no release (see below).
-> Related: [Application Packaging & GHCR Contract](../themes/platform/prds/application-packaging/README.md).
+> Related: [Application Packaging & GHCR Contract](../themes/platform/prds/application-packaging.md).
 
 ## TL;DR
 

@@ -67,5 +67,5 @@ The name "pillar" is retained for continuity. ADR-026's original framing ("load-
 - [ADR-027](adr-027-runtime-pillar-registry.md) — the registry this ADR clarifies the contents of
 - [ADR-032](adr-032-positioning-vs-self-hosted-os-family.md) — introduces bridge pillars as a concept; this ADR formally categorises them
 - [ADR-034](adr-034-sinks-manifest-dimension.md) — the sinks dimension bridge pillars use
-- [manifest-schema-validator](../themes/federation/prds/manifest-schema-validator/README.md) — manifest schema (unchanged by this ADR)
-- [dynamic-pillar-registration](../themes/federation/prds/dynamic-pillar-registration/README.md) — dynamic pillar registration (no schema changes needed from this ADR)
+- [manifest-schema-validator](../themes/federation/prds/manifest-schema-validator.md) — manifest schema (unchanged by this ADR)
+- [dynamic-pillar-registration](../themes/federation/prds/dynamic-pillar-registration.md) — dynamic pillar registration (no schema changes needed from this ADR)

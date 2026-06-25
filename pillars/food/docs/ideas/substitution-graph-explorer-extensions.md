@@ -1,6 +1,6 @@
 # Idea: Substitution graph explorer extensions
 
-Forward-looking work deliberately excluded from the shipped [substitution-graph-explorer](../prds/substitution-graph-explorer/README.md). The read-only force-directed / radial visualisation, both side panels, and the `GET /food/substitutions/graph-view` projection are done; these are the next layers.
+Forward-looking work deliberately excluded from the shipped [substitution-graph-explorer](../prds/substitution-graph-explorer.md). The read-only force-directed / radial visualisation, both side panels, and the `GET /food/substitutions/graph-view` projection are done; these are the next layers.
 
 ## Recipe-scope picker
 

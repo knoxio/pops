@@ -1,7 +1,7 @@
 # External pillar example — unbuilt pieces
 
 The cross-language story is discharged by a real, deployed Rust pillar (`contacts` —
-see [the PRD](../themes/federation/prds/external-pillar-example-repo/README.md)). These
+see [the PRD](../themes/federation/prds/external-pillar-example-repo.md)). These
 adjacent deliverables were specced but never built, and the chosen approach made the
 first two unnecessary.
 

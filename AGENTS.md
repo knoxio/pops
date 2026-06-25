@@ -310,11 +310,11 @@ To work a domain locally: `cd pillars/<id> && pnpm dev` (applies its own migrati
 
 ### PRD-First Rule
 
-The docs model is **slug-only** — a PRD's id is its slug + path; there are no PRD numbers and no separate `us-*.md` user-story files. Acceptance criteria live **inline** in each PRD under `## Acceptance Criteria`. Hierarchy: **Theme → PRD** (optional `epics/` grouping only when a theme has enough PRDs). ADRs keep frozen `adr-NNN` numbers.
+The docs model is **slug-only** — a PRD's id is its slug + path; there are no PRD numbers and no separate `us-*.md` user-story files. Acceptance criteria live **inline** in each PRD under `## Acceptance Criteria`. Hierarchy: **Theme → PRD**. ADRs keep frozen `adr-NNN` numbers.
 
 Docs live in two places:
 
-- **Pillar-scoped** under `pillars/<id>/docs/` (`README.md` domain overview, `prds/<slug>/README.md`, optional `epics/`, pillar-only `architecture/`, `runbooks/`, `ideas/`) — most PRDs live here.
+- **Pillar-scoped** under `pillars/<id>/docs/` (`README.md` domain overview, `prds/<slug>.md`, pillar-only `architecture/`, `runbooks/`, `ideas/`) — most PRDs live here.
 - **Cross-cutting** under `docs/themes/{platform,foundation,federation}/` plus central `docs/architecture/` (ADRs), `_templates/`, `runbooks/` (cut-release), `vision.md`, `roadmap.md`.
 
 **Locate the PRD** before any code:

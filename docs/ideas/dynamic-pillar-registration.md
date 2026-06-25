@@ -1,7 +1,7 @@
 # Idea: shared-key auth for pillar registration
 
 Captures the unbuilt parts of the original dynamic-pillar-registration design. The shipped
-[Dynamic pillar registration](../themes/federation/prds/dynamic-pillar-registration/README.md)
+[Dynamic pillar registration](../themes/federation/prds/dynamic-pillar-registration.md)
 PRD relies on the docker network as the trust boundary (ADR-027) and carries no
 per-request credential. An earlier draft specified a shared-key auth layer
 instead. None of the following is built; revisit only if external pillars ever

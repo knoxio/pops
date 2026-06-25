@@ -7,7 +7,7 @@ hand-writes a `useQuery` / `useMutation` per endpoint.
 Specced once under the old federation plan, **not built**. The frontends went a
 different way: each consumes a generated per-pillar Hey API SDK plus a small
 `*-api-helpers.ts` shim wired directly into react-query (see the
-[react-hooks PRD](../themes/federation/prds/react-hooks/README.md)). The generic
+[react-hooks PRD](../themes/federation/prds/react-hooks.md)). The generic
 hooks below would sit on top of that, or replace the per-frontend boilerplate.
 
 ## Proposed surface

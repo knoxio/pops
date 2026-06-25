@@ -1,6 +1,6 @@
 # Caching + invalidation: unbuilt follow-ups
 
-Spun out of the [Caching + invalidation PRD](../themes/federation/prds/caching-invalidation/README.md).
+Spun out of the [Caching + invalidation PRD](../themes/federation/prds/caching-invalidation.md).
 The SSE → React Query bridge ships; what's below does not.
 
 ## Bridge + failure-flag integration ("pillar drops → fallback rendered")

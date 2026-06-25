@@ -6,7 +6,7 @@ MCP (Model Context Protocol) HTTP gateway for POPS. Exposes inventory, finance, 
 - **Port:** 3002 (configurable via `MCP_PORT`), bound `0.0.0.0` for LAN reach
 - **Auth:** Outbound only. Authenticates to pillars with a service-account key (`POPS_INTERNAL_API_KEY`, legacy `POPS_API_KEY`, or the `POPS_API_KEY_FILE` Docker-secret pattern). Inbound MCP connections are unauthenticated — LAN-trusted.
 
-See the [MCP Server PRD](../../docs/themes/platform/prds/mcp-server/README.md) for the gateway spec and the [Tool Inventory](docs/prds/tool-inventory/README.md) for the per-tool surface.
+See the [MCP Server PRD](../../docs/themes/platform/prds/mcp-server.md) for the gateway spec and the [Tool Inventory](docs/prds/tool-inventory.md) for the per-tool surface.
 
 ## Prerequisites
 

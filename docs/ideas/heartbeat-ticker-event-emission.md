@@ -1,6 +1,6 @@
 # Heartbeat ticker should emit `healthy → unavailable` as push events
 
-> Origin: split out of [heartbeat-lifecycle PRD](../themes/federation/prds/heartbeat-lifecycle/README.md) — the one acceptance criterion the live engine does not yet satisfy.
+> Origin: split out of [heartbeat-lifecycle PRD](../themes/federation/prds/heartbeat-lifecycle.md) — the one acceptance criterion the live engine does not yet satisfy.
 
 ## Problem
 
@@ -33,7 +33,7 @@ Considerations:
 
 - **Origin on the payload.** `RegistryEventPayload.origin` is optional; the ticker only has the `StatusTransition` (`pillarId`, `previousStatus`, `nextStatus`, `at`). Either look up the row's origin before emitting, or accept the unset-origin path that pre-PRD-228 emitters already use.
 - **Entry hydration.** The recovery path emits `entry: null`; an SSE consumer then re-reads or relies on the next snapshot. Decide whether down-transitions should carry the full `RegistryEntry` (it is cheap — the row is in hand during the tick) so subscribers can update without a round-trip.
-- **Flutter.** A pillar that flaps `healthy → unavailable → healthy` would now push three frames. The [subscription-model](../themes/federation/prds/subscription-model/README.md) PRD already states subscribers tolerate flutter, so no debounce is needed here, but confirm the SSE consumers actually do.
+- **Flutter.** A pillar that flaps `healthy → unavailable → healthy` would now push three frames. The [subscription-model](../themes/federation/prds/subscription-model.md) PRD already states subscribers tolerate flutter, so no debounce is needed here, but confirm the SSE consumers actually do.
 
 ## Acceptance criteria
 

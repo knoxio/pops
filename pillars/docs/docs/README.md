@@ -47,9 +47,9 @@ pillars/docs/
 
 ## PRDs
 
-| PRD                                                   | Summary                                                                             | Status |
-| ----------------------------------------------------- | ----------------------------------------------------------------------------------- | ------ |
-| [swagger-container](prds/swagger-container/README.md) | Static nginx pillar serving Stoplight Elements over every pillar's OpenAPI snapshot | Done   |
+| PRD                                            | Summary                                                                             | Status |
+| ---------------------------------------------- | ----------------------------------------------------------------------------------- | ------ |
+| [swagger-container](prds/swagger-container.md) | Static nginx pillar serving Stoplight Elements over every pillar's OpenAPI snapshot | Done   |
 
 ## Out of scope
 

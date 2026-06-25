@@ -1,6 +1,6 @@
 # Fixtures: graph traversal, per-fixture listing, and search
 
-Forward-looking gaps carved out of the shipped [fixtures-data-model](../prds/fixtures-data-model/README.md). The fixture tables, CRUD, connect/disconnect, and per-item listing all exist; the three items below were specified but never built.
+Forward-looking gaps carved out of the shipped [fixtures-data-model](../prds/fixtures-data-model.md). The fixture tables, CRUD, connect/disconnect, and per-item listing all exist; the three items below were specified but never built.
 
 ## Connection graph + trace traversal of fixtures
 

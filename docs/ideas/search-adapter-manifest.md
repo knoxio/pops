@@ -1,6 +1,6 @@
 # Idea: Roll search adapters out across the federation
 
-Spun out of [Search Adapter Manifest](../themes/federation/prds/search-adapter-manifest/README.md). The
+Spun out of [Search Adapter Manifest](../themes/federation/prds/search-adapter-manifest.md). The
 manifest schema, validator, and orchestrator selection gate are built and the
 `contacts` pillar declares a real adapter end-to-end. What is **not** built is the
 rollout across the rest of the federation, plus runtime use of the richer query

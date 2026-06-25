@@ -2,7 +2,7 @@
 
 Only the `shopping` kind has a specialised UX today. `packing`, `todo`, and
 `generic` all render via the bare generic path
-([crud-ui](../prds/crud-ui/README.md)). The schema is already kind-agnostic and
+([crud-ui](../prds/crud-ui.md)). The schema is already kind-agnostic and
 carries the columns these would need, but nothing consumes them.
 
 ## Todo specialisation (`due_at`)

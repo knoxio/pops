@@ -55,4 +55,4 @@ A module exposes one or more surfaces. The shell renders them differently:
 
 A module may declare multiple surfaces. `ego` is **dual-surface** — it has both a `/cerebrum/chat` route (`app`) and a system-wide overlay panel (`overlay`) sharing tRPC state. Modules express this via `surfaces: ['app', 'overlay']` on their `ModuleManifest`.
 
-The set of installed modules is a runtime decision driven by the `POPS_APPS` and `POPS_OVERLAYS` env vars; the shell composes routers and routes from the manifests of installed modules only. See [plugin-contract (ModuleManifest + Tier 1 loader)](../themes/foundation/prds/plugin-contract/README.md).
+The set of installed modules is a runtime decision driven by the `POPS_APPS` and `POPS_OVERLAYS` env vars; the shell composes routers and routes from the manifests of installed modules only. See [plugin-contract (ModuleManifest + Tier 1 loader)](../themes/foundation/prds/plugin-contract.md).

@@ -1,6 +1,6 @@
 # Idea: richer `bootstrapPillar()` lifecycle
 
-The shipped [`bootstrapPillar()`](../themes/federation/prds/bootstrap-pillar-helper/README.md) is deliberately thin: validate manifest → register (capped retry) → heartbeat → `stop()`. Each pillar still hand-rolls its Express app, DB lifecycle, `app.listen`, and `SIGTERM`/`SIGINT` handler. The following were specced but never built; they would fold the per-pillar boilerplate into the SDK.
+The shipped [`bootstrapPillar()`](../themes/federation/prds/bootstrap-pillar-helper.md) is deliberately thin: validate manifest → register (capped retry) → heartbeat → `stop()`. Each pillar still hand-rolls its Express app, DB lifecycle, `app.listen`, and `SIGTERM`/`SIGINT` handler. The following were specced but never built; they would fold the per-pillar boilerplate into the SDK.
 
 ## Boot state machine + register-first-then-serve
 

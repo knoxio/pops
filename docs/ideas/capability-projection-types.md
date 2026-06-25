@@ -1,6 +1,6 @@
 # Wire the capability projections into the runtime `pillar()` SDK
 
-The type projection toolkit in `@pops/pillar-sdk/capabilities` (PRD [capability-projection-types](../themes/federation/prds/capability-projection-types/README.md)) is built and fully tested, but it has **no downstream consumers**. The runtime `pillar()` SDK that actually ships (`@pops/pillar-sdk/client`) was built in parallel and never composed the projections. These are the unbuilt pieces.
+The type projection toolkit in `@pops/pillar-sdk/capabilities` (PRD [capability-projection-types](../themes/federation/prds/capability-projection-types.md)) is built and fully tested, but it has **no downstream consumers**. The runtime `pillar()` SDK that actually ships (`@pops/pillar-sdk/client`) was built in parallel and never composed the projections. These are the unbuilt pieces.
 
 ## Compose `CallablePillar<C>` into the runtime `pillar()` proxy
 

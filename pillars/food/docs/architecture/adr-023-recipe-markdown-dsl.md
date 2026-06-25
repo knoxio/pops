@@ -133,6 +133,6 @@ The renderer is out of scope for this ADR (lives in `recipe-model` + an Epic 01 
 ## References
 
 - [ADR-022](./adr-022-unified-recipe-ingredient-model.md) — recipes-as-ingredients (the basis for `@ingredient(N, recipe-slug, qty:unit)` syntax)
-- [`ingredient-model`](../prds/ingredient-model/README.md) — slug_registry table (amended as part of this ADR)
+- [`ingredient-model`](../prds/ingredient-model.md) — slug_registry table (amended as part of this ADR)
 - `recipe-model` — Recipe & Version Model (stores `body_dsl`, materializes `recipe_lines` and `recipe_steps`)
 - Future PRD in Epic 01 — DSL-aware editor with autocomplete and chip rendering

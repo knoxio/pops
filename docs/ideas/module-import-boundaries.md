@@ -1,6 +1,6 @@
 # Idea: module-import-boundaries — unbuilt / superseded delta
 
-Split out from the [module-import-boundaries](../themes/foundation/prds/module-import-boundaries/README.md) PRD during the greenfield rewrite. The enforced parts of it shipped (see the PRD). What follows is the part of the original spec that was either superseded by the federation isolation model or never built.
+Split out from the [module-import-boundaries](../themes/foundation/prds/module-import-boundaries.md) PRD during the greenfield rewrite. The enforced parts of it shipped (see the PRD). What follows is the part of the original spec that was either superseded by the federation isolation model or never built.
 
 ## Superseded by the current architecture (do not rebuild)
 

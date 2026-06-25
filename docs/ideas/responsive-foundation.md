@@ -1,6 +1,6 @@
 # Responsive Foundation — follow-ups
 
-Open work beyond the shipped [Responsive Foundation PRD](../themes/foundation/prds/responsive-foundation/README.md). The breakpoint system, shell mobile layout, component adaptation patterns, primitive touch targets, and empty/error/page-header conventions are built. The items below are not.
+Open work beyond the shipped [Responsive Foundation PRD](../themes/foundation/prds/responsive-foundation.md). The breakpoint system, shell mobile layout, component adaptation patterns, primitive touch targets, and empty/error/page-header conventions are built. The items below are not.
 
 ## Consumer-side touch-target audit
 

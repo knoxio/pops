@@ -1,6 +1,6 @@
 # Contract semver classification + enforcement
 
-Status: not built. The drift half shipped (see [Contract drift CI](../themes/federation/prds/contract-semver-ci/README.md)). This is the unbuilt semantic-version half.
+Status: not built. The drift half shipped (see [Contract drift CI](../themes/federation/prds/contract-semver-ci.md)). This is the unbuilt semantic-version half.
 
 ## Idea
 

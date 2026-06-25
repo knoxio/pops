@@ -1,6 +1,6 @@
 # Ranking strategy — unbuilt live wiring
 
-Specified for the [ranking strategy](../themes/federation/prds/ranking-strategy/README.md)
+Specified for the [ranking strategy](../themes/federation/prds/ranking-strategy.md)
 but not wired into the runtime. The pure weighted-sum merge
 (`@pops/pillar-sdk/ranking` — `mergeResults`, `pillarWeightSettingKey`,
 `DEFAULT_PILLAR_WEIGHT`, `SETTINGS_KEY_PREFIX`) ships and is fully unit-tested.

@@ -1,6 +1,6 @@
 # {Name}
 
-> Epic: [{Epic name}](../../epics/{slug}.md)
+> Theme: [{Theme name}](../README.md)
 
 ## Overview
 

@@ -22,11 +22,11 @@ other data pillar is TypeScript.
 
 The HTTP surface is three buildable units:
 
-| Unit                                        | Path prefix | What it serves                                                                |
-| ------------------------------------------- | ----------- | ----------------------------------------------------------------------------- |
-| [entities](prds/entities/README.md)         | `/entities` | Contact CRUD, paginated/filtered list, and the bulk match-column lookup.      |
-| [search](prds/search/README.md)             | `/search`   | The contacts slice of unified search — ranked name hits for the orchestrator. |
-| [registration](prds/registration/README.md) | (outbound)  | Boot register + heartbeat + deregister handshake with the `registry` pillar.  |
+| Unit                                 | Path prefix | What it serves                                                                |
+| ------------------------------------ | ----------- | ----------------------------------------------------------------------------- |
+| [entities](prds/entities.md)         | `/entities` | Contact CRUD, paginated/filtered list, and the bulk match-column lookup.      |
+| [search](prds/search.md)             | `/search`   | The contacts slice of unified search — ranked name hits for the orchestrator. |
+| [registration](prds/registration.md) | (outbound)  | Boot register + heartbeat + deregister handshake with the `registry` pillar.  |
 
 Plus the fleet-standard `GET /health` liveness envelope and `GET /openapi`.
 

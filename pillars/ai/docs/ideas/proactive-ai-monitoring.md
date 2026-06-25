@@ -1,7 +1,7 @@
 # Idea: Proactive AI Monitoring
 
 > Pillar: [AI Ops](../README.md)
-> Status: Not built — depends on the [telemetry foundation](../prds/ai-inference-monitoring/README.md), which is in place.
+> Status: Not built — depends on the [telemetry foundation](../prds/ai-inference-monitoring.md), which is in place.
 
 The telemetry ingest, observability dashboards, budgets, and alerting all exist. What does **not** exist is the proactive, domain-level insight layer that turns that data (and cross-pillar data) into unprompted notifications. This idea captures it; nothing here is implemented.
 

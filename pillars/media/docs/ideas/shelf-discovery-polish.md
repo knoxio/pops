@@ -27,5 +27,5 @@ The Refresh button re-runs assembly and swaps the shelves in place. The spec ask
 
 ## Out of the original spec, already shipped (for reference)
 
-Weighted-random shelf selection, freshness scoring with a 0.1 floor, variety/context bonuses, category caps, the impressions table + REST sub-router, lazy-loaded shelf rows, and the `/media/calendar → /media/discover` redirect are all live — see `../prds/shelf-discovery/README.md`.
+Weighted-random shelf selection, freshness scoring with a 0.1 floor, variety/context bonuses, category caps, the impressions table + REST sub-router, lazy-loaded shelf rows, and the `/media/calendar → /media/discover` redirect are all live — see `../prds/shelf-discovery.md`.
 </content>

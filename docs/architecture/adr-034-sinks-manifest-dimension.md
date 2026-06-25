@@ -60,8 +60,8 @@ The full implementation is split across two PRDs:
 ## Related
 
 - [ADR-032](adr-032-positioning-vs-self-hosted-os-family.md) — establishes the bridge-pillar pattern that needs the sinks dimension
-- [search-adapter-manifest](../themes/federation/prds/search-adapter-manifest/README.md) — searchAdapters dimension (the precedent for first-class manifest features)
-- [ai-tool-manifest](../themes/federation/prds/ai-tool-manifest/README.md) — aiTools dimension (the second precedent)
+- [search-adapter-manifest](../themes/federation/prds/search-adapter-manifest.md) — searchAdapters dimension (the precedent for first-class manifest features)
+- [ai-tool-manifest](../themes/federation/prds/ai-tool-manifest.md) — aiTools dimension (the second precedent)
 - `ha-bridge-pillar` — HA bridge pillar (first inbound bridge, also first outbound consumer of sinks)
-- [sinks-manifest-dimension](../themes/federation/prds/sinks-manifest-dimension/README.md) — sinks manifest dimension scaffold
+- [sinks-manifest-dimension](../themes/federation/prds/sinks-manifest-dimension.md) — sinks manifest dimension scaffold
 - `pops-to-ha-event-publisher` — pops → HA event publisher

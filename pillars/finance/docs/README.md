@@ -20,64 +20,64 @@ Build a finance app that tracks every transaction across multiple bank accounts,
 
 The transaction ledger — the core data model and UI for viewing, creating, editing, and deleting financial transactions across multiple bank accounts, with filtering, sorting, and inline tag editing.
 
-| PRD                                         | Summary                                                                               | Status |
-| ------------------------------------------- | ------------------------------------------------------------------------------------- | ------ |
-| [Transactions](prds/transactions/README.md) | Transaction data model, ledger page with CRUD, filtering, sorting, inline tag editing | Done   |
+| PRD                                  | Summary                                                                               | Status |
+| ------------------------------------ | ------------------------------------------------------------------------------------- | ------ |
+| [Transactions](prds/transactions.md) | Transaction data model, ledger page with CRUD, filtering, sorting, inline tag editing | Done   |
 
 **Import Pipeline**
 
 The multi-step import wizard that ingests bank data into the ledger — wizard UI, the entity-matching engine (deterministic ladder + env-gated AI fallback), deduplication, per-bank CSV parsers, and a local-first buffer that commits atomically.
 
-| PRD                                                                 | Summary                                                                                                                                          | Status  |
-| ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | ------- |
-| [Import Wizard UI](prds/import-wizard-ui/README.md)                 | 8-step flow: upload, column mapping, processing, review, tags, final review & commit, summary                                                    | Partial |
-| [Entity Matching Engine](prds/entity-matching-engine/README.md)     | Matching chain: aliases → exact → prefix → contains → AI fallback; per-run reference maps fetched live from `contacts`; Claude Haiku final stage | Done    |
-| [Deduplication & CSV Parsing](prds/import-dedup-csv/README.md)      | Checksum dedup + generic CSV column-mapping; per-bank parsers (ANZ, Amex, ING) and Up Bank API import                                            | Partial |
-| [Local-First Import State Layer](prds/local-first-import/README.md) | Pending entity/rule stores in zustand, server-side merged re-evaluation, commit payload builder                                                  | Done    |
-| [Final Review & Commit Step](prds/final-review-commit/README.md)    | Atomic commit endpoint (entities + changeSets + transactions in one SQLite tx), retroactive reclassification                                     | Done    |
+| PRD                                                          | Summary                                                                                                                                          | Status  |
+| ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------ | ------- |
+| [Import Wizard UI](prds/import-wizard-ui.md)                 | 8-step flow: upload, column mapping, processing, review, tags, final review & commit, summary                                                    | Partial |
+| [Entity Matching Engine](prds/entity-matching-engine.md)     | Matching chain: aliases → exact → prefix → contains → AI fallback; per-run reference maps fetched live from `contacts`; Claude Haiku final stage | Done    |
+| [Deduplication & CSV Parsing](prds/import-dedup-csv.md)      | Checksum dedup + generic CSV column-mapping; per-bank parsers (ANZ, Amex, ING) and Up Bank API import                                            | Partial |
+| [Local-First Import State Layer](prds/local-first-import.md) | Pending entity/rule stores in zustand, server-side merged re-evaluation, commit payload builder                                                  | Done    |
+| [Final Review & Commit Step](prds/final-review-commit.md)    | Atomic commit endpoint (entities + changeSets + transactions in one SQLite tx), retroactive reclassification                                     | Done    |
 
 **Entities**
 
 The merchant/payee registry that transactions match against is owned by the `contacts` pillar; finance consumes it read-only via `pillar('contacts').entities.list` and keeps no entities table of its own.
 
-| PRD                                                                          | Summary                                                       |
-| ---------------------------------------------------------------------------- | ------------------------------------------------------------- |
-| [`contacts/docs/prds/entities`](../../contacts/docs/prds/entities/README.md) | Entity data model, CRUD, search, aliases, default tags, types |
+| PRD                                                                   | Summary                                                       |
+| --------------------------------------------------------------------- | ------------------------------------------------------------- |
+| [`contacts/docs/prds/entities`](../../contacts/docs/prds/entities.md) | Entity data model, CRUD, search, aliases, default tags, types |
 
 **Corrections**
 
 Learned classification rules and separate tag rules that improve over time — pattern matching (exact / contains / regex) with confidence scoring, bundled ChangeSet proposals with impact preview, and explicit priority ordering.
 
-| PRD                                                                             | Summary                                                                                              | Status  |
-| ------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- | ------- |
-| [Corrections](prds/corrections/README.md)                                       | Classification corrections: pattern matching, confidence/activation semantics, transfer-only support | Done    |
-| [Correction Proposal Engine](prds/correction-proposal-engine/README.md)         | Bundled ChangeSet proposals with impact preview, approve/apply, reject-with-feedback                 | Partial |
-| [Tag Rule Proposals](prds/tag-rule-proposals/README.md)                         | Tag-rule learning proposals, separate from classification rules, with a seed taxonomy                | Done    |
-| [Global Rule Manager & Priority Ordering](prds/rule-manager-priority/README.md) | Browse-all rule CRUD, priority column, drag-to-reorder, override indicators, orphaned entities       | Partial |
+| PRD                                                                      | Summary                                                                                              | Status  |
+| ------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------- | ------- |
+| [Corrections](prds/corrections.md)                                       | Classification corrections: pattern matching, confidence/activation semantics, transfer-only support | Done    |
+| [Correction Proposal Engine](prds/correction-proposal-engine.md)         | Bundled ChangeSet proposals with impact preview, approve/apply, reject-with-feedback                 | Partial |
+| [Tag Rule Proposals](prds/tag-rule-proposals.md)                         | Tag-rule learning proposals, separate from classification rules, with a seed taxonomy                | Done    |
+| [Global Rule Manager & Priority Ordering](prds/rule-manager-priority.md) | Browse-all rule CRUD, priority column, drag-to-reorder, override indicators, orphaned entities       | Partial |
 
 **Budgets**
 
 Budget tracking — spending categories with monthly, yearly, or one-time limits, showing actual spend against target with an active/inactive toggle per budget.
 
-| PRD                               | Summary                                                                                              | Status |
-| --------------------------------- | ---------------------------------------------------------------------------------------------------- | ------ |
-| [Budgets](prds/budgets/README.md) | Budget data model, CRUD page, period types (monthly/yearly), spend vs target, active/inactive toggle | Done   |
+| PRD                        | Summary                                                                                              | Status |
+| -------------------------- | ---------------------------------------------------------------------------------------------------- | ------ |
+| [Budgets](prds/budgets.md) | Budget data model, CRUD page, period types (monthly/yearly), spend vs target, active/inactive toggle | Done   |
 
 **Wishlist**
 
 Savings goals — items the user wants to buy, each with a target price and tracked progress toward that goal.
 
-| PRD                                 | Summary                                                                       | Status |
-| ----------------------------------- | ----------------------------------------------------------------------------- | ------ |
-| [Wishlist](prds/wishlist/README.md) | Wishlist data model, CRUD page, target amounts, progress tracking, priorities | Done   |
+| PRD                          | Summary                                                                       | Status |
+| ---------------------------- | ----------------------------------------------------------------------------- | ------ |
+| [Wishlist](prds/wishlist.md) | Wishlist data model, CRUD page, target amounts, progress tracking, priorities | Done   |
 
 **AI Rule Creation**
 
 AI-powered live rule creation during import — when a user corrects a transaction's entity, Claude derives a matching rule that applies immediately to remaining rows, so manual corrections trend toward zero.
 
-| PRD                                                 | Summary                                                                                             | Status  |
-| --------------------------------------------------- | --------------------------------------------------------------------------------------------------- | ------- |
-| [AI Rule Creation](prds/ai-rule-creation/README.md) | AI-assisted proposal generation for corrections during import (proposal + preview + approve/reject) | Partial |
+| PRD                                          | Summary                                                                                             | Status  |
+| -------------------------------------------- | --------------------------------------------------------------------------------------------------- | ------- |
+| [AI Rule Creation](prds/ai-rule-creation.md) | AI-assisted proposal generation for corrections during import (proposal + preview + approve/reject) | Partial |
 
 ## Key Decisions
 

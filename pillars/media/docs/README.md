@@ -21,91 +21,91 @@ Build a personal media intelligence app — not just a tracker, but a system tha
 
 The media domain schema (movies, TV hierarchy, comparisons, scores, watchlist, watch history) and the REST contract every other area builds on.
 
-| #   | PRD                                                     | Status |
-| --- | ------------------------------------------------------- | ------ |
-| 028 | [Media Data Model & API](prds/data-model-api/README.md) | Done   |
+| #   | PRD                                              | Status |
+| --- | ------------------------------------------------ | ------ |
+| 028 | [Media Data Model & API](prds/data-model-api.md) | Done   |
 
 **Metadata Integration**
 
 External metadata clients — TMDB for movies, TheTVDB for TV — each handling search, metadata fetch, poster download/cache, and rate limiting.
 
-| #   | PRD                                             | Status |
-| --- | ----------------------------------------------- | ------ |
-| 029 | [TMDB Client](prds/tmdb-client/README.md)       | Done   |
-| 030 | [TheTVDB Client](prds/thetvdb-client/README.md) | Done   |
+| #   | PRD                                      | Status |
+| --- | ---------------------------------------- | ------ |
+| 029 | [TMDB Client](prds/tmdb-client.md)       | Done   |
+| 030 | [TheTVDB Client](prds/thetvdb-client.md) | Done   |
 
 **App Package & Core UI**
 
 `@pops/app-media` — library browsing, external search with add-to-library, and detail views for movies and TV shows.
 
-| #   | PRD                                                       | Status  |
-| --- | --------------------------------------------------------- | ------- |
-| 031 | [Library Page](prds/library-page/README.md)               | Done    |
-| 032 | [Search Page](prds/search-page/README.md)                 | Done    |
-| 033 | [Movie Detail Page](prds/movie-detail-page/README.md)     | Done    |
-| 034 | [TV Show Detail Page](prds/tv-show-detail-page/README.md) | Partial |
+| #   | PRD                                                | Status  |
+| --- | -------------------------------------------------- | ------- |
+| 031 | [Library Page](prds/library-page.md)               | Done    |
+| 032 | [Search Page](prds/search-page.md)                 | Done    |
+| 033 | [Movie Detail Page](prds/movie-detail-page.md)     | Done    |
+| 034 | [TV Show Detail Page](prds/tv-show-detail-page.md) | Partial |
 
 **Tracking & Watchlist**
 
 Watch history at episode level for TV, plus a prioritised watchlist that auto-removes on manual watches.
 
-| #   | PRD                                           | Status |
-| --- | --------------------------------------------- | ------ |
-| 035 | [Watch History](prds/watch-history/README.md) | Done   |
-| 036 | [Watchlist](prds/watchlist/README.md)         | Done   |
+| #   | PRD                                    | Status |
+| --- | -------------------------------------- | ------ |
+| 035 | [Watch History](prds/watch-history.md) | Done   |
+| 036 | [Watchlist](prds/watchlist.md)         | Done   |
 
 **Ratings & Comparisons**
 
 Pairwise comparison across taste dimensions: pick a winner, ELO scores update, rankings and radar charts visualise the result.
 
-| #   | PRD                                                                               | Status         |
-| --- | --------------------------------------------------------------------------------- | -------------- |
-| 037 | [Ratings & Comparisons](prds/ratings-comparisons/README.md)                       | Done           |
-| 062 | [Comparison Intelligence](prds/comparison-intelligence/README.md)                 | Partial        |
-| 064 | [Batch Tier List](prds/batch-tier-list/README.md)                                 | Done           |
-| 066 | [Arena Redesign](prds/arena/README.md)                                            | Done           |
-| 067 | [Comparison History Enhancements](prds/comparison-history-enhancements/README.md) | Done           |
-| —   | [Comparison History — Search & Filter](prds/comparison-history-search/README.md)  | Done           |
-| —   | [Post-Watch Debrief](ideas/post-watch-debrief.md)                                 | Idea (unbuilt) |
+| #   | PRD                                                                        | Status         |
+| --- | -------------------------------------------------------------------------- | -------------- |
+| 037 | [Ratings & Comparisons](prds/ratings-comparisons.md)                       | Done           |
+| 062 | [Comparison Intelligence](prds/comparison-intelligence.md)                 | Partial        |
+| 064 | [Batch Tier List](prds/batch-tier-list.md)                                 | Done           |
+| 066 | [Arena Redesign](prds/arena.md)                                            | Done           |
+| 067 | [Comparison History Enhancements](prds/comparison-history-enhancements.md) | Done           |
+| —   | [Comparison History — Search & Filter](prds/comparison-history-search.md)  | Done           |
+| —   | [Post-Watch Debrief](ideas/post-watch-debrief.md)                          | Idea (unbuilt) |
 
 **Discovery & Recommendations**
 
 The recommendation engine and discover surface — trending, new releases, and personalised suggestions from comparison data, watch history, and genre preferences.
 
-| #   | PRD                                                                     | Status  |
-| --- | ----------------------------------------------------------------------- | ------- |
-| 038 | [Discovery & Recommendations](prds/discovery-recommendations/README.md) | Partial |
-| 060 | [Discover Page](prds/discover-page/README.md)                           | Done    |
-| 065 | [Shelf-Based Discovery](prds/shelf-discovery/README.md)                 | Done    |
+| #   | PRD                                                              | Status  |
+| --- | ---------------------------------------------------------------- | ------- |
+| 038 | [Discovery & Recommendations](prds/discovery-recommendations.md) | Partial |
+| 060 | [Discover Page](prds/discover-page.md)                           | Done    |
+| 065 | [Shelf-Based Discovery](prds/shelf-discovery.md)                 | Done    |
 
 **Plex Sync**
 
 Polling-based sync with Plex: import library items, watch history, and watchlist. Plex is one input source — POPS owns the library.
 
-| #   | PRD                                                       | Status  |
-| --- | --------------------------------------------------------- | ------- |
-| 039 | [Plex Sync](prds/plex-sync/README.md)                     | Partial |
-| 059 | [Plex Watchlist Sync](prds/plex-watchlist-sync/README.md) | Partial |
+| #   | PRD                                                | Status  |
+| --- | -------------------------------------------------- | ------- |
+| 039 | [Plex Sync](prds/plex-sync.md)                     | Partial |
+| 059 | [Plex Watchlist Sync](prds/plex-watchlist-sync.md) | Partial |
 
 **Radarr & Sonarr**
 
 Radarr (movies) and Sonarr (TV) integration — status badges and full request management, replacing Overseerr as the single request interface inside POPS.
 
-| #   | PRD                                                                   | Status  |
-| --- | --------------------------------------------------------------------- | ------- |
-| 040 | [Arr Status Display](prds/arr-status-display/README.md)               | Partial |
-| 041 | [Radarr Request Management](prds/radarr-request-management/README.md) | Done    |
-| 042 | [Sonarr Request Management](prds/sonarr-request-management/README.md) | Partial |
+| #   | PRD                                                            | Status  |
+| --- | -------------------------------------------------------------- | ------- |
+| 040 | [Arr Status Display](prds/arr-status-display.md)               | Partial |
+| 041 | [Radarr Request Management](prds/radarr-request-management.md) | Done    |
+| 042 | [Sonarr Request Management](prds/sonarr-request-management.md) | Partial |
 
 **Library Rotation**
 
 Automated movie lifecycle: source-fed candidates, a daily add/remove cycle gated on disk space, and a "leaving soon" grace period. Movies only.
 
-| #   | PRD                                               | Status  |
-| --- | ------------------------------------------------- | ------- |
-| 070 | [Rotation Engine](prds/rotation-engine/README.md) | Partial |
-| 071 | [Source Lists](prds/source-lists/README.md)       | Done    |
-| 072 | [Rotation UI](prds/rotation-ui/README.md)         | Partial |
+| #   | PRD                                        | Status  |
+| --- | ------------------------------------------ | ------- |
+| 070 | [Rotation Engine](prds/rotation-engine.md) | Partial |
+| 071 | [Source Lists](prds/source-lists.md)       | Done    |
+| 072 | [Rotation UI](prds/rotation-ui.md)         | Partial |
 
 ## Key Decisions
 

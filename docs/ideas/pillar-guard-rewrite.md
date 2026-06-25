@@ -1,6 +1,6 @@
 # PillarGuard — live re-render, customisable fallback, flap handling, e2e
 
-Deferred scope for [PillarGuard](../themes/federation/prds/pillar-guard-rewrite/README.md). The guard, boot-snapshot provider, and placeholder ship today; the items below are not built.
+Deferred scope for [PillarGuard](../themes/federation/prds/pillar-guard-rewrite.md). The guard, boot-snapshot provider, and placeholder ship today; the items below are not built.
 
 ## Live re-render on registry change
 

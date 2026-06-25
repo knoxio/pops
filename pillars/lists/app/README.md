@@ -13,11 +13,11 @@ Built: the index page, the generic detail page, and the shopping specialisation
 (uncheck-all, clear-checked, sort modes, touch-tuned rows). Backed by the lists
 pillar's REST contract.
 
-- Domain overview: [`pillars/lists/docs/`](../../docs/README.md)
-- Schema spec: [lists schema](../../docs/prds/schema/README.md)
-- Shell module spec: [lists shell module](../../docs/prds/shell-module/README.md)
-- CRUD UI spec: [generic lists CRUD UI](../../docs/prds/crud-ui/README.md)
-- Shopping specialisation: [shopping list specialisation](../../docs/prds/shopping-specialisation/README.md)
+- Domain overview: [`pillars/lists/docs/`](../docs/README.md)
+- Schema spec: [lists schema](../docs/prds/schema.md)
+- Shell module spec: [lists shell module](../docs/prds/shell-module.md)
+- CRUD UI spec: [generic lists CRUD UI](../docs/prds/crud-ui.md)
+- Shopping specialisation: [shopping list specialisation](../docs/prds/shopping-specialisation.md)
 
 ## Layout
 

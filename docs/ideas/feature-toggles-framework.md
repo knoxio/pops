@@ -1,6 +1,6 @@
 # Idea — Adopt the feature-toggle framework (migrations + first user-scoped feature)
 
-The [feature-toggles framework](../themes/foundation/prds/feature-toggles-framework/README.md) is built and proven end-to-end by the two declared capability features (`core.redis`, `cerebrum.vectorSearch`). What remains is **adoption**: no `system`- or `user`-scoped feature is declared by any pillar, and the existing ad-hoc gates have not moved behind the single read path. This is centralisation work, not framework work — behaviour is preserved, the reads move.
+The [feature-toggles framework](../themes/foundation/prds/feature-toggles-framework.md) is built and proven end-to-end by the two declared capability features (`core.redis`, `cerebrum.vectorSearch`). What remains is **adoption**: no `system`- or `user`-scoped feature is declared by any pillar, and the existing ad-hoc gates have not moved behind the single read path. This is centralisation work, not framework work — behaviour is preserved, the reads move.
 
 Related: the broader [feature-toggles spike](./feature-toggles-spike.md) (layering rationale, four-category model, risks).
 

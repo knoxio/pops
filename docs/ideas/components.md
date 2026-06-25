@@ -1,6 +1,6 @@
 # Idea: Finish + automate the action-icon standards sweep
 
-Spun out of [Components](../themes/foundation/prds/components/README.md).
+Spun out of [Components](../themes/foundation/prds/components.md).
 The shared library (`@pops/ui`) is built and shipped; what remains is the
 cross-codebase **icon-standards sweep** and turning the convention into
 machine-enforced rules.
@@ -47,4 +47,4 @@ mostly followed, but it is a convention with no guard rail:
 
 The icon vocabulary is enforced by tooling, the known `PenLine` offender is
 gone, and every app frontend has passed the compact/prominent pattern audit —
-at which point these criteria fold back into the [Components](../themes/foundation/prds/components/README.md) PRD as `[x]`.
+at which point these criteria fold back into the [Components](../themes/foundation/prds/components.md) PRD as `[x]`.

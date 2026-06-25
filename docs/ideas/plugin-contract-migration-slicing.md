@@ -1,6 +1,6 @@
 # Plugin Contract — deferred slots (migration slicing, `dependsOn`)
 
-Carved out of the [Plugin Contract PRD](../themes/foundation/prds/plugin-contract/README.md). These were specified against the old shared-database monolith and never landed in a form that survives the per-pillar-database federation. They stay here until a real driver appears.
+Carved out of the [Plugin Contract PRD](../themes/foundation/prds/plugin-contract.md). These were specified against the old shared-database monolith and never landed in a form that survives the per-pillar-database federation. They stay here until a real driver appears.
 
 ## Per-pillar migration slicing
 

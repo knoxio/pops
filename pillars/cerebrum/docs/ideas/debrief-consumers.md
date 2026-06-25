@@ -1,6 +1,6 @@
 # Debrief consumers — wire up the post-watch reflection flow
 
-The cerebrum [debrief surface](../prds/debrief/README.md) ships in full — the `debrief.*` contract, the `debrief_sessions` / `debrief_results` / `debrief_status` tables, and unit coverage — but nothing consumes it. No pillar calls `pillar('cerebrum').debrief.*` and no UI drives a session through `create → record → dismiss`. The feature is dormant; the surface exists so a consumer can be wired up later without re-deriving the shape.
+The cerebrum [debrief surface](../prds/debrief.md) ships in full — the `debrief.*` contract, the `debrief_sessions` / `debrief_results` / `debrief_status` tables, and unit coverage — but nothing consumes it. No pillar calls `pillar('cerebrum').debrief.*` and no UI drives a session through `create → record → dismiss`. The feature is dormant; the surface exists so a consumer can be wired up later without re-deriving the shape.
 
 ## What's missing
 

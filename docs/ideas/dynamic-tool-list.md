@@ -1,6 +1,6 @@
 # Dynamic tool list: unbuilt follow-ups
 
-Spun out of the [Dynamic AI tool list PRD](../themes/federation/prds/dynamic-tool-list/README.md).
+Spun out of the [Dynamic AI tool list PRD](../themes/federation/prds/dynamic-tool-list.md).
 The registry-driven `buildToolList()` projection ships in full; what's below does not.
 
 ## Registry-backed `unknown-tool` detection

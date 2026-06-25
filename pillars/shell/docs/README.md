@@ -60,13 +60,13 @@ degraded:
 
 ## Docs
 
-| PRD                                                                         | Scope                                                                            |
-| --------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
-| [shell](prds/shell/README.md)                                               | SPA host, provider stack, registry-driven routing, layout/scroll, error handling |
-| [app-switcher](prds/app-switcher/README.md)                                 | Two-level navigation: app rail + page nav, registry-driven                       |
-| [app-theme-colour-propagation](prds/app-theme-colour-propagation/README.md) | Active-app accent colour propagation via CSS cascade                             |
-| [search-ui](prds/search-ui/README.md)                                       | Top-bar search, federated results panel, result-component registry               |
-| [contextual-intelligence](prds/contextual-intelligence/README.md)           | Shell-tracked `AppContext` consumed by search and overlays                       |
+| PRD                                                                  | Scope                                                                            |
+| -------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| [shell](prds/shell.md)                                               | SPA host, provider stack, registry-driven routing, layout/scroll, error handling |
+| [app-switcher](prds/app-switcher.md)                                 | Two-level navigation: app rail + page nav, registry-driven                       |
+| [app-theme-colour-propagation](prds/app-theme-colour-propagation.md) | Active-app accent colour propagation via CSS cascade                             |
+| [search-ui](prds/search-ui.md)                                       | Top-bar search, federated results panel, result-component registry               |
+| [contextual-intelligence](prds/contextual-intelligence.md)           | Shell-tracked `AppContext` consumed by search and overlays                       |
 
 The package technical readme (`../README.md`) documents UI-pillar
 registration and the event-driven nginx reload watcher.

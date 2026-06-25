@@ -26,37 +26,37 @@ Every PRD lives under [`prds/`](prds/), grouped by area.
 
 GitHub Actions gates quality on every PR and publishes per-pillar images to GHCR on every push to `main`; there is no in-repo deployment step.
 
-| PRD                                                                           | Summary                                                                                                               | Status |
-| ----------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- | ------ |
-| [CI/CD Pipelines](prds/cicd-pipelines/README.md)                              | Disk-discovered per-unit quality matrices over `pillars/*` + `libs/*`, collapsed to one required `CI Gate` aggregator | Done   |
-| [Application Packaging & GHCR Contract](prds/application-packaging/README.md) | `publish-images.yml`, `infra/docker-compose.yml` as the public deployment artifact, secrets layout, Watchtower hook   | Done   |
+| PRD                                                                    | Summary                                                                                                               | Status |
+| ---------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- | ------ |
+| [CI/CD Pipelines](prds/cicd-pipelines.md)                              | Disk-discovered per-unit quality matrices over `pillars/*` + `libs/*`, collapsed to one required `CI Gate` aggregator | Done   |
+| [Application Packaging & GHCR Contract](prds/application-packaging.md) | `publish-images.yml`, `infra/docker-compose.yml` as the public deployment artifact, secrets layout, Watchtower hook   | Done   |
 
 ### Database lifecycle
 
 Each pillar applies its own Drizzle migration journal at boot, resolves its SQLite path safely, guards production data, and backs up independently, so a pillar's database survives any number of schema changes without data loss.
 
-| PRD                                                       | Summary                                                                                                        | Status |
-| --------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- | ------ |
-| [Database Operations](prds/database-operations/README.md) | Per-pillar SQLite lifecycle: Drizzle migration journal at boot, path resolution, independent Litestream backup | Done   |
+| PRD                                                | Summary                                                                                                        | Status |
+| -------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- | ------ |
+| [Database Operations](prds/database-operations.md) | Per-pillar SQLite lifecycle: Drizzle migration journal at boot, path resolution, independent Litestream backup | Done   |
 
 ### Cortex runtime
 
 The shared runtime the application layer depends on: a Redis container for queuing and caching, a BullMQ job queue for durable background work, each pillar's OpenAPI contract as the polyglot wire surface, and sqlite-vec for vector storage and semantic search.
 
-| PRD                                                            | Summary                                                                                          | Status |
-| -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ | ------ |
-| [Redis Container & Connection](prds/redis-container/README.md) | Redis 7 in the Docker stack, connection module, dev setup                                        | Done   |
-| [Job Queue Infrastructure](prds/job-queue/README.md)           | BullMQ queues, typed workers, job management API, failure handling                               | Done   |
-| [OpenAPI Pillar Contract](prds/openapi-contract/README.md)     | Per-pillar OpenAPI 3.0.x projection of each REST contract, served at `GET /openapi`, drift-gated | Done   |
-| [Vector Storage](prds/vector-storage/README.md)                | sqlite-vec extension, embedding schema, similarity search service, embedding generation pipeline | Done   |
+| PRD                                                     | Summary                                                                                          | Status |
+| ------------------------------------------------------- | ------------------------------------------------------------------------------------------------ | ------ |
+| [Redis Container & Connection](prds/redis-container.md) | Redis 7 in the Docker stack, connection module, dev setup                                        | Done   |
+| [Job Queue Infrastructure](prds/job-queue.md)           | BullMQ queues, typed workers, job management API, failure handling                               | Done   |
+| [OpenAPI Pillar Contract](prds/openapi-contract.md)     | Per-pillar OpenAPI 3.0.x projection of each REST contract, served at `GET /openapi`, drift-gated | Done   |
+| [Vector Storage](prds/vector-storage.md)                | sqlite-vec extension, embedding schema, similarity search service, embedding generation pipeline | Done   |
 
 ### MCP gateway
 
 A standalone HTTP gateway (`@pops/mcp`) exposes the fleet through the Model Context Protocol, dispatching each tool call to the owning pillar over REST so AI agents on the LAN get read-and-write access to inventory, finance, media, and cerebrum data.
 
-| PRD                                     | Summary                                                                                                       | Status |
-| --------------------------------------- | ------------------------------------------------------------------------------------------------------------- | ------ |
-| [MCP Server](prds/mcp-server/README.md) | HTTP MCP gateway: transport, discovery/auth, tool catalogue (inventory, finance, media, cerebrum), CI publish | Done   |
+| PRD                              | Summary                                                                                                       | Status |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------- | ------ |
+| [MCP Server](prds/mcp-server.md) | HTTP MCP gateway: transport, discovery/auth, tool catalogue (inventory, finance, media, cerebrum), CI publish | Done   |
 
 ## Key Decisions
 
