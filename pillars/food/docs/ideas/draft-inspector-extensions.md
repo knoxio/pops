@@ -1,6 +1,6 @@
 # Idea: Draft-inspector extensions
 
-Forward-looking work deliberately excluded from the shipped [draft-inspector](../prds/draft-inspector/README.md). The inspector (three panes, `getForReview` aggregate, approve/reject/undo/re-run, per-kind provenance bodies) is built; these are the next layers — mostly richer provenance rendering and layout polish.
+Forward-looking work deliberately excluded from the shipped [draft-inspector](../prds/draft-inspector.md). The inspector (three panes, `getForReview` aggregate, approve/reject/undo/re-run, per-kind provenance bodies) is built; these are the next layers — mostly richer provenance rendering and layout polish.
 
 ## Resizable panes + persisted widths
 

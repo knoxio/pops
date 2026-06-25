@@ -35,11 +35,8 @@ docs/                            ← central, cross-cutting docs only
     ├── foundation/          ← shell, UI, REST contract, manifest/plugin model
     └── federation/          ← registry, cross-pillar contracts, SDK, detachment
         ├── README.md        ← theme overview
-        ├── epics/           ← optional grouping
-        │   └── <slug>.md
         └── prds/
-            └── <slug>/
-                └── README.md    ← detailed spec (acceptance criteria inline)
+            └── <slug>.md    ← detailed spec (acceptance criteria inline)
 
 pillars/<id>/                    ← one folder per pillar
 ├── README.md                ← technical package readme (# @pops/<id>)
@@ -47,29 +44,25 @@ pillars/<id>/                    ← one folder per pillar
 ├── app/                     ← pillar frontend (mounted in the shell)
 └── docs/                    ← this pillar's domain docs
     ├── README.md            ← domain overview (the former theme README)
-    ├── epics/               ← optional grouping
-    │   └── <slug>.md
     ├── prds/
-    │   └── <slug>/
-    │       └── README.md    ← detailed spec (acceptance criteria inline)
+    │   └── <slug>.md        ← detailed spec (acceptance criteria inline)
     ├── architecture/        ← ADRs scoped to this pillar alone
     │   └── adr-NNN-slug.md
     ├── runbooks/  ideas/    ← when applicable
     └── plans/  specs/       ← when applicable
 ```
 
-A pillar's `docs/README.md` is the domain overview. The package `README.md` (`# @pops/<id>`) is the technical readme and stays separate. Theme, epic, and PRD ids are **slug-only** — a doc's unique id is its slug plus its path, with nothing to insert or renumber. ADRs keep their frozen `adr-NNN` numbering (append-only). See [CLAUDE.md](CLAUDE.md) for the full layout, naming, and sync rules.
+A pillar's `docs/README.md` is the domain overview. The package `README.md` (`# @pops/<id>`) is the technical readme and stays separate. Theme and PRD ids are **slug-only** — a doc's unique id is its slug plus its path, with nothing to insert or renumber. ADRs keep their frozen `adr-NNN` numbering (append-only). See [CLAUDE.md](CLAUDE.md) for the full layout, naming, and sync rules.
 
 ## Doc Types
 
-| Type                | What it is                                            | Where it lives                                                                |
-| ------------------- | ----------------------------------------------------- | ----------------------------------------------------------------------------- |
-| **Theme**           | Cross-cutting initiative overview, lists its PRDs     | `themes/<slug>/README.md` (central) or `pillars/<id>/docs/README.md`          |
-| **PRD**             | Detailed spec — data model, API, edge cases, criteria | `<theme-or-pillar>/.../prds/<slug>/README.md`                                 |
-| **Epic** (optional) | Groups several related PRDs when a theme is large     | `themes/<slug>/epics/<slug>.md` or `pillars/<id>/docs/epics/<slug>.md`        |
-| **ADR**             | Architecture decision and its rationale               | `architecture/adr-NNN-slug.md` (central) or `pillars/<id>/docs/architecture/` |
+| Type      | What it is                                            | Where it lives                                                                |
+| --------- | ----------------------------------------------------- | ----------------------------------------------------------------------------- |
+| **Theme** | Cross-cutting initiative overview, lists its PRDs     | `themes/<slug>/README.md` (central) or `pillars/<id>/docs/README.md`          |
+| **PRD**   | Detailed spec — data model, API, edge cases, criteria | `<theme-or-pillar>/.../prds/<slug>.md`                                        |
+| **ADR**   | Architecture decision and its rationale               | `architecture/adr-NNN-slug.md` (central) or `pillars/<id>/docs/architecture/` |
 
-The required spine is **Theme → PRD**, with acceptance criteria **inline** in each PRD under `## Acceptance Criteria`. There is no separate User Story doc type. An **Epic** is an optional grouping file, used only when a theme has enough PRDs to warrant intermediate organisation; a theme can point straight at its PRDs. ADRs are cross-cutting and referenced by any level.
+The required spine is **Theme → PRD**, with acceptance criteria **inline** in each PRD under `## Acceptance Criteria`. There is no separate User Story doc type, and no intermediate grouping doc — a theme groups its PRDs directly. ADRs are cross-cutting and referenced by any level.
 
 See [CLAUDE.md](CLAUDE.md) for templates and standards.
 
@@ -103,4 +96,4 @@ POPS is a working multi-pillar REST platform. There is no tRPC, no `pops-api` mo
 
 Cross-pillar communication goes through `@pops/pillar-sdk` (`libs/sdk`). The only two structural units are **PILLAR** (`pillars/`) and **LIB** (`libs/`) — there is no `apps/` directory and no `packages/*`. Build is per-unit via mise + pnpm + cargo (no turbo).
 
-See the [roadmap implementation tracker](roadmap.md#implementation-tracker) for detailed status across all pillars.
+See the [roadmap](roadmap.md) for detailed status across all pillars.

@@ -1,7 +1,7 @@
 # Idea: Trust Graduation — review-queue UX and conflict guards
 
-> Pillar: cerebrum · Epic: [04 — Glia](../epics/04-glia.md)
-> Forward-looking. The [Trust Graduation PRD](../prds/trust-graduation/README.md) ships the full state machine, revert, digest, proposal queue and operational dashboard; the items below are unbuilt refinements.
+> Pillar: cerebrum · Component: Glia
+> Forward-looking. The [Trust Graduation PRD](../prds/trust-graduation.md) ships the full state machine, revert, digest, proposal queue and operational dashboard; the items below are unbuilt refinements.
 
 The current proposal queue (`/cerebrum/proposals`) is functional but minimal: each card shows id, rationale, type badge, affected engram IDs, a note field, and Approve / Modify / Reject. The decide/execute/revert backend has no conflict guards beyond the `pending`-status check. The following make the human-in-the-loop step lower-friction and harder to footgun.
 

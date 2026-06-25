@@ -38,5 +38,5 @@ The registry is a **directory** (look up baseUrl + manifest, then call directly)
 
 ## Related
 
-- [dynamic-pillar-registration](../themes/federation/prds/dynamic-pillar-registration/README.md) implements the runtime register / heartbeat / deregister API both workspace and external pillars call; the registry is the sole source of truth for the live pillar set (no hand-curated static list).
-- [external-pillar-example-repo](../themes/federation/prds/external-pillar-example-repo/README.md) is the worked example that exercises the runtime path end-to-end for a non-workspace (Rust) pillar.
+- [dynamic-pillar-registration](../themes/federation/prds/dynamic-pillar-registration.md) implements the runtime register / heartbeat / deregister API both workspace and external pillars call; the registry is the sole source of truth for the live pillar set (no hand-curated static list).
+- [external-pillar-example-repo](../themes/federation/prds/external-pillar-example-repo.md) is the worked example that exercises the runtime path end-to-end for a non-workspace (Rust) pillar.

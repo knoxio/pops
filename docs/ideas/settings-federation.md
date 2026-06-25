@@ -1,6 +1,6 @@
 # Settings federation — per-pillar read/write transport + storage
 
-The [Settings as a manifest dimension](../themes/federation/prds/settings-as-manifest-dimension/README.md)
+The [Settings as a manifest dimension](../themes/federation/prds/settings-as-manifest-dimension.md)
 PRD covers discovery: a pillar declares its settings UI under `settings.manifests[]`,
 and `discoverSettings()` walks the live registry to return every contribution tagged
 with its `ownerPillar` and live `capabilities`. That contract is shipped.

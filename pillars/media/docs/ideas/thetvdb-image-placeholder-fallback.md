@@ -1,6 +1,6 @@
 # TheTVDB image placeholder fallback + hard startup key check
 
-Two forward-looking gaps split out of the [TheTVDB Client PRD](../prds/thetvdb-client/README.md). Both are real today: the code is present but unwired (placeholder) or deliberately deferred (startup gate).
+Two forward-looking gaps split out of the [TheTVDB Client PRD](../prds/thetvdb-client.md). Both are real today: the code is present but unwired (placeholder) or deliberately deferred (startup gate).
 
 ## Generated-placeholder fallback tier
 

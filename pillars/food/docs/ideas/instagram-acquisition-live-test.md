@@ -1,6 +1,6 @@
 # Idea: Live Instagram acquisition integration test
 
-Forward-looking. The acquisition pipeline ([prds/instagram-acquisition](../prds/instagram-acquisition/README.md)) is fully unit-tested with a mocked `child_process`, so every `AcquisitionResult` branch is exercised without touching the network. What's missing is an end-to-end smoke test that proves the _real_ `yt-dlp` binary, the _real_ cookie file, and the _real_ Instagram response still produce a successful `AcquisitionResult`.
+Forward-looking. The acquisition pipeline ([prds/instagram-acquisition](../prds/instagram-acquisition.md)) is fully unit-tested with a mocked `child_process`, so every `AcquisitionResult` branch is exercised without touching the network. What's missing is an end-to-end smoke test that proves the _real_ `yt-dlp` binary, the _real_ cookie file, and the _real_ Instagram response still produce a successful `AcquisitionResult`.
 
 ## What to build
 

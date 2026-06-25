@@ -1,6 +1,6 @@
 # Idea: test API-mocking framework
 
-Spun out of [PRD: Project Bootstrap](../themes/foundation/prds/project-bootstrap/README.md).
+Spun out of [PRD: Project Bootstrap](../themes/foundation/prds/project-bootstrap.md).
 
 ## Context
 

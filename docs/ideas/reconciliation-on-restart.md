@@ -3,7 +3,7 @@
 Captures the parts of the original restart-reconciliation spec that the shipped
 registry does **not** implement. The built behaviour (per-row `unknown` demotion
 on boot + the `degraded/reconciling` consumer contract) lives in
-[the PRD](../themes/federation/prds/reconciliation-on-restart/README.md). What
+[the PRD](../themes/federation/prds/reconciliation-on-restart.md). What
 follows was specified but never built — the implementation chose a simpler,
 threshold-driven model instead.
 

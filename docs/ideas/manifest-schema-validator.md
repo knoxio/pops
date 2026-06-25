@@ -1,6 +1,6 @@
 # Manifest schema validator — deferred slices
 
-Companion to [PRD manifest-schema-validator](../themes/federation/prds/manifest-schema-validator/README.md).
+Companion to [PRD manifest-schema-validator](../themes/federation/prds/manifest-schema-validator.md).
 The schema, validator, both-ends integration, and per-field error reporting are
 all built and shipped. Two slices from the original plan were never built — they
 are not blocking, because the per-pillar manifest test suites already gate a

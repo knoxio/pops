@@ -12,7 +12,7 @@ Three regexes in the manifest schema (`libs/sdk/src/manifest-schema/schema.ts`) 
 - `CAMEL_IDENTIFIER` — `^[a-z][a-zA-Z0-9]*$` (camelCase; no dots, no hyphens). Used for `ai.tools[].name` and `search.adapters[].name`.
 - `SINK_EVENT_TYPE` — `^[a-z][a-z0-9]*\.[a-z][a-z0-9]*\.[a-z][a-z0-9]*$` (lowercase dotted, exactly 3 segments)
 
-The constraints are enforced — the manifest validator ([manifest-schema-validator](../themes/federation/prds/manifest-schema-validator/README.md)) rejects non-conforming manifests at registration time — but the _convention_ that ties them together is not documented anywhere. Three federation PRs hit it in quick succession and each had to rediscover the rule:
+The constraints are enforced — the manifest validator ([manifest-schema-validator](../themes/federation/prds/manifest-schema-validator.md)) rejects non-conforming manifests at registration time — but the _convention_ that ties them together is not documented anywhere. Three federation PRs hit it in quick succession and each had to rediscover the rule:
 
 - **PR #3179** — drafted as `ha.entity.list`. Manifest publishes `entityList`. The tool-router composes `<pillarId>.<toolName>` at call time, so the LLM sees `ha-bridge.entityList`.
 - **PR #3184** — same shape for `ha.entity.getState` → `entityGetState`. Identical workaround.
@@ -67,10 +67,10 @@ Concretely, draft and ship like this:
 
 - [ADR-026](adr-026-pillar-architecture.md) — pillar architecture; pillar id concept
 - [ADR-034](adr-034-sinks-manifest-dimension.md) — sinks dimension; original home of the `SINK_EVENT_TYPE` rule
-- [manifest-schema-validator](../themes/federation/prds/manifest-schema-validator/README.md) — manifest schema (regexes live here, unchanged)
-- [ai-tool-manifest](../themes/federation/prds/ai-tool-manifest/README.md) — AI tool descriptors in the manifest (camelCase tool name)
-- [tool-call-routing](../themes/federation/prds/tool-call-routing/README.md) — tool-router dispatch (`<pillarId>.<toolName>` composition)
-- [manifest-schema-validator](../themes/federation/prds/manifest-schema-validator/README.md) — sinks manifest validation
+- [manifest-schema-validator](../themes/federation/prds/manifest-schema-validator.md) — manifest schema (regexes live here, unchanged)
+- [ai-tool-manifest](../themes/federation/prds/ai-tool-manifest.md) — AI tool descriptors in the manifest (camelCase tool name)
+- [tool-call-routing](../themes/federation/prds/tool-call-routing.md) — tool-router dispatch (`<pillarId>.<toolName>` composition)
+- [manifest-schema-validator](../themes/federation/prds/manifest-schema-validator.md) — sinks manifest validation
 - PR #3179 — `ha.entity.list` → `entityList`
 - PR #3184 — `ha.entity.getState` → `entityGetState`
 - PR #3189 — `ha.notify` → `ha.notify.send` + `ha.event.fire`

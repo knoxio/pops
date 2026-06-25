@@ -1,6 +1,6 @@
 # Registry-driven shell UI — remaining work
 
-Spin-off from the [registry-driven shell UI PRD](../themes/federation/prds/registry-driven-shell-ui/README.md). The in-repo registry walk, the manifest UI dimensions, and the external-pillar ESM loader all shipped. Two things remain unbuilt.
+Spin-off from the [registry-driven shell UI PRD](../themes/federation/prds/registry-driven-shell-ui.md). The in-repo registry walk, the manifest UI dimensions, and the external-pillar ESM loader all shipped. Two things remain unbuilt.
 
 ## 1. Put cerebrum and ai `nav` / `pages` on the wire
 

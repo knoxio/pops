@@ -1,6 +1,6 @@
 # Themes
 
-Themes are strategic initiatives that group related epics. This index lists only the **central, cross-cutting themes** — the substrate every pillar leans on.
+Themes are strategic initiatives that group related PRDs. This index lists only the **central, cross-cutting themes** — the substrate every pillar leans on.
 
 Domain themes (finance, media, inventory, food, cerebrum, etc.) are not central. They live inside their pillar at `pillars/<id>/docs/`, where the pillar's `docs/README.md` is the domain/theme overview.
 
@@ -16,4 +16,4 @@ See [roadmap.md](../roadmap.md) for sequencing, dependencies, and implementation
 
 ## Pillar-Scoped Themes
 
-A theme or PRD that belongs to exactly one pillar lives inside that pillar, not here. Look under `pillars/<id>/docs/` — the pillar's `docs/README.md` is its domain overview, with `epics/`, `prds/`, and (where applicable) `architecture/`, `runbooks/`, and `ideas/` alongside it.
+A theme or PRD that belongs to exactly one pillar lives inside that pillar, not here. Look under `pillars/<id>/docs/` — the pillar's `docs/README.md` is its domain overview, with `prds/` and (where applicable) `architecture/`, `runbooks/`, and `ideas/` alongside it.

@@ -1,6 +1,6 @@
 # Idea: Storybook test + regression enforcement
 
-Spun out of [PRD: Storybook](../themes/foundation/prds/storybook/README.md). The base Storybook (discovery, theme/app-colour decorators, a11y addon, alias-coverage CI guard) is built. The items below are gaps — present as intent or as an installed-but-unwired addon, not as enforced behaviour.
+Spun out of [PRD: Storybook](../themes/foundation/prds/storybook.md). The base Storybook (discovery, theme/app-colour decorators, a11y addon, alias-coverage CI guard) is built. The items below are gaps — present as intent or as an installed-but-unwired addon, not as enforced behaviour.
 
 ## Visual regression (Chromatic)
 

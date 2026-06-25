@@ -1,6 +1,6 @@
 # Sinks manifest dimension — deferred work
 
-Follow-on to the shipped [sinks PRD](../themes/federation/prds/sinks-manifest-dimension/README.md). The schema field, orchestrator `publishEvent` dispatcher, and server `createSinkHandler` helper are built and tested. The items below are not.
+Follow-on to the shipped [sinks PRD](../themes/federation/prds/sinks-manifest-dimension.md). The schema field, orchestrator `publishEvent` dispatcher, and server `createSinkHandler` helper are built and tested. The items below are not.
 
 ## Cross-field uniqueness validator (US-04)
 

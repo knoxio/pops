@@ -1,6 +1,6 @@
 # Arena mobile breakpoints and inter-pair transitions
 
-The Compare Arena ([prds/arena](../prds/arena/README.md)) ships a single fixed `1fr auto 1fr` grid and snaps instantly between pairs. Two polish items were deliberately left out of the redesign and remain unbuilt:
+The Compare Arena ([prds/arena](../prds/arena.md)) ships a single fixed `1fr auto 1fr` grid and snaps instantly between pairs. Two polish items were deliberately left out of the redesign and remain unbuilt:
 
 ## Mobile layout breakpoints
 

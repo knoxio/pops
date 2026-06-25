@@ -8,9 +8,9 @@ POPS (Personal Operations System) is a self-hosted personal command center for f
 - `pillars/<id>/` — one REST pillar per folder (registry, inventory, media, finance, food, lists, cerebrum, ai, contacts, orchestrator, shell, docs, mcp, moltbot). Each owns its SQLite DB (`src/db`), zod → ts-rest contract (`src/contract`), OpenAPI snapshot (`openapi/<id>.openapi.json`), `./manifest`, and Dockerfile.
 - `libs/<name>/` — shared workspace libraries (types, db-types, sdk, settings, ai-telemetry, ui, navigation, module-registry, overlay-ego, locales, pops-ai, pops-settings)
 - `infra/` — Docker Compose (`docker-compose.yml` prod, `docker-compose.dev.yml` dev) + Litestream stream configs
-- `docs/` — PRDs, epics, user stories, ADRs, roadmap
+- `docs/` — cross-cutting PRDs (under `docs/themes/{platform,foundation,federation}/`), ADRs (`docs/architecture/`), templates, runbooks, roadmap, vision. Pillar-scoped PRDs live under `pillars/<id>/docs/prds/`.
 
-**Documentation hierarchy (strictly maintained):** Theme → Epic → PRD → User Story (status flows upward: US done → PRD → Epic → Theme → `docs/roadmap.md`)
+**Documentation model (slug-only, strictly maintained):** hierarchy is **Theme → PRD** — there are no epics and no separate `us-*.md` user-story files (both layers were removed). A PRD's id is its slug; it lives at a single-file path (`pillars/<id>/docs/prds/<slug>.md` for pillar-scoped, `docs/themes/<name>/prds/<slug>.md` for cross-cutting). Acceptance criteria live **inline** in each PRD under `## Acceptance Criteria`. There is no PRD numbering. ADRs keep frozen `adr-NNN` numbers. Status flows upward: PRD criteria → PRD → Theme → `docs/roadmap.md`.
 
 ---
 
@@ -49,13 +49,12 @@ Do not soften or hedge. Do not say "you might want to consider" or "this is just
 
 **1. Documentation sync (zero drift tolerated)**
 
-- Every code change that touches a feature, API surface, data model, or behavior must have corresponding updates in `docs/`. Check: the relevant user story (`us-NN-*.md`), PRD (`docs/themes/NN-*/prds/NNN-*/README.md`), and epic.
-- Update status fields to reflect the current state: `Done` when all acceptance criteria in the US are met; `Partial` when some criteria are intentionally deferred (with the missing items explicitly documented in the US); `In progress` otherwise. Marking `Partial` without documenting what remains is a blocker.
+- Every code change that touches a feature, API surface, data model, or behavior must have corresponding updates in its PRD — pillar-scoped at `pillars/<id>/docs/prds/<slug>.md` or cross-cutting at `docs/themes/<name>/prds/<slug>.md`. (There are no epics or `us-*.md` files; acceptance criteria are inline in the PRD.)
+- Update status fields to reflect the current state: tick `- [ ]` → `- [x]` inline criteria as work lands; `Done` when every criterion is ticked; `In progress` otherwise. Deferred criteria must be explicitly documented (and a gap issue filed — see "Implementation gaps").
 - `docs/roadmap.md` must reflect the current state of any phase or PRD that changed.
-- API changes must update or maintain the OpenAPI spec. Run `pnpm openapi:validate`.
-- Schema changes must have a Drizzle migration generated via `mise drizzle:generate`.
+- API changes must update or maintain the pillar's OpenAPI snapshot (`pillars/<id>/openapi/<id>.openapi.json`). Regenerate via `mise openapi:generate`.
+- Schema changes must have a Drizzle migration: edit the pillar's schema, run `drizzle-kit generate` in that pillar, review, and commit the result (each pillar auto-migrates its own SQLite DB on startup; there is no shared/global drizzle step).
 - Any behavior documented in `AGENTS.md` or `docs/CLAUDE.md` that changes must be updated in those files too.
-- Design system changes must be reflected in `.impeccable.md` if applicable.
 
 **2. Implementation gaps — no partial work**
 
@@ -65,7 +64,7 @@ Do not soften or hedge. Do not say "you might want to consider" or "this is just
 
 **3. Correctness**
 
-- Verify all acceptance criteria in the referenced user story are fully satisfied.
+- Verify all acceptance criteria in the referenced PRD are fully satisfied.
 - Drizzle queries must use parameterized inputs — never string interpolation.
 - All external inputs (user input, webhook payloads, imported CSV data) must be validated with Zod at the boundary.
 - No secrets, `.env` values, or credentials may be hardcoded or committed.
@@ -84,7 +83,7 @@ Do not soften or hedge. Do not say "you might want to consider" or "this is just
 - Components: all new UI components must have a Storybook story.
 - Icons: Lucide only. No other icon libraries.
 - Database: integer PKs for domain tables, UUID text for cross-domain FKs. Timestamps as ISO 8601 `TEXT`. All schema changes via Drizzle migrations.
-- Tests: alongside source as `*.test.ts`. No test file placed in a separate top-level `tests/` directory.
+- Tests: next to the code they cover (`pillars/<id>/src/**/__tests__/`, `libs/<lib>/src/**`); a pillar runs its own migrations against a real in-memory/temp SQLite DB in its own tests. No shared monolith test path.
 
 **6. Security**
 
@@ -104,8 +103,8 @@ Do not soften or hedge. Do not say "you might want to consider" or "this is just
 Report every issue as a required change. Use direct language:
 
 > "This procedure lacks a Zod input schema. Add one before merging."
-> "The user story us-04-transactions.md acceptance criteria item 3 is not satisfied by this implementation."
-> "There is no migration for the new `tags` column. Run `mise drizzle:generate` and commit the result."
+> "Acceptance criterion 3 in `pillars/finance/docs/prds/import-dedup-csv.md` is not satisfied by this implementation."
+> "There is no migration for the new `tags` column. Run `drizzle-kit generate` in this pillar and commit the result."
 > "This TODO at line 47 has no tracking issue. Either resolve it or open a GitHub issue and reference it here."
 
 Do not batch small issues into a single comment. File a separate review comment per issue so each can be resolved independently and tracked.
@@ -118,7 +117,7 @@ Do not batch small issues into a single comment. File a separate review comment 
 |---|---|
 | Agent guidance (primary) | `AGENTS.md` |
 | Coding conventions | `AGENTS.md` → "Coding Conventions" |
-| Design system | `.impeccable.md` |
+| Design context | `AGENTS.md` → "Design Context" |
 | Documentation standards | `docs/CLAUDE.md` |
 | Roadmap & phase tracker | `docs/roadmap.md` |
 | Per-pillar DB schema | `pillars/<id>/src/db/schema/` |

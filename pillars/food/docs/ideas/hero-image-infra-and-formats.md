@@ -1,6 +1,6 @@
 # Hero Image — infra exclusion & format/UX extensions
 
-Forward-looking work beyond the shipped hero-image upload feature (see [prds/hero-image-upload](../prds/hero-image-upload/README.md)). The core upload / thumbnail / serve / remove flow is done; these are deferred or out-of-scope items.
+Forward-looking work beyond the shipped hero-image upload feature (see [prds/hero-image-upload](../prds/hero-image-upload.md)). The core upload / thumbnail / serve / remove flow is done; these are deferred or out-of-scope items.
 
 ## Litestream exclusion (deferred, out-of-tree)
 

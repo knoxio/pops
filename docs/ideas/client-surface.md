@@ -3,7 +3,7 @@
 Bind the `pillar()` client surface to per-pillar contract types so consumers stop hand-rolling the
 router shape they pass as `TRouter`.
 
-> Related PRD: [client-surface](../themes/federation/prds/client-surface/README.md)
+> Related PRD: [client-surface](../themes/federation/prds/client-surface.md)
 
 ## Problem
 

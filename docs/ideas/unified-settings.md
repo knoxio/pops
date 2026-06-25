@@ -1,6 +1,6 @@
 # Unified Settings — unbuilt extensions
 
-Captured from the original unified-settings acceptance criteria that the shipped federated settings system does **not** implement. The built system is documented at [foundation/prds/unified-settings](../themes/foundation/prds/unified-settings/README.md).
+Captured from the original unified-settings acceptance criteria that the shipped federated settings system does **not** implement. The built system is documented at [foundation/prds/unified-settings](../themes/foundation/prds/unified-settings.md).
 
 ## Legacy route redirects
 

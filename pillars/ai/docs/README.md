@@ -17,13 +17,32 @@ Give POPS one place to see and control all AI spend and reliability. No pillar e
 - Monthly token/cost budgets (global, per-provider, per-operation) are defined, tracked month-to-date, and evaluated for breaches; the pre-call gate that would block, warn, or fall back to a local model before an over-budget call hits the provider is specified but not yet wired.
 - Budget-threshold, error-spike, and latency-degradation alerts reach the operator via the shell nudge feed and Telegram.
 
-## Epics
+## PRD Index
 
-| #   | Epic                                            | Summary                                                                                          | Status                                                  |
-| --- | ----------------------------------------------- | ------------------------------------------------------------------------------------------------ | ------------------------------------------------------- |
-| 0   | [AI Operations App](epics/ai-operations-app.md) | The AI Ops dashboard surface — usage/cost visualisation and cache maintenance UI                 | Done                                                    |
-| 2   | [AI Inference](epics/ai-inference.md)           | Pillar extraction + cross-pillar telemetry ingest, then proactive monitoring (unbuilt)           | Partial                                                 |
-| 3   | [AI Observability](epics/ai-observability.md)   | Multi-provider inference tracking, budgets (CRUD/status/eval), latency/quality metrics, alerting | Mostly built — pre-call budget enforcement gate unbuilt |
+**Inference & Telemetry**
+
+The standalone AI Ops pillar with its own `ai.db`, and the single internal ingest (`POST /ai-usage/record`) that is the one production write path into `ai_inference_log` — every model-calling pillar reports usage/cost/latency/cache/error through the `@pops/ai-telemetry` wrapper, which shapes cost from the public pricing read first.
+
+| PRD                                                          | Summary                                                                 | Status  |
+| ------------------------------------------------------------ | ----------------------------------------------------------------------- | ------- |
+| [AI Inference & Monitoring](prds/ai-inference-monitoring.md) | Pillar + telemetry ingest; proactive anomaly/summary/Moltbot is an idea | Partial |
+
+**Observability**
+
+The observability layer over every AI inference call — cloud APIs (Claude Haiku/Sonnet/Opus), local models (Ollama, llama.cpp), and Cerebrum operations (embeddings, conversations, curation). It owns the unified inference log and its daily roll-up, the provider registry and model pricing with health checks, budgets (CRUD, month-to-date status, and pre-call evaluation primitives), on-the-fly stats/latency/quality/history APIs, alert rules and fired alerts delivered via the nudge feed and Telegram, and the nightly summary cache plus the retention job.
+
+| PRD                                                   | Summary                                                                            | Status                                                    |
+| ----------------------------------------------------- | ---------------------------------------------------------------------------------- | --------------------------------------------------------- |
+| [AI Observability Platform](prds/ai-observability.md) | Inference log, providers, budgets, stats/latency/quality APIs, alerting, retention | Mostly built — pre-call budget _enforcement_ gate unbuilt |
+
+**Operations App**
+
+The AI Ops dashboard — the pillar's `app` surface, mounted by the shell at `/ai/*`. It gives platform-wide visibility into AI usage and cost (KPI cards, per-provider/model/domain/operation breakdowns, latency percentiles, quality metrics, usage-history chart) and hosts the cache-maintenance UI; legacy `/ai/rules`, `/ai/prompts`, and `/ai/config` routes redirect to the finance pillar and settings.
+
+| PRD                                                        | Summary                                                        | Status  |
+| ---------------------------------------------------------- | -------------------------------------------------------------- | ------- |
+| [AI Usage & Cost Tracking](prds/ai-usage-cost-tracking.md) | The usage dashboard — KPIs, breakdowns, latency, history chart | Done    |
+| [AI Configuration & Rules](prds/ai-configuration-rules.md) | Cache maintenance (here) + cross-refs to finance-owned config  | Partial |
 
 ## Data Ownership
 
@@ -51,8 +70,8 @@ Give POPS one place to see and control all AI spend and reliability. No pillar e
 
 ## Out of Scope (here)
 
-- **AI categorisation rules, prompt templates, and the entity cache** — owned by the finance pillar. The AI Ops app links out to `/finance/rules`, `/finance/prompts`, and reads cache stats from finance's `/ai-usage/cache` surface. See [PRD: AI Configuration & Rules](prds/ai-configuration-rules/README.md).
-- **Proactive domain-level insights** (spending anomalies, warranty alerts, scheduled summaries, Telegram delivery of those) — specified in [PRD: AI Inference & Monitoring](prds/ai-inference-monitoring/README.md); the foundation ships, the proactive layer is an idea.
+- **AI categorisation rules, prompt templates, and the entity cache** — owned by the finance pillar. The AI Ops app links out to `/finance/rules`, `/finance/prompts`, and reads cache stats from finance's `/ai-usage/cache` surface. See [PRD: AI Configuration & Rules](prds/ai-configuration-rules.md).
+- **Proactive domain-level insights** (spending anomalies, warranty alerts, scheduled summaries, Telegram delivery of those) — specified in [PRD: AI Inference & Monitoring](prds/ai-inference-monitoring.md); the foundation ships, the proactive layer is an idea.
 - Training or fine-tuning models; a general-purpose chatbot (that is Cerebrum/Ego).
 
 ## Cross-References

@@ -1,6 +1,6 @@
 # Server surface — deferred: connection pooling + container-level tests
 
-Deferred remainder of the [server `pillar()` surface](../themes/federation/prds/server-surface/README.md). The built surface ships auth, internal base-URL routing, handle reuse, error parity, and sink handling. Two pieces are not built.
+Deferred remainder of the [server `pillar()` surface](../themes/federation/prds/server-surface.md). The built surface ships auth, internal base-URL routing, handle reuse, error parity, and sink handling. Two pieces are not built.
 
 ## Connection pooling for high-throughput workers
 

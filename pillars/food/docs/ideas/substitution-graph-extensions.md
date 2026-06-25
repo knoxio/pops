@@ -1,6 +1,6 @@
 # Idea: Substitution graph extensions
 
-Forward-looking work deliberately excluded from the shipped [substitution-model](../prds/substitution-model/README.md). The base graph, CRUD, cook-time resolver, and one-hop solver are done; these are the next layers.
+Forward-looking work deliberately excluded from the shipped [substitution-model](../prds/substitution-model.md). The base graph, CRUD, cook-time resolver, and one-hop solver are done; these are the next layers.
 
 ## Multi-hop substitution chaining
 

@@ -2,7 +2,7 @@
 
 > Theme: [Federation](README.md)
 >
-> Audience: engineers writing a server-side cross-pillar call site. This is a how-to reference, not an SDK architecture explainer. For the architecture, see [Server surface](prds/server-surface/README.md).
+> Audience: engineers writing a server-side cross-pillar call site. This is a how-to reference, not an SDK architecture explainer. For the architecture, see [Server surface](prds/server-surface.md).
 
 The server-side `pillar()` proxy lives at `libs/sdk/src/server/factory.ts` and is exported from `@pops/pillar-sdk/server`. It turns what would otherwise be a same-process service call into an authenticated REST call against another pillar's container, resolved through the live registry. A peer is reached only through its published `@pops/<peer>` contract and REST API — never its DB, services, or internal paths. This note pins down the conventions every server call site must follow.
 
@@ -137,9 +137,9 @@ The proxy is generic over the target contract's router type: `pillar<TRouter>('i
 
 ## References
 
-- [Server surface](prds/server-surface/README.md) — the server-side `pillar()` proxy: auth, internal targeting, handle memoisation.
-- [Discovery client](prds/discovery-client/README.md) — registry-backed discovery cache the proxy resolves through.
-- [Consumer import discipline](prds/consumer-import-discipline/README.md) — the lint gate forbidding a consumer from reaching behind a peer's contract.
-- [Capability projection types](prds/capability-projection-types/README.md) — `PillarCallError`, `PillarId`, and the typed-proxy machinery.
+- [Server surface](prds/server-surface.md) — the server-side `pillar()` proxy: auth, internal targeting, handle memoisation.
+- [Discovery client](prds/discovery-client.md) — registry-backed discovery cache the proxy resolves through.
+- [Consumer import discipline](prds/consumer-import-discipline.md) — the lint gate forbidding a consumer from reaching behind a peer's contract.
+- [Capability projection types](prds/capability-projection-types.md) — `PillarCallError`, `PillarId`, and the typed-proxy machinery.
 - `libs/sdk/src/server/factory.ts` — implementation.
 - `libs/sdk/src/server/errors.ts`, `libs/sdk/src/client/errors.ts` — `PillarServerSdkError`, `PillarCallError`, `isOk` helpers.

@@ -1,6 +1,6 @@
 # Discovery client — wire dispose into bootstrap shutdown
 
-Carved out of the [Discovery client PRD](../themes/federation/prds/discovery-client/README.md). Everything else in that PRD is built and tested; this is the one piece that isn't.
+Carved out of the [Discovery client PRD](../themes/federation/prds/discovery-client.md). Everything else in that PRD is built and tested; this is the one piece that isn't.
 
 ## What's missing
 

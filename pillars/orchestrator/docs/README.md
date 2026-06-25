@@ -35,21 +35,21 @@ The orchestrator holds no domain state of its own. The only state it touches is 
 
 The reusable cross-pillar machinery — the federated-query runner, the cross-pillar ranking strategy, partial-failure semantics, the AI-tool manifest projection, and tool-call routing — lives in `@pops/pillar-sdk` and is specified centrally under the pillar-finale federation theme. This pillar **hosts** those primitives on an HTTP surface; it does not reimplement them. See:
 
-- [search-adapter-manifest](../../../docs/themes/federation/prds/search-adapter-manifest/README.md)
-- [federated-query-orchestrator](../../../docs/themes/federation/prds/federated-query-orchestrator/README.md)
-- [ranking-strategy](../../../docs/themes/federation/prds/ranking-strategy/README.md)
-- [partial-failure-semantics](../../../docs/themes/federation/prds/partial-failure-semantics/README.md)
-- [ai-tool-manifest](../../../docs/themes/federation/prds/ai-tool-manifest/README.md)
-- [dynamic-tool-list](../../../docs/themes/federation/prds/dynamic-tool-list/README.md)
-- [tool-call-routing](../../../docs/themes/federation/prds/tool-call-routing/README.md)
+- [search-adapter-manifest](../../../docs/themes/federation/prds/search-adapter-manifest.md)
+- [federated-query-orchestrator](../../../docs/themes/federation/prds/federated-query-orchestrator.md)
+- [ranking-strategy](../../../docs/themes/federation/prds/ranking-strategy.md)
+- [partial-failure-semantics](../../../docs/themes/federation/prds/partial-failure-semantics.md)
+- [ai-tool-manifest](../../../docs/themes/federation/prds/ai-tool-manifest.md)
+- [dynamic-tool-list](../../../docs/themes/federation/prds/dynamic-tool-list.md)
+- [tool-call-routing](../../../docs/themes/federation/prds/tool-call-routing.md)
 
 ## PRDs
 
-| PRD                                                 | Scope                                                                                                  |
-| --------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| [service-runtime](prds/service-runtime/README.md)   | The container: ports, boot, registry self-registration, `/health`, `/pillars`, partial-failure stance. |
-| [federated-search](prds/federated-search/README.md) | `POST /search` — registry-driven fan-out, merge/rank, section decoration, per-pillar best-effort.      |
-| [ai-tool-registry](prds/ai-tool-registry/README.md) | `GET /ai/tools` — manifest projection onto an HTTP surface, degraded-empty stance.                     |
+| PRD                                          | Scope                                                                                                  |
+| -------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| [service-runtime](prds/service-runtime.md)   | The container: ports, boot, registry self-registration, `/health`, `/pillars`, partial-failure stance. |
+| [federated-search](prds/federated-search.md) | `POST /search` — registry-driven fan-out, merge/rank, section decoration, per-pillar best-effort.      |
+| [ai-tool-registry](prds/ai-tool-registry.md) | `GET /ai/tools` — manifest projection onto an HTTP surface, degraded-empty stance.                     |
 
 </content>
 </invoke>

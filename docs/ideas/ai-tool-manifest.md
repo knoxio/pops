@@ -1,6 +1,6 @@
 # Populate pillar AI tool descriptors
 
-The [AI tool manifest](../themes/federation/prds/ai-tool-manifest/README.md)
+The [AI tool manifest](../themes/federation/prds/ai-tool-manifest.md)
 contract is fully implemented: the `ai.tools` slot, its `.strict()` descriptor
 schema, and the `allowedUriTypes ⊆ uri.types` cross-field validator all ship and
 are tested. What does _not_ exist is any pillar that actually declares a tool.

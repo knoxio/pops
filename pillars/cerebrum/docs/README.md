@@ -35,20 +35,70 @@ Cerebrum is a subsystem umbrella containing multiple named components:
 - The system surfaces consolidation opportunities before the user notices duplication
 - Cross-domain queries work seamlessly (e.g., "what did I spend on that trip where I had the idea about X?")
 
-## Epics
+## PRD Index
 
-| #   | Epic                                         | Summary                                                                        | Status  |
-| --- | -------------------------------------------- | ------------------------------------------------------------------------------ | ------- |
-| 0   | [Engram Storage](epics/00-engram-storage.md) | File format, templates, directory structure, scope model, CRUD operations      | Done    |
-| 1   | [Thalamus](epics/01-thalamus.md)             | File watcher, frontmatter indexing, embedding sync, cross-source retrieval     | Done    |
-| 2   | [Ingest](epics/02-ingest.md)                 | Manual/agent/capture input, classification, entity extraction, scope inference | Done    |
-| 3   | [Emit](epics/03-emit.md)                     | Query engine, document generation, proactive nudges                            | Partial |
-| 4   | [Glia](epics/04-glia.md)                     | Curation workers (pruner, consolidator, linker, auditor), trust graduation     | Partial |
-| 5   | [Ego](epics/05-ego.md)                       | Chat agent — shell panel, MCP tools, Moltbot, CLI. Supersedes `ego-core`       | Partial |
-| 6   | [Reflex](epics/06-reflex.md)                 | Automation triggers — event, threshold, scheduled. reflexes.toml               | Done    |
-| 7   | [Plexus](epics/07-plexus.md)                 | Plugin system — adapter interface, core integrations (email, calendar, GitHub) | Done    |
+PRDs are grouped by the component they build. Each group's scopes are independent; a PRD relates to its component through this index.
 
-Epics 0-3 form Phase 1 (MVP): store, index, ingest, retrieve. Epics 4-5 form Phase 2: curation and chat interface. Epics 6-7 form Phase 3: automation and ecosystem. Within each phase, epics are sequential on their dependencies (0 before 1 before 2, etc.) but later phases can begin individual epics as their dependencies are met.
+**Engram Storage** — the engram file format, template system, scope model, and CRUD service. Engrams are human-readable Markdown files on disk, mirrored into a regenerable SQLite index; scopes are output filtering (not access control) that hard-block secret content from shared outputs.
+
+| PRD                                                     | Summary                                                                          | Status |
+| ------------------------------------------------------- | -------------------------------------------------------------------------------- | ------ |
+| [Engram File Format & CRUD](prds/engram-file-format.md) | File format, YAML frontmatter, templates, SQLite index, CRUD service, REST       | Done   |
+| [Scope Model](prds/scope-model.md)                      | Hierarchical dot-notation scopes, rules engine, filtering, secret-scope blocking | Done   |
+
+**Thalamus** — indexing and retrieval middleware that makes engrams queryable. A file watcher keeps the SQLite index and embeddings in step with the Markdown files, re-embedding peer-pillar rows so semantic search spans engrams and domain data; the unified read surface fuses semantic, structured, and hybrid search with token-budgeted context assembly.
+
+| PRD                                             | Summary                                                                             | Status  |
+| ----------------------------------------------- | ----------------------------------------------------------------------------------- | ------- |
+| [Indexing & Sync](prds/indexing.md)             | File watcher, frontmatter-to-SQLite sync, embedding trigger, cross-source re-embed  | Partial |
+| [Retrieval Engine](prds/retrieval-engine.md)    | Semantic / structured / hybrid search, context assembly, scope-filtered retrieval   | Done    |
+| [Embeddings (read surface)](prds/embeddings.md) | Read-only coverage view over the embeddings metadata table for cross-pillar callers | Done    |
+
+**Ingest** — the single path from raw input to a stored engram. Content enters through one capture-first pipeline (normalise → classify → match template → extract entities → infer scopes → dedup → write); manual ingest defaults to a single body input with structure inferred asynchronously.
+
+| PRD                                              | Summary                                                                               | Status  |
+| ------------------------------------------------ | ------------------------------------------------------------------------------------- | ------- |
+| [Ingestion Pipeline](prds/ingestion-pipeline.md) | Input channels, classification, entity extraction, scope inference, dedup, templating | Partial |
+
+**Emit** — the output layer that turns stored knowledge into usable artifacts across three modes: natural-language Q&A, document generation, and proactive nudges. Every output is scope-filtered and audience-aware; secret content is never included without explicit opt-in.
+
+| PRD                                                | Summary                                                                             | Status  |
+| -------------------------------------------------- | ----------------------------------------------------------------------------------- | ------- |
+| [Query Engine](prds/query-engine.md)               | Natural-language Q&A, scope-aware retrieval, citation attribution, multi-domain     | Partial |
+| [Document Generation](prds/document-generation.md) | Reports, summaries, timelines — scope-filtered, audience-aware output documents     | Done    |
+| [Proactive Nudges](prds/proactive-nudges.md)       | Consolidation proposals, staleness alerts, pattern detection, notification delivery | Partial |
+
+**Glia** — autonomous curation workers that maintain engram quality over time. Four worker types (pruner, consolidator, linker, auditor) scan the corpus and emit proposed actions; every action type climbs the three-phase trust graduation model (propose → act+report → silent) per [ADR-021](architecture/adr-021-glia-trust-graduation.md), earning autonomy incrementally and demoting automatically on reverts.
+
+| PRD                                          | Summary                                                                        | Status  |
+| -------------------------------------------- | ------------------------------------------------------------------------------ | ------- |
+| [Curation Workers](prds/curation-workers.md) | Pruner, consolidator, linker, auditor — the four Glia worker types             | Partial |
+| [Trust Graduation](prds/trust-graduation.md) | Three-phase progression, approval tracking, immutable log, reversible demotion | Done    |
+
+**Ego** — the conversational "I" of the system: a multi-turn chat engine grounded in engram retrieval, accessible through multiple channels. Each turn negotiates scopes, retrieves engrams via hybrid search, assembles context, calls the LLM, and attributes citations; channels are thin adapters over the core engine.
+
+| PRD                                  | Summary                                                                            | Status  |
+| ------------------------------------ | ---------------------------------------------------------------------------------- | ------- |
+| [Ego Core](prds/ego-core.md)         | Conversation engine, scope negotiation, context assembly, conversation persistence | Partial |
+| [Ego Channels](prds/ego-channels.md) | Shell chat panel, MCP tools for Claude Code, Moltbot, CLI                          | Partial |
+
+**Reflex** — declarative event-action automation. Rules in `reflexes.toml` say _when_ something should happen (event, threshold, or schedule) and _what_ subsystem verb to run; the pillar validates them, holds them in a registry, exposes a management surface, and logs every firing.
+
+| PRD                                    | Summary                                                                               | Status  |
+| -------------------------------------- | ------------------------------------------------------------------------------------- | ------- |
+| [Reflex System](prds/reflex-system.md) | Reflex definitions, trigger types, action dispatch, management surface, execution log | Partial |
+
+**Plexus** — the extension point that connects Cerebrum to external data sources. Each adapter implements a standard TypeScript interface for ingesting external data into engrams (and optionally emitting outputs back out); the pillar owns the adapter contract, the in-process lifecycle manager, and the ingestion-filter framework. Concrete email/calendar/GitHub adapters are tracked as [core-integration-adapters](ideas/core-integration-adapters.md).
+
+| PRD                                                | Summary                                                                                | Status  |
+| -------------------------------------------------- | -------------------------------------------------------------------------------------- | ------- |
+| [Plugin Architecture](prds/plugin-architecture.md) | Adapter interface, lifecycle manager, ingestion filters, plugin registry, REST surface | Partial |
+
+**Debrief** — post-watch reflection over media the user has finished. Cerebrum tracks one debrief session per (re-)watch and records per-dimension reflection results; the media tuple, watch-history, dimension, and comparison ids are soft pointers into the media pillar, so cerebrum's SQLite file stands alone.
+
+| PRD                        | Summary                                                                               | Status  |
+| -------------------------- | ------------------------------------------------------------------------------------- | ------- |
+| [Debrief](prds/debrief.md) | Session/result tables, soft pointers into media, best-effort post-commit REST surface | Partial |
 
 ## Key Decisions
 

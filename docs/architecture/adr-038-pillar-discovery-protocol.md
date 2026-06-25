@@ -8,7 +8,7 @@ Accepted
 
 The registry substrate for runtime pillar discovery already exists and is tested: core serves a
 DB-backed snapshot (`GET /core.registry.list`), an SSE change feed (`GET /registry/subscribe`), and a
-shared-key external register/heartbeat/deregister surface ([dynamic-pillar-registration](../themes/federation/prds/dynamic-pillar-registration/README.md));
+shared-key external register/heartbeat/deregister surface ([dynamic-pillar-registration](../themes/federation/prds/dynamic-pillar-registration.md));
 the SDK exposes a pluggable `DiscoveryTransport` seam (`packages/pillar-sdk/src/client/discovery.ts:25`)
 whose only implementation today is `HttpDiscoveryTransport`.
 
@@ -46,7 +46,7 @@ current target — but the seam and the gating model should be locked now so the
    transport.** A future `MqttDiscoveryTransport` / `MdnsDiscoveryTransport` is a drop-in via
    `factory.ts` (`options.transport ?? new HttpDiscoveryTransport(...)`). **The LAN transport choice is
    deferred** to a successor ADR/PRD, taken when the first real LAN/kiosk consumer exists — mirroring
-   the deferral discipline in [registry-driven-shell-ui](../themes/federation/prds/registry-driven-shell-ui/README.md) (external-pillar UI loading).
+   the deferral discipline in [registry-driven-shell-ui](../themes/federation/prds/registry-driven-shell-ui.md) (external-pillar UI loading).
 2. **Introduce a discovery toggle, default OFF.** Acceptance of _external/unknown_ registrations in
    production is gated by an explicit switch (FE/BE). Internal in-tree pillars (`origin = 'internal'`)
    are unaffected. When the toggle is off, external registrations are refused (not silently dropped) and
@@ -59,10 +59,10 @@ current target — but the seam and the gating model should be locked now so the
 ## Consequences
 
 - **Enables** the MQTT/mDNS future as additive work: the seam, the registry contract, and the
-  open-id type ([two-tier-pillar-id](../themes/federation/prds/two-tier-pillar-id/README.md)) are in
+  open-id type ([two-tier-pillar-id](../themes/federation/prds/two-tier-pillar-id.md)) are in
   place, so the LAN phase implements a transport, not a re-architecture.
 - **Prod stays closed by default** — the toggle means shipping discovery code does not open the network
-  until an operator opts in, which keeps [prod-registry-driven-nginx](../themes/federation/prds/prod-registry-driven-nginx/README.md)'s
+  until an operator opts in, which keeps [prod-registry-driven-nginx](../themes/federation/prds/prod-registry-driven-nginx.md)'s
   registry-driven nginx safe (it routes what the registry holds; the registry only holds external
   pillars when discovery is on).
 - **Defers the hard calls** (transport, full LAN trust model, remote FE bundle loading) to a successor
@@ -76,6 +76,6 @@ current target — but the seam and the gating model should be locked now so the
 - [ADR-026](./adr-026-pillar-architecture.md) — the seven-pillar carve and the URI dispatcher.
 - [ADR-027](./adr-027-runtime-pillar-registry.md) — runtime registry; docker network as the trust boundary; shared key.
 - [ADR-035](./adr-035-pillar-redefinition-and-implicit-kinds.md) — shell-as-UI-pillar; UI surfaces as containers with a `baseUrl`.
-- [dynamic-pillar-registration](../themes/federation/prds/dynamic-pillar-registration/README.md) — external-pillar register/heartbeat/deregister + reserved-id rule.
-- [prod-registry-driven-nginx](../themes/federation/prds/prod-registry-driven-nginx/README.md) — deploys the registry-driven nginx that this protocol feeds.
-- [two-tier-pillar-id](../themes/federation/prds/two-tier-pillar-id/README.md) — opens the pillar-id type so unknown LAN ids are expressible.
+- [dynamic-pillar-registration](../themes/federation/prds/dynamic-pillar-registration.md) — external-pillar register/heartbeat/deregister + reserved-id rule.
+- [prod-registry-driven-nginx](../themes/federation/prds/prod-registry-driven-nginx.md) — deploys the registry-driven nginx that this protocol feeds.
+- [two-tier-pillar-id](../themes/federation/prds/two-tier-pillar-id.md) — opens the pillar-id type so unknown LAN ids are expressible.

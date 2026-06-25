@@ -1,6 +1,6 @@
 # Database Operations — deferred safety mechanisms
 
-Deferred from [PRD Database Operations](../themes/platform/prds/database-operations/README.md). The per-pillar architecture obsoleted some monolith-era safety mechanisms and has not yet rebuilt others. The built lifecycle (per-pillar opener, Drizzle journal, path resolution, Litestream backup) lives in the PRD; everything here is not-yet-built.
+Deferred from [PRD Database Operations](../themes/platform/prds/database-operations.md). The per-pillar architecture obsoleted some monolith-era safety mechanisms and has not yet rebuilt others. The built lifecycle (per-pillar opener, Drizzle journal, path resolution, Litestream backup) lives in the PRD; everything here is not-yet-built.
 
 ## 1. Pre-migration snapshot + auto-restore
 

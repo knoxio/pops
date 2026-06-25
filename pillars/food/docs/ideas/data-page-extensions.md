@@ -1,6 +1,6 @@
 # Idea: Data-page extensions
 
-Forward-looking work deliberately excluded from the shipped [data-page](../prds/data-page/README.md). The page (six tabs, CRUD, global search, deep-link focus) is done; these are the next layers.
+Forward-looking work deliberately excluded from the shipped [data-page](../prds/data-page.md). The page (six tabs, CRUD, global search, deep-link focus) is done; these are the next layers.
 
 ## Ingredient list filters & pagination
 

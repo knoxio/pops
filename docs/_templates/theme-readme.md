@@ -12,14 +12,17 @@
 - {Measurable outcome 2}
 - {Measurable outcome 3}
 
-## Epics
+## PRD Index
 
-| Epic                           | Summary            | Status                             |
-| ------------------------------ | ------------------ | ---------------------------------- |
-| [{Epic name}](epics/{slug}.md) | {One-line summary} | {Not started / In progress / Done} |
-| [{Epic name}](epics/{slug}.md) | {One-line summary} | {Status}                           |
+PRDs grouped by area; each row links the PRD and shows its status. A large theme uses a `### {Area}` sub-heading per group with a one-line intro; a small theme can use a single flat table.
 
-{Dependency notes: which epics block which, what can be parallelised.}
+### {Area name}
+
+{One-line intro to this group of PRDs.}
+
+| PRD                          | Summary            | Status                             |
+| ---------------------------- | ------------------ | ---------------------------------- |
+| [{PRD name}](prds/{slug}.md) | {One-line summary} | {Not started / In progress / Done} |
 
 ## Key Decisions
 

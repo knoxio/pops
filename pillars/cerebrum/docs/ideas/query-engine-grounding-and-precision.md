@@ -1,6 +1,6 @@
 # Query engine — grounding & precision (deferred)
 
-Forward-looking gaps in the cerebrum query engine. The core pipeline (ask / retrieve / explain / SSE stream, scope-aware retrieval, citation attribution, cross-pillar multi-domain) ships today — see the [query-engine PRD](../prds/query-engine/README.md). These items are the unbuilt remainder.
+Forward-looking gaps in the cerebrum query engine. The core pipeline (ask / retrieve / explain / SSE stream, scope-aware retrieval, citation attribution, cross-pillar multi-domain) ships today — see the [query-engine PRD](../prds/query-engine.md). These items are the unbuilt remainder.
 
 ## Ground scope inference in a live scope registry
 

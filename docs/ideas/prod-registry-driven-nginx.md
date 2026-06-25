@@ -1,6 +1,6 @@
 # Deployed-topology e2e for registry-driven nginx
 
-Split out of the [Production registry-driven nginx](../themes/federation/prds/prod-registry-driven-nginx/README.md)
+Split out of the [Production registry-driven nginx](../themes/federation/prds/prod-registry-driven-nginx.md)
 PRD. The boot-render + watcher run in production and are covered in-process (fake SSE registry driving
 the watcher; static-source guards on the entrypoint). The missing piece is a **deployed-topology**
 drill: a real `pops-shell` container, real nginx, real `nginx -s reload`, proving a self-registered

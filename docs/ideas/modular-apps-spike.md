@@ -2,7 +2,7 @@
 
 Investigation only — recommendations, no code changes. Sibling spike: [feature-toggles](./feature-toggles-spike.md).
 
-Outcome: superseded by **Epic: Modular Module Runtime** ([docs/themes/foundation/epics/modular-module-runtime.md](../themes/foundation/epics/modular-module-runtime.md)). The spike below describes the goal-state architecture; PRDs 097–100 carry the implementation.
+Outcome: superseded by the **Modular Module Runtime** group in the [Foundation theme](../themes/foundation/README.md). The spike below describes the goal-state architecture; the [module-import-boundaries](../themes/foundation/prds/module-import-boundaries.md), [overlay-surfaces](../themes/foundation/prds/overlay-surfaces.md), and [plugin-contract](../themes/foundation/prds/plugin-contract.md) PRDs carry the implementation.
 
 ## Question
 
@@ -78,7 +78,7 @@ export const manifest: ModuleManifest = {
 };
 ```
 
-`SettingsManifest` ([unified-settings](../themes/foundation/prds/unified-settings/README.md)) plugs in as a `settings` slot inside `ModuleManifest`, not as a parallel concept.
+`SettingsManifest` ([unified-settings](../themes/foundation/prds/unified-settings.md)) plugs in as a `settings` slot inside `ModuleManifest`, not as a parallel concept.
 
 ## Backend modules — already siblings
 
@@ -88,7 +88,7 @@ Per-module migrations are deferred. `0038-0041` straddle cerebrum sub-modules; s
 
 ## Cross-module communication
 
-- Cross-module imports are forbidden at code level, enforced by [module-import-boundaries](../themes/foundation/prds/module-import-boundaries/README.md) lint rules (not honour-system).
+- Cross-module imports are forbidden at code level, enforced by [module-import-boundaries](../themes/foundation/prds/module-import-boundaries.md) lint rules (not honour-system).
 - Cross-module data references go through tRPC contracts; FKs that cross module boundaries are nullable with `ON DELETE SET NULL`.
 - The URI resolver ([ADR-012](../architecture/adr-012-universal-object-uri.md)) and universal search degrade gracefully when a referenced module is absent.
 

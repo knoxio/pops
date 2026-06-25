@@ -14,4 +14,4 @@ The PRD documented `personal` / `work` / `storage` as reserved top-levels but th
 
 ## Out of scope (separate PRD)
 
-LLM-based scope classification lives in the [ingestion pipeline](../prds/ingestion-pipeline/README.md) — not part of this idea.
+LLM-based scope classification lives in the [ingestion pipeline](../prds/ingestion-pipeline.md) — not part of this idea.

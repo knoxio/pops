@@ -1,6 +1,6 @@
 # Idea: Finish design-token cleanup in pillar frontends
 
-The token system itself (`@pops/ui/theme`) is shipped and clean. What remains is mechanical cleanup in consumer code that was never completed. See the PRD: [design-tokens-theming](../themes/foundation/prds/design-tokens-theming/README.md).
+The token system itself (`@pops/ui/theme`) is shipped and clean. What remains is mechanical cleanup in consumer code that was never completed. See the PRD: [design-tokens-theming](../themes/foundation/prds/design-tokens-theming.md).
 
 ## Outstanding work
 

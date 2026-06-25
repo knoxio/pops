@@ -1,6 +1,6 @@
 # Idea: weighted composite recommendation scoring + per-card attribution
 
-The discovery recommendations engine ([prds/discovery-recommendations](../prds/discovery-recommendations/README.md)) ships, but three things the original PRD specified were never built that way. Capture them here as forward-looking work, not as shipped behaviour.
+The discovery recommendations engine ([prds/discovery-recommendations](../prds/discovery-recommendations.md)) ships, but three things the original PRD specified were never built that way. Capture them here as forward-looking work, not as shipped behaviour.
 
 ## 1. Weighted composite score
 

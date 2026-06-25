@@ -1,6 +1,6 @@
 # Redis: shared status surface, cache layer, key namespace
 
-Spun out of [PRD: Redis Container & Connection](../themes/platform/prds/redis-container/README.md).
+Spun out of [PRD: Redis Container & Connection](../themes/platform/prds/redis-container.md).
 The container and per-pillar BullMQ connections are built. The pieces below were
 specified in the original PRD but never implemented; the codebase took a
 different (per-pillar, queue-only) shape instead.

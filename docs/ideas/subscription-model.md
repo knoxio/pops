@@ -1,6 +1,6 @@
 # Subscription model — deferred extensions
 
-Parts of the original subscription-model spec that the shipped registry SSE stream does not carry. The built surface is documented in [PRD subscription-model](../themes/federation/prds/subscription-model/README.md). These are additive and can land independently.
+Parts of the original subscription-model spec that the shipped registry SSE stream does not carry. The built surface is documented in [PRD subscription-model](../themes/federation/prds/subscription-model.md). These are additive and can land independently.
 
 ## `manifest-updated` event
 

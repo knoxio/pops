@@ -4,22 +4,22 @@ The **ai** pillar — the platform's AI governance surface: providers, usage,
 budgets, alerts, observability, and pricing. A standalone REST service that owns
 its own SQLite DB (`ai.db`), serves a [ts-rest](https://ts-rest.com) contract
 built from zod, exports a `./manifest`, and self-registers with the `registry`
-pillar on boot. Port **3008**.
+pillar on boot. Port **3008**. Domain docs: [`docs/README.md`](docs/README.md).
 
 ## Public surface
 
-```jsonc
-package.json
-  "exports": {
-    ".":          → src/contract/index.ts        // FE-safe types + zod schemas
-    "./manifest": → src/contract/manifest.ts     // pillar manifest
-    "./api-types":→ src/contract/api-types.generated.ts
-    "./openapi":  → openapi/ai.openapi.json        // canonical wire contract
-  }
-```
+The package ships only its contract surface (`dist/contract/**` + the OpenAPI
+snapshot). `exports`:
+
+| Subpath       | Built from                            | Use                                 |
+| ------------- | ------------------------------------- | ----------------------------------- |
+| `.`           | `src/contract/index.ts`               | `aiContract` router + FE-safe types |
+| `./manifest`  | `src/contract/manifest.ts`            | `aiManifest` `ModuleManifest`       |
+| `./api-types` | `src/contract/api-types.generated.ts` | generated OpenAPI TS types          |
+| `./openapi`   | `openapi/ai.openapi.json`             | canonical wire contract (JSON)      |
 
 The contract (`src/contract/rest.ts`, zod) is the single source of truth;
-OpenAPI and api-types are generated projections, drift-checked in CI.
+the OpenAPI JSON and `api-types` are generated projections, drift-checked in CI.
 
 ## Domains
 
@@ -37,7 +37,7 @@ OpenAPI and api-types are generated projections, drift-checked in CI.
 ```
 pillars/ai/
 ├── package.json            @pops/ai
-├── Dockerfile              runs src/api/server.ts
+├── Dockerfile              runs dist/api/server.js
 ├── mise.toml               per-pillar tasks
 ├── app/                    @pops/app-ai — FE feature module
 ├── openapi/
@@ -52,10 +52,16 @@ pillars/ai/
 ## Registration
 
 On boot, when `POPS_REGISTRY_ENABLED=true`, the server registers via
-`bootstrapPillar` from `@pops/pillar-sdk` (`/registry/register` on the
-`registry` pillar) and deregisters on `SIGTERM`. It exposes `/health` and a
-federated `/pillars` view. There is no per-request auth: the pillar trusts the
-docker network and the gateway in front authenticates.
+`bootstrapPillar` from `@pops/pillar-sdk/bootstrap` (`POST /registry/register`
+on the `registry` pillar) and deregisters on `SIGTERM`/`SIGINT`. It exposes
+`/health`, a federated `/pillars` view, and the raw `/openapi` document.
+
+Most routes trust the docker network and the gateway in front of it. The one
+exception is the cross-pillar ingest `POST /ai-usage/record`: nginx never
+proxies it, and it 403s any request missing the shared `x-pops-internal-token`,
+so only sibling pillars carrying that token can write usage. The pricing read
+`GET /ai-pricing/:provider/:model` stays open so callers can shape cost before
+recording.
 
 ## Commands
 

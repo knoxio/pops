@@ -1,7 +1,7 @@
 # Surfacing partial-failure metadata
 
 > Theme: [federation](../themes/federation/README.md) ·
-> PRD: [partial-failure-semantics](../themes/federation/prds/partial-failure-semantics/README.md)
+> PRD: [partial-failure-semantics](../themes/federation/prds/partial-failure-semantics.md)
 
 ## Problem
 
