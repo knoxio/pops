@@ -2,10 +2,12 @@
 
 The **shell** pillar — the single Vite/React SPA host for POPS. It lazy-loads
 each domain's feature app and renders the federated navigation assembled from
-the live registry. It is a **UI pillar**: it owns no SQLite DB, exposes no data
-contract, and ships an effectively empty manifest. It still announces itself to
-the `registry` pillar so the federation has one dynamic list of every running
-surface — UI included.
+the live registry. It is a **UI pillar**: it owns no SQLite DB and serves no
+data procedures. Its manifest carries a sentinel contract block plus empty
+capability arrays — the registry's manifest schema requires those fields, so a
+UI pillar fills them with empties rather than dropping them. It still announces
+itself to the `registry` pillar so the federation has one dynamic list of every
+running surface — UI included.
 
 The frontend source lives in `pillars/shell/src` (`main.tsx`, `components/`,
 `store/`, `i18n/`, `registry-api/`). The production image is `nginx:alpine`
@@ -13,9 +15,12 @@ serving the built bundle; there is no Node at request time.
 
 ## UI-pillar registration
 
-A UI pillar registers exactly like a data pillar, but its manifest carries no
-capabilities — no contract surface, no settings keys, no search/AI/uri
-contributions. The slim payload is just identity plus a healthcheck:
+A UI pillar registers exactly like a data pillar, but every capability array is
+empty — no procedures, no search/AI/uri contributions, no consumed settings.
+The `ManifestPayloadSchema` (in `@pops/pillar-sdk`) is `.strict()` and requires
+`contract`, `routes`, `search`, `ai`, `uri`, `consumedSettings`, and
+`healthcheck`, so `buildShellManifest()` emits all of them — empties plus a
+sentinel contract triplet — rather than omitting them:
 
 ```jsonc
 {
@@ -24,15 +29,29 @@ contributions. The slim payload is just identity plus a healthcheck:
   "manifest": {
     "pillar": "shell",
     "version": "0.1.0",
+    "contract": {
+      "package": "@pops/shell",
+      "version": "0.1.0",
+      "tag": "contract-shell@v0.1.0",
+    },
+    "routes": { "queries": [], "mutations": [], "subscriptions": [] },
+    "search": { "adapters": [] },
+    "ai": { "tools": [] },
+    "uri": { "types": [] },
+    "consumedSettings": { "keys": [] },
     "healthcheck": { "path": "/health" },
   },
   "apiKey": "<POPS_INTERNAL_API_KEY>",
 }
 ```
 
-`manifest.pillar` MUST equal `pillarId` — the registry rejects a mismatch.
-Capability arrays are optional in the manifest schema, so a UI pillar simply
-omits them.
+`manifest.pillar` MUST equal `pillarId` — the registry rejects a mismatch. The
+sentinel `contract.package` is a placeholder that need not exist in the
+workspace; it only has to satisfy the cross-field validator
+(`checkContractPackageMatchesPillar`), which requires the package to equal
+`@pops/<pillar>` (the collapsed form shown above is the simplest value that
+passes). `sinks` and the other UI-only blocks (`settings`, `nav`, `pages`,
+`features`, …) are optional in the schema, so a UI pillar omits those.
 
 ### Registration runs at deploy time, not in the browser
 
@@ -54,12 +73,10 @@ POPS_INTERNAL_API_KEY=… \
   pnpm --filter @pops/shell registry:register
 ```
 
-> Endpoint note: `src/lib/register-with-registry.ts` currently POSTs to the
-> legacy path `/core.registry.register`. The `registry` pillar serves both the
-> canonical `/registry/register` and the legacy `/core.registry.register`
-> (see `@pops/pillar-sdk` `REGISTRY_PATHS` / `LEGACY_REGISTRY_PATHS`), so the
-> shell still resolves correctly. Migrating the shell to the canonical path is
-> a follow-up.
+> Endpoint note: `src/lib/register-with-registry.ts` POSTs to
+> `/core.registry.register`. The `registry` pillar mounts every registry
+> operation on both that path and the canonical `/registry/register` (see the
+> pillar SDK's `REGISTRY_PATHS` / `LEGACY_REGISTRY_PATHS`), so either resolves.
 
 Behaviour (always exits `0` so a partially-configured deploy still boots):
 
@@ -113,17 +130,17 @@ pnpm --filter @pops/shell gen:nginx:watch     # long-lived watch + reload
 
 ### Watcher env
 
-| Var                          | Default                    | Purpose                                                                                  |
-| ---------------------------- | -------------------------- | ---------------------------------------------------------------------------------------- |
-| `CORE_REGISTRY_URL`          | `http://registry-api:3001` | Registry pillar base URL; SSE consumed from `<url>/registry/subscribe`.                  |
-| `POPS_NGINX_OUTPUT`          | shell `nginx.conf`         | Where the regenerated conf is written.                                                   |
-| `POPS_NGINX_RELOAD_CMD`      | `nginx -s reload`          | Shell command run after each successful validate.                                        |
-| `POPS_NGINX_CONFIG_TEST_CMD` | `nginx -t -c <output>`     | Pre-reload validation. Empty string disables the gate (e.g. nginx in another container). |
-| `POPS_NGINX_DEBOUNCE_MS`     | `250`                      | Trailing-debounce window for coalescing bursts.                                          |
-| `POPS_NGINX_BACKOFF_MS`      | `1000`                     | Initial reconnect backoff (caps at 30s, doubles per failure).                            |
-| `POPS_NGINX_HEALTH_PORT`     | (unset)                    | If set + positive, expose a JSON health endpoint with `nginx_generator_last_error_at`.   |
-| `POPS_NGINX_HEALTH_HOST`     | `0.0.0.0`                  | Health endpoint bind host.                                                               |
-| `POPS_NGINX_HEALTH_PATH`     | `/health`                  | Health endpoint path.                                                                    |
+| Var                          | Default                    | Purpose                                                                                                                      |
+| ---------------------------- | -------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `POPS_REGISTRY_URL`          | `http://registry-api:3001` | Registry pillar base URL; SSE consumed from `<url>/registry/subscribe`. `CORE_REGISTRY_URL` is a deprecated legacy fallback. |
+| `POPS_NGINX_OUTPUT`          | shell `nginx.conf`         | Where the regenerated conf is written.                                                                                       |
+| `POPS_NGINX_RELOAD_CMD`      | `nginx -s reload`          | Shell command run after each successful validate.                                                                            |
+| `POPS_NGINX_CONFIG_TEST_CMD` | `nginx -t -c <output>`     | Pre-reload validation. Empty string disables the gate (e.g. nginx in another container).                                     |
+| `POPS_NGINX_DEBOUNCE_MS`     | `250`                      | Trailing-debounce window for coalescing bursts.                                                                              |
+| `POPS_NGINX_BACKOFF_MS`      | `1000`                     | Initial reconnect backoff (caps at 30s, doubles per failure).                                                                |
+| `POPS_NGINX_HEALTH_PORT`     | (unset)                    | If set + positive, expose a JSON health endpoint with `nginx_generator_last_error_at`.                                       |
+| `POPS_NGINX_HEALTH_HOST`     | `0.0.0.0`                  | Health endpoint bind host.                                                                                                   |
+| `POPS_NGINX_HEALTH_PATH`     | `/health`                  | Health endpoint path.                                                                                                        |
 
 ### Health endpoint payload
 
@@ -146,9 +163,10 @@ when `degraded`.
 pnpm --filter @pops/shell dev          # Vite dev server
 pnpm --filter @pops/shell build        # tsc + vite build
 pnpm --filter @pops/shell test         # vitest run
-pnpm --filter @pops/shell typecheck
-pnpm --filter @pops/shell lint
+pnpm --filter @pops/shell test:e2e     # playwright test
+pnpm --filter @pops/shell typecheck    # tsc --noEmit
 ```
 
-`mise tasks` (from `pillars/shell/mise.toml`) wraps the same set:
+`mise tasks` (from `pillars/shell/mise.toml`) wraps the same set plus `lint`
+(`oxlint src && oxfmt --check .`, which has no `package.json` equivalent):
 `mise run build | dev | typecheck | test | test:e2e | lint`.

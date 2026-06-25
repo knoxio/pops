@@ -1,21 +1,28 @@
 # @pops/finance
 
-The **finance** pillar — transactions, budgets, wishlists, entities, CSV import,
+The **finance** pillar — transactions, budgets, wishlist, CSV/Up Bank import,
 tag rules/suggestions, and AI-assisted corrections. A standalone REST service
 that owns its own SQLite DB (`finance.db`, opened via `openFinanceDb`), serves a
-[ts-rest](https://ts-rest.com) contract built from zod, exports a `./manifest`,
-and self-registers with the `registry` pillar on boot. Port **3004**.
+[ts-rest](https://ts-rest.com) contract built from zod, exports its manifest,
+and self-registers with the `registry` pillar on boot. Port **3004**. Merchant
+entities live in the `contacts` pillar; finance keeps no entities table of its
+own — it reads them over HTTP and create-or-fetches by name (creating a contact
+only when none already matches) during import.
+
+Domain docs: [`docs/README.md`](docs/README.md).
 
 ## Public surface
 
+The package ships only its contract and the OpenAPI snapshot (`package.json`
+`files`). The `exports` map points at the built `dist/` artifacts:
+
 ```jsonc
-package.json
-  "exports": {
-    ".":          → src/contract/index.ts        // FE-safe types + zod schemas
-    "./manifest": → src/contract/manifest.ts     // pillar manifest
-    "./api-types":→ src/contract/api-types.generated.ts
-    "./openapi":  → openapi/finance.openapi.json  // canonical wire contract
-  }
+"exports": {
+  ".":          dist/contract/index.js              // FE-safe types + zod schemas
+  "./manifest": dist/contract/manifest.js           // ModuleManifest value + FinanceContract type
+  "./api-types":dist/contract/api-types.generated.js
+  "./openapi":  openapi/finance.openapi.json        // canonical wire snapshot
+}
 ```
 
 The wire surface is the ts-rest contract (`src/contract/rest.ts`). It is the
@@ -27,15 +34,18 @@ hand-authored paths; CI gates on drift.
 
 ## Domains
 
-| Domain         | Routes                                                        |
+The contract (`src/contract/rest.ts`) composes these sub-routers:
+
+| Domain         | Surface                                                       |
 | -------------- | ------------------------------------------------------------- |
 | `transactions` | `/transactions`, `/transactions/:id`, `/transactions/restore` |
 | `budgets`      | `/budgets`, `/budgets/:id`                                    |
 | `wishlist`     | `/wishlist`, `/wishlist/:id`                                  |
-| `imports`      | CSV import                                                    |
-| `tag-rules`    | tag rules + suggester                                         |
-| `corrections`  | AI-assisted correction proposals (+ AI cache)                 |
-| `entities`     | entity usage                                                  |
+| `imports`      | CSV / Up Bank import + atomic commit                          |
+| `tagRules`     | tag rules + suggester                                         |
+| `corrections`  | AI-assisted correction proposals                              |
+| `aiCache`      | AI entity-resolution cache                                    |
+| `entityUsage`  | read-only usage counts for `contacts` entities                |
 | `search`       | cross-domain search                                           |
 | `settings`     | per-pillar settings                                           |
 
@@ -44,7 +54,7 @@ hand-authored paths; CI gates on drift.
 ```
 pillars/finance/
 ├── package.json            @pops/finance
-├── Dockerfile              runs src/api/server.ts
+├── Dockerfile              runs dist/api/server.js
 ├── mise.toml               per-pillar tasks
 ├── app/                    @pops/app-finance — FE feature module
 ├── openapi/

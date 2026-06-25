@@ -9,26 +9,31 @@ a [ts-rest](https://ts-rest.com) contract built from zod, exports a
 A pillar is a **black box with a published wire contract**. Everything else is
 private, enforced by Node's `exports` map.
 
+Domain model, REST surface, and PRDs: [`docs/README.md`](docs/README.md).
+
 ## Public surface
 
 ```jsonc
 package.json
   "exports": {
-    ".":          → src/contract/index.ts        // FE-safe types + zod schemas
-    "./manifest": → src/contract/manifest.ts     // pillar manifest
-    "./api-types":→ src/contract/api-types.generated.ts
-    "./openapi":  → openapi/lists.openapi.json    // canonical wire contract
+    ".":          → dist/contract/index.js                 // FE-safe types + zod schemas
+    "./manifest": → dist/contract/manifest.js              // pillar manifest
+    "./api-types":→ dist/contract/api-types.generated.js   // typed client surface
+    "./openapi":  → openapi/lists.openapi.json             // canonical wire contract
   }
 ```
+
+Subpaths resolve to the compiled `dist/` artifacts; the `src/` files above are
+their inputs.
 
 Only these resolve. `import '@pops/lists/db'` or `import '@pops/lists/api'`
 throws `ERR_PACKAGE_PATH_NOT_EXPORTED` at the resolver — the boundary is enforced
 by Node itself.
 
-- **Types + zod schemas** for every entity that crosses the wire (`List`,
-  `ListItem`, …) — `import { ListItem, ListItemSchema } from '@pops/lists'`.
-- **The manifest** describing the pillar's nav contribution and contract pin —
-  `import { listsManifest } from '@pops/lists/manifest'`.
+- **Types + zod schemas** for every entity that crosses the wire (`ListItem`,
+  `AgendaItem`, `Project`, `Tag`) — `import { ListItem, ListItemSchema } from '@pops/lists'`.
+- **The manifest** (`id`, `name`, `version`, `surfaces`, `description`) consumed
+  when the pillar self-registers — `import { listsManifest } from '@pops/lists/manifest'`.
 - **The OpenAPI 3 spec** at `openapi/lists.openapi.json` — language-agnostic;
   non-TS consumers (Rust, Swift, Go) consume it directly.
 
@@ -52,7 +57,7 @@ pillars/lists/
 ├── package.json            @pops/lists
 ├── tsconfig.json
 ├── vitest.config.ts
-├── Dockerfile              runs src/api/server.ts
+├── Dockerfile              runs dist/api/server.js
 ├── mise.toml               per-pillar tasks
 ├── app/                    @pops/app-lists — FE feature module
 ├── openapi/
@@ -83,7 +88,7 @@ authenticates.
 ```bash
 pnpm --filter @pops/lists typecheck
 pnpm --filter @pops/lists test          # vitest against a real temp SQLite DB
-pnpm --filter @pops/lists build         # tsc + generate openapi + api-types
+pnpm --filter @pops/lists build         # verify manifest → tsc -b → openapi → api-types
 pnpm --filter @pops/lists dev           # tsx watch on src/api/server.ts
 pnpm --filter @pops/lists generate:openapi
 pnpm --filter @pops/lists generate:api-types

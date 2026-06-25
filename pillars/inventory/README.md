@@ -10,13 +10,16 @@ private, enforced by Node's `exports` map.
 
 ## Public surface
 
+The `exports` map ships compiled `dist/contract/**`; the source it is built from
+lives in `src/contract/`:
+
 ```jsonc
 package.json
   "exports": {
-    ".":          → src/contract/index.ts        // FE-safe types + zod schemas
-    "./manifest": → src/contract/manifest.ts     // pillar manifest
-    "./api-types":→ src/contract/api-types.generated.ts
-    "./openapi":  → openapi/inventory.openapi.json // canonical wire contract
+    ".":           dist/contract/index.js            // FE-safe types + zod schemas
+    "./manifest":  dist/contract/manifest.js         // pillar manifest
+    "./api-types": dist/contract/api-types.generated.js
+    "./openapi":   openapi/inventory.openapi.json     // canonical wire contract
   }
 ```
 
@@ -26,8 +29,9 @@ by Node itself, no reviewer needed.
 
 - **Types + zod schemas** for every entity that crosses the wire (`Item`,
   `Location`, `Warranty`, …) — `import { Item, ItemSchema } from '@pops/inventory'`.
-- **The manifest** describing the pillar's nav contribution, settings
-  dimensions, and contract pin — `import { inventoryManifest } from '@pops/inventory/manifest'`.
+- **The manifest** — `id`, `name`, `version`, `surfaces: ['app']`, `description`,
+  and the pillar's `settings` dimensions, consumed by the `registry` on
+  self-registration — `import { inventoryManifest } from '@pops/inventory/manifest'`.
 - **The OpenAPI 3 spec** at `openapi/inventory.openapi.json` — language-agnostic;
   non-TS consumers (Rust, Swift, Go) consume it directly.
 
@@ -51,7 +55,7 @@ pillars/inventory/
 ├── package.json            @pops/inventory
 ├── tsconfig.json
 ├── vitest.config.ts
-├── Dockerfile              runs src/api/server.ts
+├── Dockerfile              CMD node dist/api/server.js
 ├── mise.toml               per-pillar tasks
 ├── app/                    @pops/app-inventory — FE feature module
 ├── openapi/
@@ -78,14 +82,19 @@ authenticates.
 ## Commands
 
 ```bash
-pnpm --filter @pops/inventory typecheck
+pnpm --filter @pops/inventory typecheck     # tsc --noEmit (src + scripts)
 pnpm --filter @pops/inventory test          # vitest against a real temp SQLite DB
-pnpm --filter @pops/inventory build         # tsc + generate openapi + api-types
+pnpm --filter @pops/inventory build         # verify manifest → tsc -b → openapi → api-types
 pnpm --filter @pops/inventory dev           # tsx watch on src/api/server.ts
+pnpm --filter @pops/inventory start         # node dist/api/server.js
 pnpm --filter @pops/inventory generate:openapi
 pnpm --filter @pops/inventory generate:api-types
+pnpm --filter @pops/inventory generate:manifest
 docker build -f pillars/inventory/Dockerfile .
 ```
+
+The same tasks are exposed through `mise.toml` (`mise run build`, `mise run test`,
+`mise run lint`) for per-pillar federation.
 
 ## Codegen
 
@@ -93,6 +102,16 @@ docker build -f pillars/inventory/Dockerfile .
   contract's zod schemas. CI gates on drift.
 - `generate:api-types` — regenerates `src/contract/api-types.generated.ts` from
   the OpenAPI projection. CI gates on drift.
+- `generate:manifest` — regenerates `src/contract/manifest.generated.ts`;
+  `verify:manifest` (run first in `build`) fails the build on drift.
 
-The contract (zod) is the single source of truth; OpenAPI and api-types are
-generated projections. No hand-authored OpenAPI, no hand-authored paths.
+The contract (zod) is the single source of truth; OpenAPI, api-types, and the
+generated manifest are downstream projections. No hand-authored OpenAPI, no
+hand-authored paths.
+
+## Domain docs
+
+The inventory domain — items, locations, the connection graph, warranties,
+Paperless-ngx links, and insurance reporting — is documented in
+[docs/README.md](docs/README.md), with one PRD per feature under
+[docs/prds/](docs/prds/).

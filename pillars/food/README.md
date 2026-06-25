@@ -1,10 +1,12 @@
 # @pops/food
 
 The **food** pillar — recipes, ingredients, the cook/plan/shopping domain, the
-inbox quality scorer, the recipe DSL, and the ingestion worker. A standalone
-REST service that owns its own SQLite DB, serves a [ts-rest](https://ts-rest.com)
-contract built from zod, runs a BullMQ ingest worker, exports a `./manifest`,
-and self-registers with the `registry` pillar on boot. Port **3005**.
+inbox quality scorer, the recipe DSL, and the multimodal ingestion worker. A
+standalone REST service that owns its own SQLite DB, serves a
+[ts-rest](https://ts-rest.com) contract built from zod, runs a BullMQ ingest
+worker, exports a `./manifest`, and self-registers with the `registry` pillar on
+boot. Default port **3005** (override with `PORT`). Domain docs:
+[docs/README.md](docs/README.md).
 
 ## Public surface
 
@@ -82,7 +84,7 @@ the layer cache warm across both roles.
 ## Registration
 
 On boot, when `POPS_REGISTRY_ENABLED=true`, the API server registers via
-`bootstrapPillar` from `@pops/pillar-sdk` (`/registry/register` on the
+`bootstrapPillar` from `@pops/pillar-sdk/bootstrap` (`/registry/register` on the
 `registry` pillar) and deregisters on `SIGTERM`. There is no per-request auth:
 the pillar trusts the docker network and the gateway in front authenticates.
 
@@ -92,7 +94,9 @@ the pillar trusts the docker network and the gateway in front authenticates.
 pnpm --filter @pops/food typecheck
 pnpm --filter @pops/food test          # vitest against a real temp SQLite DB
 pnpm --filter @pops/food build         # verify-manifest → tsc → openapi → api-types
-pnpm --filter @pops/food dev
+pnpm --filter @pops/food dev:api       # tsx watch on the HTTP server
+pnpm --filter @pops/food dev:worker    # tsx watch on the BullMQ ingest daemon
+pnpm --filter @pops/food db:seed:food  # seed a local food DB
 pnpm --filter @pops/food generate:openapi
 pnpm --filter @pops/food generate:api-types
 docker build -f pillars/food/Dockerfile .

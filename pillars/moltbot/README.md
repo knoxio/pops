@@ -1,7 +1,6 @@
 # Moltbot
 
-[Moltbot](https://github.com/moltbot/moltbot) is the Telegram channel for POPS
-(see the cerebrum [ego-channels PRD](../cerebrum/docs/prds/ego-channels.md)).
+[Moltbot](https://github.com/moltbot/moltbot) is the Telegram channel for POPS.
 This directory ships:
 
 - The **config** files (prod + dev) that get mounted into the upstream
@@ -15,9 +14,10 @@ This directory ships:
 
 The bot itself is the upstream image — we don't fork it.
 
-## First-run runbook
+Domain docs live in the cerebrum pillar's
+[ego-channels PRD](../cerebrum/docs/prds/ego-channels.md).
 
-Estimated 10–15 minutes from a clean checkout (ego-channels PRD acceptance target).
+## First-run runbook
 
 ### 1. Create the Telegram bot
 
@@ -120,11 +120,11 @@ Telegram bot (token in `secrets/telegram_bot_token_dev`) using
 don't poison your prod conversation history.
 
 ```bash
-mise moltbot:dev    # starts dev compose with moltbot profile
-mise moltbot:logs   # tail the bot logs
+mise moltbot:validate   # run the alpine one-shot validator against the dev config
+mise moltbot:dev        # start dev compose with the moltbot profile
+mise moltbot:logs       # tail the bot logs
+mise moltbot:down       # stop and remove the dev container + validator
 ```
-
-Stop with `docker compose -f infra/docker-compose.dev.yml --profile moltbot down moltbot moltbot-validator`.
 
 ## Authentication contract
 
@@ -134,12 +134,15 @@ Skills authenticate to the pillars using:
 X-API-Key: <plaintext key from pops_api_key secret>
 ```
 
-The target pillar rejects the call with 401 if the key is missing/invalid or
-403 if the key is valid but the row's `scopes` don't cover the requested
-route (e.g. `moltbot` calling `POST /registry/service-accounts` will hit 403).
-See `pillars/registry/src/contract/rest-service-accounts.ts` for the
-service-account mint/revoke API. Requests reach each pillar via the
-`shell` nginx reverse proxy that fronts every service.
+The target pillar rejects the call with 401 if the key is missing/invalid.
+The registry also collapses a scope miss — a valid key whose row's `scopes`
+don't cover the requested route — into the same 401 (e.g. `moltbot` calling
+`POST /registry/service-accounts` is rejected because that admin route needs
+a human session, not a service-account scope). See
+`pillars/registry/src/contract/rest-service-accounts.ts` for the
+service-account mint/revoke API and `pillars/registry/src/api/middleware/identity.ts`
+for the auth gate. Requests reach each pillar via the `shell` nginx reverse
+proxy that fronts every service.
 
 ## Why a separate validator container?
 
@@ -148,9 +151,10 @@ don't want to fork the image just for that. A 6-line `alpine:3.20` init
 container that runs `validate-config.sh` keeps the failure visible at
 `docker compose up` time without touching the upstream binary.
 
-## Out of scope (for issue #2496)
+## Scope
 
-- Building our own moltbot fork.
-- Multi-user `allowed_user_ids` — the bot stays single-tenant.
-- Reaching the Up Bank webhook from skills — that path uses signed
-  webhook auth and doesn't need a service-account key.
+- The bot is the upstream `moltbot/moltbot:latest` image — this directory
+  carries config and skills, not a fork.
+- `allowed_user_ids` is single-tenant: one operator per bot.
+- The Up Bank webhook path uses signed webhook auth, not a service-account
+  key, so skills never reach it.

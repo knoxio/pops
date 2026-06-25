@@ -92,19 +92,9 @@ Pillar-to-pillar and consumer-to-pillar communication uses a versioned JSON-over
 | Infra      | Docker Compose + Watchtower auto-rollout. Deployer-side host setup (ansible, Cloudflare Tunnel) lives in [`knoxio/homelab-infra`](https://github.com/knoxio/homelab-infra) for the knoxio lab; other deployers run the same compose however they like. |
 | CI         | GitHub Actions (lint, typecheck, format, test, E2E, security)                                                                                                                                                                                          |
 
-## Status
+## Roadmap
 
-See [`docs/roadmap.md`](docs/roadmap.md) for the full implementation tracker.
-
-| Phase                                             | Status      |
-| ------------------------------------------------- | ----------- |
-| 0 — Infrastructure                                | Done        |
-| 1 — Foundation                                    | Done        |
-| 2 — Core Apps (Finance, Media, Inventory, AI Ops) | In progress |
-| 3 — AI Layer                                      | Not started |
-| 4 — Expansion Apps                                | Not started |
-| 5 — Mobile & Hardware                             | Not started |
-| 6 — Long Tail                                     | Not started |
+[`docs/roadmap.md`](docs/roadmap.md) is the current-state snapshot of the platform and the forward view, with links into each pillar's `docs/README.md`.
 
 ## Quick Start
 
@@ -172,7 +162,8 @@ cp .env.example .env                  # then edit: POPS_DOMAIN, image tag, watch
 # (or leave the file empty if the corresponding integration is unused).
 mkdir -p secrets && cd secrets
 for name in claude_api_key up_bank_token up_webhook_secret notion_api_token \
-            telegram_bot_token finance_api_key tmdb_api_key thetvdb_api_key \
+            telegram_bot_token finance_api_key pops_api_key pops_api_internal_token \
+            instagram_cookies tmdb_api_key thetvdb_api_key \
             paperless_secret_key paperless_admin_password; do
   : > "$name"
   chmod 600 "$name"
@@ -201,7 +192,7 @@ If the packages are public there is no setup needed.
 
 ### Secrets and rollout
 
-The compose file mounts each `secrets/<name>` file into containers via Docker file-based secrets (`/run/secrets/<name>`). All ten secret files must exist for `docker compose up` to succeed; leave a file empty if the corresponding integration is unused.
+The compose file mounts each `secrets/<name>` file into containers via Docker file-based secrets (`/run/secrets/<name>`). All thirteen secret files must exist for `docker compose up` to succeed; leave a file empty if the corresponding integration is unused.
 
 Pushing to `main` builds and publishes one image per pillar — `ghcr.io/knoxio/pops-<id>` (e.g. `pops-registry`, `pops-finance`, `pops-media`, …) plus `ghcr.io/knoxio/pops-shell` and `ghcr.io/knoxio/pops-docs`. The [`publish-images.yml`](.github/workflows/publish-images.yml) workflow discovers each pillar's `pillars/<id>/Dockerfile` and publishes it. The compose file ships a Watchtower service that polls GHCR every 60s and rolls out new digests for any container labelled `com.centurylinklabs.watchtower.enable=true`.
 
@@ -215,11 +206,11 @@ Server provisioning (Docker, secrets, Cloudflare Tunnel, backups, github runner)
 
 ## Repo Structure
 
-There are exactly **two unit kinds**: `pillars/` (services) and `libs/` (shared libraries). No `apps/`, no `packages/`, no turbo, no `pops-api` monolith.
+There are exactly **two unit kinds**: `pillars/` (services) and `libs/` (shared libraries). No `apps/`, no `packages/`, no turbo, no central API monolith.
 
 ```
 pillars/                   # One pillar per folder — owns SQLite DB, ts-rest contract, OpenAPI, manifest, its app/ frontend, Dockerfile
-├── registry/              # Registry / platform: registry, settings, users, service-accounts, features (formerly `core`)
+├── registry/              # Registry / platform: registry, settings, users, service-accounts, features
 ├── inventory/  media/  finance/  food/  lists/  cerebrum/   # Domain data pillars (food + cerebrum run workers)
 ├── ai/                    # AI-ops pillar (:3008): providers, usage/telemetry, ingest
 ├── contacts/              # Rust pillar (:3010, axum + OpenAPI)
