@@ -190,6 +190,26 @@ jobs:
       - name: Every pillar app is referenced by the shell bundle map
         run: node scripts/check-bundle-map-coverage.mjs
 
+  tailwind-source-coverage:
+    name: Tailwind @source coverage
+    # NON-required gate: asserts every `@source` glob in the single Tailwind
+    # theme entry (libs/ui/src/theme/globals.css) matches real files, and that
+    # no className-bearing UI file falls outside those globs. Tailwind v4 never
+    # errors on an empty `@source` glob, so the pillars/libs rename silently
+    # voided the old `apps/*`/`packages/*` globs and collapsed the UI with no
+    # build error. This guard makes that class of rot loud. It reads the source
+    # tree directly and pulls in no third-party deps, so it skips `pnpm install`.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+      - name: Gate self-test (proves the guard catches a stale/empty glob)
+        run: node scripts/check-tailwind-source-coverage.mjs --self-test
+      - name: Every @source glob matches files and every UI file is covered
+        run: node scripts/check-tailwind-source-coverage.mjs
+
   vendored-contracts:
     name: Vendored contract drift (ADR-033)
     # A consumer that vendors a producer pillar's OpenAPI snapshot (because the
