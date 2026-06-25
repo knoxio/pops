@@ -7,9 +7,12 @@
 @import 'tw-animate-css';
 @import 'shadcn/tailwind.css';
 
-/* Explicitly source all apps and packages so Tailwind scans for utility classes */
-@source "../../../../apps/*/src/**/*.{ts,tsx}";
-@source "../../../../packages/*/src/**/*.{ts,tsx}";
+/* Explicitly source all pillars and libs so Tailwind scans for utility classes.
+   globals.css lives in libs/ui, so Tailwind's automatic detection only covers
+   libs/ui; these globs add every other package. src dirs sit at mixed depths
+   (pillars/shell/src, pillars/finance/app/src), hence the recursive glob. */
+@source "../../../../pillars/**/src/**/*.{ts,tsx}";
+@source "../../../../libs/**/src/**/*.{ts,tsx}";
 
 /*---break---
  */

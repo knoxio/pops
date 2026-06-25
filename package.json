@@ -22,6 +22,8 @@
     "exports:check": "node scripts/check-exports.mjs",
     "check:bundle-map": "node scripts/check-bundle-map-coverage.mjs",
     "check:bundle-map:self-test": "node scripts/check-bundle-map-coverage.mjs --self-test",
+    "check:tailwind-source": "node scripts/check-tailwind-source-coverage.mjs",
+    "check:tailwind-source:self-test": "node scripts/check-tailwind-source-coverage.mjs --self-test",
     "check:vendored-contracts": "node scripts/ci/check-vendored-contracts.mjs",
     "check:vendored-contracts:self-test": "node scripts/ci/check-vendored-contracts.mjs --self-test",
     "ci:fix": "pnpm lint:fix && pnpm format && pnpm typecheck",
