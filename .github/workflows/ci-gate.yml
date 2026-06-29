@@ -63,7 +63,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Aggregate gated workflow conclusions at this commit
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         env:
           HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
           TRIGGERING_WORKFLOW: ${{ github.event.workflow_run.name }}
