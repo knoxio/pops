@@ -2,20 +2,16 @@ import { Zap } from 'lucide-react';
 
 import { Badge, Popover, PopoverContent, PopoverTrigger } from '@pops/ui';
 
-import type { MatchedRule, ProcessedTransaction } from '@pops/finance';
+import type { MatchedRule } from '@pops/finance';
+
+import type { ProcessedTransaction } from '../../../store/import-store-types';
 
 type EntityMatchType = NonNullable<ProcessedTransaction['entity']>['matchType'];
 
 /** Match types the system produced on its own — as opposed to `manual`, an explicit/`learned` rule, or `none`. */
 const AUTO_MATCH_TYPES: readonly EntityMatchType[] = ['alias', 'exact', 'prefix', 'contains', 'ai'];
 
-export function HeaderBadges({
-  transaction,
-}: {
-  // `manuallyEdited` is a store-side augmentation (import-store-types.ts) absent from the
-  // contract type; widen the prop instead of casting at the read site.
-  transaction: ProcessedTransaction & { manuallyEdited?: boolean };
-}) {
+export function HeaderBadges({ transaction }: { transaction: ProcessedTransaction }) {
   const matchType = transaction.entity?.matchType;
   const isAutoMatched = matchType !== undefined && AUTO_MATCH_TYPES.includes(matchType);
   const isEdited = transaction.manuallyEdited;

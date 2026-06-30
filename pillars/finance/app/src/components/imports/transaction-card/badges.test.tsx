@@ -3,14 +3,14 @@ import { describe, expect, it } from 'vitest';
 
 import { HeaderBadges } from './badges';
 
-import type { ProcessedTransaction } from '@pops/finance';
+import type { ProcessedTransaction } from '../../../store/import-store-types';
 
 type MatchType = NonNullable<ProcessedTransaction['entity']>['matchType'];
 
 function makeTx(
   matchType: MatchType,
-  overrides: Partial<ProcessedTransaction & { manuallyEdited?: boolean }> = {}
-): ProcessedTransaction & { manuallyEdited?: boolean } {
+  overrides: Partial<ProcessedTransaction> = {}
+): ProcessedTransaction {
   return {
     date: '2026-04-01',
     description: 'WOOLWORTHS 1234',
