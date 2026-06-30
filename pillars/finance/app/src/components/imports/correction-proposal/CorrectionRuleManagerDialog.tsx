@@ -11,6 +11,8 @@ import { RuleManagerFooter } from './rule-manager/Footer';
 import { RuleManagerBody } from './rule-manager/RuleManagerBody';
 import { useRuleManagerHooks } from './rule-manager/useRuleManagerHooks';
 
+import type { LocalOp } from './types';
+
 export interface CorrectionRuleManagerDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -22,7 +24,7 @@ export interface CorrectionRuleManagerDialogProps {
 interface CleanupArgs {
   setBrowseSearch: (v: string) => void;
   setBrowseSelectedRuleId: (v: string | null) => void;
-  setLocalOps: (v: never[]) => void;
+  setLocalOps: React.Dispatch<React.SetStateAction<LocalOp[]>>;
   setSelectedClientId: (v: string | null) => void;
   setPreviewView: (v: PreviewView) => void;
   resetPreviewState: () => void;
@@ -63,7 +65,7 @@ export function CorrectionRuleManagerDialog(props: CorrectionRuleManagerDialogPr
     buildOpenChangeHandler(onOpenChange, onBrowseClose, dialogState.browseInitialPendingCountRef, {
       setBrowseSearch: dialogState.setBrowseSearch,
       setBrowseSelectedRuleId: selection.setBrowseSelectedRuleId,
-      setLocalOps: setLocalOps as never,
+      setLocalOps,
       setSelectedClientId,
       setPreviewView: dialogState.setPreviewView,
       resetPreviewState: previewHook.resetPreviewState,

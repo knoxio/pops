@@ -23,17 +23,7 @@
   "pillars/cerebrum/scripts/generate-openapi.ts": {
     "as unknown as": 2
   },
-  "pillars/finance/app/src/components/imports/correction-proposal/CorrectionProposalWorkflow.tsx": {
-    "as never": 1
-  },
-  "pillars/finance/app/src/components/imports/correction-proposal/CorrectionRuleManagerDialog.tsx": {
-    "as never": 1
-  },
-  "pillars/finance/app/src/components/imports/correction-proposal/workflow/WorkflowPanels.tsx": {
-    "as never": 5
-  },
   "pillars/finance/app/src/components/imports/correction-proposal/workflow/WorkflowSlots.tsx": {
-    "as never": 3,
     "eslint-disable": 1
   },
   "pillars/finance/app/src/components/imports/processing/useProcessing.ts": {

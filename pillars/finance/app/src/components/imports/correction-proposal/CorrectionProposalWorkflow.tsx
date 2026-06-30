@@ -22,7 +22,7 @@ export function CorrectionProposalWorkflow(props: CorrectionProposalWorkflowProp
   const view = useViewSelection(localOpsHook, previewHook);
 
   const handleOpenChange = useResetOnClose({
-    setLocalOps: localOpsHook.setLocalOps as never,
+    setLocalOps: localOpsHook.setLocalOps,
     setSelectedClientId: localOpsHook.setSelectedClientId,
     setPreviewView: view.setPreviewView,
     resetPreviewState: previewHook.resetPreviewState,

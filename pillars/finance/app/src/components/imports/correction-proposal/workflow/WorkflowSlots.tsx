@@ -11,6 +11,7 @@ import {
   renderProposalBodyState,
 } from './WorkflowPanels';
 
+import type { LocalOp, PreviewChangeSetOutput } from '../types';
 import type { CorrectionProposalWorkflowProps, useWorkflowHooks } from './useWorkflowHooks';
 
 interface FooterProps {
@@ -51,7 +52,7 @@ export function ProposalFooter(props: FooterProps) {
 }
 
 interface ResetArgs {
-  setLocalOps: (v: never[]) => void;
+  setLocalOps: React.Dispatch<React.SetStateAction<LocalOp[]>>;
   setSelectedClientId: (v: string | null) => void;
   setPreviewView: (v: PreviewView) => void;
   resetPreviewState: () => void;
@@ -91,7 +92,7 @@ export function useResetOnClose(args: ResetArgs) {
 export interface ViewSelection {
   previewView: PreviewView;
   setPreviewView: React.Dispatch<React.SetStateAction<PreviewView>>;
-  previewResult: unknown;
+  previewResult: PreviewChangeSetOutput | null;
   previewError: string | null;
   previewTruncated: boolean;
   currentPreviewLabel: string;
@@ -137,8 +138,8 @@ export function renderBody(
   if (state) return state;
   return (
     <ProposalBody
-      localOpsHook={hooks.localOpsHook as never}
-      previewHook={hooks.previewHook as never}
+      localOpsHook={hooks.localOpsHook}
+      previewHook={hooks.previewHook}
       excludeIds={view.excludeIds}
       isBusy={hooks.mutationsHook.isBusy}
       previewView={view.previewView}
@@ -164,7 +165,7 @@ export function renderHeader(
       triggeringTransaction={triggeringTransaction}
       rationale={hooks.localOpsHook.rationale}
       opCount={hooks.localOpsHook.localOps.length}
-      combinedSummary={(hooks.previewHook.combinedPreview?.summary ?? null) as never}
+      combinedSummary={hooks.previewHook.combinedPreview?.summary ?? null}
     />
   );
 }

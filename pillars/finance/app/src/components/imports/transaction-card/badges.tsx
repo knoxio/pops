@@ -9,11 +9,16 @@ type EntityMatchType = NonNullable<ProcessedTransaction['entity']>['matchType'];
 /** Match types the system produced on its own — as opposed to `manual`, an explicit/`learned` rule, or `none`. */
 const AUTO_MATCH_TYPES: readonly EntityMatchType[] = ['alias', 'exact', 'prefix', 'contains', 'ai'];
 
-export function HeaderBadges({ transaction }: { transaction: ProcessedTransaction }) {
+export function HeaderBadges({
+  transaction,
+}: {
+  // `manuallyEdited` is a store-side augmentation (import-store-types.ts) absent from the
+  // contract type; widen the prop instead of casting at the read site.
+  transaction: ProcessedTransaction & { manuallyEdited?: boolean };
+}) {
   const matchType = transaction.entity?.matchType;
   const isAutoMatched = matchType !== undefined && AUTO_MATCH_TYPES.includes(matchType);
-  const isEdited = (transaction as ProcessedTransaction & { manuallyEdited?: boolean })
-    .manuallyEdited;
+  const isEdited = transaction.manuallyEdited;
   const ruleProvenance = transaction.ruleProvenance;
   const isRuleMatched = Boolean(ruleProvenance) || transaction.entity?.matchType === 'learned';
   const overriddenRules = transaction.matchedRules?.slice(1) ?? [];

@@ -9,8 +9,8 @@ type MatchType = NonNullable<ProcessedTransaction['entity']>['matchType'];
 
 function makeTx(
   matchType: MatchType,
-  overrides: Partial<ProcessedTransaction> = {}
-): ProcessedTransaction {
+  overrides: Partial<ProcessedTransaction & { manuallyEdited?: boolean }> = {}
+): ProcessedTransaction & { manuallyEdited?: boolean } {
   return {
     date: '2026-04-01',
     description: 'WOOLWORTHS 1234',
@@ -53,5 +53,17 @@ describe('HeaderBadges — Auto-matched badge', () => {
     render(<HeaderBadges transaction={makeTx('learned')} />);
     expect(screen.getByText('Rule matched')).toBeInTheDocument();
     expect(screen.queryByText('Auto-matched')).not.toBeInTheDocument();
+  });
+});
+
+describe('HeaderBadges — Edited badge (store-side manuallyEdited)', () => {
+  it('shows "Edited" when manuallyEdited is true', () => {
+    render(<HeaderBadges transaction={makeTx('ai', { manuallyEdited: true })} />);
+    expect(screen.getByText('Edited')).toBeInTheDocument();
+  });
+
+  it('does not show "Edited" when manuallyEdited is absent', () => {
+    render(<HeaderBadges transaction={makeTx('ai')} />);
+    expect(screen.queryByText('Edited')).not.toBeInTheDocument();
   });
 });
