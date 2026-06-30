@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 import { HeaderBadges } from './badges';
 
-import type { ProcessedTransaction } from '@pops/finance';
+import type { ProcessedTransaction } from '../../../store/import-store-types';
 
 type MatchType = NonNullable<ProcessedTransaction['entity']>['matchType'];
 
@@ -53,5 +53,17 @@ describe('HeaderBadges — Auto-matched badge', () => {
     render(<HeaderBadges transaction={makeTx('learned')} />);
     expect(screen.getByText('Rule matched')).toBeInTheDocument();
     expect(screen.queryByText('Auto-matched')).not.toBeInTheDocument();
+  });
+});
+
+describe('HeaderBadges — Edited badge (store-side manuallyEdited)', () => {
+  it('shows "Edited" when manuallyEdited is true', () => {
+    render(<HeaderBadges transaction={makeTx('ai', { manuallyEdited: true })} />);
+    expect(screen.getByText('Edited')).toBeInTheDocument();
+  });
+
+  it('does not show "Edited" when manuallyEdited is absent', () => {
+    render(<HeaderBadges transaction={makeTx('ai')} />);
+    expect(screen.queryByText('Edited')).not.toBeInTheDocument();
   });
 });

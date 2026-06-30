@@ -14,6 +14,9 @@ import type {
   CorrectionSignal,
   TriggeringTransactionContext,
 } from '../../correction-proposal-shared';
+import type { UsePreviewEffectsReturn } from '../../hooks/preview-effects-helpers';
+import type { UseLocalOpsReturn } from '../../hooks/useLocalOps';
+import type { AiMessage, PreviewChangeSetOutput } from '../types';
 
 export function previewLabel(view: PreviewView, hasSelectedOp: boolean): string {
   if (view === 'combined') return 'Combined effect of entire ChangeSet';
@@ -47,35 +50,35 @@ export function renderProposalBodyState({
 }
 
 interface ProposalBodyProps {
-  localOpsHook: {
-    localOps: unknown[];
-    selectedClientId: string | null;
-    setSelectedClientId: (id: string | null) => void;
-    selectedOp: unknown;
-    updateOp: (id: string, m: unknown) => void;
-    handleDeleteOp: (id: string) => void;
-    handleAddNewRuleOp: () => void;
-    handleAddTargetedOp: unknown;
-  };
-  previewHook: {
-    previewMutationPending: boolean;
-    hasDirty: boolean;
-    handleRerunPreview: () => void;
-  };
+  localOpsHook: Pick<
+    UseLocalOpsReturn,
+    | 'localOps'
+    | 'selectedClientId'
+    | 'setSelectedClientId'
+    | 'selectedOp'
+    | 'updateOp'
+    | 'handleDeleteOp'
+    | 'handleAddNewRuleOp'
+    | 'handleAddTargetedOp'
+  >;
+  previewHook: Pick<
+    UsePreviewEffectsReturn,
+    'previewMutationPending' | 'hasDirty' | 'handleRerunPreview'
+  >;
   excludeIds: ReadonlySet<string>;
   isBusy: boolean;
   previewView: PreviewView;
   setPreviewView: (v: PreviewView) => void;
   currentPreviewLabel: string;
-  previewResult: unknown;
+  previewResult: PreviewChangeSetOutput | null;
   previewError: string | null;
   previewTruncated: boolean;
 }
 
 export function ProposalBody(props: ProposalBodyProps) {
   const { localOpsHook, previewHook, excludeIds, isBusy } = props;
-  const ops = localOpsHook.localOps as never[];
-  const selectedOp = localOpsHook.selectedOp as { clientId: string } | null;
+  const ops = localOpsHook.localOps;
+  const selectedOp = localOpsHook.selectedOp;
   return (
     <>
       <OpsListPanel
@@ -84,12 +87,12 @@ export function ProposalBody(props: ProposalBodyProps) {
         onSelect={localOpsHook.setSelectedClientId}
         onDelete={localOpsHook.handleDeleteOp}
         onAddNewRule={localOpsHook.handleAddNewRuleOp}
-        onAddTargeted={localOpsHook.handleAddTargetedOp as never}
+        onAddTargeted={localOpsHook.handleAddTargetedOp}
         excludeIds={excludeIds}
         disabled={isBusy}
       />
       <DetailPanel
-        op={selectedOp as never}
+        op={selectedOp}
         onChange={(mutator) => {
           if (!selectedOp) return;
           localOpsHook.updateOp(selectedOp.clientId, mutator);
@@ -100,7 +103,7 @@ export function ProposalBody(props: ProposalBodyProps) {
         view={props.previewView}
         onViewChange={props.setPreviewView}
         label={props.currentPreviewLabel}
-        previewResult={props.previewResult as never}
+        previewResult={props.previewResult}
         previewError={props.previewError}
         isPending={previewHook.previewMutationPending}
         stale={previewHook.hasDirty}
@@ -123,7 +126,7 @@ export function ContextHeader({
   triggeringTransaction: TriggeringTransactionContext | null;
   rationale: string | null;
   opCount: number;
-  combinedSummary: never;
+  combinedSummary: PreviewChangeSetOutput['summary'] | null;
 }) {
   return (
     <ContextPanel
@@ -143,7 +146,7 @@ interface SubpanelArgs {
   setRejectMode: (v: boolean) => void;
   handleConfirmReject: () => void;
   rejectMutationPending: boolean;
-  aiMessages: unknown[];
+  aiMessages: AiMessage[];
   aiInstruction: string;
   setAiInstruction: (v: string) => void;
   handleAiSubmit: () => void;
@@ -167,7 +170,7 @@ export function ProposalSubpanel(args: SubpanelArgs) {
   }
   return (
     <AiHelperPanel
-      messages={args.aiMessages as never}
+      messages={args.aiMessages}
       instruction={args.aiInstruction}
       onInstructionChange={args.setAiInstruction}
       onSubmit={args.handleAiSubmit}
