@@ -228,3 +228,25 @@ jobs:
         run: node scripts/ci/check-vendored-contracts.mjs --self-test
       - name: Every vendored contract matches its canonical source
         run: node scripts/ci/check-vendored-contracts.mjs
+
+  escape-hatches:
+    name: Escape-hatch ratchet
+    # Type-safety escape hatches (`as any`, `as unknown as`, `as never`,
+    # `eslint-disable`) in hand-written source may only ever shrink against the
+    # committed baseline (.escape-hatch-baseline.json) — a new one fails here.
+    # A `progress as never` once laundered a gutted DTO past tsc and crashed the
+    # finance import wizard at runtime; this gate keeps that class of regression
+    # from landing. It reads the source tree directly and pulls in no
+    # third-party deps, so it skips `pnpm install`. See
+    # scripts/check-escape-hatches.mjs. `@ts-ignore`/`@ts-nocheck` are blocked
+    # separately by the oxlint `ban-ts-comment` rule.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+      - name: Gate self-test (proves the guard catches a new hatch)
+        run: node scripts/check-escape-hatches.mjs --self-test
+      - name: No new type-safety escape hatches vs baseline
+        run: node scripts/check-escape-hatches.mjs
