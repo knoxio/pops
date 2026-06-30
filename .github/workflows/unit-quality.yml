@@ -14,7 +14,7 @@ name: Unit Quality
 #
 # The unit list + changed-set come from `_discover-units.yml`. Each lane is
 # selected by `matrix.unit.lang`; the per-unit `mise.toml` pins the toolchain
-# so the steps are uniform regardless of unit. jdx/mise-action@v2 is the sole
+# so the steps are uniform regardless of unit. jdx/mise-action@v4 is the sole
 # Node manager (no setup-node); `MISE_ENV=ci` pins node 22 via `mise.ci.toml`.
 #
 # Selectors use `matrix.unit.pkg` (the manifest name) EXCLUSIVELY — never
@@ -71,7 +71,7 @@ jobs:
         uses: actions/checkout@v6
 
       - if: ${{ matrix.unit.lang == 'ts' }}
-        uses: jdx/mise-action@v2
+        uses: jdx/mise-action@v4
 
       - if: ${{ matrix.unit.lang == 'ts' }}
         name: Expose bundled node-gyp on PATH
@@ -206,7 +206,7 @@ jobs:
         uses: actions/checkout@v6
 
       - if: ${{ matrix.unit.lang == 'rust' }}
-        uses: jdx/mise-action@v2
+        uses: jdx/mise-action@v4
 
       - if: ${{ matrix.unit.lang == 'rust' }}
         name: Format check
