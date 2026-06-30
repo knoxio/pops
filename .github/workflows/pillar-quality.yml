@@ -45,7 +45,7 @@ jobs:
       pillars: ${{ steps.list.outputs.pillars }}
       count: ${{ steps.list.outputs.count }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - id: list
         name: Enumerate pillars from disk
         # A pillar is any `pillars/<x>` carrying a package.json. Derived from
@@ -77,7 +77,7 @@ jobs:
       matrix:
         pillar: ${{ fromJson(needs.discover.outputs.pillars) }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - uses: docker/setup-buildx-action@v3
 

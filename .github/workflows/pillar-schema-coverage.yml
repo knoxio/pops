@@ -27,7 +27,7 @@ jobs:
       pillars: ${{ steps.list.outputs.pillars }}
       count: ${{ steps.list.outputs.count }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - id: list
         name: Enumerate pillars with a migrated schema surface
         # A pillar this guard can check is any `pillars/<x>` exposing a
@@ -58,7 +58,7 @@ jobs:
       matrix:
         pillar: ${{ fromJson(needs.discover.outputs.pillars) }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v5
       - uses: actions/setup-node@v6
         with:
@@ -80,7 +80,7 @@ jobs:
     if: needs.discover.outputs.count != '0'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v5
       - uses: actions/setup-node@v6
         with:

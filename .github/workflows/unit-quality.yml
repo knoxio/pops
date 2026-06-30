@@ -68,7 +68,7 @@ jobs:
         run: echo "skip non-ts unit ${{ matrix.unit.name }} (${{ matrix.unit.lang }})"
 
       - if: ${{ matrix.unit.lang == 'ts' }}
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - if: ${{ matrix.unit.lang == 'ts' }}
         uses: jdx/mise-action@v2
@@ -203,7 +203,7 @@ jobs:
         run: echo "skip non-rust unit ${{ matrix.unit.name }} (${{ matrix.unit.lang }})"
 
       - if: ${{ matrix.unit.lang == 'rust' }}
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - if: ${{ matrix.unit.lang == 'rust' }}
         uses: jdx/mise-action@v2

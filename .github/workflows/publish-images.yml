@@ -36,7 +36,7 @@ jobs:
           - { image: pops-orchestrator, file: pillars/orchestrator/Dockerfile }
           - { image: pops-docs, file: pillars/docs/Dockerfile }
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Log in to GHCR
         uses: docker/login-action@v4
@@ -79,7 +79,7 @@ jobs:
       pillars: ${{ steps.list.outputs.pillars }}
       count: ${{ steps.list.outputs.count }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - id: list
         name: Enumerate pillars published from the prod compose
         # A pillar is publishable iff infra/docker-compose.yml pins it to a
@@ -124,7 +124,7 @@ jobs:
         # publish.
         pillar: ${{ fromJson(needs.discover.outputs.pillars) }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Log in to GHCR
         uses: docker/login-action@v4
