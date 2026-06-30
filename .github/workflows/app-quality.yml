@@ -74,7 +74,7 @@ jobs:
       apps: ${{ steps.scan.outputs.apps }}
       count: ${{ steps.scan.outputs.count }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - id: scan
         name: Walk pillars/*/app/package.json for the manifest name
         # An app unit is any `pillars/*/app` carrying a package.json. Emit the
@@ -110,7 +110,7 @@ jobs:
       matrix:
         app: ${{ fromJson(needs.discover.outputs.apps) }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - uses: jdx/mise-action@v2
 
