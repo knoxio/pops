@@ -112,6 +112,36 @@ describe('ProcessingStep', () => {
     });
   });
 
+  it('renders live batch progress without crashing while status is processing', async () => {
+    mockProcessSessionId = 'sess-1';
+    mockGetImportProgress.mockResolvedValue({
+      data: {
+        sessionId: 'sess-1',
+        status: 'processing',
+        errors: [],
+        currentBatch: [
+          { description: 'Coffee shop', status: 'processing' },
+          { description: 'Grocery store', status: 'success' },
+        ],
+        currentStep: 'matching',
+        processedCount: 1,
+        startedAt: '2026-01-01T00:00:00.000Z',
+        totalTransactions: 4,
+      },
+      error: undefined,
+    });
+    render(renderStep());
+    expect(await screen.findByText('Processing 1/4 transactions...')).toBeInTheDocument();
+    expect(screen.getByText('Coffee shop')).toBeInTheDocument();
+    expect(screen.getByText('Grocery store')).toBeInTheDocument();
+    expect(screen.getByText('Matching entities').nextElementSibling).toHaveTextContent(
+      'In progress...'
+    );
+    expect(screen.getByText('Checking for duplicates').nextElementSibling).toHaveTextContent(
+      'Complete'
+    );
+  });
+
   it('shows Retry button when the progress query reports a failed status', async () => {
     mockProcessSessionId = 'sess-1';
     mockGetImportProgress.mockResolvedValue({
