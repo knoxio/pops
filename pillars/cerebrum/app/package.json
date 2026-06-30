@@ -18,8 +18,8 @@
     "@pops/pillar-sdk": "workspace:*",
     "@pops/types": "workspace:*",
     "@pops/ui": "workspace:*",
-    "@tanstack/react-query": "5.101.0",
-    "lucide-react": "^1.17.0",
+    "@tanstack/react-query": "5.101.2",
+    "lucide-react": "^1.22.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "react-i18next": "^17.0.8",
@@ -29,7 +29,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@hey-api/openapi-ts": "^0.98.2",
+    "@hey-api/openapi-ts": "^0.99.0",
     "@pops/locales": "workspace:*",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
@@ -37,10 +37,10 @@
     "@types/node": "^25.9.3",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.0.0",
-    "@vitest/coverage-v8": "^4.1.8",
-    "i18next": "^26.3.1",
+    "@vitest/coverage-v8": "^4.1.9",
+    "i18next": "^26.3.4",
     "jsdom": "^29.1.1",
     "typescript": "^6.0.3",
-    "vitest": "^4.1.8"
+    "vitest": "^4.1.9"
   }
 }
