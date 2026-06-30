@@ -76,7 +76,7 @@ export function ProcessingStep() {
     <div className="flex flex-col items-center space-y-6">
       <ProgressDisplay
         isProcessing={Boolean(isProcessing)}
-        progress={progress as never}
+        progress={progress ?? undefined}
         parsedCount={parsedTransactions.length}
       />
       {completedWarnings?.map((warning) => (

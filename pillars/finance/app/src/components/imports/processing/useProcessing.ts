@@ -19,12 +19,25 @@ interface ImportProgressShape {
   status: ProgressResponse['status'];
   result?: ProcessImportOutput;
   errors?: ProgressResponse['errors'];
+  currentStep?: ProgressResponse['currentStep'];
+  totalTransactions: number;
+  processedCount: number;
+  currentBatch: ProgressResponse['currentBatch'];
 }
 
 function toProgressShape(res: ImportsGetImportProgressResponses[200]): ImportProgressShape | null {
   if (!res) return null;
   const result = res.result && 'matched' in res.result ? res.result : undefined;
-  return { sessionId: res.sessionId, status: res.status, result, errors: res.errors };
+  return {
+    sessionId: res.sessionId,
+    status: res.status,
+    result,
+    errors: res.errors,
+    currentStep: res.currentStep,
+    totalTransactions: res.totalTransactions,
+    processedCount: res.processedCount,
+    currentBatch: res.currentBatch,
+  };
 }
 
 export function useHasAlreadyProcessed(): boolean {
