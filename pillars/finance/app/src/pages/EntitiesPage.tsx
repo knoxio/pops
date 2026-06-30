@@ -69,7 +69,7 @@ function TableSection({
       </div>
       <DataTable
         columns={columns}
-        data={(data?.data as never) ?? []}
+        data={data?.data ?? []}
         searchable
         searchColumn="name"
         searchPlaceholder={t('entities.searchPlaceholder')}
@@ -114,7 +114,7 @@ export function EntitiesPage() {
       />
       <TableSection
         isLoading={query.isLoading}
-        data={query.data as never}
+        data={query.data}
         showOrphanedOnly={state.showOrphanedOnly}
         setShowOrphanedOnly={state.setShowOrphanedOnly}
         columns={columns}

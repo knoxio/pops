@@ -4,8 +4,14 @@ import { Badge, Popover, PopoverContent, PopoverTrigger } from '@pops/ui';
 
 import type { MatchedRule, ProcessedTransaction } from '@pops/finance';
 
+type EntityMatchType = NonNullable<ProcessedTransaction['entity']>['matchType'];
+
+/** Match types the system produced on its own — as opposed to `manual`, an explicit/`learned` rule, or `none`. */
+const AUTO_MATCH_TYPES: readonly EntityMatchType[] = ['alias', 'exact', 'prefix', 'contains', 'ai'];
+
 export function HeaderBadges({ transaction }: { transaction: ProcessedTransaction }) {
-  const isAutoMatched = transaction.entity?.matchType === ('auto-matched' as never);
+  const matchType = transaction.entity?.matchType;
+  const isAutoMatched = matchType !== undefined && AUTO_MATCH_TYPES.includes(matchType);
   const isEdited = (transaction as ProcessedTransaction & { manuallyEdited?: boolean })
     .manuallyEdited;
   const ruleProvenance = transaction.ruleProvenance;

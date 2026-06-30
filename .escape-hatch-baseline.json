@@ -1,0 +1,85 @@
+{
+  "libs/ui/src/components/Button.tsx": {
+    "as never": 1
+  },
+  "libs/ui/src/components/DataTable.hook.ts": {
+    "eslint-disable": 1
+  },
+  "libs/ui/src/components/DataTable.tsx": {
+    "as unknown as": 1
+  },
+  "libs/ui/src/components/ForceGraph.pointer.ts": {
+    "eslint-disable": 2
+  },
+  "libs/ui/src/components/MediaCard.tsx": {
+    "as unknown as": 1
+  },
+  "libs/ui/src/components/NumberInput.hooks.ts": {
+    "eslint-disable": 1
+  },
+  "pillars/ai/scripts/generate-openapi.ts": {
+    "as unknown as": 2
+  },
+  "pillars/cerebrum/scripts/generate-openapi.ts": {
+    "as unknown as": 2
+  },
+  "pillars/finance/app/src/components/imports/correction-proposal/CorrectionProposalWorkflow.tsx": {
+    "as never": 1
+  },
+  "pillars/finance/app/src/components/imports/correction-proposal/CorrectionRuleManagerDialog.tsx": {
+    "as never": 1
+  },
+  "pillars/finance/app/src/components/imports/correction-proposal/workflow/WorkflowPanels.tsx": {
+    "as never": 5
+  },
+  "pillars/finance/app/src/components/imports/correction-proposal/workflow/WorkflowSlots.tsx": {
+    "as never": 3,
+    "eslint-disable": 1
+  },
+  "pillars/finance/app/src/components/imports/processing/useProcessing.ts": {
+    "eslint-disable": 1
+  },
+  "pillars/finance/app/src/components/imports/tag-rule-dialog/useTagRuleProposal.ts": {
+    "eslint-disable": 1
+  },
+  "pillars/finance/scripts/generate-openapi.ts": {
+    "as unknown as": 2
+  },
+  "pillars/food/app/src/components/useDslEditorView.ts": {
+    "eslint-disable": 1
+  },
+  "pillars/food/app/src/pages/inbox/inspector/ProvenancePane.tsx": {
+    "eslint-disable": 1
+  },
+  "pillars/food/app/src/pages/recipes/RecipeEditPage.tsx": {
+    "eslint-disable": 1
+  },
+  "pillars/food/scripts/generate-openapi.ts": {
+    "as unknown as": 2
+  },
+  "pillars/food/src/worker/ai/web-llm-anthropic.ts": {
+    "as unknown as": 1
+  },
+  "pillars/inventory/app/src/components/ValueBreakdown.tsx": {
+    "as never": 1,
+    "as unknown as": 1
+  },
+  "pillars/inventory/app/src/components/connection-graph/useGraphSimulation.ts": {
+    "eslint-disable": 1
+  },
+  "pillars/inventory/app/src/pages/location-tree-page/sections/LocationNode.tsx": {
+    "as unknown as": 2
+  },
+  "pillars/inventory/scripts/generate-openapi.ts": {
+    "as unknown as": 2
+  },
+  "pillars/lists/scripts/generate-openapi.ts": {
+    "as unknown as": 1
+  },
+  "pillars/media/scripts/generate-openapi.ts": {
+    "as unknown as": 2
+  },
+  "pillars/registry/scripts/generate-openapi.ts": {
+    "as unknown as": 2
+  }
+}

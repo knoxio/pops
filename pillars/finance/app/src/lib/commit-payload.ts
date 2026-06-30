@@ -70,12 +70,8 @@ export function buildCommitPayload(
   confirmedTransactions: ConfirmedTransaction[]
 ): CommitPayload {
   const validTempEntityIds = new Set(pendingEntities.map((e) => e.tempId));
-  validateChangeSetEntities(pendingChangeSets as never, validTempEntityIds, 'ChangeSet');
-  validateChangeSetEntities(
-    pendingTagRuleChangeSets as never,
-    validTempEntityIds,
-    'Tag rule ChangeSet'
-  );
+  validateChangeSetEntities(pendingChangeSets, validTempEntityIds, 'ChangeSet');
+  validateChangeSetEntities(pendingTagRuleChangeSets, validTempEntityIds, 'Tag rule ChangeSet');
   return {
     entities: [...pendingEntities],
     changeSets: pendingChangeSets.map((pcs) => pcs.changeSet),

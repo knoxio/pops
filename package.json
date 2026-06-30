@@ -26,6 +26,9 @@
     "check:tailwind-source:self-test": "node scripts/check-tailwind-source-coverage.mjs --self-test",
     "check:vendored-contracts": "node scripts/ci/check-vendored-contracts.mjs",
     "check:vendored-contracts:self-test": "node scripts/ci/check-vendored-contracts.mjs --self-test",
+    "check:escape-hatches": "node scripts/check-escape-hatches.mjs",
+    "check:escape-hatches:self-test": "node scripts/check-escape-hatches.mjs --self-test",
+    "check:escape-hatches:baseline": "node scripts/check-escape-hatches.mjs --write",
     "ci:fix": "pnpm lint:fix && pnpm format && pnpm typecheck",
     "registry:build": "pnpm --filter @pops/module-registry registry:build",
     "prepare": "husky"
