@@ -96,6 +96,24 @@ describe('categorizeWithAi — live call (mocked SDK)', () => {
     expect(out.result?.entityName).toBe('Aldi');
   });
 
+  it('parses a response that appends prose after the JSON object', async () => {
+    createMock.mockResolvedValue(
+      textResponse(
+        '{\n  "entityName": "Ozturk Jr",\n  "tags": ["Dining"]\n}\nThis looks like a Darlington restaurant.'
+      )
+    );
+    const out = await categorizeWithAi('OZTURK JR 176752 DARLINGTON');
+    expect(out.result?.entityName).toBe('Ozturk Jr');
+    expect(out.result?.tags).toEqual(['Dining']);
+  });
+
+  it('rejects with AiCategorizationError(PARSE_ERROR) on an unparseable reply (degrades to uncertain, not failed)', async () => {
+    createMock.mockResolvedValue(textResponse('Sorry, I cannot determine the merchant.'));
+    const err = await categorizeWithAi('MYSTERY').catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(AiCategorizationError);
+    expect((err as AiCategorizationError).code).toBe('PARSE_ERROR');
+  });
+
   it('sanitises a placeholder entity name to null (usage still recorded)', async () => {
     createMock.mockResolvedValue(textResponse('{"entityName":"Unknown Vendor","tags":["misc"]}'));
     const out = await categorizeWithAi('MYSTERY CHARGE');
