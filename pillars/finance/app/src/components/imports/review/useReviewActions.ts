@@ -30,11 +30,14 @@ export interface MoveArgs {
  * Move a transaction into the `matched` bucket with the chosen entity, removing
  * any prior copy of it from every bucket first.
  *
- * The transaction is identified by `checksum`. When it already lives in
- * `matched` (e.g. re-assigning the entity on a rule-matched card) it is replaced
- * in place so the card keeps its position; otherwise it is appended. Failing to
- * drop the existing `matched` entry previously appended a duplicate and left the
- * original card untouched, so picking an entity looked like a no-op.
+ * The transaction is identified by `checksum`. Any prior copy is dropped from
+ * every bucket — including collapsing duplicate `matched` entries down to a
+ * single one — so the result holds exactly one copy per checksum. When it
+ * already lives in `matched` (e.g. re-assigning the entity on a rule-matched
+ * card) the replacement keeps the original card's position; otherwise it is
+ * appended. Failing to drop the existing `matched` entry previously appended a
+ * duplicate and left the original card untouched, so picking an entity looked
+ * like a no-op.
  *
  * Exported for unit testing the dedupe/replace invariant.
  */
@@ -47,14 +50,17 @@ export function moveOneToMatched(prev: LocalTxState, args: MoveArgs): LocalTxSta
   } as ProcessedTransaction;
   const withoutTx = (list: ProcessedTransaction[]): ProcessedTransaction[] =>
     list.filter((t) => t.checksum !== transaction.checksum);
-  const alreadyMatched = prev.matched.some((t) => t.checksum === transaction.checksum);
+  const firstMatchedIdx = prev.matched.findIndex((t) => t.checksum === transaction.checksum);
   return {
     ...prev,
     uncertain: withoutTx(prev.uncertain),
     failed: withoutTx(prev.failed),
-    matched: alreadyMatched
-      ? prev.matched.map((t) => (t.checksum === transaction.checksum ? matchedTx : t))
-      : [...prev.matched, matchedTx],
+    // Insert at the first prior position (collapsing any duplicates) when the
+    // transaction was already matched, else append.
+    matched:
+      firstMatchedIdx === -1
+        ? [...prev.matched, matchedTx]
+        : withoutTx(prev.matched).toSpliced(firstMatchedIdx, 0, matchedTx),
   };
 }
 

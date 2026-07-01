@@ -107,6 +107,36 @@ describe('moveOneToMatched', () => {
     expect(next.skipped).toEqual([skipped]);
   });
 
+  it('collapses pre-existing duplicate matched entries down to a single copy at the first position', () => {
+    const dupeA = makeProcessed('dupe', {
+      status: 'matched',
+      description: 'FIRST COPY',
+      entity: { matchType: 'learned' },
+    });
+    const dupeB = makeProcessed('dupe', {
+      status: 'matched',
+      description: 'SECOND COPY',
+      entity: { matchType: 'ai' },
+    });
+    const other = makeProcessed('other', { status: 'matched' });
+    // Corrupted prior state: two entries share the same checksum.
+    const prev = emptyState({ matched: [dupeA, other, dupeB] });
+
+    const next = moveOneToMatched(prev, {
+      transaction: dupeA,
+      entityId: 'ent-dupe',
+      entityName: 'Deduped Co',
+      matchType: 'manual',
+    });
+
+    expect(next.matched.filter((t) => t.checksum === 'dupe')).toHaveLength(1);
+    // Single survivor sits at the first duplicate's original index (0).
+    expect(next.matched[0]?.checksum).toBe('dupe');
+    expect(next.matched[0]?.entity.entityName).toBe('Deduped Co');
+    // The unrelated matched row is preserved once, after the collapsed entry.
+    expect(next.matched.map((t) => t.checksum)).toEqual(['dupe', 'other']);
+  });
+
   it('re-selecting the same entity twice is idempotent — no growth on repeated picks', () => {
     const target = makeProcessed('dedupe', { status: 'matched', entity: { matchType: 'manual' } });
     const prev = emptyState({ matched: [target] });
