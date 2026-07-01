@@ -107,7 +107,12 @@ describe('categorizeWithAi — live call (mocked SDK)', () => {
     expect(out.result?.tags).toEqual(['Dining']);
   });
 
-  it('rejects with AiCategorizationError(PARSE_ERROR) on an unparseable reply (degrades to uncertain, not failed)', async () => {
+  // Classifying a bad parse as AiCategorizationError (rather than letting a raw
+  // SyntaxError escape) is what keeps the row out of the Failed bucket: the
+  // caller `tryAiCategorization` catches any AiCategorizationError and degrades
+  // to uncertain. This asserts the classification; the degrade lives in
+  // process-transaction.ts.
+  it('rejects with AiCategorizationError(PARSE_ERROR) on an unparseable reply', async () => {
     createMock.mockResolvedValue(textResponse('Sorry, I cannot determine the merchant.'));
     const err = await categorizeWithAi('MYSTERY').catch((e: unknown) => e);
     expect(err).toBeInstanceOf(AiCategorizationError);
