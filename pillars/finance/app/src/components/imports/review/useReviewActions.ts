@@ -4,7 +4,7 @@ import type { Dispatch, SetStateAction } from 'react';
 
 import type { ProcessedTransaction } from '../../../store/importStore';
 
-interface LocalTxState {
+export interface LocalTxState {
   matched: ProcessedTransaction[];
   uncertain: ProcessedTransaction[];
   failed: ProcessedTransaction[];
@@ -19,27 +19,42 @@ type GenerateProposal = (args: {
   transactionType?: 'purchase' | 'transfer' | 'income' | null;
 }) => Promise<void>;
 
-interface MoveArgs {
+export interface MoveArgs {
   transaction: ProcessedTransaction;
   entityId: string;
   entityName: string;
   matchType: 'manual' | 'ai';
 }
 
-function moveOneToMatched(prev: LocalTxState, args: MoveArgs): LocalTxState {
+/**
+ * Move a transaction into the `matched` bucket with the chosen entity, removing
+ * any prior copy of it from every bucket first.
+ *
+ * The transaction is identified by `checksum`. When it already lives in
+ * `matched` (e.g. re-assigning the entity on a rule-matched card) it is replaced
+ * in place so the card keeps its position; otherwise it is appended. Failing to
+ * drop the existing `matched` entry previously appended a duplicate and left the
+ * original card untouched, so picking an entity looked like a no-op.
+ *
+ * Exported for unit testing the dedupe/replace invariant.
+ */
+export function moveOneToMatched(prev: LocalTxState, args: MoveArgs): LocalTxState {
   const { transaction, entityId, entityName, matchType } = args;
+  const matchedTx = {
+    ...transaction,
+    entity: { entityId, entityName, matchType, confidence: 1 },
+    status: 'matched' as const,
+  } as ProcessedTransaction;
+  const withoutTx = (list: ProcessedTransaction[]): ProcessedTransaction[] =>
+    list.filter((t) => t.checksum !== transaction.checksum);
+  const alreadyMatched = prev.matched.some((t) => t.checksum === transaction.checksum);
   return {
     ...prev,
-    uncertain: prev.uncertain.filter((t) => t.checksum !== transaction.checksum),
-    failed: prev.failed.filter((t) => t.checksum !== transaction.checksum),
-    matched: [
-      ...prev.matched,
-      {
-        ...transaction,
-        entity: { entityId, entityName, matchType, confidence: 1 },
-        status: 'matched' as const,
-      } as ProcessedTransaction,
-    ],
+    uncertain: withoutTx(prev.uncertain),
+    failed: withoutTx(prev.failed),
+    matched: alreadyMatched
+      ? prev.matched.map((t) => (t.checksum === transaction.checksum ? matchedTx : t))
+      : [...prev.matched, matchedTx],
   };
 }
 

@@ -1,8 +1,9 @@
 import { useState } from 'react';
 
-import { Collapsible, CollapsibleContent, Label, Select as UiSelect } from '@pops/ui';
+import { Collapsible, CollapsibleContent, Label } from '@pops/ui';
 
 import { EditableTransactionCard } from './EditableTransactionCard';
+import { EntitySelect } from './EntitySelect';
 import { GroupHeader } from './transaction-group/GroupHeader';
 import { TransactionCard } from './TransactionCard';
 
@@ -53,22 +54,19 @@ function BulkEntitySelector({
       <Label className="block mb-2">
         Select entity to assign to all {group.transactions.length} transactions:
       </Label>
-      <UiSelect
+      <EntitySelect
+        entities={entities}
         placeholder="Choose entity..."
-        options={entities.map((entity) => ({ label: entity.name, value: entity.id }))}
-        onChange={(e) => {
-          const selectedEntity = entities.find((ent) => ent.id === e.target.value);
-          if (!selectedEntity) return;
+        onChange={(entityId, entityName) => {
           if (onBulkEntitySelect) {
-            onBulkEntitySelect(group.transactions, selectedEntity.id, selectedEntity.name);
+            onBulkEntitySelect(group.transactions, entityId, entityName);
           } else {
             for (const t of group.transactions) {
-              onEntitySelect(t, selectedEntity.id, selectedEntity.name);
+              onEntitySelect(t, entityId, entityName);
             }
           }
           onClose();
         }}
-        defaultValue=""
       />
     </div>
   );
