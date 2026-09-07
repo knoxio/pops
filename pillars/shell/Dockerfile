@@ -45,7 +45,7 @@ RUN pnpm build
 RUN pnpm gen:nginx:bundle
 
 # ── Production image ──────────────────────────────────────────────
-FROM nginx:1.31.4-alpine
+FROM nginx:1.31.5-alpine
 
 # Node runtime for the boot-render + watcher bundles. Pinned to the alpine
 # package so `apk add` stays reproducible across rebuilds of the same base.

@@ -13,7 +13,7 @@ WORKDIR /app/pillars/docs
 RUN pnpm build
 
 # ── Production image ──────────────────────────────────────────────
-FROM nginx:1.31.4-alpine
+FROM nginx:1.31.5-alpine
 COPY --from=builder /app/pillars/docs/dist /usr/share/nginx/html
 COPY pillars/docs/nginx/default.conf /etc/nginx/conf.d/default.conf
 

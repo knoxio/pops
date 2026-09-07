@@ -32,7 +32,7 @@ WORKDIR /app/pillars/design
 RUN pnpm build
 
 # ── Production image ──────────────────────────────────────────────
-FROM nginx:1.31.3-alpine
+FROM nginx:1.31.5-alpine
 COPY --from=builder /app/pillars/design/dist/web /usr/share/nginx/html
 COPY pillars/design/nginx/default.conf /etc/nginx/conf.d/default.conf
 
