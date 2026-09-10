@@ -1,15 +1,39 @@
-import { useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useSearchParams } from 'react-router';
+import { useNavigate, useSearchParams } from 'react-router';
 import { toast } from 'sonner';
 
-import { Alert, AlertDescription, AlertTitle, Button, PageHeader } from '@pops/ui';
+import { PageHeader } from '@pops/ui';
 
-import { useDraftHydration } from '../components/imports/hooks/useDraftHydration';
+import { DraftGateNotice } from '../components/imports/DraftGateNotice';
+import { claimDraft, useDraftHydration } from '../components/imports/hooks/useDraftHydration';
 import { useDraftWriteThrough } from '../components/imports/hooks/useDraftWriteThrough';
 import { useImportPrescope } from '../components/imports/hooks/useImportPrescope';
+import { ImportTakenOverNotice } from '../components/imports/ImportTakenOverNotice';
 import { ImportWizard } from '../components/imports/ImportWizard';
 import { useImportStore } from '../store/importStore';
+
+/**
+ * The lease as the page sees it: `epoch` restarts the write-through after a
+ * take-back, `takenOverAt` is set the moment a write or heartbeat learns
+ * another tab holds the draft.
+ */
+function useLeaseLoss() {
+  const [takenOverAt, setTakenOverAt] = useState<string | null>(null);
+  const [epoch, setEpoch] = useState(0);
+  const draftId = useImportStore((state) => state.draftId);
+
+  const onOwnedElsewhere = useCallback(() => setTakenOverAt(new Date().toISOString()), []);
+  const takeBack = useCallback(() => {
+    if (draftId === null) return;
+    void claimDraft(draftId, true).then(() => {
+      setTakenOverAt(null);
+      setEpoch((n) => n + 1);
+    });
+  }, [draftId]);
+
+  return { takenOverAt, epoch, onOwnedElsewhere, takeBack };
+}
 
 /**
  * Import page. The draft in `?draft=<id>` is the run (finance ADR-005): the
@@ -21,11 +45,13 @@ import { useImportStore } from '../store/importStore';
  */
 export function ImportPage() {
   const { t } = useTranslation('finance');
+  const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
   const requested = params.get('draft');
   const { gate, takeOver, discard } = useDraftHydration(requested);
   const draftId = useImportStore((state) => state.draftId);
   const ready = gate.status === 'ready';
+  const lease = useLeaseLoss();
 
   useEffect(() => {
     if (gate.status === 'gone') {
@@ -38,36 +64,27 @@ export function ImportPage() {
     }
   }, [gate.status, ready, draftId, requested, setParams, t]);
 
-  useDraftWriteThrough(ready);
+  useDraftWriteThrough({
+    enabled: ready && lease.takenOverAt === null,
+    epoch: lease.epoch,
+    onOwnedElsewhere: lease.onOwnedElsewhere,
+    onSaveFailed: useCallback(() => toast.warning(t('import.draft.saveFailed')), [t]),
+  });
   useImportPrescope(ready && requested === null);
 
   return (
     <div className="space-y-6">
       <PageHeader title={t('import.title')} description={t('import.description')} />
 
-      {gate.status === 'unusable' && (
-        <Alert variant="destructive">
-          <AlertTitle>{t('import.draft.unusableTitle')}</AlertTitle>
-          <AlertDescription>
-            <p>{gate.reason}</p>
-            <Button size="sm" variant="destructive" onClick={() => void discard()}>
-              {t('import.draft.discard')}
-            </Button>
-          </AlertDescription>
-        </Alert>
-      )}
-      {gate.status === 'owned-elsewhere' && (
-        <Alert>
-          <AlertTitle>{t('import.draft.ownedElsewhereTitle')}</AlertTitle>
-          <AlertDescription>
-            <p>{t('import.draft.ownedElsewhereBody')}</p>
-            <Button size="sm" onClick={takeOver}>
-              {t('import.draft.takeOver')}
-            </Button>
-          </AlertDescription>
-        </Alert>
-      )}
+      <DraftGateNotice gate={gate} onDiscard={() => void discard()} onTakeOver={takeOver} />
       {ready && <ImportWizard />}
+      {lease.takenOverAt !== null && (
+        <ImportTakenOverNotice
+          takenAt={lease.takenOverAt}
+          onTakeBack={lease.takeBack}
+          onLeave={() => void navigate('/finance')}
+        />
+      )}
     </div>
   );
 }

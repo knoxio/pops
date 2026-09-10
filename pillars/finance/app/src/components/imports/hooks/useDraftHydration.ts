@@ -32,6 +32,13 @@ function statusOf(error: unknown): number | undefined {
   return error instanceof FinanceApiError ? error.status : undefined;
 }
 
+/** Take the lease as this tab; `force` is the person's "Take over" / "Take it back". */
+export async function claimDraft(draftId: string, force: boolean): Promise<void> {
+  unwrap(
+    await importDraftsClaim({ path: { id: draftId }, body: { ownerToken: ownerToken(), force } })
+  );
+}
+
 async function loadInto(draftId: string, force: boolean): Promise<DraftGate> {
   let draft;
   try {
@@ -44,9 +51,7 @@ async function loadInto(draftId: string, force: boolean): Promise<DraftGate> {
     throw error;
   }
   try {
-    unwrap(
-      await importDraftsClaim({ path: { id: draftId }, body: { ownerToken: ownerToken(), force } })
-    );
+    await claimDraft(draftId, force);
   } catch (error) {
     if (codeOf(error) === 'DraftOwnedElsewhere') return { status: 'owned-elsewhere' };
     if (statusOf(error) === 404) return { status: 'gone' };

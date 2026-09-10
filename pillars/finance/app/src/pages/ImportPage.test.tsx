@@ -7,7 +7,7 @@
  */
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { MemoryRouter, useLocation } from 'react-router';
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
@@ -18,6 +18,7 @@ const mocks = vi.hoisted(() => ({
   draftsWrite: vi.fn(),
   draftsRelease: vi.fn(),
   draftsDiscard: vi.fn(),
+  draftsHeartbeat: vi.fn(),
   process: vi.fn(),
   progress: vi.fn(),
 }));
@@ -30,6 +31,7 @@ vi.mock('../finance-api/index.js', async (importOriginal) => ({
   importDraftsWrite: (...args: unknown[]) => mocks.draftsWrite(...args),
   importDraftsRelease: (...args: unknown[]) => mocks.draftsRelease(...args),
   importDraftsDiscard: (...args: unknown[]) => mocks.draftsDiscard(...args),
+  importDraftsHeartbeat: (...args: unknown[]) => mocks.draftsHeartbeat(...args),
   importsProcessImport: (...args: unknown[]) => mocks.process(...args),
   importsGetImportProgress: (...args: unknown[]) => mocks.progress(...args),
 }));
@@ -125,7 +127,10 @@ function renderImportPage(url = '/finance/import') {
     <QueryClientProvider client={queryClient}>
       <MemoryRouter initialEntries={[url]}>
         <LocationSpy />
-        <ImportPage />
+        <Routes>
+          <Route path="/finance/import" element={<ImportPage />} />
+          <Route path="/finance" element={<div>Dashboard</div>} />
+        </Routes>
       </MemoryRouter>
     </QueryClientProvider>
   );
@@ -143,6 +148,7 @@ beforeEach(() => {
   mocks.draftsWrite.mockResolvedValue(ok({ data: { id: 'draft-1', state: 'open' } }));
   mocks.draftsRelease.mockResolvedValue({ data: undefined, error: undefined });
   mocks.draftsDiscard.mockResolvedValue({ data: undefined, error: undefined });
+  mocks.draftsHeartbeat.mockResolvedValue(ok({ data: { id: 'draft-1', state: 'open' } }));
   mocks.draftsCreate.mockResolvedValue(ok({ data: { id: 'draft-new', state: 'open' } }));
   mocks.process.mockResolvedValue(ok({ sessionId: 'sess-1' }));
   mocks.progress.mockResolvedValue(
@@ -348,5 +354,58 @@ describe('POPS-3159: a reload at Final Review after a failed commit', () => {
     expect(state.manuallyResolvedChecksums).toEqual(['a']);
     expect(state.commitResult).toBeNull();
     expect(mocks.draftsDiscard).not.toHaveBeenCalled();
+  });
+});
+
+describe('losing the lease mid-run (POPS-3331)', () => {
+  function openDraftOnStepTwo() {
+    useImportStore.setState({
+      ...initialState,
+      draftId: 'draft-1',
+      currentStep: 2,
+      rows: [{ a: '1' }],
+      headers: ['a'],
+      accountId: 'acc-amex',
+    });
+    return renderImportPage('/finance/import?draft=draft-1');
+  }
+
+  it('shows the blocking notice when a write is refused, and Take it back reclaims with force and writes again', async () => {
+    openDraftOnStepTwo();
+    await screen.findByText('Map');
+    mocks.draftsWrite.mockResolvedValueOnce(failure(409, 'DraftOwnedElsewhere', 'open elsewhere'));
+    useImportStore.getState().nextStep();
+
+    await screen.findByText('This import is open somewhere else now');
+    expect(mocks.draftsWrite).toHaveBeenCalledOnce();
+
+    useImportStore.getState().prevStep();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(mocks.draftsWrite).toHaveBeenCalledOnce();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Take it back' }));
+    await waitFor(() => expect(mocks.draftsClaim).toHaveBeenCalledOnce());
+    expect(mocks.draftsClaim.mock.calls[0]?.[0]).toMatchObject({
+      path: { id: 'draft-1' },
+      body: { force: true },
+    });
+    await waitFor(() =>
+      expect(screen.queryByText('This import is open somewhere else now')).toBeNull()
+    );
+
+    useImportStore.getState().nextStep();
+    await waitFor(() => expect(mocks.draftsWrite).toHaveBeenCalledTimes(2));
+  });
+
+  it('Leave navigates away without claiming', async () => {
+    openDraftOnStepTwo();
+    await screen.findByText('Map');
+    mocks.draftsWrite.mockResolvedValueOnce(failure(409, 'DraftOwnedElsewhere', 'open elsewhere'));
+    useImportStore.getState().nextStep();
+    await screen.findByText('This import is open somewhere else now');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Leave' }));
+    await waitFor(() => expect(lastLocation).toBe('/finance'));
+    expect(mocks.draftsClaim).not.toHaveBeenCalled();
   });
 });

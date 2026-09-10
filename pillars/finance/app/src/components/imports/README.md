@@ -37,7 +37,7 @@ Everything, because the run is a server record: `import_drafts` in the finance p
 
 The consequence worth knowing here, because it spans the store and step 1: **the `File` handles are not in the draft**, since they are not serialisable and the file is not stored. On resume there is nothing to compare against, so re-selecting even the byte-identical CSVs reads as a new batch and cascades a downstream reset over the work the resume just restored. Only `sourceFileNames` survives, to label the card.
 
-Two more edges in the same area: resuming mid-processing restarts `POST /imports/process` rather than re-attaching to a server session that may still be alive, and a second tab opening the same draft is refused by the lease rather than racing on it (`code: DraftOwnedElsewhere`); it can take the draft over, after which the first tab's writes are refused.
+Two more edges in the same area: resuming mid-processing restarts `POST /imports/process` rather than re-attaching to a server session that may still be alive, and a second tab opening the same draft is refused by the lease rather than racing on it (`code: DraftOwnedElsewhere`); it can take the draft over, after which the first tab's next write or thirty-second heartbeat is refused and it shows `ImportTakenOverNotice.tsx`, which blocks until the person takes the draft back or leaves.
 
 ## Where things live
 

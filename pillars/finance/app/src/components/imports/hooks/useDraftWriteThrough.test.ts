@@ -1,20 +1,26 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { createMock, writeMock, releaseMock } = vi.hoisted(() => ({
+const { createMock, writeMock, releaseMock, heartbeatMock } = vi.hoisted(() => ({
   createMock: vi.fn(),
   writeMock: vi.fn(),
   releaseMock: vi.fn(),
+  heartbeatMock: vi.fn(),
 }));
 vi.mock('../../../finance-api/index.js', () => ({
   importDraftsCreate: (...args: unknown[]) => createMock(...args),
   importDraftsWrite: (...args: unknown[]) => writeMock(...args),
   importDraftsRelease: (...args: unknown[]) => releaseMock(...args),
+  importDraftsHeartbeat: (...args: unknown[]) => heartbeatMock(...args),
 }));
 
 import { resetOwnerTokenForTests } from '../../../store/import-draft-owner';
 import { initialState } from '../../../store/import-store-types';
 import { useImportStore } from '../../../store/importStore';
-import { DRAFT_WRITE_DEBOUNCE_MS, startDraftWriteThrough } from './useDraftWriteThrough';
+import {
+  DRAFT_HEARTBEAT_MS,
+  DRAFT_WRITE_DEBOUNCE_MS,
+  startDraftWriteThrough,
+} from './useDraftWriteThrough';
 
 const summary = { id: 'draft-1', state: 'open' };
 
@@ -66,6 +72,7 @@ beforeEach(() => {
   createMock.mockResolvedValue(ok(summary));
   writeMock.mockResolvedValue(ok(summary));
   releaseMock.mockResolvedValue({ data: undefined, error: undefined });
+  heartbeatMock.mockResolvedValue(ok(summary));
   useImportStore.setState({ ...initialState });
 });
 
@@ -237,5 +244,64 @@ describe('losing the lease', () => {
     useImportStore.getState().nextStep();
     await flushPromises();
     expect(writeMock).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('heartbeat', () => {
+  it('beats every thirty seconds while a draft is known, and stops when stopped', async () => {
+    startOnDraft();
+    vi.advanceTimersByTime(DRAFT_HEARTBEAT_MS - 1);
+    expect(heartbeatMock).not.toHaveBeenCalled();
+    vi.advanceTimersByTime(1);
+    expect(heartbeatMock).toHaveBeenCalledOnce();
+    expect(heartbeatMock.mock.calls[0]?.[0]).toMatchObject({ path: { id: 'draft-1' } });
+    vi.advanceTimersByTime(DRAFT_HEARTBEAT_MS);
+    expect(heartbeatMock).toHaveBeenCalledTimes(2);
+
+    stopNow();
+    await flushPromises();
+    vi.advanceTimersByTime(DRAFT_HEARTBEAT_MS * 3);
+    expect(heartbeatMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('starts beating once a fresh run has created its draft', async () => {
+    useImportStore.setState({ ...initialState, accountId: 'acc-1' });
+    stop = startDraftWriteThrough(callbacks);
+    vi.advanceTimersByTime(DRAFT_HEARTBEAT_MS);
+    expect(heartbeatMock).not.toHaveBeenCalled();
+
+    useImportStore.setState({ headers: ['Date'], rows: [{ Date: '01/01/2026' }] });
+    await flushPromises();
+    vi.advanceTimersByTime(DRAFT_HEARTBEAT_MS);
+    expect(heartbeatMock).toHaveBeenCalledOnce();
+  });
+
+  it('a 409 on the heartbeat latches the lease as lost: no more beats, no more writes', async () => {
+    startOnDraft();
+    heartbeatMock.mockResolvedValueOnce(ownedElsewhere());
+    vi.advanceTimersByTime(DRAFT_HEARTBEAT_MS);
+    await flushPromises();
+    expect(callbacks.onOwnedElsewhere).toHaveBeenCalledOnce();
+
+    useImportStore.getState().nextStep();
+    vi.advanceTimersByTime(DRAFT_HEARTBEAT_MS);
+    await flushPromises();
+    expect(writeMock).not.toHaveBeenCalled();
+    expect(heartbeatMock).toHaveBeenCalledOnce();
+  });
+
+  it('a transient heartbeat failure is ignored', async () => {
+    startOnDraft();
+    heartbeatMock.mockResolvedValueOnce({
+      data: undefined,
+      error: { message: 'down' },
+      response: new Response(null, { status: 503 }),
+    });
+    vi.advanceTimersByTime(DRAFT_HEARTBEAT_MS);
+    await flushPromises();
+    expect(callbacks.onOwnedElsewhere).not.toHaveBeenCalled();
+    expect(callbacks.onSaveFailed).not.toHaveBeenCalled();
+    vi.advanceTimersByTime(DRAFT_HEARTBEAT_MS);
+    expect(heartbeatMock).toHaveBeenCalledTimes(2);
   });
 });
