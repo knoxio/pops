@@ -6,7 +6,7 @@ import type { ComponentType } from 'react';
 
 import type { ModuleManifest, SettingsManifest } from '@pops/types';
 
-import type { BundleEntry } from './bundle-map';
+import type { BundleEntry } from './bundle-entry';
 
 const Widget: ComponentType = () => null;
 const OtherWidget: ComponentType = () => null;

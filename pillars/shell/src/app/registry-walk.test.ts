@@ -1,19 +1,16 @@
 /**
  * Registry-walk unit tests.
  *
- * Exercises the bundle-map-driven discovery path with synthetic data
- * instead of the live `WORKSPACE_BUNDLE_MAP` / `MODULES` constants. The
- * override-based `installed-modules.test.ts` covers the production wiring;
- * this file pins the walk's contract:
+ * Exercises the discovery path with synthetic registry entries. This file
+ * pins the walk's contract:
  *
  *   - Two synthetic pillars produce two nav configs.
- *   - Frontend manifests joined through the walk preserve `frontend.routes`.
+ *   - Manifests synthesized by the walk preserve one route per `pages` entry.
  *   - Pillars omitting both `nav` and `pages` are skipped from the rail.
- *   - An external pillar (absent from the bundle map) that advertises an
- *     `assetsBaseUrl` plus `nav` / `pages` is loaded via the runtime path
- *     (Option A) and contributes a mounted manifest.
- *   - A structurally broken external descriptor is logged once and skipped
- *     (no crash).
+ *   - A pillar that advertises an `assetsBaseUrl` plus `nav` / `pages` is
+ *     loaded via the runtime path (Option A) and contributes a mounted
+ *     manifest — lazily, without the walk fetching its bundle.
+ *   - A structurally broken descriptor is logged once and skipped (no crash).
  *   - Sort order respects `navOrder` ascending with a lexicographic
  *     tiebreak on the nav id.
  */
@@ -30,7 +27,7 @@ import { buildRegisteredAppsFromBundleMap } from './nav/registry';
 
 import type { NavConfigDescriptor, PageDescriptor, PillarSnapshot } from '@pops/pillar-sdk';
 
-import type { BundleEntry } from './bundle-map';
+import type { BundleEntry } from './bundle-entry';
 import type { AppNavConfig } from './nav/types';
 
 function manifestFor(
@@ -57,6 +54,27 @@ function navFor(id: string, label: string): AppNavConfig {
     icon: 'Bot',
     basePath: `/${id}`,
     items: [{ path: '', label: 'Home', labelKey: `${id}.home`, icon: 'LayoutDashboard' }],
+  };
+}
+
+/**
+ * A loader-mounted pillar's registry entry: the wire nav descriptor (kebab
+ * icons, which is what the wire schema permits) plus its page descriptors.
+ */
+function loaderEntry(id: string, order: number, pages: readonly PageDescriptor[]): RegistryEntry {
+  return {
+    pillarId: id,
+    assetsBaseUrl: `/${id}-ui/${id}.js`,
+    nav: {
+      id,
+      label: id,
+      labelKey: id,
+      icon: 'compass',
+      basePath: `/${id}`,
+      order,
+      items: [{ path: '', label: 'Home', labelKey: `${id}.home`, icon: 'compass' }],
+    },
+    pages: [...pages],
   };
 }
 
@@ -105,37 +123,26 @@ describe('walkRegistry', () => {
     warnSpy.mockRestore();
   });
 
-  it('emits one manifest per registered pillar resolvable through the bundle map', () => {
-    const bundleMap: Record<string, BundleEntry> = {
-      finance: {
-        manifest: manifestFor('finance', navFor('finance', 'Finance'), [{ index: true }]),
-        navOrder: 10,
-      },
-      media: {
-        manifest: manifestFor('media', navFor('media', 'Media'), [{ index: true }]),
-        navOrder: 20,
-      },
-    };
-    const entries: RegistryEntry[] = [{ pillarId: 'finance' }, { pillarId: 'media' }];
+  it('emits one manifest per registered pillar that advertises a UI bundle', () => {
+    const entries: RegistryEntry[] = [
+      loaderEntry('finance', 10, [{ path: '', index: true, bundleSlot: 'finance-home' }]),
+      loaderEntry('media', 20, [{ path: '', index: true, bundleSlot: 'media-home' }]),
+    ];
 
-    const out = walkRegistry(entries, bundleMap);
+    const out = walkRegistry(entries);
 
     expect(out.map((m) => m.id)).toEqual(['finance', 'media']);
   });
 
-  it('preserves frontend.routes on the joined manifest so the router can mount them', () => {
-    const bundleMap: Record<string, BundleEntry> = {
-      finance: {
-        manifest: manifestFor('finance', navFor('finance', 'Finance'), [
-          { index: true },
-          { path: 'transactions' },
-        ]),
-        navOrder: 10,
-      },
-    };
-    const entries: RegistryEntry[] = [{ pillarId: 'finance' }];
+  it('preserves frontend.routes on the synthesized manifest so the router can mount them', () => {
+    const entries: RegistryEntry[] = [
+      loaderEntry('finance', 10, [
+        { path: '', index: true, bundleSlot: 'finance-home' },
+        { path: 'transactions', bundleSlot: 'finance-transactions' },
+      ]),
+    ];
 
-    const out = walkRegistry(entries, bundleMap);
+    const out = walkRegistry(entries);
     const financeRoutes = out[0]?.frontend?.routes;
 
     expect(Array.isArray(financeRoutes)).toBe(true);
@@ -181,7 +188,7 @@ describe('walkRegistry', () => {
 
     // Importer is never invoked here: synthesis is synchronous; the remote
     // bundle is fetched lazily only when the route actually renders.
-    const out = walkRegistry(entries, {}, () =>
+    const out = walkRegistry(entries, () =>
       Promise.reject(new Error('importer must not run during synthesis'))
     );
 
@@ -208,7 +215,7 @@ describe('walkRegistry', () => {
       { pillarId: 'external-headless', assetsBaseUrl: 'https://cdn.example.com/headless.js' },
     ];
 
-    const out = walkRegistry(entries, {});
+    const out = walkRegistry(entries);
 
     expect(out).toHaveLength(0);
     expect(warnSpy).not.toHaveBeenCalled();
@@ -245,9 +252,9 @@ describe('walkRegistry', () => {
  *
  * The pillar left `WORKSPACE_BUNDLE_MAP` and `@pops/shell` stopped depending
  * on `@pops/app-purchases`, so what reaches the shell is a wire snapshot and
- * a URL. This walks that snapshot against a bundle map that has never heard
- * of purchases — which is the real map's state — and asserts the whole
- * surface survives the crossing.
+ * a URL. This walks that snapshot straight through `walkRegistry`, which has
+ * no bundle map to consult at all — POPS-3227 removed it — and asserts the
+ * whole surface survives the crossing.
  *
  * The descriptor mirrors `pillars/purchases/src/api/manifest.ts`. It is
  * restated rather than imported because the shell has no dependency on the
@@ -292,7 +299,7 @@ describe('a pillar that reaches the shell only over the wire', () => {
   };
 
   function walkPurchases(): readonly FrontendManifest[] {
-    return walkRegistry([entry], {}, () =>
+    return walkRegistry([entry], () =>
       Promise.resolve({
         bundles: Object.fromEntries(PURCHASES_PAGES.map((page) => [page.bundleSlot, () => null])),
       })
@@ -342,7 +349,7 @@ describe('a pillar that reaches the shell only over the wire', () => {
   // per loader-mounted pillar in front of the first paint.
   it('does not fetch the bundle during the walk', () => {
     const importer = vi.fn(() => Promise.resolve({ bundles: {} }));
-    walkRegistry([entry], {}, importer);
+    walkRegistry([entry], importer);
     expect(importer).not.toHaveBeenCalled();
   });
 });
@@ -386,7 +393,7 @@ describe('remote bundle URLs the boot resolver reports', () => {
     expect(resolved.remoteBundleUrls).toEqual([]);
   });
 
-  it('reports nothing on the static floor, where every pillar is bundle-mapped', () => {
+  it('reports nothing for an empty snapshot, which mounts nothing to preload', () => {
     expect(resolveBootRegistry([]).remoteBundleUrls).toEqual([]);
   });
 });

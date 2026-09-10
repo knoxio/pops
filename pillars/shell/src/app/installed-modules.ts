@@ -1,30 +1,25 @@
 /**
- * Shell-side aggregator that resolves the shell's install set against the
- * workspace bundle map (`./bundle-map.tsx`) — the single place the shell
- * enumerates in-repo pillar ids. Every installed pillar id resolves through
- * the workspace bundle map.
+ * Shell-side aggregator that turns a registry snapshot into the frontend
+ * manifests the shell mounts.
  *
- * Install-set source: the live registry snapshot is the source of truth for
- * which pillars mount, not the build-time `MODULES` / `INSTALLED_MODULES`
- * constants. The async boot path (`main.tsx` → `boot-snapshot.ts`) fetches
- * the snapshot and walks {@link bootEntries}; if the registry is unreachable
- * the shell falls back to {@link staticFloorEntries} (the in-repo bundle-map
- * pillars) so it never bricks. `installedFrontendManifests()` is that static
- * floor — the synchronous in-repo set the boot path degrades to, and the
- * source the capture-overlay / manifest-validation tests read.
+ * The live registry snapshot is the sole source of truth for which pillars
+ * mount. The async boot path (`main.tsx` → `boot-snapshot.ts`) fetches it and
+ * walks {@link bootEntries}; when the registry is unreachable the shell falls
+ * back to the last good snapshot from `localStorage` (POPS-3239), and to
+ * nothing when there is no cache either. There is no build-time set behind
+ * that: POPS-3227 removed the static bundle map and with it the in-repo
+ * "floor" the boot path used to degrade to, so an in-repo pillar and an
+ * out-of-tree one reach the shell by the same one path.
  *
- * External pillars that the registry advertises via `assetsBaseUrl` are
- * absent from the workspace bundle map by design (ADR-002 keeps the in-repo
- * FE a single static SPA). For those the walk takes the runtime path
- * (Option A): it lazily `import()`s the pillar's ESM bundle from the
- * advertised URL and mounts it like an in-repo module. A failed remote load
- * degrades to skipping the pillar's UI, never crashing the shell.
+ * That path is the runtime loader: the walk lazily `import()`s the pillar's
+ * ESM bundle from the `assetsBaseUrl` its manifest advertises and mounts the
+ * slots its `pages` name. A failed remote load degrades to skipping the
+ * pillar's UI, never crashing the shell.
  *
  * The registry-as-source-of-truth stance this walk implements is ADR-027.
  */
 import { isInstalledModule, KNOWN_MODULES } from '@pops/module-registry';
 
-import { WORKSPACE_BUNDLE_MAP, type BundleEntry } from './bundle-map';
 import {
   synthesizeExternalBundleEntry,
   type RemoteModuleImporter,
@@ -86,15 +81,13 @@ export class ExternalUiLoadError extends Error {
 /**
  * Minimal "registry entry" shape the shell walks. Mirrors the
  * `PillarSnapshot` projection `discoverSettings()` reads but carries only
- * the fields needed to decide which UI surface to mount: the pillar id,
- * and — for external pillars absent from the workspace bundle map — the
- * `assetsBaseUrl` plus the wire-shaped `nav` / `pages` descriptors the
- * runtime loader consumes.
+ * the fields needed to decide which UI surface to mount: the pillar id, the
+ * `assetsBaseUrl`, and the wire-shaped `nav` / `pages` descriptors the runtime
+ * loader consumes.
  *
- * In-repo pillars carry only `pillarId`: their UI surface comes from the
- * static bundle map, never the wire. Sourced from the live registry
- * snapshot via {@link bootEntries}, or from the in-repo bundle map via
- * {@link staticFloorEntries} when the registry is unreachable.
+ * An entry carrying only `pillarId` is a backend-only pillar and contributes
+ * no UI. Sourced from the live registry snapshot via {@link bootEntries}, or
+ * from the cached snapshot when the registry is unreachable.
  */
 export interface RegistryEntry {
   readonly pillarId: string;
@@ -103,9 +96,9 @@ export interface RegistryEntry {
   readonly pages?: readonly PageDescriptor[];
   /**
    * The pillar's capture-overlay contribution. Carried through the walk like
-   * `nav` and `pages`: it is a surface the bundle supplies, and dropping it
-   * here left the overlay resolvable only from the static bundle map
-   * (POPS-3266).
+   * `nav` and `pages`: it is a surface the bundle supplies, and while this
+   * field was missing the overlay was resolvable only from the static bundle
+   * map, so a loader-mounted pillar silently lost it (POPS-3266).
    */
   readonly captureOverlay?: CaptureOverlayDescriptor;
   /**
@@ -133,34 +126,12 @@ function settingsWidgetSlotsOf(manifest: PillarSnapshot['manifest']): string[] {
 }
 
 /**
- * The static install-set floor: the in-repo pillars the shell renders when
- * the live registry is unreachable (the never-brick fallback), and the
- * synchronous source `installedFrontendManifests()` walks.
- *
- * The floor is the workspace bundle map narrowed by the runtime install
- * shim `isInstalledModule` (the `@pops/module-registry` projection of the
- * build-time `POPS_APPS` contract). The LIVE install set comes from the
- * registry snapshot (`bootEntries`) and is the source of truth; this floor
- * only governs the offline path. Honouring the install shim here means an
- * operator's `POPS_APPS` selection still narrows the shell when the registry
- * is down (and the finance-only install-set e2e stays meaningful) — without
- * the shell consulting the build-time `MODULES` superset for the live
- * install set. In-repo pillars carry only `pillarId`; their UI surface comes
- * from the static bundle map.
- */
-export function staticFloorEntries(): readonly RegistryEntry[] {
-  return Object.keys(WORKSPACE_BUNDLE_MAP)
-    .filter((pillarId) => isInstalledModule(pillarId))
-    .map((pillarId) => ({ pillarId }));
-}
-
-/**
  * Narrow a snapshot to what this build is allowed to mount offline.
  *
  * The LIVE registry is deliberately unfiltered: while it is answering it is
  * the source of truth, and `POPS_APPS` does not override it. The CACHED
- * snapshot is different — it stands in for {@link staticFloorEntries} as the
- * offline floor, and the floor honours the install set. Without this the
+ * snapshot is different — it is the offline floor, and the floor honours the
+ * install set. Without this the
  * shell's offline behaviour would depend on whether a browser happened to
  * hold a cache: an operator who narrowed `POPS_APPS` and redeployed would
  * get the excluded module back on a returning machine and not on a fresh
@@ -184,13 +155,10 @@ export function offlineInstallableSnapshot(
 
 /**
  * Map a live registry snapshot onto the registry-entry list the walk
- * consumes. Only `registered` pillars contribute. For each, the wire
- * `manifest` carries the external-UI surface
- * (`assetsBaseUrl` / `nav` / `pages`); in-repo pillars omit `assetsBaseUrl`
- * and resolve through the static bundle map instead. The snapshot is the
- * sole truth for which pillars mount — backend-only pillars (no bundle-map
- * entry, no `assetsBaseUrl`) are dropped by the walk's existing decision
- * tree.
+ * consumes. Only `registered` pillars contribute, and for each the wire
+ * `manifest` carries the UI surface (`assetsBaseUrl` / `nav` / `pages`). The
+ * snapshot is the sole truth for which pillars mount — a pillar that
+ * advertises no `assetsBaseUrl` is backend-only and the walk drops it.
  */
 export function bootEntries(snapshot: readonly PillarSnapshot[]): readonly RegistryEntry[] {
   const out: RegistryEntry[] = [];
@@ -247,33 +215,24 @@ function resolveExternalManifest(
 }
 
 /**
- * Walk a registry entry list against a workspace bundle map, returning
- * the frontend manifests the shell should mount. Resolution per id:
+ * Walk a registry entry list, returning the frontend manifests the shell
+ * should mount. Resolution per entry:
  *
- *   - Bundle map hit → emit the in-repo workspace manifest (ADR-002:
- *     statically bundled, unchanged).
- *   - Bundle map miss + `assetsBaseUrl` set → external pillar. Synthesize a
- *     manifest whose routes lazy-`import()` the remote bundle (Option A). A
- *     bad descriptor is logged and skipped; a remote bundle that fails to
- *     load later is contained by the per-route error boundary, not here.
- *   - Bundle map miss + no `assetsBaseUrl` → backend-only pillar, drop
- *     silently.
+ *   - `assetsBaseUrl` set → synthesize a manifest whose routes lazy-`import()`
+ *     the remote bundle. A bad descriptor is logged and skipped; a remote
+ *     bundle that fails to load later is contained by the per-route error
+ *     boundary, not here.
+ *   - no `assetsBaseUrl` → backend-only pillar, drop silently.
  *
- * `importer` is injectable for tests; production omits it so the external
- * loader uses the real dynamic `import()`.
+ * `importer` is injectable for tests; production omits it so the loader uses
+ * the real dynamic `import()`.
  */
 export function walkRegistry(
   entries: readonly RegistryEntry[],
-  bundleMap: Readonly<Record<string, BundleEntry>>,
   importer?: RemoteModuleImporter
 ): readonly FrontendManifest[] {
   const out: FrontendManifest[] = [];
   for (const entry of entries) {
-    const bundle = bundleMap[entry.pillarId];
-    if (bundle !== undefined) {
-      out.push(bundle.manifest);
-      continue;
-    }
     if (entry.assetsBaseUrl !== undefined) {
       const manifest = resolveExternalManifest(
         { ...entry, assetsBaseUrl: entry.assetsBaseUrl },
@@ -282,43 +241,19 @@ export function walkRegistry(
       if (manifest !== null) out.push(manifest);
       continue;
     }
-    // Backend-only pillars (e.g. `registry`) sit in `MODULES` but contribute
-    // no UI. They never appear in the bundle map and they never advertise
-    // an `assetsBaseUrl`, so the walk drops them silently.
+    // A pillar that advertises no `assetsBaseUrl` contributes no UI —
+    // `registry` and `orchestrator` are backend-only — so the walk drops it
+    // silently. Since POPS-3227 that is the only way a pillar can be
+    // dropped: there is no static map left to fall back to.
   }
   return out;
 }
 
 /**
- * Test-only override. When set, `installedFrontendManifests()` returns
- * this list verbatim instead of walking the static floor.
- * Reset between tests via `__resetInstalledFrontendManifestsOverride()`.
- *
- * The override exists so tests can inject synthetic module manifests
- * without standing up the workspace bundle map.
- */
-let testOverride: readonly FrontendManifest[] | null = null;
-
-/**
- * The static install-set floor as frontend manifests: every in-repo
- * pillar in the workspace bundle map, walked through {@link walkRegistry}.
- *
- * This is the synchronous in-repo set the live install-set degrades to when
- * the registry is unreachable, and the source the capture-overlay walk and
- * manifest-validation tests read. The live,
- * snapshot-driven install set is built by the async boot path
- * (`boot-snapshot.ts`), not here.
- */
-export function installedFrontendManifests(): readonly FrontendManifest[] {
-  if (testOverride !== null) return testOverride;
-  return walkRegistry(staticFloorEntries(), WORKSPACE_BUNDLE_MAP);
-}
-
-/**
  * Filter a manifest list to the page-routed apps the router mounts under a
  * top-level path (declares `surfaces.includes('app')` and `frontend.routes`).
- * Pure over an arbitrary manifest list so the boot path can apply it to the
- * snapshot-resolved set, not just the static floor.
+ * Pure over an arbitrary manifest list: the boot path applies it to the
+ * snapshot-resolved set, which since POPS-3227 is the only set there is.
  */
 export function filterAppManifests(
   manifests: readonly FrontendManifest[]
@@ -327,30 +262,4 @@ export function filterAppManifests(
     (m): m is FrontendManifest & { frontend: { routes: RouteObject[] } } =>
       m.surfaces.includes('app') && hasRoutes(m)
   );
-}
-
-/**
- * Subset of `installedFrontendManifests()` (the static floor) that surfaces a
- * page-routed app. Retained for the synchronous in-repo consumers; the live
- * router builds from the boot-resolved set via {@link filterAppManifests}.
- */
-export function installedAppManifests(): readonly (FrontendManifest & {
-  frontend: { routes: RouteObject[] };
-})[] {
-  return filterAppManifests(installedFrontendManifests());
-}
-
-/**
- * Test-only: replace the installed-manifest source with `manifests`.
- * Pass `null` to restore the production behaviour (walk the registry).
- */
-export function __setInstalledFrontendManifestsOverride(
-  manifests: readonly FrontendManifest[] | null
-): void {
-  testOverride = manifests;
-}
-
-/** Test-only convenience wrapper around `__setInstalledFrontendManifestsOverride(null)`. */
-export function __resetInstalledFrontendManifestsOverride(): void {
-  testOverride = null;
 }

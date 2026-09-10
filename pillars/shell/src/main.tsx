@@ -61,14 +61,14 @@ function mount(bootRegistry: BootRegistry): void {
 /**
  * Boot the shell behind an async boundary (P7-T03 / RD-3): resolve the live
  * registry snapshot into the install set BEFORE building the router and
- * mounting the app, so the registry — not the build-time `MODULES` constant —
+ * mounting the app, so the registry — not anything this build compiled in —
  * decides which pillars mount.
  *
  * `fetchBootRegistry` never throws by contract: an unreachable / slow / empty
- * registry resolves to the static bundle-map floor (the in-repo app set), so
- * the shell always mounts a usable app surface. The `.catch` below is the
+ * registry resolves to the cached snapshot, or to an empty surface when there
+ * is no cache, so the shell always mounts. The `.catch` below is the
  * structural backstop: should resolution ever throw despite that contract
- * (e.g. a future regression), we still mount the static floor rather than
+ * (e.g. a future regression), we still mount the empty surface rather than
  * leaving the splash up forever — the shell never bricks on a registry outage.
  */
 function bootstrap(): Promise<void> {
@@ -76,6 +76,6 @@ function bootstrap(): Promise<void> {
 }
 
 void bootstrap().catch((error: unknown) => {
-  console.error('[shell] boot registry resolution failed; mounting static floor', error);
+  console.error('[shell] boot registry resolution failed; mounting an empty surface', error);
   mount(resolveBootRegistry([]));
 });

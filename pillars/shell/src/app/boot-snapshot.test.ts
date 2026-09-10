@@ -3,13 +3,13 @@
  *
  * The safety-critical guarantee under test: the shell mounts the live
  * registry snapshot's pillars when the registry is reachable, and NEVER
- * bricks when it is not — it falls back to the static in-repo bundle-map
- * floor. Both branches are exercised with injected fixtures (no live fetch).
+ * bricks when it is not — it falls back to the cached snapshot, and to an
+ * empty surface when there is no cache either. Both branches are exercised
+ * with injected fixtures (no live fetch).
  */
 import { describe, expect, it, vi } from 'vitest';
 
 import { fetchBootRegistry, resolveBootRegistry } from './boot-snapshot';
-import { WORKSPACE_BUNDLE_MAP } from './bundle-map';
 import { filterAppManifests } from './installed-modules';
 
 import type { ManifestPayload, PillarSnapshot } from '@pops/pillar-sdk';
@@ -109,27 +109,19 @@ function externalSnapshotEntry(): PillarSnapshot {
 const inertImporter: RemoteModuleImporter = () =>
   Promise.reject(new Error('importer must not run during synthesis'));
 
-const IN_REPO_IDS = Object.keys(WORKSPACE_BUNDLE_MAP);
-
 describe('resolveBootRegistry — registry-driven (snapshot non-empty)', () => {
-  it('derives the install set from the snapshot, not the full bundle map', () => {
+  /**
+   * The snapshot is the only source there is. This test used to prove that by
+   * comparing against the bundle map — "the snapshot narrowed the install set
+   * to fewer than the map carries" — and POPS-3227 deleted the map, so what
+   * is left to assert is the direct statement: what mounts is exactly what
+   * the snapshot named, and nothing arrives from anywhere else.
+   */
+  it('mounts exactly what the snapshot names', () => {
     const result = resolveBootRegistry([uiEntry('media')]);
     expect(result.source).toBe('registry');
     expect(result.manifests.map((m) => m.id)).toEqual(['media']);
-    // The snapshot is now the ONLY source of routable pillars: POPS-3226 took
-    // the last one out of the bundle map, so the comparison this used to make
-    // — "fewer than the map" — has no content left. What replaces it is the
-    // stronger statement: the map contributes no page-routed app at all.
-    //
-    // `ego` is still in the map and still declares `surfaces: ['overlay',
-    // 'app']`, but carries no `frontend.routes` — it is a shell-hosted
-    // overlay, not a pillar with pages. Hence the routes half of the
-    // predicate, which is the one that decides whether anything mounts.
-    const mapRoutedApps = IN_REPO_IDS.filter((id) => {
-      const m = WORKSPACE_BUNDLE_MAP[id]?.manifest;
-      return m?.surfaces.includes('app') === true && Array.isArray(m.frontend?.routes);
-    });
-    expect(mapRoutedApps).toEqual([]);
+    expect(result.registeredApps.map((a) => a.id)).toEqual(['media']);
   });
 
   it('drops a backend-only registered pillar with no UI surface', () => {
@@ -166,10 +158,10 @@ describe('resolveBootRegistry — registry-driven (snapshot non-empty)', () => {
   // M2(a): the registry-driven branch is THIS PR's whole purpose, yet no
   // rendered/e2e test exercises it (every e2e silently falls through to the
   // floor — see the PR body). This focused unit pins the live-mount path
-  // non-blank: a non-empty snapshot with 1 in-repo pillar (bundle-map hit) and
-  // 1 external pillar (assetsBaseUrl) must yield source='registry' with BOTH a
-  // non-empty router manifest set (including the synthesized external route)
-  // and a non-empty app rail. A regression that breaks only the live mount —
+  // non-blank: a non-empty snapshot with 2 pillars, each advertising an
+  // `assetsBaseUrl`, must yield source='registry' with BOTH a non-empty
+  // router manifest set (including the synthesized external route) and a
+  // non-empty app rail. A regression that breaks only the live mount —
   // invisible to the floor-only e2e — fails here.
   it('drives the live registry branch to a non-blank surface (in-repo + external)', () => {
     const result = resolveBootRegistry([uiEntry('media'), externalSnapshotEntry()], inertImporter);
@@ -197,19 +189,20 @@ describe('resolveBootRegistry — registry-driven (snapshot non-empty)', () => {
 
 describe('resolveBootRegistry — never-brick on a zero-UI live snapshot', () => {
   // M1 (never-brick hole): a NON-EMPTY snapshot whose pillars are all
-  // backend-only — no bundle-map hit, no assetsBaseUrl — is the live state
-  // mid-deploy on a host restart, before the app pillars have re-registered
-  // (only `registry` / `orchestrator` are up). `snapshot.length > 0` is true,
-  // but the snapshot resolves to zero mountable UI. Treating that as
-  // "registry is the source of truth" would mount an app-less shell (manifests
-  // = [], registeredApps = []) — exactly the brick the resilience contract
-  // forbids, reachable on a real capivara restart. The resolver must fall back
-  // to the static floor instead.
+  // backend-only — no `assetsBaseUrl`, so no UI surface at all — is the live
+  // state mid-deploy on a host restart, before the app pillars have
+  // re-registered (only `registry` / `orchestrator` are up). `snapshot.length
+  // > 0` is true, but the snapshot resolves to zero mountable UI. Treating
+  // that as "registry is the source of truth" would mount an app-less shell
+  // (manifests = [], registeredApps = []) — exactly the brick the resilience
+  // contract forbids, reachable on a real capivara restart. The resolver must
+  // report `'empty'` instead, so `fetchBootRegistry` can fall back to the
+  // cached snapshot.
   const BACKEND_ONLY_SNAPSHOT = [snapshotEntry('registry'), snapshotEntry('orchestrator')];
 
-  it('falls back to the static floor (source) when a live snapshot resolves to zero mountable UI', () => {
+  it('resolves to nothing when a live snapshot yields zero mountable UI', () => {
     const result = resolveBootRegistry(BACKEND_ONLY_SNAPSHOT);
-    expect(result.source).toBe('static-floor');
+    expect(result.source).toBe('empty');
   });
 
   it('mounts the FULL in-repo rail (not an app-less shell) on the zero-UI fallback', () => {
@@ -222,25 +215,19 @@ describe('resolveBootRegistry — never-brick on a zero-UI live snapshot', () =>
     // something arbitrary. The guarantee itself now rests on the cached
     // snapshot (POPS-3239), which `offline-install-set.test.ts` and the
     // cached-floor block below cover.
-    const floorAppIds = IN_REPO_IDS.filter((id) => {
-      const m = WORKSPACE_BUNDLE_MAP[id]?.manifest;
-      return m?.surfaces.includes('app') === true && Array.isArray(m.frontend?.routes);
-    }).toSorted();
-    expect(floorAppIds).toEqual([]);
-    const mountedAppIds = filterAppManifests(result.manifests)
-      .map((m) => m.id)
-      .toSorted();
-    expect(mountedAppIds).toEqual(floorAppIds);
+    // There is no floor left to compare against — POPS-3227 removed the
+    // bundle map — so the fallback mounts nothing, which is the state this
+    // asserts directly rather than through the map.
+    expect(filterAppManifests(result.manifests)).toEqual([]);
 
     expect(result.registeredApps.map((a) => a.id)).toEqual([]);
 
-    // The result must be byte-identical to the empty-snapshot floor: the
-    // zero-UI live snapshot degrades EXACTLY as if the registry were down.
+    // The result must be identical to the empty-snapshot path: a zero-UI live
+    // snapshot degrades EXACTLY as if the registry were down. Both are empty
+    // now, and the equality is still what matters — the two must not diverge.
     const emptyFloor = resolveBootRegistry([]);
-    expect(mountedAppIds).toEqual(
-      filterAppManifests(emptyFloor.manifests)
-        .map((m) => m.id)
-        .toSorted()
+    expect(filterAppManifests(result.manifests).map((m) => m.id)).toEqual(
+      filterAppManifests(emptyFloor.manifests).map((m) => m.id)
     );
     expect(result.registeredApps.map((a) => a.id)).toEqual(
       emptyFloor.registeredApps.map((a) => a.id)
@@ -249,9 +236,9 @@ describe('resolveBootRegistry — never-brick on a zero-UI live snapshot', () =>
 });
 
 describe('resolveBootRegistry — never-brick fallback (snapshot empty)', () => {
-  it('renders the FULL in-repo app set from the static floor when the snapshot is empty', () => {
+  it('resolves to an empty surface when the snapshot is empty', () => {
     const result = resolveBootRegistry([]);
-    expect(result.source).toBe('static-floor');
+    expect(result.source).toBe('empty');
 
     // The never-brick guarantee: every in-repo app-routed pillar still mounts.
     // Assert the router-facing app set (the exact `filterAppManifests`
@@ -260,15 +247,10 @@ describe('resolveBootRegistry — never-brick fallback (snapshot empty)', () => 
     // the bundle map, so this now says the empty-snapshot path and the floor
     // agree on nothing rather than on everything. The equality is still the
     // point: the two must not diverge.
-    const floorAppIds = IN_REPO_IDS.filter((id) => {
-      const m = WORKSPACE_BUNDLE_MAP[id]?.manifest;
-      return m?.surfaces.includes('app') === true && Array.isArray(m.frontend?.routes);
-    }).toSorted();
-    expect(floorAppIds).toEqual([]);
-    const mountedAppIds = filterAppManifests(result.manifests)
-      .map((m) => m.id)
-      .toSorted();
-    expect(mountedAppIds).toEqual(floorAppIds);
+    // There is no floor left to compare against — POPS-3227 removed the
+    // bundle map — so the fallback mounts nothing, which is the state this
+    // asserts directly rather than through the map.
+    expect(filterAppManifests(result.manifests)).toEqual([]);
   });
 
   /**
@@ -280,7 +262,7 @@ describe('resolveBootRegistry — never-brick fallback (snapshot empty)', () => 
    */
   it('resolves to an empty rail on the fallback path, rather than failing', () => {
     const result = resolveBootRegistry([]);
-    expect(result.source).toBe('static-floor');
+    expect(result.source).toBe('empty');
     expect(result.registeredApps.map((a) => a.id)).toEqual([]);
   });
 });
@@ -334,43 +316,49 @@ describe('fetchBootRegistry — fetch-failure resilience', () => {
     };
   }
 
-  it('falls back to the static floor when the fetch rejects (registry unreachable)', async () => {
+  it('resolves to an empty surface when the fetch rejects (registry unreachable)', async () => {
     const fetchStub = vi.fn(() => Promise.reject(new Error('ECONNREFUSED')));
     const result = await fetchBootRegistry({ fetch: fetchStub, store: noCache() });
-    expect(result.source).toBe('static-floor');
-    expect(result.manifests.length).toBeGreaterThan(0);
+    expect(result.source).toBe('empty');
+    // The floor is empty since POPS-3226; what this still asserts is that an
+    // unreachable registry degrades to it rather than throwing or leaving the
+    // shell mid-boot.
+    expect(result.manifests).toEqual([]);
   });
 
-  it('falls back to the static floor on a non-OK status', async () => {
+  it('resolves to an empty surface on a non-OK status', async () => {
     const fetchStub = vi.fn(() => Promise.resolve(jsonResponse({}, 502)));
     const result = await fetchBootRegistry({ fetch: fetchStub, store: noCache() });
-    expect(result.source).toBe('static-floor');
+    expect(result.source).toBe('empty');
     // The floor is empty since POPS-3226; what this still asserts is that a
     // bad response degrades to it rather than throwing or leaving the shell
     // mid-boot.
     expect(result.registeredApps).toEqual([]);
   });
 
-  it('falls back to the static floor on an empty pillar list', async () => {
+  it('resolves to an empty surface on an empty pillar list', async () => {
     const fetchStub = vi.fn(() => Promise.resolve(jsonResponse({ pillars: [] })));
     const result = await fetchBootRegistry({ fetch: fetchStub, store: noCache() });
-    expect(result.source).toBe('static-floor');
+    expect(result.source).toBe('empty');
     // The floor is empty since POPS-3226; what this still asserts is that a
     // bad response degrades to it rather than throwing or leaving the shell
     // mid-boot.
     expect(result.registeredApps).toEqual([]);
   });
 
-  it('falls back to the static floor when the fetch times out', async () => {
+  it('resolves to an empty surface when the fetch times out', async () => {
     const fetchStub = vi.fn(
       (_url: RequestInfo | URL, init?: RequestInit) =>
         new Promise<Response>((_resolve, reject) => {
           init?.signal?.addEventListener('abort', () => reject(new Error('aborted')));
         })
     );
-    const result = await fetchBootRegistry({ fetch: fetchStub, timeoutMs: 1 });
-    expect(result.source).toBe('static-floor');
-    expect(result.manifests.length).toBeGreaterThan(0);
+    const result = await fetchBootRegistry({ fetch: fetchStub, timeoutMs: 1, store: noCache() });
+    expect(result.source).toBe('empty');
+    // The floor is empty since POPS-3226; what this still asserts is that a
+    // timed-out registry degrades to it rather than throwing or leaving the
+    // shell mid-boot.
+    expect(result.manifests).toEqual([]);
   });
 });
 
@@ -461,9 +449,9 @@ describe('fetchBootRegistry — the cached-snapshot floor', () => {
     expect(store.read()).not.toContain('"pillarId":"registry"');
   });
 
-  it('falls through to the static floor when there is no cache', async () => {
+  it('falls through to an empty surface when there is no cache', async () => {
     const result = await fetchBootRegistry({ fetch: deadFetch(), store: memoryStore() });
-    expect(result.source).toBe('static-floor');
+    expect(result.source).toBe('empty');
   });
 
   // Every pillar in the cache has left the build, so it resolves to nothing.
@@ -482,7 +470,7 @@ describe('fetchBootRegistry — the cached-snapshot floor', () => {
 
     const result = await fetchBootRegistry({ fetch: deadFetch(), store });
 
-    expect(result.source).toBe('static-floor');
+    expect(result.source).toBe('empty');
     expect(store.read()).toBeNull();
   });
 });

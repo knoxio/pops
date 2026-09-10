@@ -413,7 +413,7 @@ function run() {
  * Synthetic fixtures proving the guard catches a stale (empty) glob, an
  * uncovered UI file, a banned `@source not`, and an unrecognised `@source`
  * statement — and passes a correct tree. Mirrors the `--self-test` convention
- * in check-bundle-map-coverage.mjs.
+ * in check-pillar-ui-reachability.mjs.
  *
  * @returns {boolean}
  */

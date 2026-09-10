@@ -1,27 +1,17 @@
 /**
  * Shell-side install-set aggregator.
  *
- * P7-T03 / RD-3 moved the install-set source from the build-time `MODULES`
- * constant to the live registry snapshot: `bootEntries()` maps a snapshot onto
- * registry entries and `staticFloorEntries()` is the in-repo fallback floor.
- * `installedFrontendManifests()` walks that floor synchronously (the source
- * the capture-overlay / manifest-validation tests read); the live install set
- * is resolved by the async boot path (see `boot-snapshot.test.ts`).
+ * The install set has no build-time source: `bootEntries()` maps a registry
+ * snapshot onto registry entries and `filterAppManifests()` narrows those to
+ * the ones the router can mount. The live set is resolved by the async boot
+ * path (see `boot-snapshot.test.ts`).
  */
-import { afterEach, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
-import { isInstalledModule } from '@pops/module-registry';
-
-import { WORKSPACE_BUNDLE_MAP } from './bundle-map';
 import {
-  __resetInstalledFrontendManifestsOverride,
-  __setInstalledFrontendManifestsOverride,
   bootEntries,
   filterAppManifests,
   hasRoutes,
-  installedAppManifests,
-  installedFrontendManifests,
-  staticFloorEntries,
   type FrontendManifest,
 } from './installed-modules';
 
@@ -83,27 +73,6 @@ function snapshotEntry(
     lastSeenAt: new Date(0),
   };
 }
-
-describe('staticFloorEntries', () => {
-  it('lists the installed in-repo bundle-map pillars as registry entries', () => {
-    // The unit-test env leaves `POPS_APPS` unset, so every bundle-map pillar
-    // is installed and the floor covers the full map. The `isInstalledModule`
-    // narrowing it applies is exercised by the finance-only install-set e2e.
-    const ids = staticFloorEntries().map((e) => e.pillarId);
-    expect(new Set(ids)).toEqual(new Set(Object.keys(WORKSPACE_BUNDLE_MAP)));
-    for (const id of ids) {
-      expect(isInstalledModule(id)).toBe(true);
-    }
-  });
-
-  it('carries only the pillar id (in-repo pillars resolve via the bundle map)', () => {
-    for (const entry of staticFloorEntries()) {
-      expect(entry.assetsBaseUrl).toBeUndefined();
-      expect(entry.nav).toBeUndefined();
-      expect(entry.pages).toBeUndefined();
-    }
-  });
-});
 
 describe('bootEntries — the non-page surfaces (POPS-3266)', () => {
   const OVERLAY = { bundleSlot: 'quick-add', order: 10, labelKey: 'acme.capture' } as const;
@@ -212,47 +181,6 @@ describe('bootEntries (P7-T03 snapshot → registry entries)', () => {
   });
 });
 
-describe('installedAppManifests', () => {
-  afterEach(() => {
-    __resetInstalledFrontendManifestsOverride();
-  });
-
-  it('returns every installed manifest that declares both app surface and frontend.routes', () => {
-    __setInstalledFrontendManifestsOverride([
-      SYNTHETIC_FINANCE,
-      SYNTHETIC_INVENTORY_NO_ROUTES,
-      SYNTHETIC_EGO_OVERLAY,
-    ]);
-    const ids = installedAppManifests().map((m) => m.id);
-    // Inventory is excluded — declares 'app' surface but no routes.
-    // Ego is excluded — declares 'overlay' surface only.
-    expect(ids).toEqual(['finance']);
-  });
-
-  it('excludes overlay-only surfaces from the app route table', () => {
-    __setInstalledFrontendManifestsOverride([SYNTHETIC_EGO_OVERLAY]);
-    expect(installedAppManifests()).toEqual([]);
-  });
-
-  it('returns an empty list when no manifests are installed', () => {
-    __setInstalledFrontendManifestsOverride([]);
-    expect(installedAppManifests()).toEqual([]);
-  });
-
-  it('the static floor surfaces only well-formed manifests with app surfaces', () => {
-    // No override applied — `installedFrontendManifests` walks the in-repo
-    // bundle-map floor (P7-T03). The shell supports an empty install set, so
-    // we assert the manifest contract for whatever the floor returns rather
-    // than a minimum length.
-    const live = installedFrontendManifests();
-    expect(Array.isArray(live)).toBe(true);
-    for (const m of live) {
-      expect(typeof m.id).toBe('string');
-      expect(Array.isArray(m.surfaces)).toBe(true);
-    }
-  });
-});
-
 describe('filterAppManifests', () => {
   it('keeps app-surfaced, route-bearing manifests and drops the rest', () => {
     const ids = filterAppManifests([
@@ -261,6 +189,18 @@ describe('filterAppManifests', () => {
       SYNTHETIC_EGO_OVERLAY,
     ]).map((m) => m.id);
     expect(ids).toEqual(['finance']);
+  });
+
+  it('drops an app-surfaced manifest that declares no routes', () => {
+    expect(filterAppManifests([SYNTHETIC_INVENTORY_NO_ROUTES])).toEqual([]);
+  });
+
+  it('drops overlay-only surfaces from the app route table', () => {
+    expect(filterAppManifests([SYNTHETIC_EGO_OVERLAY])).toEqual([]);
+  });
+
+  it('returns an empty list when nothing is installed', () => {
+    expect(filterAppManifests([])).toEqual([]);
   });
 });
 

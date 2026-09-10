@@ -185,12 +185,12 @@ function minimalManifest(pillarId: string): Record<string, unknown> {
 /**
  * The UI surface a loader-mounted pillar advertises, by pillar id.
  *
- * Most in-repo pillars resolve through the shell's static bundle map, so their
- * stubbed manifest needs no UI dimension at all. A pillar the shell mounts
- * through its runtime loader has left that map (POPS-3217), and everything the
- * rail and the router know about it comes off this wire — so a stub that omits
- * it produces a shell with no such pillar, which is what a spec clicking its
- * rail button discovers 30 seconds later.
+ * Every in-repo pillar now mounts through the shell's runtime loader (the
+ * static bundle map POPS-3227 removed used to make this unnecessary for most
+ * of them), and everything the rail and the router know about a pillar comes
+ * off this wire — so a stub that omits it produces a shell with no such
+ * pillar, which is what a spec clicking its rail button discovers 30 seconds
+ * later.
  *
  * Restated rather than imported from `@pops/purchases/manifest`: the point of
  * the change under test is that `@pops/shell` does not depend on the pillar,
@@ -218,7 +218,7 @@ const LOADER_MOUNTED_UI: Readonly<Record<string, Record<string, unknown>>> = {
     },
     // All twenty. The list this replaces carried eight, which was invisible
     // while the shell mounted media from its bundle map and a 404 on twelve
-    // URLs the moment it did not.
+    // URLs the moment it stopped.
     pages: [
       { path: '', index: true, bundleSlot: 'media-library' },
       { path: 'movies/:id', bundleSlot: 'media-movie-detail' },
@@ -539,12 +539,11 @@ const LOADER_MOUNTED_UI: Readonly<Record<string, Record<string, unknown>>> = {
  * Answer the boot snapshot fetch with exactly `pillarIds` registered, and the
  * shell manifest with the same set as the operator's selection.
  *
- * An in-repo pillar id resolves to mountable UI either through the static
- * bundle map or, for one that advertises `assetsBaseUrl` + `pages`
- * (`LOADER_MOUNTED_UI` above), through the runtime loader — and an id that
- * resolves to neither contributes no rail entry. Pass `[]` to exercise the
- * never-brick fallback: an empty snapshot degrades to the static bundle-map
- * floor rather than an app-less shell.
+ * A pillar id resolves to mountable UI by advertising `assetsBaseUrl` +
+ * `pages` (`LOADER_MOUNTED_UI` above); one that advertises neither is
+ * backend-only and contributes no rail entry. Pass `[]` to exercise the
+ * never-brick fallback: an empty snapshot degrades to the cached snapshot,
+ * and to the shell's own chrome when there is no cache.
  */
 export async function stubRegistry(page: Page, pillarIds: readonly string[]): Promise<void> {
   const pillars = pillarIds.map((pillarId) => {
@@ -599,7 +598,7 @@ export async function stubPillarHealth(page: Page, pillarIds: readonly string[])
   );
 }
 
-/** Every in-repo pillar the shell's static bundle map can mount. */
+/** Every pillar this repo ships a UI for. */
 export const IN_REPO_PILLARS = [
   'finance',
   'purchases',

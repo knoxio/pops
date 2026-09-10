@@ -1,60 +1,42 @@
 #!/usr/bin/env node
 /**
- * Pillar-UI reachability guard (P7-T08 / RD-10, widened by POPS-3217).
+ * Pillar-UI reachability guard (P7-T08 / RD-10, widened by POPS-3217,
+ * inverted by POPS-3227).
  *
- * There are two ways an in-repo pillar's UI reaches the shell, and this guard
- * asserts that every pillar app uses ONE of them.
+ * There is now exactly one way an in-repo pillar's UI reaches the shell, and
+ * this guard asserts every pillar app uses it: the pillar's wire manifest
+ * advertises an `assetsBaseUrl` and its `pages`, and the shell `import()`s the
+ * built bundle at that URL (`pillars/shell/src/app/external-ui.tsx`). The
+ * shell's build knows nothing about the package.
  *
- *   1. **The static bundle map.** The shell imports the published
- *      `@pops/app-<pillar>` package in `bundle-map.tsx` and mounts its routes
- *      at build time (ADR-002).
- *   2. **The runtime loader.** The pillar's wire manifest advertises an
- *      `assetsBaseUrl` and its `pages`, and the shell `import()`s the built
- *      bundle at that URL (`pillars/shell/src/app/external-ui.tsx`). The
- *      shell's build knows nothing about the package.
+ * Until POPS-3227 there was a second route — a static import of the published
+ * `@pops/app-<pillar>` package in the shell's `bundle-map.tsx` (ADR-002) —
+ * and this guard accepted either. That map is gone, so the guard is inverted:
+ * being on the wire is no longer an alternative, it is the requirement.
  *
- * Either is fine; neither is not. Both failure modes are silent in exactly the
- * same way — the pillar's UI simply does not appear, with no error anywhere —
- * which is why one guard covers both rather than the second arrangement
- * quietly opting a pillar out of the first one's check.
- *
- * The `pages` half of (2) is load-bearing rather than belt-and-braces: the
- * loader builds a pillar's routes from `pages` ALONE, so a manifest with an
+ * The `pages` half is load-bearing rather than belt-and-braces: the loader
+ * builds a pillar's routes from `pages` ALONE, so a manifest with an
  * `assetsBaseUrl` and no pages advertises a bundle nothing will ever mount a
- * route from.
+ * route from. Either omission fails the same silent way — the pillar's UI does
+ * not appear, with no error anywhere — which is why this is a guard and not a
+ * runtime check.
  *
  * What it does:
  *   1. Discover every in-repo pillar app by walking `pillars/<x>/app/package.json`
- *      and reading its `name` (expected `@pops/app-<pillar>`). This is the set
- *      the bundle map MUST reference. Discovered from disk — never a hardcoded
- *      pillar list, which is the exact static-rot this whole phase kills.
- *   2. Locate the shell's `bundle-map.tsx` and extract the `@pops/app-*`
- *      package specifiers it imports, via the shared statement-anchored
- *      specifier extractor (`scripts/ci/import-scan.mjs`) so a package name
- *      inside a comment or string literal does NOT count.
- *   3. For a package the bundle map does not reference, read the pillar's wire
- *      manifest (`pillars/<x>/src/api/manifest.ts`) and check it declares both
- *      `assetsBaseUrl` and a non-empty `pages`. Comments are stripped first,
- *      so a mention in prose does not count.
- *   4. Exit non-zero listing any pillar reachable by neither route; exit 0
- *      when every one is reachable by one of them.
- *
- * It deliberately ignores non-`@pops/app-*` imports the bundle map also
- * pulls in (e.g. `@pops/overlay-ego`, a frontend-only lib that is not a
- * pillar app and lives in `libs/`, not `pillars/<x>/app`). The contract this
- * guard enforces is one-directional: every pillar app must be referenced;
- * the bundle map may reference other things too.
- *
- * The `import.meta.glob` over `pillars/<x>/app/src` alternative is rejected
- * by design: it reaches behind the `@pops/app-*` contract into `src/`
- * (ISO-R3 violation). This guard exists precisely to keep the static,
- * contract-respecting bundle map honest without that hack.
+ *      and reading its `name` (expected `@pops/app-<pillar>`). Discovered from
+ *      disk — never a hardcoded pillar list, which is the exact static-rot this
+ *      whole phase kills.
+ *   2. Read each pillar's wire manifest (`pillars/<x>/src/api/manifest.ts`) and
+ *      check it declares both `assetsBaseUrl` and a non-empty `pages`.
+ *      Comments are stripped first, so a mention in prose does not count.
+ *   3. Exit non-zero listing any pillar the shell cannot reach; exit 0 when
+ *      every one is reachable.
  *
  * Usage:
- *   node scripts/check-bundle-map-coverage.mjs              check the real tree
- *   node scripts/check-bundle-map-coverage.mjs --self-test  prove the guard catches a gap
+ *   node scripts/check-pillar-ui-reachability.mjs              check the real tree
+ *   node scripts/check-pillar-ui-reachability.mjs --self-test  prove the guard catches a gap
  *
- * Exit code 0 on full coverage. Non-zero on any uncovered pillar app, on a
+ * Exit code 0 on full coverage. Non-zero on any unreachable pillar app, on a
  * failed self-test, or on usage / discovery errors.
  */
 
@@ -62,25 +44,13 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { extractSpecifiers, stripComments } from './ci/import-scan.mjs';
+import { stripComments } from './ci/import-scan.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(here, '..');
 
 /** Package-name prefix every in-repo pillar app must carry. */
 const APP_PACKAGE_PREFIX = '@pops/app-';
-
-/**
- * Candidate locations for the shell's static bundle map, relative to the
- * repo root, in priority order. The first that exists wins. The shell's
- * post-relocation home is `pillars/shell`; the legacy `apps/pops-shell`
- * path is kept as a fallback so the guard does not silently no-op if the
- * relocation order shifts.
- */
-const BUNDLE_MAP_CANDIDATES = [
-  'pillars/shell/src/app/bundle-map.tsx',
-  'apps/pops-shell/src/app/bundle-map.tsx',
-];
 
 /**
  * @typedef {object} PillarApp
@@ -92,11 +62,12 @@ const BUNDLE_MAP_CANDIDATES = [
 /**
  * Discover every in-repo pillar app from disk by walking
  * `pillars/<x>/app/package.json` and reading its `name`. The result is the set
- * of `@pops/app-*` packages the bundle map must reference. No hardcoded list.
+ * of pillars whose UI must be reachable. No hardcoded list.
  *
  * A `pillars/<x>/app/package.json` whose `name` does not start with
  * `@pops/app-` is a malformed app and is reported loudly rather than skipped —
- * the convention (`@pops/app-<pillar>`) is what the shell relies on.
+ * the convention (`@pops/app-<pillar>`) is what the build and the published
+ * bundle path rely on.
  *
  * @returns {PillarApp[]}
  */
@@ -117,44 +88,12 @@ function discoverPillarApps() {
     if (!pkg.name.startsWith(APP_PACKAGE_PREFIX)) {
       throw new Error(
         `${pkgPath} declares name "${pkg.name}" — every pillar app must be ` +
-          `named "${APP_PACKAGE_PREFIX}<pillar>" so the shell can static-import it.`
+          `named "${APP_PACKAGE_PREFIX}<pillar>".`
       );
     }
     out.push({ pkgName: pkg.name, pkgPath, pillarId: entry.name });
   }
   return out.toSorted((a, b) => a.pkgName.localeCompare(b.pkgName));
-}
-
-/**
- * Locate the shell bundle map on disk and return its repo-relative path.
- *
- * @returns {string}
- */
-function locateBundleMap() {
-  for (const candidate of BUNDLE_MAP_CANDIDATES) {
-    if (existsSync(join(repoRoot, candidate))) return candidate;
-  }
-  throw new Error(
-    `bundle-map.tsx not found. Looked in: ${BUNDLE_MAP_CANDIDATES.join(', ')}. ` +
-      `If the shell moved, add its path to BUNDLE_MAP_CANDIDATES.`
-  );
-}
-
-/**
- * The set of `@pops/app-*` package specifiers a bundle-map source actually
- * imports. Uses the shared statement-anchored extractor so a specifier that
- * merely appears inside a comment or string literal is NOT counted.
- *
- * @param {string} src
- * @returns {Set<string>}
- */
-export function referencedAppPackages(src) {
-  /** @type {Set<string>} */
-  const out = new Set();
-  for (const specifier of extractSpecifiers(src)) {
-    if (specifier.startsWith(APP_PACKAGE_PREFIX)) out.add(specifier);
-  }
-  return out;
 }
 
 /**
@@ -189,54 +128,45 @@ export function advertisesLoaderMountedUi(src) {
 }
 
 /**
- * @typedef {object} CoverageResult
- * @property {string[]} missing  Pillar-app package names reachable by neither route.
- * @property {string[]} covered  Pillar-app package names reachable by one of them.
- * @property {string[]} viaLoader Of the covered, those mounted through the loader.
+ * @typedef {object} ReachabilityResult
+ * @property {string[]} missing  Pillar-app package names the shell cannot reach.
+ * @property {string[]} covered  Pillar-app package names the loader will mount.
  * @property {string[]} reasons  One line per missing app saying what it lacks.
  */
 
 /**
- * Pure core: assert every discovered pillar-app package is reachable — through
- * the bundle map, or through the runtime loader. Pure (no I/O) so the self-test
- * can drive it over in-memory fixtures.
+ * Pure core: assert every discovered pillar app is reachable through the
+ * runtime loader. Pure (no I/O) so the self-test can drive it over in-memory
+ * fixtures.
  *
- * @param {PillarApp[]} apps        Discovered pillar apps.
- * @param {Set<string>} referenced  `@pops/app-*` specifiers the bundle map imports.
+ * @param {PillarApp[]} apps  Discovered pillar apps.
  * @param {(app: PillarApp) => { assetsBaseUrl: boolean, pages: boolean, found?: boolean }} loaderUiOf
  *   What the pillar's wire manifest advertises. `found: false` means no wire
  *   manifest could be located at all, which is reported as its own failure
  *   rather than as a manifest that declares nothing — the two need different
  *   fixes, and conflating them sent a reader looking for a missing
  *   `assetsBaseUrl` in a file that was there and correct (POPS-3220).
- * @returns {CoverageResult}
+ * @returns {ReachabilityResult}
  */
-export function evaluateCoverage(apps, referenced, loaderUiOf) {
+export function evaluateReachability(apps, loaderUiOf) {
   /** @type {string[]} */
   const missing = [];
   /** @type {string[]} */
   const covered = [];
   /** @type {string[]} */
-  const viaLoader = [];
-  /** @type {string[]} */
   const reasons = [];
 
   for (const app of apps) {
-    if (referenced.has(app.pkgName)) {
-      covered.push(app.pkgName);
-      continue;
-    }
     const wire = loaderUiOf(app);
     if (wire.assetsBaseUrl && wire.pages) {
       covered.push(app.pkgName);
-      viaLoader.push(app.pkgName);
       continue;
     }
     missing.push(app.pkgName);
     if (wire.found === false) {
       reasons.push(
-        `${app.pkgName} — absent from the bundle map, and no wire manifest could be ` +
-          `found for pillar '${app.pillarId}' (looked for src/api/manifest.ts, ` +
+        `${app.pkgName} — no wire manifest could be found for pillar ` +
+          `'${app.pillarId}' (looked for src/api/manifest.ts, ` +
           `src/api/${app.pillarId}-manifest.ts, and any src/api/*.ts building a ` +
           `ManifestPayload)`
       );
@@ -251,13 +181,10 @@ export function evaluateCoverage(apps, referenced, loaderUiOf) {
     const lacks = [];
     if (!wire.assetsBaseUrl) lacks.push('assetsBaseUrl');
     if (!wire.pages) lacks.push('non-empty pages');
-    reasons.push(
-      `${app.pkgName} — absent from the bundle map, and its wire manifest ` +
-        `declares no ${lacks.join(' and no ')}`
-    );
+    reasons.push(`${app.pkgName} — its wire manifest declares no ${lacks.join(' and no ')}`);
   }
 
-  return { missing, covered, viaLoader, reasons };
+  return { missing, covered, reasons };
 }
 
 /**
@@ -319,9 +246,7 @@ function run() {
     );
     return false;
   }
-  const bundleMapPath = locateBundleMap();
-  const referenced = referencedAppPackages(readFileSync(join(repoRoot, bundleMapPath), 'utf8'));
-  const { missing, covered, viaLoader, reasons } = evaluateCoverage(apps, referenced, (app) => {
+  const { missing, covered, reasons } = evaluateReachability(apps, (app) => {
     const manifestPath = locatePillarManifest(app.pillarId);
     if (manifestPath === undefined) {
       return { assetsBaseUrl: false, pages: false, found: false };
@@ -329,33 +254,27 @@ function run() {
     return { ...advertisesLoaderMountedUi(readFileSync(manifestPath, 'utf8')), found: true };
   });
 
-  const loaderMounted = new Set(viaLoader);
-  console.log(
-    `Discovered ${apps.length} pillar app(s); ${bundleMapPath} references ` +
-      `${referenced.size} @pops/app-* package(s).`
-  );
-  for (const name of covered) {
-    console.log(`  OK  ${name}${loaderMounted.has(name) ? '  (runtime loader)' : ''}`);
-  }
+  console.log(`Discovered ${apps.length} pillar app(s).`);
+  for (const name of covered) console.log(`  OK  ${name}`);
 
   if (missing.length === 0) {
-    console.log('OK — every pillar app reaches the shell, by the map or by the loader.');
+    console.log('OK — every pillar app reaches the shell through the runtime loader.');
     return true;
   }
 
-  console.error(`FAIL — ${missing.length} pillar app(s) reach the shell by neither route:`);
+  console.error(`FAIL — ${missing.length} pillar app(s) the shell cannot reach:`);
   for (const reason of reasons) console.error(`  XX  ${reason}`);
   console.error(
-    `  A pillar's UI has to arrive one of two ways: an import plus an entry in ` +
-      `${bundleMapPath}, or an \`assetsBaseUrl\` + \`pages\` in its wire manifest ` +
-      `for the runtime loader. With neither, the UI silently fails to mount.`
+    `  A pillar's UI arrives one way: an \`assetsBaseUrl\` + \`pages\` in its wire ` +
+      `manifest, which the shell loads at runtime. Without both, the UI silently ` +
+      `fails to mount.`
   );
   return false;
 }
 
 /**
  * Synthetic fixtures proving the guard catches a gap and passes a complete
- * map. Mirrors the `--self-test` convention in check-exports.mjs /
+ * tree. Mirrors the `--self-test` convention in check-exports.mjs /
  * check-pillar-schema-coverage.mjs so a regression that neuters the guard is
  * caught without a real tree break.
  *
@@ -368,35 +287,18 @@ function selfTest() {
     { pkgName: '@pops/app-beta', pkgPath: 'pillars/beta/app/package.json', pillarId: 'beta' },
   ];
 
-  const completeMap = [
-    "import { manifest as a } from '@pops/app-alpha';",
-    "import { manifest as b } from '@pops/app-beta';",
-    "import { manifest as e } from '@pops/overlay-ego';",
-  ].join('\n');
-
-  // beta is only present in a comment and a string literal — the statement
-  // anchored extractor must NOT count either, so the gap is still caught.
-  const gappedMap = [
-    "import { manifest as a } from '@pops/app-alpha';",
-    "// import { manifest as b } from '@pops/app-beta';",
-    "const doc = 'see @pops/app-beta for the missing one';",
-  ].join('\n');
-
   const noWireUi = () => ({ assetsBaseUrl: false, pages: false });
   const loaderMounted = () => ({ assetsBaseUrl: true, pages: true });
 
-  const complete = evaluateCoverage(apps, referencedAppPackages(completeMap), noWireUi);
-  const gapped = evaluateCoverage(apps, referencedAppPackages(gappedMap), noWireUi);
-  const gappedButOnTheWire = evaluateCoverage(
-    apps,
-    referencedAppPackages(gappedMap),
-    loaderMounted
+  const complete = evaluateReachability(apps, loaderMounted);
+  const bothMissing = evaluateReachability(apps, noWireUi);
+  const onlyAlphaOnTheWire = evaluateReachability(apps, (app) =>
+    app.pkgName === '@pops/app-alpha' ? loaderMounted() : noWireUi()
   );
-  const halfDeclared = evaluateCoverage(apps, referencedAppPackages(gappedMap), () => ({
+  const halfDeclared = evaluateReachability(apps, () => ({
     assetsBaseUrl: true,
     pages: false,
   }));
-  const bothMissing = evaluateCoverage(apps, referencedAppPackages(gappedMap), noWireUi);
 
   const manifestWithBoth = [
     'export function build() {',
@@ -426,10 +328,10 @@ function selfTest() {
   ].join('\n');
 
   // No wire manifest at all is a different failure from one that declares
-  // nothing, and the guard conflated them until POPS-3220, back when
-  // ai named its builder `ai-manifest.ts`: the hardcoded lookup missed it,
-  // and the reader was told to add an `assetsBaseUrl` that was already there.
-  const noManifestFound = evaluateCoverage(apps, referencedAppPackages(gappedMap), () => ({
+  // nothing, and the guard conflated them until POPS-3220, back when `ai`
+  // named its builder `ai-manifest.ts`: the hardcoded lookup missed it, and
+  // the reader was told to add an `assetsBaseUrl` that was already there.
+  const noManifestFound = evaluateReachability(apps, () => ({
     assetsBaseUrl: false,
     pages: false,
     found: false,
@@ -475,16 +377,12 @@ function selfTest() {
   const mentioned = advertisesLoaderMountedUi(manifestMentioningOnly);
 
   const checks = {
-    'complete map passes (no missing)': complete.missing.length === 0,
-    'complete map covers both apps': complete.covered.length === 2,
-    'gap detected when the wire declares nothing either':
-      gapped.missing.length === 1 && gapped.missing[0] === '@pops/app-beta',
-    'commented / stringified specifier does not count': gapped.covered.length === 1,
-    'non-app import ignored': !complete.covered.includes('@pops/overlay-ego'),
-    'an app off the map but on the wire is covered':
-      gappedButOnTheWire.missing.length === 0 &&
-      gappedButOnTheWire.viaLoader.includes('@pops/app-beta'),
-    'assetsBaseUrl without pages is not enough': halfDeclared.missing.length === 1,
+    'a fully wired tree passes': complete.missing.length === 0 && complete.covered.length === 2,
+    'a pillar off the wire is flagged':
+      bothMissing.missing.length === 2 && bothMissing.covered.length === 0,
+    'only the pillar off the wire is flagged':
+      onlyAlphaOnTheWire.missing.length === 1 && onlyAlphaOnTheWire.missing[0] === '@pops/app-beta',
+    'assetsBaseUrl without pages is not enough': halfDeclared.missing.length === 2,
     'the failure says what the wire lacks':
       halfDeclared.reasons[0]?.includes('declares no non-empty pages') === true,
     // Both shapes the message can take, because each has been ungrammatical at
@@ -511,8 +409,8 @@ function selfTest() {
   const ok = Object.values(checks).every(Boolean);
   if (ok) {
     console.log(
-      'self-test OK — guard accepts a mapped app and a loader-mounted one, flags ' +
-        'an app reachable by neither, and ignores commented / stringified mentions.'
+      'self-test OK — guard accepts a loader-mounted app, flags one the shell ' +
+        'cannot reach, and reads neither prose nor an empty page list as a declaration.'
     );
   } else {
     console.error('SELF-TEST FAILED — guard did not behave as expected:');
@@ -527,9 +425,9 @@ function main() {
   const args = process.argv.slice(2);
   if (args.includes('--help') || args.includes('-h')) {
     console.log(
-      'Usage: node scripts/check-bundle-map-coverage.mjs [--self-test]\n' +
-        'Asserts every in-repo pillars/*/app package reaches the shell — through the\n' +
-        'static bundle-map.tsx, or through the runtime loader via its wire manifest.'
+      'Usage: node scripts/check-pillar-ui-reachability.mjs [--self-test]\n' +
+        'Asserts every in-repo pillars/*/app package reaches the shell through the\n' +
+        'runtime loader, via an assetsBaseUrl + pages in its wire manifest.'
     );
     process.exit(2);
   }

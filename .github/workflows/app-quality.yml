@@ -11,13 +11,18 @@ name: App Quality
 # their unit tests never ran in CI. This closes that gap: a dedicated, disk-
 # discovered matrix that runs each app's `typecheck` + `test` script directly.
 #
-# App units have NO standalone `build` script (they build via the shell), so
-# this lane is typecheck + test (plus a codegen-drift check, see below) —
-# there is nothing to `pnpm build` on the unit itself. The dependency closure
-# IS built (`^...`) so the app's compiled deps (`@pops/types`, `@pops/ui`, the
-# owning pillar's generated client, …) resolve before typecheck/test import
-# them. This generalises the former single-app `ai-quality.yml` (now retired
-# — app-ai is just another row in this matrix) to every app unit.
+# Since POPS-3227 the shell has NO `@pops/app-*` dependency at all — every
+# pillar UI is loaded at runtime from its own bundle — so the transitive
+# compile that lane used to provide is gone, and this is the only workflow
+# that builds an app on an app-source change. `build` is therefore a step
+# here, not an omission: a remote bundle fails at rolldown time in ways
+# neither typecheck nor vitest can see (an externalised package compiled to a
+# bare `require`, a `process` read at module scope), and the reader's only
+# symptom is the loader's placeholder. The dependency closure is built first
+# (`^...`) so the app's compiled deps (`@pops/types`, `@pops/ui`, the owning
+# pillar's generated client, …) resolve. This generalises the former
+# single-app `ai-quality.yml` (now retired — app-ai is just another row in
+# this matrix) to every app unit.
 #
 # Codegen drift: every app's generated Hey API client(s) (`generate:*`
 # scripts — an app's own client, plus a cross-pillar consumer client where it
@@ -162,9 +167,8 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build dependency closure
-        # App units have no own `build` script — they build via the shell — so
-        # only the deps (`^...`) are built here, never the unit itself. This
-        # materialises the compiled .d.ts the app's typecheck + test import.
+        # Deps only (`^...`), so the compiled .d.ts the app's typecheck, test
+        # and bundle build all import are materialised before any of them run.
         run: pnpm --filter "${{ matrix.app.pkg }}^..." build
 
       - name: Gate self-test (proves it catches drift, a generator error, and missing output)
@@ -184,6 +188,14 @@ jobs:
 
       - name: Typecheck
         run: pnpm --filter "${{ matrix.app.pkg }}" typecheck
+
+      - name: Build the remote bundle
+        # The shell `import()`s this artifact at runtime; nothing else in CI
+        # produces it on an app-source change (docker-build triggers on
+        # Dockerfiles, not app sources). Its own build asserts the
+        # shared-runtime packages stayed external and that no bare `process`
+        # read survived — both of which fail only here.
+        run: pnpm --filter "${{ matrix.app.pkg }}" build
 
       - name: Test
         # Prefer `test:coverage` when the unit defines it.

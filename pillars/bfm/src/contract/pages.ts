@@ -7,10 +7,9 @@
  * `ManifestPayload.pages` for the registry; `@pops/app-bfm` resolves the slot
  * to the component its route table already mounts.
  *
- * **Every route, not only the rail-reachable ones.** The shell mounts a
- * bundle-mapped pillar's whole `routes` array, but a pillar mounted through
- * the runtime loader gets exactly the pages listed here — so a route missing
- * from this list does not exist (POPS-3221).
+ * **Every route, not only the rail-reachable ones.** The shell mounts
+ * exactly the pages listed here and nothing else — so a route missing from
+ * this list does not exist (POPS-3221).
  */
 export const BFM_PAGES = [{ path: '', index: true, bundleSlot: 'bfm-devices' }] as const;
 

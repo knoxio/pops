@@ -34,9 +34,9 @@ const NAV_ORDER: Readonly<Record<string, number>> = {
  *
  * Every pillar advertises `nav` / `pages` / `assetsBaseUrl` since POPS-3215;
  * before it, an entry with none of them still reached the rail through the
- * static bundle map. That map no longer carries any app, so a fixture without
- * a UI surface now resolves to nothing — which is the correct behaviour and
- * was silently doing the opposite here.
+ * static bundle map. POPS-3227 removed that map outright, so a fixture
+ * without a UI surface now resolves to nothing — which is the correct
+ * behaviour and was silently doing the opposite here.
  */
 function snapshotEntry(pillarId: string): PillarSnapshot {
   const order = NAV_ORDER[pillarId] ?? 90;
@@ -77,9 +77,9 @@ function snapshotEntry(pillarId: string): PillarSnapshot {
 /**
  * The rail a normal deploy produces: several pillars, ordered by `nav.order`.
  *
- * It comes from a registry snapshot rather than the static floor, because the
- * floor carries no app any more — the redirect's "first installed app" is
- * whatever the registry lists, and nothing else.
+ * It comes from a registry snapshot rather than the static floor, because that
+ * floor no longer exists — the redirect's "first installed app" is whatever
+ * the registry lists, and nothing else.
  */
 const LIVE_RAIL = resolveBootRegistry([
   snapshotEntry('finance'),
@@ -139,13 +139,10 @@ describe('IndexRedirect', () => {
     await waitFor(() => expect(mocks.manifest).toHaveBeenCalled());
   });
 
-  // `/media`, not `/finance`: the fallback is the first app in the STATIC
-  // bundle map, and finance left it when it moved onto the runtime loader
-  // (POPS-3219). The floor shrinks with every swap and empties at the end of
-  // POPS-3215 — what should replace it is POPS-3239.
-  // "First app on the rail", which is finance here because its nav.order is
-  // lowest — not because anything spells `/finance`. The pair of
-  // finance-less tests below is what holds those two apart.
+  // `/media`, not `/finance`: the fallback is the first app on the resolved
+  // rail, not a hardcoded literal. Finance wins here only because its
+  // `nav.order` is lowest — not because anything spells `/finance`. The pair
+  // of finance-less tests below is what holds those two apart.
   it('falls back to the first app on the rail when the manifest has not yet loaded', () => {
     mocks.manifest.mockReturnValue(new Promise(() => undefined));
     renderAt();

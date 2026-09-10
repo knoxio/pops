@@ -7,10 +7,9 @@
  * `ManifestPayload.pages` for the registry; `@pops/app-inventory` resolves the
  * slot to the component its route table already mounts.
  *
- * **Every route, not only the rail-reachable ones.** The shell mounts a
- * bundle-mapped pillar's whole `routes` array, but a pillar mounted through
- * the runtime loader gets exactly the pages listed here — so a route missing
- * from this list does not exist (POPS-3223). The two `report/*` redirects were
+ * **Every route, not only the rail-reachable ones.** The shell mounts
+ * exactly the pages listed here and nothing else — so a route missing from
+ * this list does not exist (POPS-3223). The two `report/*` redirects were
  * missing from the list this replaces: harmless while the bundle map mounted
  * the whole route table, and a 404 on an old bookmark the moment it did not.
  *

@@ -1,37 +1,78 @@
 import { describe, expect, it } from 'vitest';
 
-// CI guardrail against silent nav drift: missing icon mappings would otherwise
-// render a fallback letter instead of failing the build.
 import { iconMap } from '@pops/navigation';
 
-import { registeredApps } from './registry';
+import { buildRegisteredAppsFromBundleMap } from './registry';
 
-describe('nav registry', () => {
-  /**
-   * Inverted by POPS-3226: the bundle map carries no pillar app any more, so
-   * the rail built from it is empty and every entry comes from the registry
-   * instead. A non-empty result here means something re-entered the map.
-   */
-  it('registers no app, because the map carries none', () => {
-    expect(registeredApps.map((app) => app.id)).toEqual([]);
+import type { BundleEntry } from '../bundle-entry';
+import type { AppNavConfig } from './types';
+
+/**
+ * The app rail's invariants.
+ *
+ * These used to run over `registeredApps`, a constant built from the static
+ * bundle map. POPS-3227 deleted that map, and with it the constant — every
+ * rail entry is now synthesized from a pillar's wire manifest at boot. So the
+ * subject is the projection itself, `buildRegisteredAppsFromBundleMap`, driven
+ * over the shape boot hands it.
+ *
+ * The invariants are unchanged and still worth pinning: they are what makes
+ * the rail render rather than silently degrade — an unmapped icon renders a
+ * fallback letter, a duplicate basePath makes one pillar unreachable, and a
+ * bare item path routes to the wrong place.
+ */
+function entry(id: string, order: number, items: AppNavConfig['items']): BundleEntry {
+  return {
+    navOrder: order,
+    manifest: {
+      id,
+      name: id,
+      version: '1.0.0',
+      surfaces: ['app'],
+      frontend: {
+        routes: [],
+        navConfig: {
+          id,
+          label: id,
+          labelKey: id,
+          icon: 'Compass',
+          basePath: `/${id}`,
+          items,
+        },
+      },
+    },
+  };
+}
+
+const RAIL = buildRegisteredAppsFromBundleMap({
+  media: entry('media', 20, [
+    { path: '', label: 'Library', labelKey: 'media.library', icon: 'Film' },
+  ]),
+  finance: entry('finance', 10, [
+    { path: '', label: 'Dashboard', labelKey: 'finance.dashboard', icon: 'LayoutDashboard' },
+    { path: '/rules', label: 'Rules', labelKey: 'finance.rules', icon: 'BookOpen' },
+  ]),
+});
+
+describe('app rail projection', () => {
+  // The ordering rule, which is the one a reader notices when it breaks: the
+  // rail is sorted by navOrder, not by the order pillars happened to register.
+  it('orders the rail by navOrder, not insertion order', () => {
+    expect(RAIL.map((app) => app.id)).toEqual(['finance', 'media']);
   });
 
-  // Parity gate — the bundle-mapped pillars must render in this exact order;
-  // drift here is an observable app-rail regression.
-  //
-  // `finance` and `purchases` are absent, and their absence is the point
-  // rather than a regression: both reach the shell through its runtime loader
-  // (POPS-3217, POPS-3219), so they arrive on the rail from the live registry
-  // at their own `nav.order` — 10 and 15, ahead of media (20), where they have
-  // always sat. `registeredApps` is built from the static bundle map alone, which is
-  // also the registry-outage floor, so this list is what renders when the
-  // registry cannot be reached. `src/app/registry-walk.test.ts` asserts the
-  // wire position it takes when it can.
-  it('renders the bundle-mapped pillars in their pinned order', () => {
-    expect(registeredApps.map((app) => app.id)).toEqual([]);
+  it('drops an entry whose manifest carries no navConfig', () => {
+    const withBackendOnly = buildRegisteredAppsFromBundleMap({
+      media: entry('media', 20, []),
+      registry: {
+        navOrder: 5,
+        manifest: { id: 'registry', name: 'registry', version: '1.0.0', surfaces: ['app'] },
+      },
+    });
+    expect(withBackendOnly.map((app) => app.id)).toEqual(['media']);
   });
 
-  it.each(registeredApps.map((app) => [app.id, app] as const))(
+  it.each(RAIL.map((app) => [app.id, app] as const))(
     '%s app icon resolves through iconMap',
     (_, app) => {
       expect(iconMap[app.icon]).toBeDefined();
@@ -39,7 +80,7 @@ describe('nav registry', () => {
   );
 
   it.each(
-    registeredApps.flatMap((app) =>
+    RAIL.flatMap((app) =>
       app.items.map((item) => [`${app.id}${item.path || '/'}`, item.icon] as const)
     )
   )('%s item icon resolves through iconMap', (_, icon) => {
@@ -47,23 +88,23 @@ describe('nav registry', () => {
   });
 
   it('has unique app ids', () => {
-    const ids = registeredApps.map((app) => app.id);
+    const ids = RAIL.map((app) => app.id);
     expect(new Set(ids).size).toBe(ids.length);
   });
 
   it('has unique basePaths', () => {
-    const basePaths = registeredApps.map((app) => app.basePath);
+    const basePaths = RAIL.map((app) => app.basePath);
     expect(new Set(basePaths).size).toBe(basePaths.length);
   });
 
-  it.each(registeredApps.map((app) => [app.id, app.basePath] as const))(
+  it.each(RAIL.map((app) => [app.id, app.basePath] as const))(
     '%s basePath is rooted (starts with "/")',
     (_, basePath) => {
       expect(basePath.startsWith('/')).toBe(true);
     }
   );
 
-  it.each(registeredApps.map((app) => [app.id, app] as const))(
+  it.each(RAIL.map((app) => [app.id, app] as const))(
     '%s items use rooted paths or the empty string',
     (_, app) => {
       for (const item of app.items) {
@@ -72,11 +113,8 @@ describe('nav registry', () => {
     }
   );
 
-  it.each(registeredApps.map((app) => [app.id, app] as const))(
-    '%s items have unique paths',
-    (_, app) => {
-      const paths = app.items.map((item) => item.path);
-      expect(new Set(paths).size).toBe(paths.length);
-    }
-  );
+  it.each(RAIL.map((app) => [app.id, app] as const))('%s items have unique paths', (_, app) => {
+    const paths = app.items.map((item) => item.path);
+    expect(new Set(paths).size).toBe(paths.length);
+  });
 });

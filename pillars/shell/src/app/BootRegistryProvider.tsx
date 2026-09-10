@@ -6,7 +6,7 @@
  * consumers (`AppRail`, `Sidebar`, `PageNav`, `RootLayout`, `IndexRedirect`)
  * read `registeredApps` from here via {@link useRegisteredApps} instead of the
  * old module-eval `registeredApps` constant, so the rail reflects the live
- * install set (or the static floor when the registry is unreachable).
+ * install set (or the cached snapshot when the registry is unreachable).
  *
  * Sibling to `PillarStatusProvider`: that one feeds health post-mount; this one
  * feeds the boot-resolved install set, threaded down from the boot await.

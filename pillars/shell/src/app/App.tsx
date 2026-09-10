@@ -49,7 +49,7 @@ const queryClient = new QueryClient({
 interface AppProps {
   /**
    * The boot-resolved install set (P7-T03). Resolved in `main.tsx` from the
-   * live registry snapshot (or the static floor when the registry is
+   * live registry snapshot (or the cached snapshot when the registry is
    * unreachable) before first render, then threaded in here.
    */
   readonly bootRegistry: BootRegistry;

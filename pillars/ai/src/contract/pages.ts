@@ -7,10 +7,9 @@
  * onto `ManifestPayload.pages` for the registry; `@pops/app-ai` resolves the
  * slot to the component its route table already mounts.
  *
- * **Every route, not only the rail-reachable ones.** The shell mounts a
- * bundle-mapped pillar's whole `routes` array, but a pillar mounted through
- * the runtime loader gets exactly the pages listed here — so a route missing
- * from this list does not exist (POPS-3220). Three of ai's four routes render
+ * **Every route, not only the rail-reachable ones.** The shell mounts
+ * exactly the pages listed here and nothing else — so a route missing from
+ * this list does not exist (POPS-3220). Three of ai's four routes render
  * nothing but a redirect into finance or the settings page, and they are on
  * this list for that reason: leaving them off would turn a working link into
  * a 404 rather than into a page the reader can see is absent.

@@ -3,8 +3,8 @@
  *
  * `src/app/boot-snapshot.ts` blocks first render on
  * `GET /registry-api/registry/pillars` and resolves the rail and the router
- * from it, falling back to the static bundle-map floor when the registry says
- * nothing usable. Both halves of that contract are unit-tested; what only a
+ * from it, falling back to the last good cached snapshot when the registry
+ * says nothing usable. Both halves of that contract are unit-tested; what only a
  * browser can show is that the resolved set is what actually reaches the DOM,
  * and that the fallback is a working shell rather than an app-less one.
  */

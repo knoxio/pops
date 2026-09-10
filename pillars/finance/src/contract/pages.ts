@@ -8,9 +8,8 @@
  * slot to the component its route table already mounts. Declared once, the two
  * cannot disagree about which page a slot names.
  *
- * **Every route, not only the rail-reachable ones.** The shell mounts a
- * bundle-mapped pillar's whole `routes` array, but a pillar mounted through the
- * runtime loader gets exactly the pages listed here — so a route missing from
+ * **Every route, not only the rail-reachable ones.** The shell mounts
+ * exactly the pages listed here and nothing else — so a route missing from
  * this list does not exist. Six of finance's fourteen were missing when it
  * moved (POPS-3219): the accounts surface, an entity's detail page, the tag
  * rules browser and settings. None is reached from the rail, so none would have

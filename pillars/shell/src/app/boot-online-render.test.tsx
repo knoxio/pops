@@ -1,20 +1,19 @@
 /**
  * Online-path render test for the registry-driven boot branch.
  *
- * That branch has no rendered coverage from the gated Playwright suite
- * (workflow_dispatch only): dev Vite has no `/registry-api` proxy and the e2e
- * harness swaps a build-time `@pops/module-registry` snapshot, so the boot
- * fetch 404s and the shell silently soft-falls to `[]` → the static floor.
- * Every e2e therefore exercises ONLY the floor; a regression that breaks only
- * the live mount would pass all CI green and surface only in production.
+ * The Playwright suite that does exercise this branch is gated
+ * (workflow_dispatch only), and it drives the shell through `page.route`
+ * stubs rather than the browser's own fetch — so a regression in the fetch,
+ * parse or resolve layer surfaces there as "no pillars", if the gated suite
+ * is run at all.
  *
  * This drives the real online pipeline end-to-end in jsdom: a stubbed `fetch`
- * serves a NON-EMPTY snapshot (one in-repo pillar + one external pillar) →
+ * serves a NON-EMPTY snapshot (two loader-mounted pillars) →
  * `fetchBootRegistry()` resolves it (NOT a fixture, the production resolver) →
  * the result seeds `BootRegistryProvider` → a rail consumer reading
  * `useRegisteredApps()` renders the live install set. The assertion is the
  * 2(a) non-blank guarantee at the render layer: `source === 'registry'` and
- * the rendered rail carries the snapshot's apps, never the floor.
+ * the rendered rail carries the snapshot's apps.
  *
  * It deliberately renders a minimal rail probe rather than the full `AppRail`
  * so the test pins the boot→fetch→render contract without coupling to i18n,
@@ -185,10 +184,10 @@ describe('shell online boot → render (registry-driven branch)', () => {
    * chrome, not a crash or a blank document. POPS-3250 covers the reader-facing
    * half: those routes currently say "Module not installed".
    */
-  it('resolves to an empty floor, without crashing, when the fetch fails and no cache exists', async () => {
+  it('resolves to an empty surface, without crashing, when the fetch fails and no cache exists', async () => {
     const fetchStub = vi.fn(() => Promise.reject(new Error('ECONNREFUSED')));
     const bootRegistry = await fetchBootRegistry({ fetch: fetchStub, store: noCache() });
-    expect(bootRegistry.source).toBe('static-floor');
+    expect(bootRegistry.source).toBe('empty');
 
     renderRail(bootRegistry);
 
@@ -198,12 +197,13 @@ describe('shell online boot → render (registry-driven branch)', () => {
   });
 
   /**
-   * The floor the shell will actually have once POPS-3215 has emptied the
-   * bundle map: the set that answered last time, rendered.
+   * The floor the shell actually has now that POPS-3215 and POPS-3227 have
+   * emptied and then removed the bundle map: the set that answered last time,
+   * rendered.
    *
    * `weather` is the point. It is an external pillar with no bundle-map entry,
-   * so the static floor can never produce it — its presence on the rail after
-   * a dead fetch is proof the cache drove the boot rather than the map.
+   * and there is no static floor left to produce it — its presence on the
+   * rail after a dead fetch is proof the cache drove the boot, not a map.
    */
   it('renders the last good snapshot when the registry has gone away', async () => {
     const store = noCache();

@@ -1,13 +1,13 @@
 import { lazy, Suspense, type ComponentType } from 'react';
 
 /**
- * External-pillar UI loading (Option A).
+ * Pillar UI loading (Option A).
  *
- * In-repo pillars reach the shell through the static `WORKSPACE_BUNDLE_MAP`
- * (`./bundle-map.tsx`) — a build-time import graph that ADR-002 keeps as a
- * single static Vite SPA. This module covers the orthogonal case: a pillar
- * the build does not know about, registered at runtime, whose manifest
- * advertises an `assetsBaseUrl`.
+ * Every pillar reaches the shell through this module: one the build has never
+ * heard of, registered at runtime, and one that lives in this repo, are the
+ * same case. Both advertise an `assetsBaseUrl` on their manifest, and the
+ * shell knows nothing else about either. POPS-3227 removed the static
+ * `WORKSPACE_BUNDLE_MAP` that used to be the in-repo shortcut.
  *
  * The mechanism is Option A (not Module Federation): the shell `import()`s
  * the pillar's single ESM entry from the
@@ -19,9 +19,10 @@ import { lazy, Suspense, type ComponentType } from 'react';
  * (network error, missing slot, invalid bundle) degrades to a placeholder
  * instead of crashing the shell.
  *
- * This adds no bundler coupling and does not change how in-repo pillars are
- * bundled: it is a runtime dynamic `import()` of a URL, native to ES modules
- * and Vite. ADR-002 stands — the in-repo FE is still one static SPA.
+ * This adds no bundler coupling: it is a runtime dynamic `import()` of a URL,
+ * native to ES modules and Vite. What it costs is ADR-002's single static SPA,
+ * which is the trade POPS-3215 made deliberately — the shell's own bundle no
+ * longer carries any pillar's code, and a pillar can ship without it.
  *
  * ## The shared-runtime contract
  *
@@ -61,7 +62,7 @@ import type {
 } from '@pops/pillar-sdk';
 import type { ModuleManifest } from '@pops/types';
 
-import type { BundleEntry, CaptureOverlayMountProps } from './bundle-map';
+import type { BundleEntry, CaptureOverlayMountProps } from './bundle-entry';
 import type { AppNavConfig, AppNavItem, IconName } from './nav/types';
 
 /**
@@ -341,9 +342,10 @@ function widgetBundlesFor(
 }
 
 /**
- * Synthesize the `BundleEntry` an external pillar contributes, mirroring the
- * shape in-repo pillars get from the static bundle map. The resulting entry
- * carries:
+ * Synthesize the `BundleEntry` an external pillar contributes — the same
+ * `BundleEntry` shape every pillar resolves to now that POPS-3227 removed the
+ * static bundle map that used to produce it directly for in-repo pillars. The
+ * resulting entry carries:
  *
  *   - `manifest.frontend.navConfig` derived from the wire `nav` descriptor
  *     (so the app rail renders synchronously, no remote fetch needed),

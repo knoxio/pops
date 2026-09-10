@@ -70,7 +70,7 @@ Runs immediately after `actions/checkout`. **No third-party import, at any depth
 
 | Guard                                               | Job                                                                             | Reads                                                            |
 | --------------------------------------------------- | ------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
-| `scripts/check-bundle-map-coverage.mjs`             | `quality.yml` → `bundle-map-coverage`                                           | TSX source, `package.json`                                       |
+| `scripts/check-pillar-ui-reachability.mjs`          | `quality.yml` → `pillar-ui-reachability`                                        | Pillar wire manifests, `package.json`                            |
 | `scripts/check-tailwind-source-coverage.mjs`        | `quality.yml` → `tailwind-source-coverage`                                      | CSS `@source` globs, source file paths                           |
 | `scripts/check-escape-hatches.mjs`                  | `quality.yml` → `escape-hatches`                                                | TS/TSX source, JSON baseline                                     |
 | `scripts/check-touch-targets.mjs`                   | `quality.yml` → `touch-targets`                                                 | TS/TSX source, JSON baseline                                     |

@@ -1,14 +1,14 @@
 /**
- * App-rail registry — derived from a walk over the workspace bundle map.
+ * App-rail registry — derived from a walk over the resolved bundle entries.
  *
- * The walk iterates the workspace bundle map, picks up each entry's
+ * The walk iterates the record the boot resolver builds (one entry per mounted
+ * pillar), picks up each entry's
  * `manifest.frontend.navConfig`, and sorts by the entry-level `navOrder`
  * (mirrors `nav.order` on the pillar's wire-format manifest payload). Ties
  * break lexicographically on the nav `id` so authoring order is
  * deterministic without tight numbering.
  */
-import { WORKSPACE_BUNDLE_MAP, type BundleEntry } from '../bundle-map';
-
+import type { BundleEntry } from '../bundle-entry';
 import type { AppNavConfig } from './types';
 
 interface RankedNavConfig {
@@ -32,9 +32,10 @@ function compareRankedNav(a: RankedNavConfig, b: RankedNavConfig): number {
 }
 
 /**
- * Build the app-rail registry from a bundle map snapshot. Exported so the
- * test suite can exercise the walk against a synthetic bundle map without
- * mutating the live `WORKSPACE_BUNDLE_MAP` singleton.
+ * Build the app-rail registry from a record of resolved bundle entries.
+ * Exported taking the record rather than reading one so a test can drive a
+ * synthetic set, and so the boot resolver stays the only thing that builds
+ * the real one.
  */
 export function buildRegisteredAppsFromBundleMap(
   bundleMap: Readonly<Record<string, BundleEntry>>
@@ -48,21 +49,5 @@ export function buildRegisteredAppsFromBundleMap(
   ranked.sort(compareRankedNav);
   return ranked.map((entry) => entry.nav);
 }
-
-/**
- * The static app-rail floor: every in-repo pillar in the workspace bundle
- * map, sorted by `navOrder` ascending with a stable lexicographic tiebreak
- * on `id`. The display order (`finance, media, inventory, food, lists,
- * cerebrum, ai, bfm`) follows the sparse `navOrder` scheme in
- * `bundle-map.tsx`.
- *
- * The live app rail does not read this constant — it reads the
- * boot-resolved install set from `BootRegistryProvider`
- * (`useRegisteredApps()`), which is the registry snapshot (or this floor
- * when the registry is unreachable). This export is the floor the boot
- * path falls back to and the order the parity gate pins.
- */
-export const registeredApps: AppNavConfig[] =
-  buildRegisteredAppsFromBundleMap(WORKSPACE_BUNDLE_MAP);
 
 export type { AppNavConfig, AppNavItem } from './types';

@@ -165,7 +165,7 @@ describe('guard-job discovery', () => {
     const all = new Set(jobs.flatMap((j) => j.scripts));
     expect(all).toContain('scripts/ci/check-node-pin.mjs');
     expect(all).toContain('scripts/ci/smoke-image.mjs');
-    expect(all).toContain('scripts/check-bundle-map-coverage.mjs');
+    expect(all).toContain('scripts/check-pillar-ui-reachability.mjs');
   });
 });
 

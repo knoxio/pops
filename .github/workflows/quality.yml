@@ -371,24 +371,25 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm extractability:baseline
 
-  bundle-map-coverage:
-    name: Bundle-map coverage (RD-10)
-    # Asserts every in-repo `pillars/*/app` package is referenced by the shell's
-    # static `bundle-map.tsx`, so adding a pillar app and forgetting its entry
-    # fails loudly here instead of silently shipping no UI. ADR-002 keeps the
-    # bundle map static (one optimized SPA importing the published `@pops/app-*`
-    # contract); this guard keeps it complete. The guard reads the source tree
-    # directly and pulls in no third-party deps, so it skips `pnpm install`.
+  pillar-ui-reachability:
+    name: Pillar-UI reachability (RD-10)
+    # Asserts every in-repo `pillars/*/app` package advertises an
+    # `assetsBaseUrl` and a non-empty `pages` on its wire manifest, which is
+    # the only way a pillar's UI reaches the shell since POPS-3227 removed the
+    # static bundle map (ADR-002). Adding a pillar app and forgetting either
+    # fails loudly here instead of silently shipping no UI. The guard reads the
+    # source tree directly and pulls in no third-party deps, so it skips
+    # `pnpm install`.
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with:
           node-version: "24"
-      - name: Gate self-test (proves the guard catches a missing pillar app)
-        run: node scripts/check-bundle-map-coverage.mjs --self-test
-      - name: Every pillar app is referenced by the shell bundle map
-        run: node scripts/check-bundle-map-coverage.mjs
+      - name: Gate self-test (proves the guard catches an unreachable pillar app)
+        run: node scripts/check-pillar-ui-reachability.mjs --self-test
+      - name: Every pillar app is reachable through the runtime loader
+        run: node scripts/check-pillar-ui-reachability.mjs
 
   tailwind-source-coverage:
     name: Tailwind @source coverage

@@ -7,10 +7,9 @@
  * `ManifestPayload.pages` for the registry; `@pops/app-food` resolves the slot
  * to the component its route table already mounts.
  *
- * **Every route, not only the rail-reachable ones.** The shell mounts a
- * bundle-mapped pillar's whole `routes` array, but a pillar mounted through
- * the runtime loader gets exactly the pages listed here — so a route missing
- * from this list does not exist (POPS-3222). Most of food's routes are
+ * **Every route, not only the rail-reachable ones.** The shell mounts
+ * exactly the pages listed here and nothing else — so a route missing from
+ * this list does not exist (POPS-3222). Most of food's routes are
  * detail and edit pages reached from a list rather than from the rail, which
  * is precisely why they are easy to leave out and hard to notice missing.
  *

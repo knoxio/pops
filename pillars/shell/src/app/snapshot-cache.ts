@@ -21,8 +21,8 @@ import type { PillarSnapshot } from '@pops/pillar-sdk';
  * So the cache holds the **wire snapshot**, not the resolved surface. The
  * snapshot is JSON the registry sent; the surface holds React components and
  * would not survive `JSON.stringify`. Re-resolving the cached snapshot through
- * the same walk gives bundle-mapped pillars their static entry and
- * loader-mounted ones their `assetsBaseUrl`, exactly as a live snapshot does.
+ * the same walk gives each pillar its `assetsBaseUrl` and page slots, exactly
+ * as a live snapshot does.
  *
  * **No expiry, deliberately.** A stale entry advertises a pillar that may have
  * gone, and that failure is already contained: the loader wraps every remote

@@ -19,9 +19,10 @@ function ManifestPanel({
   section: SettingsSection;
   onTestAction: (procedure: string) => Promise<void>;
 }) {
-  // Boot's bundle map, not the static one: a loader-mounted pillar is absent
-  // from `WORKSPACE_BUNDLE_MAP`, so resolving against it dropped the custom
-  // panel and left the group rendering its plain fields (POPS-3266).
+  // Boot's bundle map, not the static one POPS-3227 later removed: a
+  // loader-mounted pillar was absent from `WORKSPACE_BUNDLE_MAP`, so resolving
+  // against it dropped the custom panel and left the group rendering its
+  // plain fields (POPS-3266).
   const { bundleMap } = useBootRegistry();
   const widgets = useMemo(
     () => resolveSettingsWidgetsFrom(section.manifest, section.ownerPillar, bundleMap),

@@ -6,20 +6,20 @@
  * `playwright.config.ts`). Two places still read the build-time set rather
  * than the live registry, and each is a different kind of leak if it breaks:
  *
- *   - `staticFloorEntries` filters the in-repo bundle map through
+ *   - `offlineInstallableSnapshot` narrows the CACHED snapshot through
  *     `isInstalledModule`, so an operator who excluded a module does not get
- *     it back the moment the registry goes quiet. Only that direction is
- *     still testable here: finance is served by the runtime loader since
- *     POPS-3219, so no install set can put it on the rail with the registry
- *     down — the floor is the in-repo bundle map, which finance has left;
+ *     it back the moment the registry goes quiet. Since POPS-3227 that cache
+ *     is the whole of the offline floor — the in-repo bundle map it used to
+ *     stand beside is gone — which makes it the only path the install set can
+ *     still leak through, and the one the second test drives;
  *   - `isInstalledModule` in `libs/navigation` drops federated-search
  *     sections for modules this build did not ship, so results cannot link
  *     into a page that was never mounted.
  *
- * The registry is deliberately taken off the air in the first two tests. The
- * boundary they assert is the one the LIVE registry cannot restore, and a
- * snapshot answering normally would mount media through the bundle map and
- * hide it.
+ * The registry is deliberately taken off the air. The boundary these assert is
+ * the one the LIVE registry cannot restore: while it is answering it IS the
+ * source of truth and `POPS_APPS` does not override it, so a snapshot
+ * answering normally puts media on the rail on purpose.
  */
 import { expect, test } from '@playwright/test';
 
@@ -29,6 +29,7 @@ import {
   SEARCH_QUERY,
   stubOrchestratorSearch,
   stubPillarHealth,
+  stubRegistry,
 } from './helpers/pillar-rest';
 
 test.describe('Shell — POPS_APPS=finance,core install set', () => {
@@ -48,19 +49,26 @@ test.describe('Shell — POPS_APPS=finance,core install set', () => {
     await expect(page.getByRole('heading', { name: /not found|404/i })).toHaveCount(0);
   });
 
-  test('an excluded module stays off the rail when the registry is down', async ({ page }) => {
-    await failRegistry(page);
-    await stubPillarHealth(page, ['finance']);
-
+  test('an excluded module stays off the rail when the shell falls back to its cache', async ({
+    page,
+  }) => {
+    await stubPillarHealth(page, ['finance', 'media']);
+    await stubRegistry(page, ['finance', 'media']);
     await page.goto('/finance');
 
-    // Media is IN the bundle map and OUT of this install set, so it is the
-    // one the floor would leak if `staticFloorEntries` stopped filtering.
+    // The live registry is the source of truth while it answers, so media is
+    // on the rail here ON PURPOSE. That is what makes the assertion after the
+    // outage load-bearing rather than a pillar that was never there: the good
+    // boot is what writes media into the cache.
+    await expect(page.getByRole('button', { name: 'Media' })).toBeVisible();
+
+    await failRegistry(page);
+    await page.goto('/finance');
+
+    // Finance proves the shell really did boot off the cache — an empty
+    // surface would hide media too, and assert nothing about the narrowing.
+    await expect(page.getByRole('button', { name: 'Finance' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Media' })).toHaveCount(0);
-    // And finance, being loader-served, cannot come off the floor at all —
-    // an outage takes it with the registry rather than the install set
-    // holding it up.
-    await expect(page.getByRole('button', { name: 'Finance' })).toHaveCount(0);
   });
 
   test('search drops results owned by an excluded module', async ({ page }) => {

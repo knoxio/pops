@@ -74,7 +74,7 @@ export type SettingsField = z.infer<typeof SettingsFieldSchema>;
  * A pillar-owned React widget mounted inside a settings group, for flows the
  * declarative field renderer cannot express (an OAuth-style handshake, a
  * device pairing dance). Mirrors `ModuleCaptureOverlayConfig.bundleSlot`: the
- * manifest names a slot and the shell's workspace bundle map resolves it to
+ * manifest names a slot and the shell's resolved bundle map resolves it to
  * the component the owning pillar exports. Wire-shaped, so a section
  * discovered over the live registry carries it unchanged.
  *

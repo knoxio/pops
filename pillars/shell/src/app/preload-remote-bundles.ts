@@ -6,8 +6,10 @@
  * behind `<Suspense>`, so the request for its entry cannot be issued until the
  * shell has booted AND the reader has navigated to it. Measured on the
  * production build, that put the entry at 120ms and its page chunk at 140ms,
- * where a bundle-mapped pillar's code was already in the boot graph and done
- * at 49ms. The delay is not the bytes — the purchases entry is under a
+ * where a pillar compiled into the shell — as all of them were before
+ * POPS-3215 — was already in the boot graph and done at 49ms. That comparison
+ * is the cost of the epic, and this module is what pays it back. The delay is
+ * not the bytes — the purchases entry is under a
  * kilobyte — it is that the round trip is serialised behind a decision the
  * reader has just made and is waiting on.
  *

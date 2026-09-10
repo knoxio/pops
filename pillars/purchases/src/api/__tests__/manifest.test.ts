@@ -30,9 +30,7 @@ describe('buildPurchasesManifest', () => {
   });
 
   // The wire nav ordering is what the shell rail sorts on, and 15 puts
-  // purchases next to finance (10) rather than at the end. It also has to
-  // agree with the bundle-map `navOrder` the shell reads, which is a
-  // separate literal in a separate package.
+  // purchases next to finance (10) rather than at the end.
   it('orders the rail entry between finance and media', () => {
     const order = buildPurchasesManifest('0.1.0').nav?.order;
     expect(order).toBeGreaterThan(10);

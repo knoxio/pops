@@ -19,7 +19,7 @@
  *
  * Failures are soft: a fetch error, timeout, non-OK status, wrong shape, or
  * empty list yields `[]`, so each consumer degrades to its own fallback
- * (the Settings page to an empty state; boot to the static bundle-map floor)
+ * (the Settings page to an empty state; boot to the cached snapshot)
  * rather than throwing.
  */
 import { ManifestPayloadSchema } from '@pops/pillar-sdk';

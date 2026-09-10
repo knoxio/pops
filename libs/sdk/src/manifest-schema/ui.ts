@@ -56,7 +56,7 @@ export const MAX_PAGE_DEPTH = 3;
 /**
  * Wire-shaped descriptor of a routable page contributed by a pillar.
  * Carries the routing surface the shell consumes today; React component
- * refs come from the workspace bundle map at the shell side (US-03), so
+ * refs come from the resolved bundle map at the shell side (US-03), so
  * the descriptor names a `bundleSlot` instead of carrying a component
  * directly.
  *
@@ -137,7 +137,7 @@ export const AssetsBaseUrlSchema = z
  * here under the manifest payload's name for it (ADR-049) — the shell
  * discovers overlays through the manifest registry the same way it discovers
  * `nav` / `pages` (PRD-243) and mounts the React component resolved from the
- * workspace bundle map, with no shell-side edit naming the pillar (PRD-246).
+ * resolved bundle map, with no shell-side edit naming the pillar (PRD-246).
  */
 export const CaptureOverlayDescriptorSchema = ModuleCaptureOverlayConfigSchema;
 

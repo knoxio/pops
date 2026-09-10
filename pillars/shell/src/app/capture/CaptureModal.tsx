@@ -2,8 +2,8 @@
  * CaptureModal — global capture surface rendered as a Dialog.
  *
  * Discovers the active capture overlay by walking the registry
- * (`activeCaptureOverlay()` over `installedFrontendManifests()` +
- * `WORKSPACE_BUNDLE_MAP`). The selection rule lives in
+ * (`activeCaptureOverlay()` over the boot-resolved manifests and the
+ * boot-resolved bundle map). The selection rule lives in
  * `./capture-registry.ts`; this file is responsible for:
  *
  *   - Mounting the resolved bundle's `Mount` component inside the
@@ -68,10 +68,10 @@ function resolveTitle(
 
 export function CaptureModal({ open, onOpenChange, activeOverlayOverride }: CaptureModalProps) {
   const { i18n, t: shellT } = useTranslation('shell');
-  // Both halves come from boot, not from the static bundle map: a pillar
-  // mounted through the runtime loader is absent from that map, and resolving
-  // against it would drop the overlay of every pillar POPS-3215 has moved
-  // (POPS-3266).
+  // Both halves come from boot, not from the static bundle map POPS-3227
+  // later removed: a loader-mounted pillar was absent from that map, and
+  // resolving against it dropped the overlay of every pillar POPS-3215 had
+  // moved (POPS-3266).
   const { manifests, bundleMap } = useBootRegistry();
   const overlay = useMemo<ActiveCaptureOverlay | null>(
     () =>

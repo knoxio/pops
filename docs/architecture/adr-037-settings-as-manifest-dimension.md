@@ -64,6 +64,14 @@ A `SettingsGroup` may now carry an optional `widget: { bundleSlot }`. This mirro
 - **Constrains:** a bound widget is statically imported into the shell bundle, exactly as `IngestForm` is. Slots are for genuinely un-expressible flows, not a general escape hatch from declarative fields.
 - **First consumer:** `media.plex`'s `account` group binds `'plex-connect'` to the media app's `PlexConnectPanel` (POPS-67).
 
+## Addendum — 2026-09-10: both constraints above are lifted
+
+POPS-3227 removed the shell's static bundle map. `external-ui.tsx` now synthesizes a pillar's `settingsWidgetBundles` from the same remote bundle it loads its pages from, keyed by the slots the pillar's own manifest names, so `settings-widget-registry.ts` resolves against a record built at runtime rather than one compiled in.
+
+That inverts the two constraints the addendum above recorded. Resolution is no longer in-repo-only — an external pillar's manifest naming a slot resolves it exactly as an in-tree one does, because there is no longer a difference between the two. And a bound widget is no longer statically imported into the shell bundle; it arrives with the pillar's, lazily, on first render of the section.
+
+What does not change is the scoping rule: a slot still resolves only against the bundles of the pillar that owns the section, so one pillar cannot claim another's slot.
+
 ## Related
 
 - [ADR-026](adr-026-pillar-architecture.md) — pillar ownership model; each pillar owns its contract surface, settings included

@@ -93,7 +93,7 @@ export interface ModuleOverlayConfig {
  * The shell walks every installed manifest's `frontend.captureOverlay`,
  * sorts by `order` ascending with a lexicographic tiebreak on the
  * pillar id, picks the head, and resolves the descriptor's `bundleSlot`
- * through the workspace bundle map to obtain the component to mount.
+ * through the resolved bundle map to obtain the component to mount.
  *
  * `bundleSlot` is the kebab-case identifier the bundle map resolves to a
  * component reference. `order` mirrors `NavConfigDescriptor.order`:
@@ -104,7 +104,7 @@ export interface ModuleOverlayConfig {
  */
 export const ModuleCaptureOverlayConfigSchema = z
   .object({
-    /** Bundle-slot identifier the workspace bundle map resolves to a component. */
+    /** Bundle-slot identifier the resolved bundle map resolves to a component. */
     bundleSlot: KebabIdentifierSchema,
     /** Ascending sort key; ties broken alphabetically by pillar id. */
     order: z.number().int(),

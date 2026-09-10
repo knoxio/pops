@@ -4,14 +4,14 @@
  * Exercises the runtime loader end to end against a fake remote bundle so
  * no network round-trip is needed:
  *
- *   - A registered external pillar (absent from the static bundle map)
- *     whose manifest advertises an `assetsBaseUrl` + `pages` has its remote
- *     component lazily imported and rendered under its route.
+ *   - A registered pillar whose manifest advertises an `assetsBaseUrl` +
+ *     `pages` has its remote component lazily imported and rendered under
+ *     its route.
  *   - A failed remote load (rejected import, missing slot, bad bundle
  *     shape) degrades to the error-boundary placeholder — the shell does
  *     not crash.
- *   - In-repo pillars never reach this path: the synthesizer only consumes
- *     the wire descriptor, leaving the static bundle map untouched.
+ *   - The synthesizer only ever consumes the wire descriptor: there is no
+ *     static bundle map left for it to reach around.
  *
  * Those all inject a fake importer. The last describe here does not: it runs
  * `defaultRemoteModuleImporter` — the function production uses — against a
@@ -39,7 +39,7 @@ import { buildRegisteredAppsFromBundleMap } from './nav/registry';
 import type { ReactElement } from 'react';
 import type { RouteObject } from 'react-router';
 
-import type { BundleEntry } from './bundle-map';
+import type { BundleEntry } from './bundle-entry';
 
 /**
  * Pull the synthesized routes out of a bundle entry through the shared

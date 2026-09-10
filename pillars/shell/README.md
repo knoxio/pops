@@ -73,18 +73,20 @@ unexpected throw sets a non-zero exit code.
 
 ## How a pillar's UI reaches the shell
 
-Two ways, and `scripts/check-bundle-map-coverage.mjs` asserts every
-`pillars/*/app` uses one of them.
-
-**The static bundle map.** `src/app/bundle-map.tsx` imports the published
-`@pops/app-<pillar>` package and the shell mounts its routes at build time.
-Eight pillars arrive this way.
+One way, and `scripts/check-pillar-ui-reachability.mjs` asserts every
+`pillars/*/app` uses it.
 
 **The runtime loader.** The pillar's wire manifest advertises `assetsBaseUrl`
 and `pages`; `src/app/external-ui.tsx` `import()`s the bundle at that URL on
 first navigation and resolves each `PageDescriptor.bundleSlot` against the
-module's `bundles` export. `purchases` is the first in-repo pillar to arrive
-this way (POPS-3217), by the same mechanism an out-of-tree pillar would.
+module's `bundles` export. Every in-repo pillar arrives this way, by the same
+mechanism an out-of-tree pillar would — there is no in-tree shortcut left to
+diverge from.
+
+Until POPS-3227 there was a second route: a static bundle map statically
+imported the published `@pops/app-<pillar>` package and the shell mounted its
+routes at build time. That file is gone, and with it the shell's dependency on
+any pillar package.
 
 ### The shared-runtime contract
 

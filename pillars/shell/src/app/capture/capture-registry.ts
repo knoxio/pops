@@ -1,12 +1,14 @@
-import { WORKSPACE_BUNDLE_MAP, type BundleEntry, type CaptureOverlayBundle } from '../bundle-map';
+import type { ModuleCaptureOverlayConfig } from '@pops/types';
+
+import type { BundleEntry, CaptureOverlayBundle } from '../bundle-entry';
 /**
  * Capture-overlay registry walk.
  *
- * Projects `installedFrontendManifests()` onto the
+ * Projects the boot-resolved manifests onto the
  * `frontend.captureOverlay` dimension, applies the selection rule (sort
  * ascending by `order`, ties broken alphabetically by pillar id, pick
  * head), and resolves the descriptor's `bundleSlot` through the
- * workspace bundle map to obtain the React component the shell's
+ * resolved bundle map to obtain the React component the shell's
  * `CaptureModal` will mount.
  *
  * Failure modes mirror the `pages` resolution edge cases:
@@ -14,16 +16,14 @@ import { WORKSPACE_BUNDLE_MAP, type BundleEntry, type CaptureOverlayBundle } fro
  *   - No manifest contributes a `captureOverlay` → returns `null`; the
  *     modal renders an empty state (`captureModal.empty`).
  *   - The descriptor's `bundleSlot` cannot be resolved against the
- *     workspace bundle map → logs a structured warning and returns
+ *     resolved bundle map → logs a structured warning and returns
  *     `null`, falling back to the empty-state path.
  *
  * The selection rule + resolver are exported so the unit tests can
  * exercise them against synthetic manifests + bundle maps without
  * touching the live registry.
  */
-import { installedFrontendManifests, type FrontendManifest } from '../installed-modules';
-
-import type { ModuleCaptureOverlayConfig } from '@pops/types';
+import type { FrontendManifest } from '../installed-modules';
 
 export interface RankedCaptureOverlay {
   readonly pillarId: string;
@@ -73,7 +73,7 @@ export function rankCaptureOverlays(
 }
 
 /**
- * Resolve a ranked descriptor against the workspace bundle map. Logs a
+ * Resolve a ranked descriptor against the resolved bundle map. Logs a
  * structured warning and returns `null` when the descriptor names a
  * `bundleSlot` no entry maps. Exported for unit tests.
  */
@@ -140,13 +140,13 @@ export function warnOnDuplicateHotkeys(ranked: readonly RankedCaptureOverlay[]):
 }
 
 /**
- * Live registry walk: head of `installedFrontendManifests()` projected
+ * Live registry walk: head of the boot-resolved manifests projected
  * onto `frontend.captureOverlay`, resolved against the workspace bundle
  * map. The default consumer of the helpers above.
  */
 export function activeCaptureOverlay(
-  manifests: readonly FrontendManifest[] = installedFrontendManifests(),
-  bundleMap: Readonly<Record<string, BundleEntry>> = WORKSPACE_BUNDLE_MAP
+  manifests: readonly FrontendManifest[],
+  bundleMap: Readonly<Record<string, BundleEntry>>
 ): ActiveCaptureOverlay | null {
   const ranked = rankCaptureOverlays(manifests);
   warnOnDuplicateHotkeys(ranked);

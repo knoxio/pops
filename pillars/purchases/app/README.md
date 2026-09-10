@@ -8,22 +8,15 @@ purchases pillar's REST contract through the generated
 `@hey-api/client-fetch` client in `src/purchases-api/`, served at the shell's
 `/purchases-api` proxy path (see `src/purchases-api-runtime-config.ts`).
 
-## Two ways in
+## How it mounts
 
-The shell mounts this app twice over, by two different mechanisms, and both
-resolve a page to the same component.
-
-The one **in use** is the shell's runtime loader (`external-ui.tsx`), which
-imports the built ESM bundle at the URL this pillar's manifest advertises and
-looks each page up by its `bundleSlot` in the module's `bundles` export.
-Purchases is the first in-repo pillar to arrive that way (POPS-3217): it is not
-in `pillars/shell/src/app/bundle-map.tsx`, and `@pops/shell` does not depend on
-this package.
-
-The other is that static bundle map, which imports `routes` at build time and
-is how the remaining eight pillars arrive. Both paths still work here, and
-`routes` is still exported for it — this app is mountable either way, which is
-what makes the swap revertible.
+The shell's runtime loader (`external-ui.tsx`) imports the built ESM bundle at
+the URL this pillar's manifest advertises and looks each page up by its
+`bundleSlot` in the module's `bundles` export. Purchases was the first
+in-repo pillar to arrive that way (POPS-3217), and since POPS-3227 it is the
+only way any pillar arrives — the static build-time mount `@pops/shell` used
+to hold every other pillar's `routes` through is gone, and `@pops/shell` does
+not depend on this package.
 
 `src/bundles.ts` is that record. It is `PAGE_COMPONENTS` from `src/routes.tsx`
 under the name the wire uses, so the two mount paths cannot name different

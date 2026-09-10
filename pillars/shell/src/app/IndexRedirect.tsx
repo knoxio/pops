@@ -15,8 +15,8 @@ import { useRegisteredApps } from './BootRegistryProvider';
  * `/finance` literal: on a finance-less registry the first live app is the
  * correct destination, and hardcoding `/finance` there would flash the
  * router's NotInstalledPage. Default deployments (POPS_APPS unset → all
- * installed) still land on `/finance` because finance carries the lowest
- * `nav.order` (10) in the workspace bundle map, so it sorts first.
+ * installed) still land on `/finance` because finance's own wire manifest
+ * carries the lowest `nav.order` (10), so it sorts first.
  */
 export function IndexRedirect() {
   const registeredApps = useRegisteredApps();

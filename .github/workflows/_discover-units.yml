@@ -19,15 +19,16 @@ name: Discover Units
 #   - `app-quality.yml` runs EACH app's OWN `typecheck` + `test` suite via its
 #     own disk-discovered matrix (the ~180 standalone vitest files that nothing
 #     else runs). This is the unit-test lane the apps were missing.
-#   - ALL `@pops/app-*` are static deps of `@pops/shell` (see its
-#     package.json + `pillars/shell/src/app/bundle-map.tsx`), so
-#     `fe-quality.yml`'s shell typecheck + build compile every app's source
-#     transitively in the assembled SPA. `bundle-map-coverage` (RD-10) asserts
-#     every app appears in that map, which is what makes "the shell build
-#     reaches every app" provable rather than assumed.
+#   - the same matrix builds each app's remote bundle (`build`), the artifact
+#     the shell `import()`s at runtime. Until POPS-3227 that compile came from
+#     `fe-quality.yml` instead, because every `@pops/app-*` was a static dep of
+#     `@pops/shell`; the shell has no such dep now, so the app's own lane is
+#     where its source is compiled. `pillar-ui-reachability` (RD-10) asserts
+#     every app is reachable from the shell at all, which is what makes "the
+#     UI mounts" provable rather than assumed.
 # The `assert-app-coverage` job below turns this from a comment into a gate:
 # it enumerates the `pillars/*/app` members on disk and FAILS if any one is
-# not routed to BOTH covering workflows — so a newly added pillar app whose
+# not routed to its covering workflow — so a newly added pillar app whose
 # coverage was forgotten breaks discovery loudly instead of shipping untested.
 #
 # Outputs:
@@ -193,10 +194,11 @@ jobs:
     # Proves the maxdepth-1 scope above leaves NO `pillars/*/app` member
     # uncovered. Each such member (npm name `@pops/app-<id>`) is excluded from
     # the unit matrix by design; this job fails loud if any one is not routed
-    # to BOTH its own unit lane (app-quality.yml) AND fe-quality's shell build,
-    # so "every unit is covered" is a gate, not a hope. Pure disk + workflow-
-    # file reads — no install.
-    name: Assert pillars/*/app are routed to app-quality + fe-quality
+    # to its own unit lane (app-quality.yml), which since POPS-3227 is the only
+    # lane that compiles an app on an app-source change — so "every unit is
+    # covered" is a gate, not a hope. Pure disk + workflow-file reads — no
+    # install.
+    name: Assert pillars/*/app are routed to app-quality
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -204,22 +206,19 @@ jobs:
         run: |
           set -euo pipefail
 
-          fe=.github/workflows/fe-quality.yml
-          [ -f "$fe" ] || { echo "::error::$fe missing — pillars/*/app lose their build coverage"; exit 1; }
-
-          # fe-quality's shell typecheck + build compile every @pops/app-* via
-          # the shell's static deps; this glob is what fires that build on any
-          # app change. If it is ever dropped, app changes ship untested.
-          grep -qE '^\s*-\s*["'\'']?pillars/\*/app/\*\*' "$fe" \
-            || { echo "::error::$fe no longer triggers on 'pillars/*/app/**' — app build coverage lost"; exit 1; }
-
-          # app-quality runs each app's OWN typecheck + test via a disk-
-          # discovered matrix; the same glob is what fires it on any app
-          # change. This is the unit-test lane the apps were missing.
+          # app-quality runs each app's OWN typecheck, test and remote-bundle
+          # build via a disk-discovered matrix; this glob is what fires it on
+          # any app change. If it is ever dropped, app changes ship untested
+          # AND unbuilt — the shell stopped compiling app source at POPS-3227.
           aq=.github/workflows/app-quality.yml
           [ -f "$aq" ] || { echo "::error::$aq missing — pillars/*/app lose their own typecheck+test lane"; exit 1; }
           grep -qE '^\s*-\s*["'\'']?pillars/\*/app/\*\*' "$aq" \
             || { echo "::error::$aq no longer triggers on 'pillars/*/app/**' — app unit-test coverage lost"; exit 1; }
+
+          # The build step itself, not just the trigger: without it the lane
+          # runs on every app change and compiles none of them.
+          grep -qE 'pnpm --filter .*matrix\.app\.pkg.*" build$' "$aq" \
+            || { echo "::error::$aq no longer builds the app's remote bundle — app build coverage lost"; exit 1; }
 
           missing=0
           while IFS= read -r appdir; do
@@ -232,8 +231,8 @@ jobs:
             # Both lanes discover apps from disk by the @pops/app-* name, so a
             # correctly named member is automatically picked up by each — the
             # glob assertions above guarantee both fire on app changes.
-            echo "$pkg -> app-quality.yml (own typecheck+test) + fe-quality (shell build)"
+            echo "$pkg -> app-quality.yml (own typecheck + test + remote-bundle build)"
           done < <(find pillars -mindepth 2 -maxdepth 2 -type d -name app | sort)
 
           [ "$missing" = 0 ] || { echo "::error::one or more pillars/*/app members are uncovered"; exit 1; }
-          echo "All pillars/*/app members are routed to app-quality + fe-quality."
+          echo "All pillars/*/app members are routed to app-quality."

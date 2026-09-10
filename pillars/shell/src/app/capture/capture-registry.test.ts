@@ -10,14 +10,14 @@ import {
 /**
  * Unit tests for the capture-overlay registry walk. Exercises the
  * selection rule (sort by order, tiebreak by pillarId) and the
- * bundle-map resolution edge cases (no overlay registered, unknown
+ * bundle resolution edge cases (no overlay registered, unknown
  * bundleSlot).
  */
 import type { ComponentType } from 'react';
 
 import type { ModuleCaptureOverlayConfig } from '@pops/types';
 
-import type { BundleEntry, CaptureOverlayBundle, CaptureOverlayMountProps } from '../bundle-map';
+import type { BundleEntry, CaptureOverlayBundle, CaptureOverlayMountProps } from '../bundle-entry';
 import type { FrontendManifest } from '../installed-modules';
 
 const FakeMount: ComponentType<CaptureOverlayMountProps> = () => null;
