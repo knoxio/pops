@@ -11,7 +11,7 @@
   "scripts": {
     "build": "pnpm run build:remote",
     "build:remote": "tsx scripts/build-remote.ts",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "test -e node_modules/@pops/finance/dist/contract/index.d.ts || (echo '@pops/finance has not been built. This app imports its compiled output; run pnpm --filter @pops/finance build first, then typecheck again. mise run typecheck builds the whole graph before checking any unit and never hits this. See POPS-3072.' >&2 && exit 1) && tsc --noEmit",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",

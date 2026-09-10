@@ -14,7 +14,7 @@
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "test -e node_modules/@pops/inventory/dist/contract/index.d.ts || (echo '@pops/inventory has not been built. This app imports its compiled output; run pnpm --filter @pops/inventory build first, then typecheck again. mise run typecheck builds the whole graph before checking any unit and never hits this. See POPS-3072.' >&2 && exit 1) && tsc --noEmit",
     "generate:inventory-client": "openapi-ts && oxfmt --write src/inventory-api"
   },
   "dependencies": {
