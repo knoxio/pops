@@ -34,6 +34,7 @@ export const FINANCE_PAGES = [
   { path: 'accounts', bundleSlot: 'finance-accounts' },
   { path: 'accounts/:id', bundleSlot: 'finance-account-detail' },
   { path: 'accounts/:id/checkpoints', bundleSlot: 'finance-account-checkpoints' },
+  { path: 'accounts/:id/imports', bundleSlot: 'finance-account-imports' },
   { path: 'budgets', bundleSlot: 'finance-budgets' },
   { path: 'wishlist', bundleSlot: 'finance-wishlist' },
   { path: 'import', bundleSlot: 'finance-import' },

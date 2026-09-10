@@ -88,6 +88,13 @@ export function BalanceCard({ account, currency }: { account: Account; currency:
             >
               Checkpoints
             </Link>
+            {' · '}
+            <Link
+              to={`/finance/accounts/${account.id}/imports`}
+              className="underline underline-offset-2 hover:text-foreground"
+            >
+              Imports
+            </Link>
           </p>
         </div>
         <BalanceTrend accountId={account.id} currency={currency} tone={tone} />
