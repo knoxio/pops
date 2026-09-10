@@ -47,8 +47,10 @@ export interface UpSyncArgs {
   to: string;
   /** Injected by tests and the CLI; built from the config's secret otherwise. */
   client?: UpBankClient;
-  /** The checkpoint's date; today unless a test says otherwise. */
+  /** The day the range ends; today unless a test says otherwise. */
   asOf?: string;
+  /** When the pass ran, for `account_import_config.last_synced_at`; now unless a test says otherwise. */
+  syncedAt?: Date;
 }
 
 /** A stored row Up has since settled, and what it settled to. */

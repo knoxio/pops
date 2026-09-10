@@ -58,6 +58,7 @@ function batchAt(accountId: string, createdAt: string, sourceRef: string | null 
 
 const NULL_STATUS = {
   lastImportAt: null,
+  lastSyncedAt: null,
   lastBatchId: null,
   newestTransactionDate: null,
   span: null,

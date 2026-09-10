@@ -35,18 +35,20 @@
 import {
   accountImportConfigService,
   accountsService,
+  importDraftsService,
   importsService,
   type FinanceDb,
 } from '../../../db/index.js';
 import { requireNamedSecret } from '../../secrets.js';
-import { toParsedTransaction, type MappedUpTransaction } from './map-transaction.js';
+import { dropStagedRow, settleStagedRow, stageMappedRows } from '../import-drafts/live-draft.js';
+import { toParsedTransaction, upChecksum, type MappedUpTransaction } from './map-transaction.js';
 import {
   createUpBankClient,
   UpBankApiError,
   type UpBankClient,
   type UpTransaction,
 } from './up-api.js';
-import { importMappedRows, settleMappedRows } from './write-rows.js';
+import { settleMappedRows } from './write-rows.js';
 
 import type { ContactsClient } from '../../contacts/client.js';
 
@@ -56,13 +58,19 @@ export interface UpWebhookEvent {
 }
 
 export type UpWebhookOutcome =
-  | { kind: 'imported'; accountId: string; batchId: string | null; failed: number }
+  /** The row now waits in the account's pending draft (finance ADR-005); `created` when this delivery opened it. */
+  | { kind: 'staged'; accountId: string; draftId: string; created: boolean }
+  /** A row the draft already held, settled in place inside it. */
+  | { kind: 'staged-settled'; accountId: string; draftId: string }
+  /** A row the draft already held; nothing to change, or the draft is open in a wizard and is not touched. */
+  | { kind: 'already-staged'; accountId: string }
   | { kind: 'settled'; accountId: string; transactionId: string }
   /** The settled amount would have contradicted the row's type; it stays held (POPS-2685). */
   | { kind: 'settle-refused'; accountId: string; transactionId: string }
   | { kind: 'duplicate'; accountId: string }
   | { kind: 'unmapped'; upAccountId: string; transactionId: string }
-  | { kind: 'deleted'; transactionId: string }
+  /** `staged: true` when the row was dropped from a pending draft; the ledger is left to the next sync. */
+  | { kind: 'deleted'; transactionId: string; staged: boolean }
   | { kind: 'ignored'; reason: string };
 
 export type UpWebhookIngest = (event: UpWebhookEvent) => Promise<UpWebhookOutcome>;
@@ -75,22 +83,24 @@ export interface UpWebhookIngestDeps {
 const INGESTED_EVENTS = new Set(['TRANSACTION_CREATED', 'TRANSACTION_SETTLED']);
 
 /** One commit per Up transaction, whatever delivers it. */
-export function webhookCommitKey(upTransactionId: string): string {
-  return `up-webhook:${upTransactionId}`;
-}
-
 function defaultClientFor(secretRef: string): UpBankClient {
   return createUpBankClient({ token: requireNamedSecret(secretRef) });
+}
+
+interface Fetched {
+  txn: UpTransaction;
+  client: UpBankClient;
 }
 
 async function fetchAcrossTokens(
   secretRefs: readonly string[],
   transactionId: string,
   clientFor: (secretRef: string) => UpBankClient
-): Promise<UpTransaction | null> {
+): Promise<Fetched | null> {
   for (const secretRef of secretRefs) {
+    const client = clientFor(secretRef);
     try {
-      return await clientFor(secretRef).getTransaction(transactionId);
+      return { txn: await client.getTransaction(transactionId), client };
     } catch (err) {
       if (err instanceof UpBankApiError && err.status === 404) continue;
       throw err;
@@ -100,27 +110,53 @@ async function fetchAcrossTokens(
 }
 
 async function writeRow(
-  db: FinanceDb,
-  contacts: ContactsClient,
-  target: { accountId: string; commitKey: string },
-  mapped: MappedUpTransaction
+  { db, contacts }: IngestContext,
+  target: { accountId: string; accountName: string },
+  mapped: MappedUpTransaction,
+  balanceCents: number | null
 ): Promise<UpWebhookOutcome> {
   const { accountId } = target;
   const existing = importsService
     .findTransactionsByChecksums(db, [mapped.parsed.checksum])
     .get(mapped.parsed.checksum);
-  if (existing === undefined) {
-    const imported = await importMappedRows(db, contacts, target, [mapped]);
-    return { kind: 'imported', accountId, batchId: imported.batchId, failed: imported.failed };
-  }
-  if (existing.pending && !mapped.parsed.pending) {
-    const { refused } = settleMappedRows(db, [{ transactionId: existing.id, mapped }]);
-    if (refused.length > 0) {
-      return { kind: 'settle-refused', accountId, transactionId: existing.id };
+  if (existing !== undefined) {
+    if (existing.pending && !mapped.parsed.pending) {
+      const { refused } = settleMappedRows(db, [{ transactionId: existing.id, mapped }]);
+      if (refused.length > 0) {
+        return { kind: 'settle-refused', accountId, transactionId: existing.id };
+      }
+      return { kind: 'settled', accountId, transactionId: existing.id };
     }
-    return { kind: 'settled', accountId, transactionId: existing.id };
+    return { kind: 'duplicate', accountId };
   }
-  return { kind: 'duplicate', accountId };
+  if (!mapped.parsed.pending) {
+    const settledInDraft = settleStagedRow(db, accountId, mapped);
+    if (settledInDraft !== 'absent') {
+      return settledInDraft === 'changed'
+        ? { kind: 'staged-settled', accountId, draftId: stagedDraftId(db, accountId, mapped) }
+        : { kind: 'already-staged', accountId };
+    }
+  }
+  const staged = await stageMappedRows({ db, contacts, target, rows: [mapped], balanceCents });
+  if (staged.staged === 0) return { kind: 'already-staged', accountId };
+  return { kind: 'staged', accountId, draftId: staged.draftId, created: staged.created };
+}
+
+function stagedDraftId(db: FinanceDb, accountId: string, mapped: MappedUpTransaction): string {
+  const holder = importDraftsService
+    .listImportDrafts(db, { accountId })
+    .find((draft) => draft.payload.includes(mapped.parsed.checksum));
+  return holder?.id ?? '';
+}
+
+function dropEverywhere(db: FinanceDb, transactionId: string): boolean {
+  return accountImportConfigService
+    .listImportConfigsByProvider(db, 'up')
+    .some(
+      (config) =>
+        dropStagedRow(db, config.accountId, upChecksum(config.accountId, transactionId)) ===
+        'changed'
+    );
 }
 
 function serialisedBy(): <T>(key: string, run: () => Promise<T>) => Promise<T> {
@@ -164,11 +200,14 @@ export function makeUpWebhookIngest(
 }
 
 async function ingestTransaction(
-  { db, contacts, clientFor }: IngestContext,
+  ctx: IngestContext,
   eventType: string | undefined,
   transactionId: string
 ): Promise<UpWebhookOutcome> {
-  if (eventType === 'TRANSACTION_DELETED') return { kind: 'deleted', transactionId };
+  const { db, clientFor } = ctx;
+  if (eventType === 'TRANSACTION_DELETED') {
+    return { kind: 'deleted', transactionId, staged: dropEverywhere(db, transactionId) };
+  }
   if (eventType === undefined || !INGESTED_EVENTS.has(eventType)) {
     return { kind: 'ignored', reason: `event ${eventType ?? 'unknown'} is not ingested` };
   }
@@ -179,21 +218,20 @@ async function ingestTransaction(
     return { kind: 'ignored', reason: 'no account fed by Up names a secret' };
   }
 
-  const txn = await fetchAcrossTokens(secretRefs, transactionId, clientFor);
-  if (txn === null) {
+  const fetched = await fetchAcrossTokens(secretRefs, transactionId, clientFor);
+  if (fetched === null) {
     return { kind: 'ignored', reason: `transaction ${transactionId} not found under any token` };
   }
 
+  const { txn, client } = fetched;
   const upAccountId = txn.relationships.account.data.id;
   const config = configs.find((c) => c.externalAccountRef === upAccountId);
   if (config === undefined) return { kind: 'unmapped', upAccountId, transactionId: txn.id };
 
   const account = accountsService.getAccount(db, config.accountId);
   const mapped = toParsedTransaction(txn, { accountId: account.id, accountLabel: account.name });
-  return writeRow(
-    db,
-    contacts,
-    { accountId: account.id, commitKey: webhookCommitKey(txn.id) },
-    mapped
-  );
+  // The balance Up reports with the newest row rides on the draft and becomes
+  // the checkpoint when it is committed (POPS-3335); one extra read per delivery.
+  const balanceCents = (await client.getAccount(upAccountId)).attributes.balance.valueInBaseUnits;
+  return writeRow(ctx, { accountId: account.id, accountName: account.name }, mapped, balanceCents);
 }

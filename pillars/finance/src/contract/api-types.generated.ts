@@ -1468,6 +1468,7 @@ export interface operations {
                 cadenceDays: number | null;
                 lastBatchId: string | null;
                 lastImportAt: string | null;
+                lastSyncedAt: string | null;
                 newestTransactionDate: string | null;
                 source: {
                   dialectId?: string;
@@ -1579,6 +1580,7 @@ export interface operations {
                 cadenceDays: number | null;
                 lastBatchId: string | null;
                 lastImportAt: string | null;
+                lastSyncedAt: string | null;
                 newestTransactionDate: string | null;
                 source: {
                   dialectId?: string;
@@ -1724,6 +1726,7 @@ export interface operations {
                 cadenceDays: number | null;
                 lastBatchId: string | null;
                 lastImportAt: string | null;
+                lastSyncedAt: string | null;
                 newestTransactionDate: string | null;
                 source: {
                   dialectId?: string;
@@ -1848,6 +1851,7 @@ export interface operations {
                 cadenceDays: number | null;
                 lastBatchId: string | null;
                 lastImportAt: string | null;
+                lastSyncedAt: string | null;
                 newestTransactionDate: string | null;
                 source: {
                   dialectId?: string;
@@ -1976,6 +1980,7 @@ export interface operations {
                 cadenceDays: number | null;
                 lastBatchId: string | null;
                 lastImportAt: string | null;
+                lastSyncedAt: string | null;
                 newestTransactionDate: string | null;
                 source: {
                   dialectId?: string;
@@ -2124,6 +2129,7 @@ export interface operations {
                 cadenceDays: number | null;
                 lastBatchId: string | null;
                 lastImportAt: string | null;
+                lastSyncedAt: string | null;
                 newestTransactionDate: string | null;
                 source: {
                   dialectId?: string;
@@ -3809,6 +3815,7 @@ export interface operations {
                 cadenceDays: number | null;
                 lastBatchId: string | null;
                 lastImportAt: string | null;
+                lastSyncedAt: string | null;
                 newestTransactionDate: string | null;
                 source: {
                   dialectId?: string;
@@ -3957,6 +3964,7 @@ export interface operations {
                   cadenceDays: number | null;
                   lastBatchId: string | null;
                   lastImportAt: string | null;
+                  lastSyncedAt: string | null;
                   newestTransactionDate: string | null;
                   source: {
                     dialectId?: string;
@@ -4018,6 +4026,7 @@ export interface operations {
                   cadenceDays: number | null;
                   lastBatchId: string | null;
                   lastImportAt: string | null;
+                  lastSyncedAt: string | null;
                   newestTransactionDate: string | null;
                   source: {
                     dialectId?: string;
@@ -4141,17 +4150,13 @@ export interface operations {
               id: string;
               result: {
                 alreadyHeld: number;
-                batchId: string | null;
-                checkpoint: {
-                  balanceCents: number;
-                  deltaCents: number;
-                  id: string;
-                } | null;
-                failed: number;
+                alreadyInLedger: number;
+                alreadyStaged: number;
+                draftId: string | null;
                 fetched: number;
-                imported: number;
                 settleRefused?: number;
                 settled: number;
+                staged: number;
                 warnings: string[];
               } | null;
               startedAt: string;
@@ -4245,17 +4250,13 @@ export interface operations {
               id: string;
               result: {
                 alreadyHeld: number;
-                batchId: string | null;
-                checkpoint: {
-                  balanceCents: number;
-                  deltaCents: number;
-                  id: string;
-                } | null;
-                failed: number;
+                alreadyInLedger: number;
+                alreadyStaged: number;
+                draftId: string | null;
                 fetched: number;
-                imported: number;
                 settleRefused?: number;
                 settled: number;
+                staged: number;
                 warnings: string[];
               } | null;
               startedAt: string;

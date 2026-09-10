@@ -15,7 +15,7 @@
  */
 import { randomUUID } from 'node:crypto';
 
-import { importStatusFor, today, type FinanceDb } from '../../../db/index.js';
+import { importDraftsService, importStatusFor, today, type FinanceDb } from '../../../db/index.js';
 import { syncUpAccount, type UpSyncResult } from './sync.js';
 
 import type {
@@ -58,12 +58,29 @@ function shiftDay(date: string, days: number): string {
 }
 
 /** The inclusive date range a sync of this account should ask Up for, ending `asOf`. */
+/**
+ * The range the next pass asks Up for: from two days before the newest row
+ * the account knows about, in the ledger or waiting in one of its drafts
+ * (finance ADR-005), or ninety days back for an account with neither. The
+ * overlap is harmless because staging dedups against both.
+ */
 export function syncRangeFor(
   db: FinanceDb,
   accountId: string,
   asOf: string = today()
 ): { from: string; to: string } {
-  const newest = importStatusFor(db, [accountId]).get(accountId)?.newestTransactionDate ?? null;
+  const inLedger = importStatusFor(db, [accountId]).get(accountId)?.newestTransactionDate ?? null;
+  const inDrafts = importDraftsService
+    .listImportDrafts(db, { accountId })
+    .map((draft) => draft.dateTo)
+    .filter((date): date is string => date !== null)
+    .toSorted()
+    .at(-1);
+  const newest =
+    [inLedger, inDrafts ?? null]
+      .filter((date): date is string => date !== null)
+      .toSorted()
+      .at(-1) ?? null;
   const from =
     newest === null ? shiftDay(asOf, -FIRST_SYNC_LOOKBACK_DAYS) : shiftDay(newest, -OVERLAP_DAYS);
   return { from: from < asOf ? from : asOf, to: asOf };
@@ -85,13 +102,13 @@ function armExpiry(jobId: string): void {
 function toJobResult(result: UpSyncResult): UpSyncJobResult {
   return {
     fetched: result.fetched,
-    imported: result.imported,
-    failed: result.failed,
+    staged: result.staged,
+    alreadyStaged: result.alreadyStaged,
+    alreadyInLedger: result.alreadyInLedger,
     settled: result.settled,
     settleRefused: result.settleRefused,
     alreadyHeld: result.alreadyHeld,
-    batchId: result.batchId,
-    checkpoint: result.checkpoint,
+    draftId: result.draftId,
     warnings: result.warnings.map((w) => `${w.type}: ${w.details ?? w.message}`),
   };
 }
@@ -124,7 +141,7 @@ export interface StartUpSyncInput {
   trigger: UpSyncTrigger;
   /** Injected by tests; built from the account's secret otherwise. */
   client?: UpBankClient;
-  /** The day the range ends and the checkpoint is dated; today unless a test says otherwise. */
+  /** The day the range ends; today unless a test says otherwise. */
   asOf?: string;
 }
 

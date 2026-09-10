@@ -59,6 +59,7 @@ export type AccountsListResponses = {
         cadenceDays: number | null;
         lastBatchId: string | null;
         lastImportAt: string | null;
+        lastSyncedAt: string | null;
         newestTransactionDate: string | null;
         source: {
           dialectId?: string;
@@ -195,6 +196,7 @@ export type AccountsCreateResponses = {
         cadenceDays: number | null;
         lastBatchId: string | null;
         lastImportAt: string | null;
+        lastSyncedAt: string | null;
         newestTransactionDate: string | null;
         source: {
           dialectId?: string;
@@ -306,6 +308,7 @@ export type AccountsReorderResponses = {
         cadenceDays: number | null;
         lastBatchId: string | null;
         lastImportAt: string | null;
+        lastSyncedAt: string | null;
         newestTransactionDate: string | null;
         source: {
           dialectId?: string;
@@ -416,6 +419,7 @@ export type AccountsDeleteResponses = {
         cadenceDays: number | null;
         lastBatchId: string | null;
         lastImportAt: string | null;
+        lastSyncedAt: string | null;
         newestTransactionDate: string | null;
         source: {
           dialectId?: string;
@@ -521,6 +525,7 @@ export type AccountsGetResponses = {
         cadenceDays: number | null;
         lastBatchId: string | null;
         lastImportAt: string | null;
+        lastSyncedAt: string | null;
         newestTransactionDate: string | null;
         source: {
           dialectId?: string;
@@ -654,6 +659,7 @@ export type AccountsUpdateResponses = {
         cadenceDays: number | null;
         lastBatchId: string | null;
         lastImportAt: string | null;
+        lastSyncedAt: string | null;
         newestTransactionDate: string | null;
         source: {
           dialectId?: string;
@@ -1994,6 +2000,7 @@ export type AccountsMergeResponses = {
         cadenceDays: number | null;
         lastBatchId: string | null;
         lastImportAt: string | null;
+        lastSyncedAt: string | null;
         newestTransactionDate: string | null;
         source: {
           dialectId?: string;
@@ -2117,6 +2124,7 @@ export type AccountsPreviewMergeResponses = {
           cadenceDays: number | null;
           lastBatchId: string | null;
           lastImportAt: string | null;
+          lastSyncedAt: string | null;
           newestTransactionDate: string | null;
           source: {
             dialectId?: string;
@@ -2173,6 +2181,7 @@ export type AccountsPreviewMergeResponses = {
           cadenceDays: number | null;
           lastBatchId: string | null;
           lastImportAt: string | null;
+          lastSyncedAt: string | null;
           newestTransactionDate: string | null;
           source: {
             dialectId?: string;
@@ -2276,17 +2285,13 @@ export type AccountImportsTriggerSyncResponses = {
       id: string;
       result: {
         alreadyHeld: number;
-        batchId: string | null;
-        checkpoint: {
-          balanceCents: number;
-          deltaCents: number;
-          id: string;
-        } | null;
-        failed: number;
+        alreadyInLedger: number;
+        alreadyStaged: number;
+        draftId: string | null;
         fetched: number;
-        imported: number;
         settleRefused?: number;
         settled: number;
+        staged: number;
         warnings: Array<string>;
       } | null;
       startedAt: string;
@@ -2353,17 +2358,13 @@ export type AccountImportsGetSyncJobResponses = {
       id: string;
       result: {
         alreadyHeld: number;
-        batchId: string | null;
-        checkpoint: {
-          balanceCents: number;
-          deltaCents: number;
-          id: string;
-        } | null;
-        failed: number;
+        alreadyInLedger: number;
+        alreadyStaged: number;
+        draftId: string | null;
         fetched: number;
-        imported: number;
         settleRefused?: number;
         settled: number;
+        staged: number;
         warnings: Array<string>;
       } | null;
       startedAt: string;

@@ -5,7 +5,7 @@
  */
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import { upsertImportConfig } from '../services/account-import-config.js';
+import { markSynced, upsertImportConfig } from '../services/account-import-config.js';
 import { createAccount } from '../services/accounts.js';
 import { insertBatch } from '../services/import-batches.js';
 import { cadenceDaysOf, importStatusFor } from '../services/import-status.js';
@@ -87,6 +87,7 @@ describe('importStatusFor', () => {
   it('answers with every field null for an account never imported into, and nothing for no accounts', () => {
     expect(statusOf()).toEqual({
       lastImportAt: null,
+      lastSyncedAt: null,
       lastBatchId: null,
       newestTransactionDate: null,
       span: null,
@@ -181,6 +182,39 @@ describe('importStatusFor', () => {
     expect(statuses.get(other)).toMatchObject({
       lastImportAt: '2026-08-01T00:00:00.000Z',
       span: { from: '2026-06-01', to: '2026-06-01' },
+    });
+  });
+});
+
+describe('lastSyncedAt', () => {
+  it('is null with no config and with a config never synced', () => {
+    expect(statusOf().lastSyncedAt).toBeNull();
+    upsertImportConfig(db, { accountId, sourceKind: 'api', provider: 'up' });
+    expect(statusOf()).toMatchObject({ lastSyncedAt: null, lastImportAt: null });
+  });
+
+  it('moves lastImportAt when the last pass is newer than the newest batch, and not when it is older', () => {
+    upsertImportConfig(db, { accountId, sourceKind: 'api', provider: 'up' });
+    batchAt('2026-09-01T00:00:00.000Z');
+    markSynced(db, accountId, new Date('2026-09-05T00:00:00.000Z'));
+    expect(statusOf()).toMatchObject({
+      lastSyncedAt: '2026-09-05T00:00:00.000Z',
+      lastImportAt: '2026-09-05T00:00:00.000Z',
+    });
+
+    batchAt('2026-09-08T00:00:00.000Z');
+    expect(statusOf()).toMatchObject({
+      lastSyncedAt: '2026-09-05T00:00:00.000Z',
+      lastImportAt: '2026-09-08T00:00:00.000Z',
+    });
+  });
+
+  it('a pass that found nothing still counts as being fed', () => {
+    upsertImportConfig(db, { accountId, sourceKind: 'api', provider: 'up' });
+    markSynced(db, accountId, new Date('2026-09-05T00:00:00.000Z'));
+    expect(statusOf()).toMatchObject({
+      lastBatchId: null,
+      lastImportAt: '2026-09-05T00:00:00.000Z',
     });
   });
 });

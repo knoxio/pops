@@ -25,7 +25,10 @@ export interface DateSpan {
 
 /** What every accounts response says about the account's imports. */
 export interface ImportStatus {
+  /** The later of the newest batch and the last provider pass (`last_synced_at`). */
   lastImportAt: string | null;
+  /** When a provider pass last ran for the account; null for one never synced. */
+  lastSyncedAt: string | null;
   lastBatchId: string | null;
   newestTransactionDate: string | null;
   /** Min/max date of the account's transactions, however they arrived; null for an empty account. */
@@ -57,7 +60,7 @@ export function cadenceDaysOf(createdAtNewestFirst: readonly string[]): number |
   const gaps = stamps
     .slice(1)
     .map((older, i) => ((stamps[i] ?? older) - older) / MS_PER_DAY)
-    .sort((a, b) => a - b);
+    .toSorted((a, b) => a - b);
   const mid = Math.floor(gaps.length / 2);
   const median =
     gaps.length % 2 === 0 ? ((gaps[mid - 1] ?? 0) + (gaps[mid] ?? 0)) / 2 : (gaps[mid] ?? 0);
@@ -147,6 +150,12 @@ function sourceOfBatch(batch: RecentBatch): ImportSource {
   }
 }
 
+function laterOf(a: string | null, b: string | null): string | null {
+  if (a === null) return b;
+  if (b === null) return a;
+  return b > a ? b : a;
+}
+
 function assemble(
   recent: RecentBatch[],
   span: DateSpan | undefined,
@@ -156,8 +165,10 @@ function assemble(
   let source: ImportSource | null = null;
   if (config !== undefined) source = sourceOfConfig(config);
   else if (latest !== undefined) source = sourceOfBatch(latest);
+  const lastSyncedAt = config?.lastSyncedAt ?? null;
   return {
-    lastImportAt: latest?.createdAt ?? null,
+    lastImportAt: laterOf(latest?.createdAt ?? null, lastSyncedAt),
+    lastSyncedAt,
     lastBatchId: latest?.id ?? null,
     newestTransactionDate: span?.to ?? null,
     span: span ?? null,

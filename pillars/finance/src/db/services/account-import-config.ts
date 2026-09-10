@@ -112,3 +112,11 @@ export function deleteImportConfig(db: FinanceDb, accountId: string): boolean {
   db.delete(accountImportConfig).where(eq(accountImportConfig.accountId, accountId)).run();
   return true;
 }
+
+/** Record that a provider pass ran for the account now, found anything or not. */
+export function markSynced(db: FinanceDb, accountId: string, at: Date): void {
+  db.update(accountImportConfig)
+    .set({ lastSyncedAt: at.toISOString(), updatedAt: at.toISOString() })
+    .where(eq(accountImportConfig.accountId, accountId))
+    .run();
+}

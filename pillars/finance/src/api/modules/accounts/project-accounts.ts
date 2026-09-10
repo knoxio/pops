@@ -52,6 +52,7 @@ const NO_BALANCE: AccountBalance = {
 /** Same standing as {@link NO_BALANCE}: what an account never imported into says. */
 const NO_IMPORT_STATUS: ImportStatus = {
   lastImportAt: null,
+  lastSyncedAt: null,
   lastBatchId: null,
   newestTransactionDate: null,
   span: null,

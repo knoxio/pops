@@ -53,15 +53,14 @@ function configure(forAccount = accountId): void {
 function fakeResult(overrides: Partial<UpSyncResult> = {}): UpSyncResult {
   return {
     accountId,
-    commitKey: 'ck',
     fetched: 3,
-    imported: 2,
-    failed: 0,
+    staged: 2,
+    alreadyStaged: 0,
+    alreadyInLedger: 0,
     settled: 1,
     settleRefused: 0,
     alreadyHeld: 0,
-    batchId: 'batch-1',
-    checkpoint: { id: 'cp-1', balanceCents: 1_000, deltaCents: 0 },
+    draftId: 'draft-1',
     warnings: [],
     ...overrides,
   };
@@ -179,13 +178,13 @@ describe('startUpSyncJob', () => {
     expect(done.finishedAt).not.toBeNull();
     expect(done.result).toEqual({
       fetched: 3,
-      imported: 2,
-      failed: 0,
+      staged: 2,
+      alreadyStaged: 0,
+      alreadyInLedger: 0,
       settled: 1,
       settleRefused: 0,
       alreadyHeld: 0,
-      batchId: 'batch-1',
-      checkpoint: { id: 'cp-1', balanceCents: 1_000, deltaCents: 0 },
+      draftId: 'draft-1',
       warnings: ['CHECKPOINT_MISMATCH: expected 1c, Up says 2c'],
     });
     expect(getUpSyncJob(started.job.id)).toEqual(done);

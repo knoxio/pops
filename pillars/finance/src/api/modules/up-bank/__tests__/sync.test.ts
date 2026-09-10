@@ -8,10 +8,16 @@ import { beforeEach, describe, expect, it } from 'vitest';
 
 import { freshMigratedFinanceDb } from '../../../../db/__tests__/migrated-db.js';
 import { accountCheckpoints, importBatches, transactions } from '../../../../db/schema.js';
-import { insertCheckpoint } from '../../../../db/services/account-checkpoints.js';
-import { upsertImportConfig } from '../../../../db/services/account-import-config.js';
+import {
+  getImportConfig,
+  upsertImportConfig,
+} from '../../../../db/services/account-import-config.js';
 import { createAccount } from '../../../../db/services/accounts.js';
+import { claimImportDraft, listImportDrafts } from '../../../../db/services/import-drafts.js';
+import { insertImportTransaction } from '../../../../db/services/imports.js';
 import { makeContactsFake } from '../../../__tests__/contacts-fake.js';
+import { readLiveDraftPayload } from '../../import-drafts/live-draft.js';
+import { upChecksum } from '../map-transaction.js';
 import { planUpSync, UpSyncCurrencyMismatchError, UpSyncNotConfiguredError } from '../sync-plan.js';
 import { syncUpAccount } from '../sync.js';
 import { upAccount, upTransaction } from './fixtures.js';
@@ -61,13 +67,40 @@ function storedRows() {
   return db.select().from(transactions).where(eq(transactions.accountId, accountId)).all();
 }
 
+function drafts() {
+  return listImportDrafts(db, { accountId });
+}
+
+function stagedRows() {
+  const [draft] = drafts();
+  return draft === undefined ? [] : readLiveDraftPayload(draft).parsedTransactions;
+}
+
+/** A held Up row already in the ledger, as an earlier commit would have left it. */
+function heldInLedger(upId: string, description: string, amountCents: number, date: string) {
+  return insertImportTransaction(db, {
+    description,
+    dialectAccountLabel: 'Up Everyday',
+    accountId,
+    amountCents,
+    date,
+    type: 'purchase',
+    tags: [],
+    entityId: null,
+    entityName: null,
+    location: null,
+    pending: true,
+    checksum: upChecksum(accountId, upId),
+  }).id;
+}
+
 beforeEach(() => {
   ({ db } = freshMigratedFinanceDb());
   accountId = createAccount(db, { name: 'Up Everyday', kind: 'savings', currency: 'AUD' }).id;
 });
 
 describe('syncUpAccount', () => {
-  it('imports the range through the commit pipeline, records the batch and mints the balance checkpoint', async () => {
+  it("stages the range into the account's live draft, classified, with the balance Up reported; nothing reaches the ledger", async () => {
     configure();
     const { client, ranges } = fakeUp([
       upTransaction({ id: 'a', cents: -1_200, createdAt: '2026-09-02T09:00:00+10:00' }),
@@ -79,110 +112,142 @@ describe('syncUpAccount', () => {
         createdAt: '2026-09-04T00:10:00+10:00',
       }),
     ]);
+    const syncedAt = new Date('2026-09-06T01:02:03.000Z');
 
-    const result = await syncUpAccount(db, makeContactsFake(), { accountId, client, ...RANGE });
+    const result = await syncUpAccount(db, makeContactsFake(), {
+      accountId,
+      client,
+      ...RANGE,
+      syncedAt,
+    });
 
     expect(ranges).toEqual([{ since: '2026-08-31T00:00:00Z', until: '2026-09-07T00:00:00Z' }]);
     expect(result).toMatchObject({
       accountId,
       fetched: 2,
-      imported: 2,
-      failed: 0,
+      staged: 2,
+      alreadyStaged: 0,
+      alreadyInLedger: 0,
       settled: 0,
       alreadyHeld: 0,
-      warnings: [],
-      checkpoint: { balanceCents: 48_800, deltaCents: 0 },
     });
+    expect(storedRows()).toEqual([]);
+    expect(db.select().from(importBatches).all()).toEqual([]);
+    expect(db.select().from(accountCheckpoints).all()).toEqual([]);
 
-    const rows = storedRows().sort((x, y) => x.date.localeCompare(y.date));
-    expect(rows.map((r) => [r.date, r.amountCents, r.type, r.pending, r.fxCaptureSource])).toEqual([
-      ['2026-09-02', -1_200, 'purchase', false, 'up-api'],
-      ['2026-09-04', 50_000, 'income', false, 'up-api'],
-    ]);
-
-    const batch = db.select().from(importBatches).get();
-    expect(batch).toMatchObject({
-      id: result.batchId,
-      accountId,
-      sourceKind: 'api',
-      sourceRef: 'up',
-      parserVersion: '1',
-      commitKey: result.commitKey,
+    const [draft] = drafts();
+    expect(draft).toMatchObject({
+      id: result.draftId,
+      state: 'live',
+      sourceKind: 'live',
+      provider: 'up',
       rowCount: 2,
       dateFrom: '2026-09-02',
       dateTo: '2026-09-04',
-      checkpointId: result.checkpoint?.id,
+      balanceReportedCents: 48_800,
+      ownerToken: null,
     });
-    expect(rows.every((r) => r.importBatchId === batch?.id)).toBe(true);
-
-    const checkpoint = db.select().from(accountCheckpoints).get();
-    expect(checkpoint).toMatchObject({
-      accountId,
-      balanceCents: 48_800,
-      asOf: '2026-09-06',
-      source: 'import',
-      sourceRef: result.commitKey,
-    });
-  });
-
-  it('warns when the ledger disagrees with the API balance, and keeps the checkpoint', async () => {
-    configure();
-    insertCheckpoint(db, { accountId, balanceCents: 0, asOf: '2026-08-31', source: 'manual' });
-    const { client } = fakeUp(
-      [upTransaction({ id: 'a', cents: -1_200 })],
-      upAccount({ balance: { currencyCode: 'AUD', value: '10.00', valueInBaseUnits: 1_000 } })
-    );
-
-    const result = await syncUpAccount(db, makeContactsFake(), { accountId, client, ...RANGE });
-
-    expect(result.checkpoint).toMatchObject({ balanceCents: 1_000, deltaCents: 2_200 });
-    expect(result.warnings).toEqual([
-      expect.objectContaining({ type: 'CHECKPOINT_MISMATCH', affectedCount: 1 }),
+    const payload = readLiveDraftPayload(draft!);
+    expect(payload.currentStep).toBe(3);
+    expect(payload.processedForFingerprint).toBe(payload.parsedTransactionsFingerprint);
+    expect(payload.parsedTransactions.map((t) => [t.date, t.amount, t.pending])).toEqual([
+      ['2026-09-02', -12, false],
+      ['2026-09-04', 500, false],
     ]);
+    const processed = [
+      ...payload.processedTransactions.matched,
+      ...payload.processedTransactions.uncertain,
+    ];
+    expect(processed.find((t) => t.description === 'Salary')?.transactionType).toBe('income');
+    expect(getImportConfig(db, accountId)?.lastSyncedAt).toBe(syncedAt.toISOString());
   });
 
-  it('re-running the same range inserts nothing, writes an empty batch and skips the same-day checkpoint', async () => {
+  it('a sync with nothing new records the pass and writes no batch and no draft', async () => {
+    configure();
+    const { client } = fakeUp([]);
+    const syncedAt = new Date('2026-09-06T05:00:00.000Z');
+
+    const result = await syncUpAccount(db, makeContactsFake(), {
+      accountId,
+      client,
+      ...RANGE,
+      syncedAt,
+    });
+
+    expect(result).toMatchObject({ fetched: 0, staged: 0, draftId: null });
+    expect(drafts()).toEqual([]);
+    expect(db.select().from(importBatches).all()).toEqual([]);
+    expect(getImportConfig(db, accountId)?.lastSyncedAt).toBe(syncedAt.toISOString());
+  });
+
+  it('re-running the same range stages nothing twice and keeps one draft', async () => {
     configure();
     const { client } = fakeUp([upTransaction({ id: 'a' }), upTransaction({ id: 'b', cents: -5 })]);
     const first = await syncUpAccount(db, makeContactsFake(), { accountId, client, ...RANGE });
 
     const again = await syncUpAccount(db, makeContactsFake(), { accountId, client, ...RANGE });
 
-    expect(again).toMatchObject({ fetched: 2, imported: 0, settled: 0, checkpoint: null });
-    expect(storedRows()).toHaveLength(2);
-    const batches = db.select().from(importBatches).all();
-    expect(batches).toHaveLength(2);
-    expect(batches.find((b) => b.id === again.batchId)).toMatchObject({
-      rowCount: 0,
-      dateFrom: null,
-      dateTo: null,
-      checkpointId: null,
-      commitKey: again.commitKey,
+    expect(again).toMatchObject({
+      fetched: 2,
+      staged: 0,
+      alreadyStaged: 2,
+      draftId: first.draftId,
     });
-    expect(db.select().from(accountCheckpoints).all()).toHaveLength(1);
-    expect(first.checkpoint).not.toBeNull();
+    expect(drafts()).toHaveLength(1);
+    expect(stagedRows()).toHaveLength(2);
   });
 
-  it('settles a held row in place: one row, new date and amount, flag cleared, edits untouched', async () => {
+  it('a row already in the ledger is counted, not staged', async () => {
     configure();
+    heldInLedger('a', 'Coles', -1_200, '2026-09-01');
+    const { client } = fakeUp([
+      upTransaction({
+        id: 'a',
+        status: 'HELD',
+        cents: -1_200,
+        createdAt: '2026-09-01T09:00:00+10:00',
+      }),
+      upTransaction({ id: 'c', cents: -700, createdAt: '2026-09-02T09:00:00+10:00' }),
+    ]);
+
+    const result = await syncUpAccount(db, makeContactsFake(), { accountId, client, ...RANGE });
+
+    expect(result).toMatchObject({ fetched: 2, staged: 1, alreadyInLedger: 0, alreadyHeld: 1 });
+    expect(stagedRows().map((t) => t.amount)).toEqual([-7]);
+  });
+
+  it('Sync now while the live draft is open stages into the next draft, leaving the open one as it was', async () => {
+    configure();
+    const first = await syncUpAccount(db, makeContactsFake(), {
+      accountId,
+      client: fakeUp([upTransaction({ id: 'a' })]).client,
+      ...RANGE,
+    });
+    claimImportDraft(db, first.draftId ?? '', 'tab-a');
+
+    const next = await syncUpAccount(db, makeContactsFake(), {
+      accountId,
+      client: fakeUp([upTransaction({ id: 'a' }), upTransaction({ id: 'b', cents: -300 })]).client,
+      ...RANGE,
+    });
+
+    expect(next.staged).toBe(1);
+    expect(next.draftId).not.toBe(first.draftId);
+    const byId = new Map(drafts().map((d) => [d.id, d]));
+    expect(byId.get(first.draftId ?? '')).toMatchObject({ state: 'saved', rowCount: 1 });
+    expect(byId.get(next.draftId ?? '')).toMatchObject({ state: 'live', rowCount: 1 });
+  });
+
+  it('settles a held ledger row in place: one row, new date and amount, flag cleared, edits untouched', async () => {
+    configure();
+    const id = heldInLedger('h', 'Fuel', -10_000, '2026-09-01');
+    db.update(transactions).set({ notes: 'fuel, keep' }).where(eq(transactions.id, id)).run();
     const held = upTransaction({
       id: 'h',
       status: 'HELD',
       cents: -10_000,
       createdAt: '2026-09-01T18:00:00+10:00',
     });
-    const first = await syncUpAccount(db, makeContactsFake(), {
-      accountId,
-      client: fakeUp([held]).client,
-      ...RANGE,
-    });
-    expect(first).toMatchObject({ imported: 1, alreadyHeld: 0 });
-    const [stored] = storedRows();
-    expect(stored).toMatchObject({ pending: true, date: '2026-09-01', amountCents: -10_000 });
-    db.update(transactions)
-      .set({ notes: 'fuel, keep' })
-      .where(eq(transactions.id, stored?.id ?? ''))
-      .run();
 
     const stillHeld = await syncUpAccount(db, makeContactsFake(), {
       accountId,
@@ -190,7 +255,7 @@ describe('syncUpAccount', () => {
       ...RANGE,
       asOf: '2026-09-07',
     });
-    expect(stillHeld).toMatchObject({ imported: 0, settled: 0, alreadyHeld: 1 });
+    expect(stillHeld).toMatchObject({ staged: 0, settled: 0, alreadyHeld: 1 });
 
     const settled = upTransaction({
       id: 'h',
@@ -206,42 +271,24 @@ describe('syncUpAccount', () => {
       asOf: '2026-09-08',
     });
 
-    expect(result).toMatchObject({ imported: 0, settled: 1, alreadyHeld: 0 });
+    expect(result).toMatchObject({ staged: 0, settled: 1, alreadyHeld: 0 });
     const rows = storedRows();
     expect(rows).toHaveLength(1);
     expect(rows[0]).toMatchObject({
-      id: stored?.id,
+      id,
       pending: false,
       date: '2026-09-03',
       amountCents: -10_250,
       notes: 'fuel, keep',
     });
     expect(JSON.parse(rows[0]?.rawRow ?? '{}')).toMatchObject({ status: 'SETTLED' });
+    expect(drafts()).toEqual([]);
   });
 
   it('reports a refused settlement without abandoning the rest of the pass', async () => {
     configure();
-    const heldFuel = upTransaction({
-      id: 'p',
-      description: 'Fuel',
-      status: 'HELD',
-      cents: -10_000,
-      createdAt: '2026-09-01T18:00:00+10:00',
-    });
-    const heldCoffee = upTransaction({
-      id: 'q',
-      description: 'Coffee',
-      status: 'HELD',
-      cents: -2_000,
-      createdAt: '2026-09-01T19:00:00+10:00',
-    });
-    const first = await syncUpAccount(db, makeContactsFake(), {
-      accountId,
-      client: fakeUp([heldFuel, heldCoffee]).client,
-      ...RANGE,
-    });
-    expect(first).toMatchObject({ imported: 2, settleRefused: 0 });
-    expect(storedRows().map((r) => r.type)).toEqual(['purchase', 'purchase']);
+    heldInLedger('p', 'Fuel', -10_000, '2026-09-01');
+    heldInLedger('q', 'Coffee', -2_000, '2026-09-01');
 
     // Up settles the held authorisation at the opposite sign: a positive
     // amount on a row typed `purchase`, which is the pairing the guard refuses.
@@ -269,8 +316,7 @@ describe('syncUpAccount', () => {
       asOf: '2026-09-08',
     });
 
-    expect(result).toMatchObject({ imported: 0, settled: 1, settleRefused: 1, alreadyHeld: 0 });
-    expect(result.checkpoint).not.toBeNull();
+    expect(result).toMatchObject({ staged: 0, settled: 1, settleRefused: 1, alreadyHeld: 0 });
     const byDescription = new Map(storedRows().map((r) => [r.description, r]));
     expect(byDescription.get('Fuel')).toMatchObject({
       pending: true,
@@ -294,11 +340,11 @@ describe('syncUpAccount', () => {
 
     const result = await syncUpAccount(db, makeContactsFake(), { accountId, client, ...RANGE });
 
-    expect(result).toMatchObject({ fetched: 3, imported: 1 });
-    expect(storedRows().map((r) => r.date)).toEqual(['2026-09-05']);
+    expect(result).toMatchObject({ fetched: 3, staged: 1 });
+    expect(stagedRows().map((r) => r.date)).toEqual(['2026-09-05']);
   });
 
-  it("asserts the mapper's transfer type over the ladder's guess", async () => {
+  it("asserts the mapper's transfer type over the ladder's guess on the staged row", async () => {
     configure();
     const { client } = fakeUp([
       upTransaction({ id: 't', cents: -20_000, transferAccountId: 'up-acc-2' }),
@@ -306,7 +352,11 @@ describe('syncUpAccount', () => {
 
     await syncUpAccount(db, makeContactsFake(), { accountId, client, ...RANGE });
 
-    expect(storedRows()[0]?.type).toBe('transfer');
+    const [draft] = drafts();
+    const { matched, uncertain, failed } = readLiveDraftPayload(draft!).processedTransactions;
+    expect([...matched, ...uncertain, ...failed].map((t) => t.transactionType)).toEqual([
+      'transfer',
+    ]);
   });
 
   it('refuses an account with no Up config, and one whose Up account holds another currency', async () => {
@@ -328,7 +378,8 @@ describe('syncUpAccount', () => {
     await expect(
       syncUpAccount(db, makeContactsFake(), { accountId, client: usd.client, ...RANGE })
     ).rejects.toBeInstanceOf(UpSyncCurrencyMismatchError);
-    expect(db.select().from(importBatches).all()).toEqual([]);
+    expect(drafts()).toEqual([]);
+    expect(getImportConfig(db, accountId)?.lastSyncedAt).toBeNull();
   });
 
   it('needs the token only when no client is injected', async () => {

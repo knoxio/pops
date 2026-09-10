@@ -35,6 +35,12 @@ export const accountImportConfig = sqliteTable('account_import_config', {
   expectedCadenceDays: integer('expected_cadence_days'),
   /** Name of the secret holding the provider token. Never the token. */
   secretRef: text('secret_ref'),
+  /**
+   * When a provider pass last ran, whether or not it found anything. A batch
+   * is only written at commit (finance ADR-005), so staleness could not
+   * otherwise tell a quiet account from a sync that stopped running.
+   */
+  lastSyncedAt: text('last_synced_at'),
   createdAt: text('created_at')
     .notNull()
     .default(sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`),

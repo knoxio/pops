@@ -73,15 +73,14 @@ function deferredRunner() {
 function result(accountId: string): UpSyncResult {
   return {
     accountId,
-    commitKey: 'ck',
     fetched: 4,
-    imported: 3,
-    failed: 0,
+    staged: 3,
+    alreadyStaged: 0,
+    alreadyInLedger: 0,
     settled: 1,
     settleRefused: 0,
     alreadyHeld: 0,
-    batchId: 'batch-1',
-    checkpoint: { id: 'cp-1', balanceCents: 61_215, deltaCents: 0 },
+    draftId: 'draft-1',
     warnings: [],
   };
 }
@@ -111,11 +110,10 @@ describe('POST /accounts/:id/sync', () => {
       status: 'completed',
       result: {
         fetched: 4,
-        imported: 3,
+        staged: 3,
         settled: 1,
         settleRefused: 0,
-        batchId: 'batch-1',
-        checkpoint: { id: 'cp-1', balanceCents: 61_215, deltaCents: 0 },
+        draftId: 'draft-1',
       },
     });
     expect(done.data.finishedAt).not.toBeNull();

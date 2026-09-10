@@ -294,7 +294,7 @@ External APIs: Finance = Up API (webhooks) + ANZ/Amex/ING CSV | Media = Plex/TMD
 
 ### Finance
 
-1. Bank data arrives as a CSV export, uploaded through the Import Wizard (Up Bank ships only a signature-verified webhook that logs and drops the event — no batch import or webhook persistence yet).
+1. Bank data arrives as a CSV export uploaded through the Import Wizard, or from the Up Bank API: the signature-verified webhook and the scheduled sync stage every row, classified on arrival, into the account's pending draft (finance ADR-005), and nothing from Up reaches the ledger until that draft is reviewed and committed through the same wizard.
 2. The wizard parses the CSV client-side (Papa Parse), maps columns, and builds `ParsedTransaction[]`, each row carrying a canonical SHA-256 dedup checksum.
 3. `POST /imports/process` partitions the batch by checksum against existing transactions (dedup), then runs the entity-matching ladder on survivors — see [Import Pipeline](#import-pipeline).
 4. Steps 4–6 of the wizard (review entities, tag review, rule creation) buffer every edit, entity creation, and rule ChangeSet locally; nothing is written to SQLite yet.

@@ -38,6 +38,7 @@ export const NO_BALANCE = {
 /** The import status every account carries on the wire (POPS-2917): an account never imported into. */
 export const NO_IMPORT_STATUS = {
   lastImportAt: null,
+  lastSyncedAt: null,
   lastBatchId: null,
   newestTransactionDate: null,
   span: null,

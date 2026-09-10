@@ -1,22 +1,24 @@
 /**
- * What a trusted Up webhook event does to the ledger (POPS-2920): a created
- * row lands as a batch of one, a second delivery writes nothing, a settled
- * event settles a held row in place, a later batch sync sees the webhook's
- * row as already there, an unmapped Up account is reported and not written,
- * a deletion is left to the sync, and the token to fetch with is found by
- * trying each configured secret until one knows the transaction.
+ * The Up webhook ingest (POPS-2920, redirected by POPS-3333): every delivery
+ * lands in the account's pending draft, classified, and nothing reaches the
+ * ledger. Settlements and deletions of staged rows change the draft in
+ * place; settlements of rows already in the ledger still settle them there.
  */
 import { eq } from 'drizzle-orm';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { freshMigratedFinanceDb } from '../../../../db/__tests__/migrated-db.js';
-import { importBatches, importCommits, transactions } from '../../../../db/schema.js';
+import { importBatches, transactions } from '../../../../db/schema.js';
 import { upsertImportConfig } from '../../../../db/services/account-import-config.js';
 import { createAccount } from '../../../../db/services/accounts.js';
+import { claimImportDraft, listImportDrafts } from '../../../../db/services/import-drafts.js';
+import { insertImportTransaction } from '../../../../db/services/imports.js';
 import { makeContactsFake } from '../../../__tests__/contacts-fake.js';
+import { readLiveDraftPayload } from '../../import-drafts/live-draft.js';
+import { upChecksum } from '../map-transaction.js';
 import { syncUpAccount } from '../sync.js';
 import { UpBankApiError, type UpBankClient, type UpTransaction } from '../up-api.js';
-import { makeUpWebhookIngest, webhookCommitKey, type UpWebhookIngest } from '../webhook-ingest.js';
+import { makeUpWebhookIngest, type UpWebhookIngest } from '../webhook-ingest.js';
 import { upAccount, upTransaction } from './fixtures.js';
 
 import type { FinanceDb } from '../../../../db/services/internal.js';
@@ -24,7 +26,6 @@ import type { FinanceDb } from '../../../../db/services/internal.js';
 let db: FinanceDb;
 let accountId: string;
 
-/** An Up customer: the rows its token can see, keyed by id, and the accounts behind them. */
 function customer(rows: UpTransaction[]): { client: UpBankClient; asked: string[] } {
   const asked: string[] = [];
   const account = upAccount();
@@ -77,7 +78,34 @@ function batches() {
   return db.select().from(importBatches).all();
 }
 
+function drafts() {
+  return listImportDrafts(db, { accountId });
+}
+
+function stagedRows() {
+  return drafts().flatMap((draft) => readLiveDraftPayload(draft).parsedTransactions);
+}
+
+function heldInLedger(upId: string, amountCents: number): string {
+  return insertImportTransaction(db, {
+    description: 'Fuel',
+    dialectAccountLabel: 'Up Everyday',
+    accountId,
+    amountCents,
+    date: '2026-09-05',
+    type: 'purchase',
+    tags: [],
+    entityId: null,
+    entityName: null,
+    location: null,
+    pending: true,
+    checksum: upChecksum(accountId, upId),
+  }).id;
+}
+
 const created = { eventType: 'TRANSACTION_CREATED', transactionId: 'txn-1' };
+const settledEvent = { eventType: 'TRANSACTION_SETTLED', transactionId: 'txn-1' };
+const deletedEvent = { eventType: 'TRANSACTION_DELETED', transactionId: 'txn-1' };
 
 beforeEach(() => {
   ({ db } = freshMigratedFinanceDb());
@@ -85,7 +113,7 @@ beforeEach(() => {
 });
 
 describe('makeUpWebhookIngest', () => {
-  it('imports a created transaction as a batch of one, and a second delivery writes nothing', async () => {
+  it('stages a created transaction in one live draft, classified, with the balance; a redelivery changes nothing', async () => {
     configure(accountId);
     const { client } = customer([
       upTransaction({ id: 'txn-1', cents: -1_250, createdAt: '2026-09-05T09:00:00+10:00' }),
@@ -93,25 +121,45 @@ describe('makeUpWebhookIngest', () => {
     const ingest = ingestWith({ UP_TOKEN: client });
 
     const first = await ingest(created);
-    expect(first).toMatchObject({ kind: 'imported', accountId, failed: 0 });
-    expect(storedRows().map((r) => [r.date, r.amountCents, r.pending])).toEqual([
-      ['2026-09-05', -1_250, false],
+    expect(first).toMatchObject({ kind: 'staged', accountId, created: true });
+    expect(storedRows()).toEqual([]);
+    expect(batches()).toEqual([]);
+    const [draft] = drafts();
+    expect(draft).toMatchObject({
+      id: first.kind === 'staged' ? first.draftId : '',
+      state: 'live',
+      rowCount: 1,
+      unresolvedCount: 1,
+      dateFrom: '2026-09-05',
+      balanceReportedCents: 48_800,
+    });
+    const payload = readLiveDraftPayload(draft!);
+    expect(payload.parsedTransactions.map((t) => [t.date, t.amount])).toEqual([
+      ['2026-09-05', -12.5],
     ]);
-    expect(batches()).toMatchObject([
-      { accountId, sourceKind: 'api', sourceRef: 'up', rowCount: 1, dateFrom: '2026-09-05' },
-    ]);
-    expect(first.kind === 'imported' && first.batchId).toBe(batches()[0]?.id);
-    expect(db.select({ key: importCommits.commitKey }).from(importCommits).all()).toEqual([
-      { key: webhookCommitKey('txn-1') },
-    ]);
+    expect(payload.processedForFingerprint).toBe(payload.parsedTransactionsFingerprint);
+    expect(payload.processedTransactions.uncertain).toHaveLength(1);
 
     const second = await ingest(created);
-    expect(second).toEqual({ kind: 'duplicate', accountId });
-    expect(storedRows()).toHaveLength(1);
-    expect(batches()).toHaveLength(1);
+    expect(second).toEqual({ kind: 'already-staged', accountId });
+    expect(drafts()).toHaveLength(1);
+    expect(stagedRows()).toHaveLength(1);
   });
 
-  it('two deliveries in flight together for one transaction land one row', async () => {
+  it('records the AI diagnostic on the draft when a row could not be classified with AI off', async () => {
+    configure(accountId);
+    const { client } = customer([
+      upTransaction({ id: 'txn-1', description: 'ZZ UNKNOWN MERCHANT' }),
+    ]);
+    await ingestWith({ UP_TOKEN: client })(created);
+
+    const [draft] = drafts();
+    expect(readLiveDraftPayload(draft!).processedTransactions.warnings).toEqual([
+      expect.objectContaining({ type: 'AI_CATEGORIZATION_UNAVAILABLE' }),
+    ]);
+  });
+
+  it('two deliveries in flight together for one transaction stage one row', async () => {
     configure(accountId);
     const { client } = customer([
       upTransaction({ id: 'txn-1', cents: -1_250, createdAt: '2026-09-05T09:00:00+10:00' }),
@@ -130,13 +178,13 @@ describe('makeUpWebhookIngest', () => {
     const ingest = ingestWith({ UP_TOKEN: slow });
 
     const first = ingest(created);
-    const second = ingest({ eventType: 'TRANSACTION_SETTLED', transactionId: 'txn-1' });
+    const second = ingest(settledEvent);
     release();
 
-    expect((await first).kind).toBe('imported');
-    expect((await second).kind).toBe('duplicate');
-    expect(storedRows()).toHaveLength(1);
-    expect(batches()).toHaveLength(1);
+    expect((await first).kind).toBe('staged');
+    expect((await second).kind).toBe('already-staged');
+    expect(stagedRows()).toHaveLength(1);
+    expect(drafts()).toHaveLength(1);
   });
 
   it('a failed delivery does not block the next one for the same transaction', async () => {
@@ -158,11 +206,34 @@ describe('makeUpWebhookIngest', () => {
     const first = ingest(created);
     const second = ingest(created);
     await expect(first).rejects.toBeInstanceOf(UpBankApiError);
-    expect((await second).kind).toBe('imported');
-    expect(storedRows()).toHaveLength(1);
+    expect((await second).kind).toBe('staged');
+    expect(stagedRows()).toHaveLength(1);
   });
 
-  it('settles a held row in place on TRANSACTION_SETTLED, once', async () => {
+  it('a second arrival grows the same draft; one that arrives while it is open goes to a new draft', async () => {
+    configure(accountId);
+    const rows = [
+      upTransaction({ id: 'txn-1', cents: -100, createdAt: '2026-09-05T09:00:00+10:00' }),
+      upTransaction({ id: 'txn-2', cents: -200, createdAt: '2026-09-05T10:00:00+10:00' }),
+      upTransaction({ id: 'txn-3', cents: -300, createdAt: '2026-09-05T11:00:00+10:00' }),
+    ];
+    const ingest = ingestWith({ UP_TOKEN: customer(rows).client });
+
+    const first = await ingest(created);
+    const second = await ingest({ ...created, transactionId: 'txn-2' });
+    expect(second).toMatchObject({ kind: 'staged', created: false });
+    expect(drafts()).toHaveLength(1);
+    expect(drafts()[0]).toMatchObject({ rowCount: 2, unresolvedCount: 2 });
+
+    claimImportDraft(db, first.kind === 'staged' ? first.draftId : '', 'tab-a');
+    const third = await ingest({ ...created, transactionId: 'txn-3' });
+    expect(third).toMatchObject({ kind: 'staged', created: true });
+    const byState = new Map(drafts().map((d) => [d.state, d]));
+    expect(byState.get('saved')).toMatchObject({ rowCount: 2 });
+    expect(byState.get('live')).toMatchObject({ rowCount: 1 });
+  });
+
+  it('settles a staged row in place on TRANSACTION_SETTLED, and leaves it alone while its draft is open', async () => {
     configure(accountId);
     const held = upTransaction({
       id: 'txn-1',
@@ -170,9 +241,8 @@ describe('makeUpWebhookIngest', () => {
       cents: -1_000,
       createdAt: '2026-09-05T09:00:00+10:00',
     });
-    const heldCustomer = customer([held]);
-    await ingestWith({ UP_TOKEN: heldCustomer.client })(created);
-    expect(storedRows().map((r) => r.pending)).toEqual([true]);
+    const first = await ingestWith({ UP_TOKEN: customer([held]).client })(created);
+    expect(stagedRows().map((r) => r.pending)).toEqual([true]);
 
     const settled = upTransaction({
       id: 'txn-1',
@@ -182,50 +252,101 @@ describe('makeUpWebhookIngest', () => {
       settledAt: '2026-09-07T02:00:00+10:00',
     });
     const ingest = ingestWith({ UP_TOKEN: customer([settled]).client });
-    const outcome = await ingest({ eventType: 'TRANSACTION_SETTLED', transactionId: 'txn-1' });
-    const [row] = storedRows();
-    expect(outcome).toEqual({ kind: 'settled', accountId, transactionId: row?.id });
-    expect(row).toMatchObject({ pending: false, amountCents: -1_050, date: '2026-09-07' });
-    expect(batches()).toHaveLength(1);
+    const outcome = await ingest(settledEvent);
+    expect(outcome).toEqual({
+      kind: 'staged-settled',
+      accountId,
+      draftId: first.kind === 'staged' ? first.draftId : '',
+    });
+    const [row] = stagedRows();
+    expect(row).toMatchObject({ pending: false, amount: -10.5, date: '2026-09-07' });
+    const [draft] = drafts();
+    expect(readLiveDraftPayload(draft!).processedTransactions.uncertain[0]).toMatchObject({
+      pending: false,
+      amount: -10.5,
+    });
+    expect(draft).toMatchObject({ dateFrom: '2026-09-07', rowCount: 1 });
+    expect(storedRows()).toEqual([]);
 
-    await expect(
-      ingest({ eventType: 'TRANSACTION_SETTLED', transactionId: 'txn-1' })
-    ).resolves.toEqual({ kind: 'duplicate', accountId });
+    claimImportDraft(db, draft!.id, 'tab-a');
+    const again = upTransaction({ ...settled, id: 'txn-1' });
+    await expect(ingestWith({ UP_TOKEN: customer([again]).client })(settledEvent)).resolves.toEqual(
+      {
+        kind: 'already-staged',
+        accountId,
+      }
+    );
   });
 
-  it('reports a settlement the guard refuses and leaves the row held for the next delivery', async () => {
+  it('settles a held row already in the ledger, once, and refuses the sign the guard refuses', async () => {
     configure(accountId);
-    const held = upTransaction({
+    const id = heldInLedger('txn-1', -1_000);
+    const settled = upTransaction({
       id: 'txn-1',
-      status: 'HELD',
-      cents: -1_000,
+      status: 'SETTLED',
+      cents: -1_050,
       createdAt: '2026-09-05T09:00:00+10:00',
+      settledAt: '2026-09-07T02:00:00+10:00',
     });
-    await ingestWith({ UP_TOKEN: customer([held]).client })(created);
-    const [stored] = storedRows();
-    expect(stored).toMatchObject({ pending: true, type: 'purchase', amountCents: -1_000 });
+    const ingest = ingestWith({ UP_TOKEN: customer([settled]).client });
 
-    const settledPositive = upTransaction({
-      id: 'txn-1',
+    await expect(ingest(settledEvent)).resolves.toEqual({
+      kind: 'settled',
+      accountId,
+      transactionId: id,
+    });
+    expect(storedRows()[0]).toMatchObject({
+      pending: false,
+      amountCents: -1_050,
+      date: '2026-09-07',
+    });
+    await expect(ingest(settledEvent)).resolves.toEqual({ kind: 'duplicate', accountId });
+    expect(drafts()).toEqual([]);
+
+    const other = heldInLedger('txn-2', -1_000);
+    const positive = upTransaction({
+      id: 'txn-2',
       status: 'SETTLED',
       cents: 1_000,
       createdAt: '2026-09-05T09:00:00+10:00',
       settledAt: '2026-09-07T02:00:00+10:00',
     });
-    const ingest = ingestWith({ UP_TOKEN: customer([settledPositive]).client });
-
-    const outcome = await ingest({ eventType: 'TRANSACTION_SETTLED', transactionId: 'txn-1' });
-
-    expect(outcome).toEqual({ kind: 'settle-refused', accountId, transactionId: stored?.id });
-    expect(storedRows()).toMatchObject([
-      { pending: true, amountCents: -1_000, date: '2026-09-05' },
-    ]);
     await expect(
-      ingest({ eventType: 'TRANSACTION_SETTLED', transactionId: 'txn-1' })
-    ).resolves.toEqual({ kind: 'settle-refused', accountId, transactionId: stored?.id });
+      ingestWith({ UP_TOKEN: customer([positive]).client })({
+        ...settledEvent,
+        transactionId: 'txn-2',
+      })
+    ).resolves.toEqual({ kind: 'settle-refused', accountId, transactionId: other });
   });
 
-  it('is one row with the batch sync, whichever fetches it first', async () => {
+  it('drops a staged row on TRANSACTION_DELETED and discards the draft when that was its last row', async () => {
+    configure(accountId);
+    const rows = [upTransaction({ id: 'txn-1' }), upTransaction({ id: 'txn-2', cents: -5 })];
+    const ingest = ingestWith({ UP_TOKEN: customer(rows).client });
+    await ingest(created);
+    await ingest({ ...created, transactionId: 'txn-2' });
+
+    await expect(ingest(deletedEvent)).resolves.toEqual({
+      kind: 'deleted',
+      transactionId: 'txn-1',
+      staged: true,
+    });
+    expect(stagedRows().map((r) => r.amount)).toEqual([-0.05]);
+    expect(drafts()[0]).toMatchObject({ rowCount: 1 });
+
+    await expect(ingest({ ...deletedEvent, transactionId: 'txn-2' })).resolves.toMatchObject({
+      staged: true,
+    });
+    expect(drafts()).toEqual([]);
+
+    await expect(ingest(deletedEvent)).resolves.toEqual({
+      kind: 'deleted',
+      transactionId: 'txn-1',
+      staged: false,
+    });
+  });
+
+  it('is one staged row with the batch sync, whichever fetches it first', async () => {
     configure(accountId);
     const { client } = customer([
       upTransaction({ id: 'txn-1', cents: -900, createdAt: '2026-09-03T09:00:00+10:00' }),
@@ -239,8 +360,9 @@ describe('makeUpWebhookIngest', () => {
       to: '2026-09-05',
       asOf: '2026-09-06',
     });
-    expect(sync).toMatchObject({ fetched: 1, imported: 0, settled: 0 });
-    expect(storedRows()).toHaveLength(1);
+    expect(sync).toMatchObject({ fetched: 1, staged: 0, alreadyStaged: 1, settled: 0 });
+    expect(stagedRows()).toHaveLength(1);
+    expect(drafts()).toHaveLength(1);
   });
 
   it('reports an Up account nobody has mapped and writes nothing', async () => {
@@ -254,19 +376,7 @@ describe('makeUpWebhookIngest', () => {
       transactionId: 'txn-1',
     });
     expect(db.select().from(transactions).all()).toHaveLength(0);
-    expect(batches()).toHaveLength(0);
-  });
-
-  it('leaves a deletion to the next sync', async () => {
-    configure(accountId);
-    const { client, asked } = customer([upTransaction({ id: 'txn-1' })]);
-    await ingestWith({ UP_TOKEN: client })(created);
-
-    await expect(
-      ingestWith({ UP_TOKEN: client })({ eventType: 'TRANSACTION_DELETED', transactionId: 'txn-1' })
-    ).resolves.toEqual({ kind: 'deleted', transactionId: 'txn-1' });
-    expect(storedRows()).toHaveLength(1);
-    expect(asked).toEqual(['txn-1']);
+    expect(listImportDrafts(db)).toEqual([]);
   });
 
   it('ignores events it does not ingest, events without a transaction, and a ledger with no Up secret', async () => {
@@ -299,7 +409,7 @@ describe('makeUpWebhookIngest', () => {
     const b = customer([upTransaction({ id: 'txn-1', cents: -300 })]);
     const ingest = ingestWith({ UP_TOKEN_A: a.client, UP_TOKEN_B: b.client });
 
-    await expect(ingest(created)).resolves.toMatchObject({ kind: 'imported', accountId });
+    await expect(ingest(created)).resolves.toMatchObject({ kind: 'staged', accountId });
     expect(b.asked).toEqual(['txn-1']);
 
     await expect(ingest({ ...created, transactionId: 'txn-nobody' })).resolves.toEqual({

@@ -173,6 +173,10 @@
                                 "nullable": true,
                                 "type": "string"
                               },
+                              "lastSyncedAt": {
+                                "nullable": true,
+                                "type": "string"
+                              },
                               "newestTransactionDate": {
                                 "nullable": true,
                                 "type": "string"
@@ -222,6 +226,7 @@
                             },
                             "required": [
                               "lastImportAt",
+                              "lastSyncedAt",
                               "lastBatchId",
                               "newestTransactionDate",
                               "span",
@@ -470,6 +475,10 @@
                               "nullable": true,
                               "type": "string"
                             },
+                            "lastSyncedAt": {
+                              "nullable": true,
+                              "type": "string"
+                            },
                             "newestTransactionDate": {
                               "nullable": true,
                               "type": "string"
@@ -519,6 +528,7 @@
                           },
                           "required": [
                             "lastImportAt",
+                            "lastSyncedAt",
                             "lastBatchId",
                             "newestTransactionDate",
                             "span",
@@ -830,6 +840,10 @@
                                 "nullable": true,
                                 "type": "string"
                               },
+                              "lastSyncedAt": {
+                                "nullable": true,
+                                "type": "string"
+                              },
                               "newestTransactionDate": {
                                 "nullable": true,
                                 "type": "string"
@@ -879,6 +893,7 @@
                             },
                             "required": [
                               "lastImportAt",
+                              "lastSyncedAt",
                               "lastBatchId",
                               "newestTransactionDate",
                               "span",
@@ -1156,6 +1171,10 @@
                               "nullable": true,
                               "type": "string"
                             },
+                            "lastSyncedAt": {
+                              "nullable": true,
+                              "type": "string"
+                            },
                             "newestTransactionDate": {
                               "nullable": true,
                               "type": "string"
@@ -1205,6 +1224,7 @@
                           },
                           "required": [
                             "lastImportAt",
+                            "lastSyncedAt",
                             "lastBatchId",
                             "newestTransactionDate",
                             "span",
@@ -1466,6 +1486,10 @@
                               "nullable": true,
                               "type": "string"
                             },
+                            "lastSyncedAt": {
+                              "nullable": true,
+                              "type": "string"
+                            },
                             "newestTransactionDate": {
                               "nullable": true,
                               "type": "string"
@@ -1515,6 +1539,7 @@
                           },
                           "required": [
                             "lastImportAt",
+                            "lastSyncedAt",
                             "lastBatchId",
                             "newestTransactionDate",
                             "span",
@@ -1823,6 +1848,10 @@
                               "nullable": true,
                               "type": "string"
                             },
+                            "lastSyncedAt": {
+                              "nullable": true,
+                              "type": "string"
+                            },
                             "newestTransactionDate": {
                               "nullable": true,
                               "type": "string"
@@ -1872,6 +1901,7 @@
                           },
                           "required": [
                             "lastImportAt",
+                            "lastSyncedAt",
                             "lastBatchId",
                             "newestTransactionDate",
                             "span",
@@ -5295,6 +5325,10 @@
                               "nullable": true,
                               "type": "string"
                             },
+                            "lastSyncedAt": {
+                              "nullable": true,
+                              "type": "string"
+                            },
                             "newestTransactionDate": {
                               "nullable": true,
                               "type": "string"
@@ -5344,6 +5378,7 @@
                           },
                           "required": [
                             "lastImportAt",
+                            "lastSyncedAt",
                             "lastBatchId",
                             "newestTransactionDate",
                             "span",
@@ -5670,6 +5705,10 @@
                                   "nullable": true,
                                   "type": "string"
                                 },
+                                "lastSyncedAt": {
+                                  "nullable": true,
+                                  "type": "string"
+                                },
                                 "newestTransactionDate": {
                                   "nullable": true,
                                   "type": "string"
@@ -5719,6 +5758,7 @@
                               },
                               "required": [
                                 "lastImportAt",
+                                "lastSyncedAt",
                                 "lastBatchId",
                                 "newestTransactionDate",
                                 "span",
@@ -5883,6 +5923,10 @@
                                   "nullable": true,
                                   "type": "string"
                                 },
+                                "lastSyncedAt": {
+                                  "nullable": true,
+                                  "type": "string"
+                                },
                                 "newestTransactionDate": {
                                   "nullable": true,
                                   "type": "string"
@@ -5932,6 +5976,7 @@
                               },
                               "required": [
                                 "lastImportAt",
+                                "lastSyncedAt",
                                 "lastBatchId",
                                 "newestTransactionDate",
                                 "span",
@@ -6175,42 +6220,21 @@
                               "minimum": 0,
                               "type": "integer"
                             },
-                            "batchId": {
+                            "alreadyInLedger": {
+                              "maximum": 9007199254740991,
+                              "minimum": 0,
+                              "type": "integer"
+                            },
+                            "alreadyStaged": {
+                              "maximum": 9007199254740991,
+                              "minimum": 0,
+                              "type": "integer"
+                            },
+                            "draftId": {
                               "nullable": true,
                               "type": "string"
                             },
-                            "checkpoint": {
-                              "additionalProperties": false,
-                              "nullable": true,
-                              "properties": {
-                                "balanceCents": {
-                                  "maximum": 9007199254740991,
-                                  "minimum": -9007199254740991,
-                                  "type": "integer"
-                                },
-                                "deltaCents": {
-                                  "maximum": 9007199254740991,
-                                  "minimum": -9007199254740991,
-                                  "type": "integer"
-                                },
-                                "id": {
-                                  "type": "string"
-                                }
-                              },
-                              "required": ["id", "balanceCents", "deltaCents"],
-                              "type": "object"
-                            },
-                            "failed": {
-                              "maximum": 9007199254740991,
-                              "minimum": 0,
-                              "type": "integer"
-                            },
                             "fetched": {
-                              "maximum": 9007199254740991,
-                              "minimum": 0,
-                              "type": "integer"
-                            },
-                            "imported": {
                               "maximum": 9007199254740991,
                               "minimum": 0,
                               "type": "integer"
@@ -6225,6 +6249,11 @@
                               "minimum": 0,
                               "type": "integer"
                             },
+                            "staged": {
+                              "maximum": 9007199254740991,
+                              "minimum": 0,
+                              "type": "integer"
+                            },
                             "warnings": {
                               "items": {
                                 "type": "string"
@@ -6234,12 +6263,12 @@
                           },
                           "required": [
                             "fetched",
-                            "imported",
-                            "failed",
+                            "staged",
+                            "alreadyStaged",
+                            "alreadyInLedger",
                             "settled",
                             "alreadyHeld",
-                            "batchId",
-                            "checkpoint",
+                            "draftId",
                             "warnings"
                           ],
                           "type": "object"
@@ -6435,42 +6464,21 @@
                               "minimum": 0,
                               "type": "integer"
                             },
-                            "batchId": {
+                            "alreadyInLedger": {
+                              "maximum": 9007199254740991,
+                              "minimum": 0,
+                              "type": "integer"
+                            },
+                            "alreadyStaged": {
+                              "maximum": 9007199254740991,
+                              "minimum": 0,
+                              "type": "integer"
+                            },
+                            "draftId": {
                               "nullable": true,
                               "type": "string"
                             },
-                            "checkpoint": {
-                              "additionalProperties": false,
-                              "nullable": true,
-                              "properties": {
-                                "balanceCents": {
-                                  "maximum": 9007199254740991,
-                                  "minimum": -9007199254740991,
-                                  "type": "integer"
-                                },
-                                "deltaCents": {
-                                  "maximum": 9007199254740991,
-                                  "minimum": -9007199254740991,
-                                  "type": "integer"
-                                },
-                                "id": {
-                                  "type": "string"
-                                }
-                              },
-                              "required": ["id", "balanceCents", "deltaCents"],
-                              "type": "object"
-                            },
-                            "failed": {
-                              "maximum": 9007199254740991,
-                              "minimum": 0,
-                              "type": "integer"
-                            },
                             "fetched": {
-                              "maximum": 9007199254740991,
-                              "minimum": 0,
-                              "type": "integer"
-                            },
-                            "imported": {
                               "maximum": 9007199254740991,
                               "minimum": 0,
                               "type": "integer"
@@ -6485,6 +6493,11 @@
                               "minimum": 0,
                               "type": "integer"
                             },
+                            "staged": {
+                              "maximum": 9007199254740991,
+                              "minimum": 0,
+                              "type": "integer"
+                            },
                             "warnings": {
                               "items": {
                                 "type": "string"
@@ -6494,12 +6507,12 @@
                           },
                           "required": [
                             "fetched",
-                            "imported",
-                            "failed",
+                            "staged",
+                            "alreadyStaged",
+                            "alreadyInLedger",
                             "settled",
                             "alreadyHeld",
-                            "batchId",
-                            "checkpoint",
+                            "draftId",
                             "warnings"
                           ],
                           "type": "object"

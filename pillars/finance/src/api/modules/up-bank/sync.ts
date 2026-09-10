@@ -13,33 +13,23 @@
  * API source, "checked, nothing new" is the fact worth recording, and it is
  * what the staleness read (POPS-2917) measures cadence from.
  */
-import { getAccountKindBehaviour } from '../../../contract/account-kind.js';
-import {
-  accountCheckpointsService,
-  checkpointDelta,
-  importBatchesService,
-  isCheckpointConflict,
-  today,
-  type FinanceDb,
-} from '../../../db/index.js';
-import { planUpSync, type UpSyncArgs, type UpSyncPlan } from './sync-plan.js';
-import { importMappedRows, settleMappedRows } from './write-rows.js';
+import { accountImportConfigService, type FinanceDb } from '../../../db/index.js';
+import { stageMappedRows } from '../import-drafts/live-draft.js';
+import { planUpSync, type UpSyncArgs } from './sync-plan.js';
+import { settleMappedRows } from './write-rows.js';
 
 import type { ImportWarning } from '../../../contract/rest-imports-schemas.js';
 import type { ContactsClient } from '../../contacts/client.js';
 
-export interface UpSyncCheckpoint {
-  id: string;
-  balanceCents: number;
-  deltaCents: number;
-}
-
 export interface UpSyncResult {
   accountId: string;
-  commitKey: string;
   fetched: number;
-  imported: number;
-  failed: number;
+  /** Rows this pass added to the account's pending draft (finance ADR-005). */
+  staged: number;
+  /** Rows the pending draft already held. */
+  alreadyStaged: number;
+  /** Rows already in the ledger: fetched, not staged. */
+  alreadyInLedger: number;
   settled: number;
   /**
    * Held rows a settlement would have turned into a positive `purchase`
@@ -49,87 +39,44 @@ export interface UpSyncResult {
    */
   settleRefused: number;
   alreadyHeld: number;
-  batchId: string | null;
-  /** Null when a checkpoint for this account and day already exists. */
-  checkpoint: UpSyncCheckpoint | null;
+  /** The pending draft the rows wait in; null when nothing was staged and none existed. */
+  draftId: string | null;
   warnings: ImportWarning[];
 }
 
 /**
- * Up's balance is signed in the customer's favour — positive is money held,
- * negative is money owed on a home loan — which is the ledger's own convention
- * for every account kind, so it is recorded as sent. The kind is read only to
- * skip an account that has no external balance to anchor on.
+ * One pass over an Up account: fetch the range, stage what is new into the
+ * account's pending draft, settle held ledger rows in place, and record the
+ * pass on the import config. Nothing reaches the ledger here; the balance
+ * Up reports rides on the draft and becomes a checkpoint when it is
+ * committed (POPS-3335).
  */
-function mintBalanceCheckpoint(
-  db: FinanceDb,
-  plan: UpSyncPlan,
-  commitKey: string,
-  asOf: string
-): { checkpoint: UpSyncCheckpoint | null; warning?: ImportWarning } {
-  if (!getAccountKindBehaviour(plan.account.kind).hasExternalBalance) return { checkpoint: null };
-  const balanceCents = plan.upAccount.attributes.balance.valueInBaseUnits;
-  let row;
-  try {
-    row = accountCheckpointsService.insertCheckpoint(db, {
-      accountId: plan.account.id,
-      balanceCents,
-      asOf,
-      source: 'import',
-      sourceRef: commitKey,
-      note: `${plan.account.name} balance from the Up API`,
-    });
-  } catch (error) {
-    if (isCheckpointConflict(error)) return { checkpoint: null };
-    throw error;
-  }
-  const delta = checkpointDelta(db, row);
-  const deltaCents = delta?.deltaCents ?? 0;
-  const checkpoint = { id: row.id, balanceCents, deltaCents };
-  if (delta === null || deltaCents === 0) return { checkpoint };
-  return {
-    checkpoint,
-    warning: {
-      type: 'CHECKPOINT_MISMATCH',
-      message: `Ledger disagrees with ${plan.account.name}'s Up balance`,
-      affectedCount: 1,
-      details: `expected ${delta.expectedBalanceCents}c, Up says ${balanceCents}c (Δ ${deltaCents}c)`,
-    },
-  };
-}
-
-/** Plan, then write: import, settle, batch, checkpoint. */
 export async function syncUpAccount(
   db: FinanceDb,
   contacts: ContactsClient,
   args: UpSyncArgs
 ): Promise<UpSyncResult> {
   const plan = await planUpSync(db, args);
-  const commitKey = crypto.randomUUID();
-
-  const imported = await importMappedRows(
+  const staged = await stageMappedRows({
     db,
     contacts,
-    { accountId: plan.account.id, commitKey },
-    plan.newRows
-  );
+    target: { accountId: plan.account.id, accountName: plan.account.name },
+    rows: plan.newRows,
+    balanceCents: plan.upAccount.attributes.balance.valueInBaseUnits,
+  });
   const { settled, refused } = settleMappedRows(db, plan.settleable);
-  const minted = mintBalanceCheckpoint(db, plan, commitKey, args.asOf ?? today());
-  if (minted.checkpoint !== null && imported.batchId !== null) {
-    importBatchesService.attachCheckpoint(db, imported.batchId, minted.checkpoint.id);
-  }
+  accountImportConfigService.markSynced(db, plan.account.id, args.syncedAt ?? new Date());
 
   return {
     accountId: plan.account.id,
-    commitKey,
     fetched: plan.fetched,
-    imported: imported.imported,
-    failed: imported.failed,
+    staged: staged.staged,
+    alreadyStaged: staged.alreadyStaged,
+    alreadyInLedger: staged.alreadyInLedger,
     settled: settled.length,
     settleRefused: refused.length,
     alreadyHeld: plan.alreadyHeld,
-    batchId: imported.batchId,
-    checkpoint: minted.checkpoint,
-    warnings: minted.warning ? [...imported.warnings, minted.warning] : imported.warnings,
+    draftId: staged.draftId === '' ? null : staged.draftId,
+    warnings: staged.warnings ?? [],
   };
 }

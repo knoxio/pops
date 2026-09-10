@@ -47,15 +47,14 @@ function enable(intervalMinutes = 60): void {
 function result(accountId: string): UpSyncResult {
   return {
     accountId,
-    commitKey: 'ck',
     fetched: 1,
-    imported: 1,
-    failed: 0,
+    staged: 1,
+    alreadyStaged: 0,
+    alreadyInLedger: 0,
     settled: 0,
     settleRefused: 0,
     alreadyHeld: 0,
-    batchId: `batch-${accountId}`,
-    checkpoint: null,
+    draftId: `draft-${accountId}`,
     warnings: [],
   };
 }

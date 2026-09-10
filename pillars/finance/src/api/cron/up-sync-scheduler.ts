@@ -103,9 +103,9 @@ function recordOutcome(
     stats.synced += 1;
     logger?.info?.('finance up sync complete', {
       accountId: job.accountId,
-      imported: job.result?.imported,
+      staged: job.result?.staged,
       settled: job.result?.settled,
-      batchId: job.result?.batchId,
+      draftId: job.result?.draftId,
     });
     return;
   }

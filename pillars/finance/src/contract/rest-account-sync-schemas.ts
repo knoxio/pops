@@ -16,8 +16,12 @@ export type UpSyncJobStatus = (typeof UP_SYNC_JOB_STATUSES)[number];
 export const UpSyncJobResultSchema = z.object({
   /** Rows Up returned for the fetched range, before dedup. */
   fetched: z.number().int().nonnegative(),
-  imported: z.number().int().nonnegative(),
-  failed: z.number().int().nonnegative(),
+  /** Rows this pass added to the account's pending draft (finance ADR-005); nothing reaches the ledger until it is committed. */
+  staged: z.number().int().nonnegative(),
+  /** Rows the pending draft already held. */
+  alreadyStaged: z.number().int().nonnegative(),
+  /** Rows already in the ledger: fetched, not staged. */
+  alreadyInLedger: z.number().int().nonnegative(),
   /** Held rows already stored that this pass marked settled. */
   settled: z.number().int().nonnegative(),
   /**
@@ -31,15 +35,8 @@ export const UpSyncJobResultSchema = z.object({
   settleRefused: z.number().int().nonnegative().optional(),
   /** Held rows already stored and still held: fetched, not written. */
   alreadyHeld: z.number().int().nonnegative(),
-  batchId: z.string().nullable(),
-  /** The checkpoint minted from Up's balance, or null when today already had one. */
-  checkpoint: z
-    .object({
-      id: z.string(),
-      balanceCents: z.number().int(),
-      deltaCents: z.number().int(),
-    })
-    .nullable(),
+  /** The pending draft the rows wait in; null when nothing was staged and none existed. */
+  draftId: z.string().nullable(),
   warnings: z.array(z.string()),
 });
 

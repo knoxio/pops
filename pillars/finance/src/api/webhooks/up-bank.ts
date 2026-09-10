@@ -87,6 +87,12 @@ function logOutcome(logger: UpBankWebhookLogger, outcome: UpWebhookOutcome): voi
       });
       return;
     case 'deleted':
+      if (outcome.staged) {
+        logger.info('[webhook/up] TRANSACTION_DELETED dropped the row from its pending draft', {
+          transactionId: outcome.transactionId,
+        });
+        return;
+      }
       logger.warn('[webhook/up] TRANSACTION_DELETED not applied; the next sync reconciles it', {
         transactionId: outcome.transactionId,
       });

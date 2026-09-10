@@ -77,7 +77,11 @@ Three things about the wire that no single file states:
   tab that is in it now from one that left without releasing.
 - **A live draft belongs to the bank until a person claims it.** Claiming
   turns it `saved`, so the Up path never writes into a draft someone has open;
-  what arrives afterwards collects in a new live draft for the account.
+  what arrives afterwards collects in a new live draft for the account. The
+  webhook and the scheduled sync both land in `../import-drafts/live-draft.ts`,
+  which classifies rows on arrival through `processImportCore` so the card can
+  say how many need a decision; a settle or a delete from Up changes the staged
+  row in place unless a tab holds the draft.
 
 ## Absent
 

@@ -252,8 +252,8 @@ describe('POST /webhooks/up ingest hand-off (POPS-2920)', () => {
     const logger = { info: vi.fn(), warn: vi.fn() };
     const outcomes: UpWebhookIngest[] = [
       async () => ({ kind: 'unmapped', upAccountId: 'up-acc-9', transactionId: 'txn-123' }),
-      async () => ({ kind: 'deleted', transactionId: 'txn-123' }),
-      async () => ({ kind: 'imported', accountId: 'a1', batchId: 'b1', failed: 0 }),
+      async () => ({ kind: 'deleted', transactionId: 'txn-123', staged: false }),
+      async () => ({ kind: 'staged', accountId: 'a1', draftId: 'd1', created: true }),
     ];
     for (const ingest of outcomes) await signedPost(buildApp(ingest, logger));
 
@@ -267,8 +267,8 @@ describe('POST /webhooks/up ingest hand-off (POPS-2920)', () => {
       expect.objectContaining({ upAccountId: 'up-acc-9' })
     );
     expect(logger.info).toHaveBeenCalledWith(
-      '[webhook/up] imported',
-      expect.objectContaining({ batchId: 'b1' })
+      '[webhook/up] staged',
+      expect.objectContaining({ draftId: 'd1' })
     );
   });
 

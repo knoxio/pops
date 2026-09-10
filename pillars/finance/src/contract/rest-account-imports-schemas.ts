@@ -55,6 +55,8 @@ export const DateSpanSchema = z.object({ from: z.string(), to: z.string() });
  */
 export const ImportStatusSchema = z.object({
   lastImportAt: z.string().nullable(),
+  /** When a provider pass last ran for the account, found anything or not; null for one never synced. */
+  lastSyncedAt: z.string().nullable(),
   lastBatchId: z.string().nullable(),
   newestTransactionDate: z.string().nullable(),
   span: DateSpanSchema.nullable(),
