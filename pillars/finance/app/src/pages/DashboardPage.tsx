@@ -8,6 +8,7 @@ import { budgetsList, transactionsList } from '../finance-api/index.js';
 import { fetchAllPages } from '../lib/fetch-all-pages';
 import { ActiveBudgets } from './dashboard/ActiveBudgets';
 import { getCurrentMonthRange } from './dashboard/dateRange';
+import { PendingImports } from './dashboard/PendingImports';
 import { RecentTransactions } from './dashboard/RecentTransactions';
 import { computeStats, StatsGrid } from './dashboard/StatsGrid';
 
@@ -78,6 +79,7 @@ export function DashboardPage() {
           isLoading={recentTransactionsQuery.isLoading || monthStatsQuery.isLoading}
         />
       </section>
+      <PendingImports />
       <section className="space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-semibold tracking-tight">

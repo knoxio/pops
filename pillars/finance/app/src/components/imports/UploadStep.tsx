@@ -8,6 +8,7 @@ import { FileUpload } from './FileUpload';
 import { uploadRoute } from './pdf/anz-pdf-import';
 import { PdfStatementFindings } from './pdf/PdfStatementFindings';
 import { BANK_ACCEPTED_TYPES, bankTakesPdf } from './upload-step/bank-upload-config';
+import { ContinuePending } from './upload-step/ContinuePending';
 import { FormatMismatchAlert } from './upload-step/FormatMismatchAlert';
 import { BankExportHelp, UploadFooter, UploadStepHeader } from './upload-step/UploadStepChrome';
 import { useCsvStage } from './upload-step/useCsvStage';
@@ -174,6 +175,7 @@ export function UploadStep() {
 
   return (
     <div className="space-y-6">
+      <ContinuePending />
       <UploadStepHeader takesPdf={bankTakesPdf(dialectId)} />
 
       <AccountAndFormatFields dialectId={dialectId} onBankChange={handleBankChange} />

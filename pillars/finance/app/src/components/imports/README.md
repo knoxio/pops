@@ -39,6 +39,10 @@ The consequence worth knowing here, because it spans the store and step 1: **the
 
 Two more edges in the same area: resuming mid-processing restarts `POST /imports/process` rather than re-attaching to a server session that may still be alive, and a second tab opening the same draft is refused by the lease rather than racing on it (`code: DraftOwnedElsewhere`); it can take the draft over, after which the first tab's next write or thirty-second heartbeat is refused and it shows `ImportTakenOverNotice.tsx`, which blocks until the person takes the draft back or leaves.
 
+## Where a pending import is picked up
+
+Two entry points list every draft, whoever started it, and both compose `pending/PendingImportCard.tsx`: the finance dashboard's "Pending imports" section (`../../pages/dashboard/PendingImports.tsx`, capped at five with a count) and the wizard's first step (`upload-step/ContinuePending.tsx`, all of them, above an "or start a new import" divider). Neither renders when nothing is pending. The card's one action follows the server's state: a saved draft resumes, a live one is reviewed, an open one is taken over, an unusable one can only be discarded, and the discard confirmation (`pending/DiscardPendingDialog.tsx`) says what is actually at stake: decisions only for a live draft, decisions and the file for a file draft.
+
 ## Where things live
 
 | Concern                                                                       | Directory                                            |

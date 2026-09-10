@@ -19,6 +19,10 @@ import type { PlacedText } from './pdf/synthetic-pdf.test-helpers';
 
 // These tests are about the PDF-statement branch, not the account picker
 // (POPS-2840) — see UploadStep.test.tsx for the same rationale.
+// The continue-where-you-left-off panel has its own suite; here it would only
+// need a router and the drafts route for a step these tests never touch.
+vi.mock('./upload-step/ContinuePending', () => ({ ContinuePending: () => null }));
+
 vi.mock('../../finance-api/index.js', () => ({
   accountsList: async () => ({ data: { data: [], pagination: { total: 0 } } }),
   currenciesList: async () => ({ data: { data: [] } }),

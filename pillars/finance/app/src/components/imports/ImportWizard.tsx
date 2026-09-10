@@ -7,6 +7,7 @@ import { ColumnMapStep } from './ColumnMapStep';
 import { FinalReviewStep } from './FinalReviewStep';
 import { ProcessingStep } from './ProcessingStep';
 import { RuleCreationStep } from './RuleCreationStep';
+import { IMPORT_STEP_LABELS } from './step-labels';
 import { SummaryStep } from './SummaryStep';
 import { TagReviewStep } from './TagReviewStep';
 import { UploadStep } from './UploadStep';
@@ -19,16 +20,22 @@ interface Step {
   component: React.ComponentType;
 }
 
-const STEPS: Step[] = [
-  { number: 1, label: 'Upload', component: UploadStep },
-  { number: 2, label: 'Map', component: ColumnMapStep },
-  { number: 3, label: 'Process', component: ProcessingStep },
-  { number: 4, label: 'Review', component: ReviewStep },
-  { number: 5, label: 'Tags', component: TagReviewStep },
-  { number: 6, label: 'Rules', component: RuleCreationStep },
-  { number: 7, label: 'Commit', component: FinalReviewStep },
-  { number: 8, label: 'Summary', component: SummaryStep },
+const STEP_COMPONENTS: React.ComponentType[] = [
+  UploadStep,
+  ColumnMapStep,
+  ProcessingStep,
+  ReviewStep,
+  TagReviewStep,
+  RuleCreationStep,
+  FinalReviewStep,
+  SummaryStep,
 ];
+
+const STEPS: Step[] = IMPORT_STEP_LABELS.map((label, index) => ({
+  number: index + 1,
+  label,
+  component: STEP_COMPONENTS[index] ?? UploadStep,
+}));
 
 function getStepClasses(stepNumber: number, currentStep: number): { text: string; circle: string } {
   if (stepNumber === currentStep) {

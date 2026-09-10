@@ -21,6 +21,10 @@ const accountsCreate = vi.fn();
 const entitiesList = vi.fn();
 const entitiesCreate = vi.fn();
 
+// The continue-where-you-left-off panel has its own suite; here it would only
+// need a router and the drafts route for a step these tests never touch.
+vi.mock('./upload-step/ContinuePending', () => ({ ContinuePending: () => null }));
+
 vi.mock('../../finance-api/index.js', () => ({
   accountsList: (...args: unknown[]) => accountsList(...args),
   currenciesList: (...args: unknown[]) => currenciesList(...args),
