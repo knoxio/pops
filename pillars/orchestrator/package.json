@@ -15,7 +15,7 @@
     "@pops/pillar-sdk": "workspace:*",
     "@pops/types": "workspace:*",
     "express": "^5.1.0",
-    "zod": "^4.4.3"
+    "zod": "^4.5.4"
   },
   "devDependencies": {
     "@types/express": "^5.0.4",
@@ -23,7 +23,7 @@
     "@types/supertest": "^7.2.1",
     "@vitest/coverage-v8": "^4.1.10",
     "supertest": "^7.1.4",
-    "tsx": "^4.23.11",
+    "tsx": "^4.23.13",
     "typescript": "^6.0.3",
     "vitest": "^4.1.10"
   }

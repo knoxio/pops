@@ -48,7 +48,7 @@
     "drizzle-orm": "^0.45.2",
     "drizzle-zod": "^0.8.3",
     "express": "^5.1.0",
-    "zod": "^4.4.3"
+    "zod": "^4.5.4"
   },
   "devDependencies": {
     "@pops/contract-openapi": "workspace:*",
@@ -59,7 +59,7 @@
     "@vitest/coverage-v8": "^4.1.10",
     "openapi-typescript": "^7.13.0",
     "supertest": "^7.1.4",
-    "tsx": "^4.23.11",
+    "tsx": "^4.23.13",
     "typescript": "^6.0.3",
     "vitest": "^4.1.10"
   }
