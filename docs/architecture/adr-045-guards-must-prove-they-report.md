@@ -100,6 +100,7 @@ Runs immediately after `actions/checkout`. **No third-party import, at any depth
 | `scripts/ci/check-pops-uri-pattern-adoption.mjs`    | `quality.yml` → `pops-uri-pattern-adoption`                                     | `pillars/purchases/src/**` TS source                             |
 | `scripts/ci/check-raw-form-controls.mjs`            | `quality.yml` → `raw-form-controls`                                             | `pillars/**` TSX/JSX source, against the guard's own `ALLOWLIST` |
 | `scripts/ci/pr-review.mjs`                          | `pr-review.yml` → `review`                                                      | `git diff`/`git show`, the sticky comment's state block          |
+| `scripts/ci/pr-review.mjs`                          | `pr-review-dependabot.yml` → `review-bypass`                                    | the sticky comment's state block only — no diff, no model call   |
 | `scripts/ci/check-review-findings.mjs`              | `review-findings-gate.yml` → `review-findings-gate`                             | the sticky comment's state block, via the GitHub REST API        |
 | `scripts/ci/design-surface-only.mjs`                | `pr-review.yml` → `review`, `review-findings-gate.yml` → `review-findings-gate` | the PR's changed-file list, via the GitHub REST API              |
 

@@ -1,0 +1,144 @@
+name: PR Review (Dependabot)
+
+# The Dependabot-only substitute for `pr-review.yml`'s "Review" job.
+#
+# WHY THIS EXISTS (POPS-3343). A Dependabot-triggered `pull_request` run reads
+# secrets from a separate "Dependabot secrets" store GitHub scopes it to, not
+# this repo's ordinary Actions secrets. `CLAUDE_CODE_OAUTH_TOKEN` lives in the
+# latter, so `pr-review.yml`'s reviewer job would hard-fail at its very first
+# step on every Dependabot PR, permanently — not a flake, since re-running the
+# same run or even a later human push to the branch does not change which
+# secret store a given workflow RUN reads from. `review-findings-gate.yml` is
+# a REQUIRED check that polls for `pr-review.yml`'s sticky comment and fails
+# outright once the review never arrives, so every Dependabot PR would be
+# permanently unmergeable without this.
+#
+# WHAT THIS DOES NOT DO: call a model, or judge the diff at all. It posts the
+# exact sticky comment `review-findings-gate.yml` already knows how to read —
+# same `<!-- pr-review-state: ... -->` marker, same `github-actions[bot]`
+# author, same `scripts/ci/pr-review.mjs publish` code path `pr-review.yml`
+# itself uses to render it — with zero findings, because there is nothing here
+# that read the diff. A prose line above the marker says so explicitly, so the
+# comment can never be mistaken for a real review by a reader who does not
+# know this workflow exists.
+#
+# WHY THIS IS AN ACCEPTABLE GAP: every deterministic gate still runs
+# unconditionally on a Dependabot PR exactly as it does on any other —
+# `agent-review.yml`'s guards, `quality.yml`'s Lint/Format/Module
+# boundaries/Duplication, every unit's typecheck/test, `CI Gate`'s aggregate.
+# What is skipped is specifically the judgment-level pass (logic correctness,
+# convention, the non-mechanical half of the rubric in `pr-review.yml`) —
+# which is the least load-bearing check for a dependency-version bump, whose
+# actual risk surface (a breaking API change, a supply-chain concern) those
+# other gates and a human's own read of the diff already cover.
+#
+# WHY A SEPARATE WORKFLOW, RATHER THAN A STEP INSIDE `pr-review.yml`: that
+# file is TIER A and reviewed as the untouched LLM path; branching its one
+# `Review` job on actor would mean every future edit to the real review logic
+# has to reason about this bypass too. Keeping it separate means the two can
+# never interact except through the sticky comment both write, which is
+# exactly the seam `review-findings-gate.yml` already reads through.
+#
+# TIER A: no `pnpm install` — `pr-review.mjs` / `pr-review-state.mjs` are
+# stdlib-only for the same reason `pr-review.yml` is (see that file's header),
+# and reusing them here rather than re-encoding the state format by hand is
+# what keeps this workflow unable to drift from the contract it exists to
+# satisfy. `scripts/ci/__tests__/guard-job-tiers.test.ts` derives and enforces
+# this by actually loading the module with no `node_modules` present.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+concurrency:
+  group: pr-review-dependabot-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  review-bypass:
+    name: Review (Dependabot bypass — no model call)
+    runs-on: ubuntu-latest
+    if: ${{ !github.event.pull_request.draft && github.event.pull_request.user.login == 'dependabot[bot]' }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+
+      - name: Reviewer self-test (prove the bookkeeping still works)
+        run: node scripts/ci/pr-review.mjs --self-test
+
+      # Same lookup `pr-review.yml` uses for the same sticky comment — kept
+      # identical (down to the two independent checks POPS-2675 added) so a
+      # human PR that somehow turns into a Dependabot one mid-flight, or vice
+      # versa, still finds and edits the one comment either workflow wrote,
+      # rather than each leaving its own.
+      - name: Fetch the existing review comment
+        id: fetch
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+          REVIEWER_LOGIN: github-actions[bot]
+        run: |
+          mkdir -p "$RUNNER_TEMP/review"
+          if gh api --paginate --slurp "repos/$REPO/issues/$PR/comments" \
+               > "$RUNNER_TEMP/comments.json"; then
+            jq --arg login "$REVIEWER_LOGIN" \
+              '[.[][]] | map(select(
+                  .user.login == $login
+                  and (.body | test("<!--\\s*pr-review-state:\\s*[A-Za-z0-9+/=]+\\s*-->"))
+                ))
+                | last // empty' \
+              < "$RUNNER_TEMP/comments.json" > "$RUNNER_TEMP/found.json"
+          else
+            echo "::warning::Could not read existing review comments; posting fresh."
+            : > "$RUNNER_TEMP/found.json"
+          fi
+          if [ -s "$RUNNER_TEMP/found.json" ]; then
+            jq -r '.id' < "$RUNNER_TEMP/found.json" > "$RUNNER_TEMP/comment_id"
+            jq -r '.body' < "$RUNNER_TEMP/found.json" > "$RUNNER_TEMP/review/prior.md"
+          fi
+
+      - name: Publish the no-model-call state
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+          PR: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          echo '{"findings": []}' > "$RUNNER_TEMP/review/findings.json"
+          node scripts/ci/pr-review.mjs publish \
+            --head "$HEAD" \
+            --mode full \
+            --findings "$RUNNER_TEMP/review/findings.json" \
+            --comment-file "$RUNNER_TEMP/review/prior.md" \
+            --repo-root . \
+            --out "$RUNNER_TEMP/review/state.md"
+
+          {
+            echo '**No AI review ran on this PR.** It was opened by Dependabot,'
+            echo 'whose runs cannot read `CLAUDE_CODE_OAUTH_TOKEN` (POPS-3343),'
+            echo 'so `pr-review.yml` cannot run here. This comment exists only'
+            echo 'to satisfy `review-findings-gate`, which polls for it —'
+            echo 'nothing below read the diff. Every deterministic check'
+            echo '(lint, typecheck, tests, `CI Gate`) still ran normally.'
+            echo ''
+            cat "$RUNNER_TEMP/review/state.md"
+          } > "$RUNNER_TEMP/review/comment.md"
+
+          if [ -f "$RUNNER_TEMP/comment_id" ]; then
+            gh api -X PATCH \
+              "repos/$REPO/issues/comments/$(cat "$RUNNER_TEMP/comment_id")" \
+              -F body=@"$RUNNER_TEMP/review/comment.md" > /dev/null
+          else
+            gh api -X POST "repos/$REPO/issues/$PR/comments" \
+              -F body=@"$RUNNER_TEMP/review/comment.md" > /dev/null
+          fi

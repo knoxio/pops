@@ -74,7 +74,20 @@ jobs:
   review:
     name: Review
     runs-on: ubuntu-latest
-    if: ${{ !github.event.pull_request.draft }}
+    # Dependabot-triggered runs read secrets from a separate "Dependabot
+    # secrets" store GitHub scopes them to, not this repo's own Actions
+    # secrets — CLAUDE_CODE_OAUTH_TOKEN lives in the latter, so this job would
+    # hard-fail at the very first step on every Dependabot PR, forever
+    # (POPS-3343). This is a job-level skip, not the step-level pattern this
+    # file's header insists on elsewhere: that rule is about a job GitHub's
+    # ruleset REQUIRES, where a skip reads as unsatisfiable. `Review` is
+    # neither required nor in `ci-gate.yml`'s gated list (see this file's own
+    # header, and `.github/workflows/README.md`), so a skip here reads as
+    # absent, same as the draft check beside it.
+    # `pr-review-dependabot.yml` is the substitute: no model call, but the
+    # same sticky-comment contract `review-findings-gate.yml` (which IS
+    # required) actually reads.
+    if: ${{ !github.event.pull_request.draft && github.event.pull_request.user.login != 'dependabot[bot]' }}
     steps:
       - name: Verify the review credential is present
         env:
