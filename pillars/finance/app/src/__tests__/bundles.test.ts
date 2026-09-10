@@ -66,6 +66,7 @@ describe('finance bundles record', () => {
     'finance-accounts',
     'finance-account-detail',
     'finance-account-checkpoints',
+    'finance-account-imports',
     'finance-tag-rules',
     'finance-settings',
   ])('carries %s, which no nav item reaches', (slot) => {

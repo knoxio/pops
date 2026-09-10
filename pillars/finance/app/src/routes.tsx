@@ -47,6 +47,9 @@ const AccountDetailPage = lazy(() =>
 const AccountCheckpointsPage = lazy(() =>
   import('./pages/AccountCheckpointsPage').then((m) => ({ default: m.AccountCheckpointsPage }))
 );
+const AccountImportsPage = lazy(() =>
+  import('./pages/AccountImportsPage').then((m) => ({ default: m.AccountImportsPage }))
+);
 const BudgetsPage = lazy(() =>
   import('./pages/BudgetsPage').then((m) => ({ default: m.BudgetsPage }))
 );
@@ -89,6 +92,7 @@ export const PAGE_COMPONENTS = {
   'finance-accounts': AccountsPage,
   'finance-account-detail': AccountDetailPage,
   'finance-account-checkpoints': AccountCheckpointsPage,
+  'finance-account-imports': AccountImportsPage,
   'finance-budgets': BudgetsPage,
   'finance-wishlist': WishlistPage,
   'finance-import': ImportPage,
@@ -106,6 +110,7 @@ export const routes: RouteObject[] = [
   { path: 'accounts', element: <AccountsPage /> },
   { path: 'accounts/:id', element: <AccountDetailPage /> },
   { path: 'accounts/:id/checkpoints', element: <AccountCheckpointsPage /> },
+  { path: 'accounts/:id/imports', element: <AccountImportsPage /> },
   { path: 'budgets', element: <BudgetsPage /> },
   { path: 'wishlist', element: <WishlistPage /> },
   { path: 'import', element: <ImportPage /> },
