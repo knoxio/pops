@@ -24,7 +24,8 @@ const BANK_ENTITY_TYPE = 'bank';
 export function useAccountAndFormat() {
   const queryClient = useQueryClient();
   const { accountId, setAccount } = useImportStore();
-  const { accounts, accountsLoading, account, availableBanks } = useAccountFormats(accountId);
+  const { accounts, accountsLoading, account, availableBanks, liveProvider } =
+    useAccountFormats(accountId);
   const bankEntitiesQuery = useAllEntities({ type: BANK_ENTITY_TYPE });
   const currenciesQuery = useQuery({
     queryKey: ['finance', 'currencies', 'list'],
@@ -65,6 +66,7 @@ export function useAccountAndFormat() {
     setAccount,
     account,
     availableBanks,
+    liveProvider,
     bankEntities: bankEntitiesQuery.data?.data ?? [],
     currencies: currenciesQuery.data?.data ?? [],
     dialog,

@@ -136,19 +136,76 @@ function mintOne(
     throw error;
   }
 
+  return measure(tx, row, account, {
+    what: `${account.name}'s statement closing balance`,
+    sayer: 'statement',
+  });
+}
+
+/** The minted row's agreement with the ledger, and the warning when there is none. */
+type MintedRow = ReturnType<typeof accountCheckpointsService.insertCheckpoint>;
+
+function measure(
+  tx: FinanceDb,
+  row: MintedRow,
+  account: { currency: string },
+  words: { what: string; sayer: string }
+): { checkpoint: CommitCheckpoint; warning?: ImportWarning } {
+  const checkpoint = {
+    id: row.id,
+    accountId: row.accountId,
+    balanceCents: row.balanceCents,
+    currency: account.currency,
+    asOf: row.asOf,
+  };
   const delta = checkpointDelta(tx, row);
-  if (delta === null || delta.deltaCents === 0) {
-    return { checkpoint: { id: row.id, accountId: candidate.accountId, deltaCents: 0 } };
-  }
+  if (delta === null || delta.deltaCents === 0)
+    return { checkpoint: { ...checkpoint, deltaCents: 0 } };
   return {
-    checkpoint: { id: row.id, accountId: candidate.accountId, deltaCents: delta.deltaCents },
+    checkpoint: { ...checkpoint, deltaCents: delta.deltaCents },
     warning: {
       type: 'CHECKPOINT_MISMATCH',
-      message: `Ledger disagrees with ${account.name}'s statement closing balance`,
+      message: `Ledger disagrees with ${words.what}`,
       affectedCount: 1,
-      details: `expected ${delta.expectedBalanceCents}c, statement says ${balanceCents}c (Δ ${delta.deltaCents}c)`,
+      details: `expected ${delta.expectedBalanceCents}c, ${words.sayer} says ${row.balanceCents}c (Δ ${delta.deltaCents}c)`,
     },
   };
+}
+
+export interface ReportedBalance {
+  accountId: string;
+  /** Already ledger-signed: a provider reports the account's balance, not a statement column. */
+  balanceCents: number;
+  /** The date of the newest row the balance was reported with. */
+  asOf: string;
+}
+
+/**
+ * Mint the checkpoint a live draft carried (finance ADR-005, POPS-3335): the
+ * balance Up reported with its newest row, dated to that row, once the rows
+ * are in the ledger. Skipped when that account and day already have one.
+ */
+export function mintReportedBalanceCheckpoint(
+  tx: FinanceDb,
+  reported: ReportedBalance,
+  commitKey: string | undefined
+): { checkpoint: CommitCheckpoint; warning?: ImportWarning } | undefined {
+  const account = accountsService.getAccount(tx, reported.accountId);
+  let row;
+  try {
+    row = accountCheckpointsService.insertCheckpoint(tx, {
+      accountId: reported.accountId,
+      balanceCents: reported.balanceCents,
+      asOf: reported.asOf,
+      source: 'import',
+      sourceRef: commitKey ?? null,
+      note: `${account.name} balance from the Up API`,
+    });
+  } catch (error) {
+    if (isCheckpointConflict(error)) return undefined;
+    throw error;
+  }
+  return measure(tx, row, account, { what: `${account.name}'s Up balance`, sayer: 'Up' });
 }
 
 /**

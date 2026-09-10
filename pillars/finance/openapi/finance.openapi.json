@@ -17605,6 +17605,17 @@
                               "accountId": {
                                 "type": "string"
                               },
+                              "asOf": {
+                                "type": "string"
+                              },
+                              "balanceCents": {
+                                "maximum": 9007199254740991,
+                                "minimum": -9007199254740991,
+                                "type": "integer"
+                              },
+                              "currency": {
+                                "type": "string"
+                              },
                               "deltaCents": {
                                 "maximum": 9007199254740991,
                                 "minimum": -9007199254740991,
@@ -17614,7 +17625,14 @@
                                 "type": "string"
                               }
                             },
-                            "required": ["id", "accountId", "deltaCents"],
+                            "required": [
+                              "id",
+                              "accountId",
+                              "balanceCents",
+                              "currency",
+                              "asOf",
+                              "deltaCents"
+                            ],
                             "type": "object"
                           },
                           "type": "array"

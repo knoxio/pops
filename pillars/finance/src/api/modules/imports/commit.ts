@@ -74,6 +74,12 @@ import {
   enqueueOutboxCandidatesPhase,
   preCreatePendingContacts,
 } from './commit-contacts-precreate.js';
+import {
+  batchSourceFor,
+  commitLiveDraftPhase,
+  type LiveDraftContext,
+  liveDraftOf,
+} from './commit-live-draft.js';
 import { expandLoanRepaymentRow } from './commit-loan-split.js';
 import { pairTransfersPhase } from './commit-pair-transfers.js';
 import { applyCommitTagVocabulary, planCommitTagVocabulary } from './commit-tag-vocabulary.js';
@@ -181,7 +187,8 @@ function writeTransactionsPhase(
 function recordOutcomePhases(
   tx: FinanceDb,
   payload: CommitPayload,
-  writeResult: WriteTxnsResult
+  writeResult: WriteTxnsResult,
+  liveDraft: LiveDraftContext | undefined
 ): { checkpoints: CommitResult['checkpoints']; warnings: ImportWarning[]; batches: CommitBatch[] } {
   pairTransfersPhase(
     tx,
@@ -198,9 +205,17 @@ function recordOutcomePhases(
     payload.commitKey
   );
 
+  commitLiveDraftPhase(tx, {
+    liveDraft,
+    inserted: writeResult.inserted,
+    commitKey: payload.commitKey,
+    checkpoints,
+    warnings,
+  });
+
   const batches = recordImportBatchesPhase(tx, {
     inserted: writeResult.inserted,
-    source: payload.source,
+    source: batchSourceFor(liveDraft, payload.source),
     checkpoints,
     commitKey: payload.commitKey,
   });
@@ -234,6 +249,7 @@ export async function commitImport(
   }
 
   const tagPlan = planCommitTagVocabulary(db, payload);
+  const liveDraft = liveDraftOf(db, payload.draftId);
 
   const { tempIdMap, entitiesCreated, outboxCandidates } = await preCreatePendingContacts(
     contacts,
@@ -253,7 +269,12 @@ export async function commitImport(
         payload.transactions.map((t) => t.checksum).filter((c): c is string => c != null)
       );
 
-      const { checkpoints, warnings, batches } = recordOutcomePhases(tx, payload, writeResult);
+      const { checkpoints, warnings, batches } = recordOutcomePhases(
+        tx,
+        payload,
+        writeResult,
+        liveDraft
+      );
 
       const result: CommitResult = {
         entitiesCreated,

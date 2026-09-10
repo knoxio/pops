@@ -1,3 +1,4 @@
+import { firstImportStep } from '../components/imports/step-labels';
 import { pendingTagRuleKey } from '../lib/tag-rule-reconcile';
 import { findSimilarTransactions } from '../lib/transaction-utils';
 import {
@@ -6,6 +7,7 @@ import {
   type AddPendingTagRuleChangeSetInput,
   downstreamReset,
   fingerprintParsedTransactions,
+  type ImportDraftSource,
   type ImportStore,
   initialState,
   isSameFileSet,
@@ -56,14 +58,22 @@ export function buildSetters(set: StoreSet) {
       set({ confirmedTransactions }),
     setCommitResult: (commitResult: ImportStore['commitResult']) => set({ commitResult }),
     setDraftId: (draftId: string | null) => set({ draftId }),
+    setDraftSource: (draftSource: ImportDraftSource | null, draftBalanceCents: number | null) =>
+      set({ draftSource, draftBalanceCents }),
   };
 }
 
 export function buildNavigation(set: StoreSet) {
   return {
     nextStep: () => set((state) => ({ currentStep: Math.min(state.currentStep + 1, 8) })),
-    prevStep: () => set((state) => ({ currentStep: Math.max(state.currentStep - 1, 1) })),
-    goToStep: (step: number) => set({ currentStep: Math.min(Math.max(step, 1), 8) }),
+    prevStep: () =>
+      set((state) => ({
+        currentStep: Math.max(state.currentStep - 1, firstImportStep(state.draftSource)),
+      })),
+    goToStep: (step: number) =>
+      set((state) => ({
+        currentStep: Math.min(Math.max(step, firstImportStep(state.draftSource)), 8),
+      })),
     reset: () => set(initialState),
   };
 }

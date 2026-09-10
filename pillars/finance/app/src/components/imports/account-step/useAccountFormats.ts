@@ -14,8 +14,16 @@ import { bankTypesForAccount } from './import-formats';
  * already resolved there.
  */
 export function useAccountFormats(accountId: string | null) {
-  const { accounts, isLoading: accountsLoading } = useAllAccounts();
+  const { accounts, rows, isLoading: accountsLoading } = useAllAccounts();
   const account = (accounts ?? []).find((candidate) => candidate.id === accountId);
+  // An account fed by a provider has nothing to upload: its rows arrive on
+  // their own and wait in a pending draft (finance ADR-005). Read through
+  // `??` for the same reason `toAccountOptions` does: a hand-rolled double
+  // can omit a field the wire always carries, and that must read as "not
+  // fed that way" rather than throwing inside the picker.
+  const row = (rows ?? []).find((candidate) => candidate.id === accountId);
+  const source = row?.importStatus?.source ?? null;
+  const liveProvider = source?.kind === 'api' && source.provider === 'up' ? 'up' : null;
 
   const availableBanks = useMemo(() => (account ? bankTypesForAccount(account) : []), [account]);
 
@@ -24,5 +32,6 @@ export function useAccountFormats(accountId: string | null) {
     accountsLoading,
     account,
     availableBanks,
+    liveProvider,
   };
 }

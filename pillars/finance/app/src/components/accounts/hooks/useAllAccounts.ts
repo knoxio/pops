@@ -40,6 +40,8 @@ export function useAllAccounts() {
 
   return {
     accounts,
+    /** The accounts as the wire serves them, for a reader that needs more than the picker's option. */
+    rows: accountsQuery.data?.data,
     isLoading: accountsQuery.isLoading,
     error: accountsQuery.error,
   };

@@ -239,6 +239,12 @@ export const FailedTransactionDetailSchema = z.object({
 export const CommitCheckpointSchema = z.object({
   id: z.string(),
   accountId: z.string(),
+  /** The balance recorded, ledger-signed, minor units. */
+  balanceCents: z.number().int(),
+  /** The account's currency, so a summary line can format the balance without a second read. */
+  currency: z.string(),
+  /** The date it was recorded for: the statement's closing date, or the newest row a provider reported it with. */
+  asOf: z.string(),
   /** `checkpoint.balanceCents - expectedBalanceCents`; zero means agreement. */
   deltaCents: z.number().int(),
 });

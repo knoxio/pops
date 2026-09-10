@@ -75,6 +75,11 @@ Three things about the wire that no single file states:
   write, heartbeat or unforced claim from another token is 409
   `DraftOwnedElsewhere`, with `details.ownerSeenAt` so the caller can tell a
   tab that is in it now from one that left without releasing.
+- **Committing a live draft is what puts its rows in the ledger.** The commit
+  takes a `draftId`; for a draft the bank filled it also writes the batch as an
+  `api` batch, mints `balance_reported_cents` as an `import` checkpoint dated to
+  the newest row it wrote, and deletes the draft, all inside the one
+  transaction. A commit that fails leaves the draft to be resumed.
 - **A live draft belongs to the bank until a person claims it.** Claiming
   turns it `saved`, so the Up path never writes into a draft someone has open;
   what arrives afterwards collects in a new live draft for the account. The

@@ -8932,6 +8932,9 @@ export interface operations {
               }[];
               checkpoints?: {
                 accountId: string;
+                asOf: string;
+                balanceCents: number;
+                currency: string;
                 deltaCents: number;
                 id: string;
               }[];

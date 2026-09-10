@@ -90,7 +90,7 @@ function useDialectSteering(
 
 function useUploadStep() {
   const { files, rows, dialectId, accountId, setFiles, setDialectId, nextStep } = useImportStore();
-  const { account, availableBanks } = useAccountFormats(accountId);
+  const { account, availableBanks, liveProvider } = useAccountFormats(accountId);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [formatMismatch, setFormatMismatch] = useState<string | null>(null);
@@ -145,6 +145,9 @@ function useUploadStep() {
     // former should hide the file drop, or a still-loading account would
     // flash the "nothing to import" gate before it has anything to say.
     hasNoFormat: Boolean(account) && availableBanks.length === 0,
+    // A live-fed account's rows arrive on their own; the section above says
+    // what is waiting and opens it, so there is no file and no Next here.
+    isLive: liveProvider !== null,
     isProcessing,
     error,
     formatMismatch,
@@ -163,6 +166,7 @@ export function UploadStep() {
     dialectId,
     accountId,
     hasNoFormat,
+    isLive,
     isProcessing,
     error,
     formatMismatch,
@@ -180,7 +184,7 @@ export function UploadStep() {
 
       <AccountAndFormatFields dialectId={dialectId} onBankChange={handleBankChange} />
 
-      {accountId && !hasNoFormat && (
+      {accountId && !hasNoFormat && !isLive && (
         <UploadFileSection
           files={files}
           rows={rows}
@@ -198,14 +202,16 @@ export function UploadStep() {
         </div>
       )}
 
-      <UploadFooter
-        onNext={handleNext}
-        disabled={
-          !accountId || hasNoFormat || (files.length === 0 && rows.length === 0) || isProcessing
-        }
-        isProcessing={isProcessing}
-        pdfStatement={pdfStatement}
-      />
+      {!isLive && (
+        <UploadFooter
+          onNext={handleNext}
+          disabled={
+            !accountId || hasNoFormat || (files.length === 0 && rows.length === 0) || isProcessing
+          }
+          isProcessing={isProcessing}
+          pdfStatement={pdfStatement}
+        />
+      )}
     </div>
   );
 }

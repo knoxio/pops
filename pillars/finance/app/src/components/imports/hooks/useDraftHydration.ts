@@ -11,6 +11,7 @@ import { ownerToken } from '../../../store/import-draft-owner';
 import { clampResumeStep, isDraftPayload } from '../../../store/import-draft-payload';
 import { initialState } from '../../../store/import-store-types';
 import { useImportStore } from '../../../store/importStore';
+import { firstImportStep } from '../step-labels';
 import { IMPORT_DRAFTS_LIST_KEY } from './useDraftWriteThrough';
 
 export type DraftGate =
@@ -63,8 +64,10 @@ async function loadInto(draftId: string, force: boolean): Promise<DraftGate> {
     ...initialState,
     ...draft.payload,
     draftId,
+    draftSource: draft.source,
+    draftBalanceCents: draft.balanceReportedCents,
     files: [],
-    currentStep: clampResumeStep(draft.payload),
+    currentStep: Math.max(clampResumeStep(draft.payload), firstImportStep(draft.source)),
   });
   return { status: 'ready' };
 }

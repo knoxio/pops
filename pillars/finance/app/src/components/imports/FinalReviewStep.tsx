@@ -20,6 +20,7 @@ import {
   TransactionsSection,
 } from './final-review/Sections';
 import { useFinalReview } from './final-review/useFinalReview';
+import { LiveCheckpointSection } from './live/LiveCheckpointSection';
 
 function CommitErrorPanel({ error }: { error: string }) {
   return (
@@ -148,6 +149,7 @@ export function FinalReviewStep() {
         </p>
       </div>
       <ReviewBody {...state} />
+      <LiveCheckpointSection />
       {state.commitError && <CommitErrorPanel error={state.commitError} />}
       <ActionFooter
         isCommitting={state.isCommitting}

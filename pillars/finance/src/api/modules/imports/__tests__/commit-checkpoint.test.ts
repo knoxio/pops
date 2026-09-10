@@ -101,7 +101,16 @@ describe('mintImportCheckpointsPhase, via commitImport', () => {
       balanceCents: -65_000,
       source: 'import',
     });
-    expect(result.checkpoints).toEqual([{ id: checkpoints[0]?.id, accountId, deltaCents: 0 }]);
+    expect(result.checkpoints).toEqual([
+      {
+        id: checkpoints[0]?.id,
+        accountId,
+        balanceCents: -65_000,
+        currency: 'AUD',
+        asOf: '2026-07-10',
+        deltaCents: 0,
+      },
+    ]);
   });
 
   it('does not double the checkpoint on a re-import of the same statement', async () => {

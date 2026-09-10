@@ -22,6 +22,10 @@ vi.mock('../../store/importStore', () => ({
 const { mockCommitImport } = vi.hoisted(() => ({ mockCommitImport: vi.fn() }));
 
 vi.mock('../../finance-api/index.js', () => ({
+  accountsList: async () => ({
+    data: { data: [], pagination: { total: 0, limit: 500, offset: 0, hasMore: false } },
+    error: undefined,
+  }),
   importsCommitImport: (...args: unknown[]) => mockCommitImport(...args),
 }));
 

@@ -77,9 +77,18 @@ export interface ProcessedTransaction extends BaseProcessedTransaction {
   manuallyEdited?: boolean;
 }
 
+/** Where a draft's rows came from, as the draft list reports it; a fresh run is a file run until it says otherwise. */
+export type ImportDraftSource =
+  | { kind: 'file'; dialectId: string | null; fileNames: string[] }
+  | { kind: 'live'; provider: 'up' };
+
 export interface ImportStore {
   /** The server draft this run writes through to; null until the first rows exist (finance ADR-005). */
   draftId: string | null;
+  /** The draft's source, from the server; decides which steps exist. Not written back. */
+  draftSource: ImportDraftSource | null;
+  /** Live only: the balance the provider reported with the newest row, minor units. Not written back. */
+  draftBalanceCents: number | null;
   currentStep: number;
   files: File[];
   sourceFileNames: string[];
@@ -126,6 +135,7 @@ export interface ImportStore {
   setConfirmedTransactions: (confirmed: ConfirmedTransaction[]) => void;
   setCommitResult: (result: CommitResult | null) => void;
   setDraftId: (draftId: string | null) => void;
+  setDraftSource: (source: ImportDraftSource | null, balanceCents: number | null) => void;
 
   nextStep: () => void;
   prevStep: () => void;
@@ -156,6 +166,8 @@ export interface ImportStore {
 
 export const initialState = {
   draftId: null,
+  draftSource: null,
+  draftBalanceCents: null,
   currentStep: 1,
   files: [],
   sourceFileNames: [],

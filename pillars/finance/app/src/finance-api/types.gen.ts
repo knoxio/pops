@@ -6237,6 +6237,9 @@ export type ImportsCommitImportResponses = {
       }>;
       checkpoints?: Array<{
         accountId: string;
+        asOf: string;
+        balanceCents: number;
+        currency: string;
         deltaCents: number;
         id: string;
       }>;

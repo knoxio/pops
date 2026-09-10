@@ -1692,6 +1692,126 @@ describe('imports.commitImport — commit idempotency (#3640/#3642)', () => {
     ).resolves.toBeDefined();
   });
 
+  it('committing a live draft writes an api batch, mints the reported balance as a checkpoint dated to the newest row, and deletes the draft, all in one transaction (POPS-3335)', async () => {
+    const c = client();
+    const accountId = (
+      await c.accounts.create({ name: 'Up Spending', kind: 'savings', currency: 'AUD' })
+    ).data.id;
+    const draft = createImportDraft(financeDb.db, {
+      accountId,
+      sourceKind: 'live',
+      state: 'saved',
+      provider: 'up',
+      payload: '{}',
+      rowCount: 2,
+      unresolvedCount: 0,
+      dateFrom: '2026-09-02',
+      dateTo: '2026-09-04',
+      balanceReportedCents: 61_215,
+    });
+
+    const result = await c.imports.commitImport({
+      draftId: draft.id,
+      commitKey: draft.id,
+      transactions: [
+        confirmed({
+          description: 'COLES',
+          checksum: 'live-1',
+          accountId,
+          amount: -12,
+          date: '2026-09-02',
+        }),
+        confirmed({
+          description: 'SALARY',
+          checksum: 'live-2',
+          accountId,
+          amount: 500,
+          date: '2026-09-04',
+          transactionType: 'income',
+        }),
+      ],
+    });
+
+    expect(result.data.transactionsImported).toBe(2);
+    expect(result.data.batches).toMatchObject([
+      { accountId, sourceKind: 'api', rowCount: 2, dateFrom: '2026-09-02', dateTo: '2026-09-04' },
+    ]);
+    expect(
+      financeDb.raw
+        .prepare(
+          'SELECT source_ref AS sourceRef, parser_version AS parserVersion FROM import_batches'
+        )
+        .all()
+    ).toEqual([{ sourceRef: 'up', parserVersion: '1' }]);
+    expect(result.data.checkpoints).toMatchObject([
+      { accountId, balanceCents: 61_215, currency: 'AUD', asOf: '2026-09-04' },
+    ]);
+    const checkpoint = financeDb.raw
+      .prepare(
+        'SELECT balance_cents AS balanceCents, as_of AS asOf, source, source_ref AS sourceRef FROM account_checkpoints WHERE account_id = ?'
+      )
+      .all(accountId);
+    expect(checkpoint).toEqual([
+      { balanceCents: 61_215, asOf: '2026-09-04', source: 'import', sourceRef: draft.id },
+    ]);
+    expect(result.data.batches?.[0]?.checkpointId).toBe(result.data.checkpoints?.[0]?.id);
+    expect(getImportDraft(financeDb.db, draft.id)).toBeUndefined();
+
+    const replay = await c.imports.commitImport({
+      draftId: draft.id,
+      commitKey: draft.id,
+      transactions: [
+        confirmed({
+          description: 'COLES',
+          checksum: 'live-1',
+          accountId,
+          amount: -12,
+          date: '2026-09-02',
+        }),
+      ],
+    });
+    expect(replay.data).toEqual(result.data);
+    expect(financeDb.raw.prepare('SELECT count(*) AS c FROM account_checkpoints').get()).toEqual({
+      c: 1,
+    });
+  });
+
+  it('a live commit that is rejected leaves rows, checkpoint and draft untouched', async () => {
+    const c = client();
+    const accountId = (
+      await c.accounts.create({ name: 'Up Saver', kind: 'savings', currency: 'AUD' })
+    ).data.id;
+    const draft = createImportDraft(financeDb.db, {
+      accountId,
+      sourceKind: 'live',
+      state: 'saved',
+      provider: 'up',
+      payload: '{}',
+      rowCount: 1,
+      unresolvedCount: 0,
+      dateFrom: '2026-09-02',
+      dateTo: '2026-09-02',
+      balanceReportedCents: 1_000,
+    });
+
+    await expect(
+      c.imports.commitImport({
+        draftId: draft.id,
+        transactions: [
+          confirmed({ description: 'BAD', checksum: 'live-bad', accountId, date: 'nope' }),
+        ],
+      })
+    ).rejects.toMatchObject({ status: 400 });
+
+    expect(getImportDraft(financeDb.db, draft.id)).toBeDefined();
+    expect(financeDb.raw.prepare('SELECT count(*) AS c FROM account_checkpoints').get()).toEqual({
+      c: 0,
+    });
+    expect(financeDb.raw.prepare('SELECT count(*) AS c FROM import_batches').get()).toEqual({
+      c: 0,
+    });
+  });
+
   it('omitting commitKey preserves the old best-effort behaviour (no dedup, documents the opt-in nature)', async () => {
     const c = client();
     const payload = {

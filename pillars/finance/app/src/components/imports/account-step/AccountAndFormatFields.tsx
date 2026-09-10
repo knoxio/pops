@@ -11,6 +11,7 @@ import {
 } from '@pops/ui';
 
 import { AccountFormDialog } from '../../../pages/accounts/AccountFormDialog';
+import { LiveFeedSection } from '../live/LiveFeedSection';
 import { BANK_OPTIONS } from '../upload-step/bank-upload-config';
 import { useAccountAndFormat } from './useAccountAndFormat';
 
@@ -109,6 +110,9 @@ function FormatSection({
   // formats against yet, so this renders neither the empty state nor a radio
   // list with nothing in it.
   if (!state.account) return null;
+  if (state.liveProvider !== null) {
+    return <LiveFeedSection account={state.account} />;
+  }
   if (state.availableBanks.length === 0) {
     return <NoFormats account={state.account} />;
   }

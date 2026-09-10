@@ -33,6 +33,7 @@ function useStoreSlice() {
     nextStep: useImportStore((s) => s.nextStep),
     setCommitResult: useImportStore((s) => s.setCommitResult),
     draftId: useImportStore((s) => s.draftId),
+    draftSource: useImportStore((s) => s.draftSource),
     setDraftId: useImportStore((s) => s.setDraftId),
   };
 }
@@ -92,17 +93,22 @@ function useDerivedCounts(
 }
 
 function commitBodyFor(slice: ReturnType<typeof useStoreSlice>, commitKey: string): CommitBody {
+  const live = slice.draftSource?.kind === 'live';
   const payload = buildCommitPayload({
     pendingEntities: slice.pendingEntities,
     pendingChangeSets: slice.pendingChangeSets,
     pendingTagRuleChangeSets: slice.pendingTagRuleChangeSets,
     confirmedTransactions: slice.confirmedTransactions,
-    source: importSourceFor(slice.dialectId, slice.sourceFileNames),
+    source: live
+      ? { kind: 'api', provider: 'up' }
+      : importSourceFor(slice.dialectId, slice.sourceFileNames),
   });
   return {
     ...payload,
     changeSets: payload.changeSets.map(toRestCorrectionChangeSet),
-    commitKey,
+    // A live draft's commit key is the draft itself: one draft, one commit,
+    // however many tabs or retries send it.
+    commitKey: live && slice.draftId !== null ? slice.draftId : commitKey,
     ...(slice.draftId === null ? {} : { draftId: slice.draftId }),
   };
 }

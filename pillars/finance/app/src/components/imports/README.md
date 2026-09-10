@@ -39,6 +39,12 @@ The consequence worth knowing here, because it spans the store and step 1: **the
 
 Two more edges in the same area: resuming mid-processing restarts `POST /imports/process` rather than re-attaching to a server session that may still be alive, and a second tab opening the same draft is refused by the lease rather than racing on it (`code: DraftOwnedElsewhere`); it can take the draft over, after which the first tab's next write or thirty-second heartbeat is refused and it shows `ImportTakenOverNotice.tsx`, which blocks until the person takes the draft back or leaves.
 
+## A live import
+
+An account fed by a provider has no file: its rows arrive on their own and wait in a pending draft (finance ADR-005), classified as they land. The wizard therefore has no Upload and no Map for one — `step-labels.ts` derives the step list from the draft's source, and Back stops at Process. The first step shows what is waiting instead of a file drop (`live/LiveFeedSection.tsx`, with `Sync now` when nothing is), Process opens on the already-processed state because the staged fingerprints match, Review carries the held-back banner (`live/LiveArrivalsBanner.tsx`, read once when it opens: a count that moved under the person is what the "an open import never changes" rule exists to prevent), and Commit says what the balance checkpoint will record (`live/LiveCheckpointSection.tsx`).
+
+Committing a live draft is what puts its rows in the ledger, and the commit does three more things in the same transaction: it writes the batch as an `api` batch, mints the balance Up reported as an `import` checkpoint dated to the newest row, and deletes the draft. The commit key is the draft id, so one draft commits once however many tabs or retries send it.
+
 ## Where a pending import is picked up
 
 Two entry points list every draft, whoever started it, and both compose `pending/PendingImportCard.tsx`: the finance dashboard's "Pending imports" section (`../../pages/dashboard/PendingImports.tsx`, capped at five with a count) and the wizard's first step (`upload-step/ContinuePending.tsx`, all of them, above an "or start a new import" divider). Neither renders when nothing is pending. The card's one action follows the server's state: a saved draft resumes, a live one is reviewed, an open one is taken over, an unusable one can only be discarded, and the discard confirmation (`pending/DiscardPendingDialog.tsx`) says what is actually at stake: decisions only for a live draft, decisions and the file for a file draft.

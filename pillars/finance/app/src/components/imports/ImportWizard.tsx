@@ -7,7 +7,7 @@ import { ColumnMapStep } from './ColumnMapStep';
 import { FinalReviewStep } from './FinalReviewStep';
 import { ProcessingStep } from './ProcessingStep';
 import { RuleCreationStep } from './RuleCreationStep';
-import { IMPORT_STEP_LABELS } from './step-labels';
+import { IMPORT_STEP_LABELS, importStepsFor } from './step-labels';
 import { SummaryStep } from './SummaryStep';
 import { TagReviewStep } from './TagReviewStep';
 import { UploadStep } from './UploadStep';
@@ -85,14 +85,24 @@ function StepContent({ currentStep }: { currentStep: number }) {
  */
 export function ImportWizard() {
   const currentStep = useImportStore((state) => state.currentStep);
-  const progress = ((currentStep - 1) / (STEPS.length - 1)) * 100;
+  const draftSource = useImportStore((state) => state.draftSource);
+  const visible = importStepsFor(draftSource);
+  const first = visible[0] ?? 1;
+  // A live draft has nothing to upload or map: the indicator shows the steps
+  // it does have, numbered from one, while the store keeps its numbering.
+  const steps = STEPS.filter((step) => visible.includes(step.number)).map((step) => ({
+    ...step,
+    number: step.number - first + 1,
+  }));
+  const shown = currentStep - first + 1;
+  const progress = ((shown - 1) / Math.max(steps.length - 1, 1)) * 100;
 
   return (
     <div className="max-w-4xl mx-auto space-y-8">
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          {STEPS.map((step) => (
-            <StepIndicator key={step.number} step={step} currentStep={currentStep} />
+          {steps.map((step) => (
+            <StepIndicator key={step.label} step={step} currentStep={shown} />
           ))}
         </div>
         <Progress value={progress} className="h-2" />

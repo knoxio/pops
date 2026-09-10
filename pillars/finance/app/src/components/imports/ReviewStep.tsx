@@ -1,4 +1,5 @@
 import { useImportStore } from '../../store/importStore';
+import { LiveArrivalsBanner } from './live/LiveArrivalsBanner';
 import { DroppedRowsNotice } from './review/DroppedRowsNotice';
 import { EntityLookupUnavailableNotice } from './review/EntityLookupUnavailableNotice';
 import { ReviewFooter, ReviewHeader } from './review/ReviewChrome';
@@ -51,6 +52,7 @@ export function ReviewStep() {
         processSessionId={processSessionId ?? ''}
         allPreviewTransactions={allPreviewTransactions}
       />
+      <LiveArrivalsBanner />
       <ReviewHeader
         isReevaluating={review.isReevaluating}
         unresolvedCount={review.unresolvedCount}

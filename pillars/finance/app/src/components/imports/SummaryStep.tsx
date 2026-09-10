@@ -5,6 +5,7 @@ import { Button, EmptyState, SummaryCard } from '@pops/ui';
 
 import { useImportStore } from '../../store/importStore';
 import { ImportWarningBanner } from './ImportWarningBanner';
+import { CheckpointResultLines } from './live/LiveCheckpointSection';
 import { RuleBreakdown } from './SummaryRuleBreakdown';
 
 import type { CommitResult } from '@pops/finance';
@@ -173,6 +174,7 @@ export function SummaryStep() {
       <SummaryCards commitResult={commitResult} totalRules={totalRules} />
       {commitResult.failedDetails && <FailedDetailsList details={commitResult.failedDetails} />}
       {commitResult.warnings && <CommitWarnings warnings={commitResult.warnings} />}
+      <CheckpointResultLines checkpoints={commitResult.checkpoints ?? []} />
       <RuleBreakdown
         rulesApplied={commitResult.rulesApplied}
         tagRuleWrites={commitResult.tagRuleWrites}
